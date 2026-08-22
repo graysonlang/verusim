@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "market-morning",
   "title": "Market Morning",
   "summary": "A cold morning after rumors of a failed eastern crop have reached Alder's Edge.",
@@ -24,12 +24,42 @@
       "position": { "x": 391, "y": 534 },
       "walkingMetersPerMinute": 18,
       "schedule": [
-        { "startMinute": 0, "locationId": "mara-house", "activity": "Sleeping" },
-        { "startMinute": 360, "locationId": "mara-house", "activity": "Preparing the inn" },
-        { "startMinute": 480, "locationId": "wayfarer-inn", "activity": "Opening the common room" },
-        { "startMinute": 720, "locationId": "market-square", "activity": "Buying provisions" },
-        { "startMinute": 780, "locationId": "wayfarer-inn", "activity": "Serving travelers" },
-        { "startMinute": 1320, "locationId": "mara-house", "activity": "Sleeping" }
+        {
+          "startMinute": 0,
+          "locationId": "mara-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        },
+        {
+          "startMinute": 360,
+          "locationId": "mara-house",
+          "activity": "Preparing the inn",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 480,
+          "locationId": "wayfarer-inn",
+          "activity": "Opening the common room",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 720,
+          "locationId": "market-square",
+          "activity": "Buying provisions",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 780,
+          "locationId": "wayfarer-inn",
+          "activity": "Serving travelers",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 1320,
+          "locationId": "mara-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        }
       ]
     },
     {
@@ -38,13 +68,48 @@
       "position": { "x": 983, "y": 556 },
       "walkingMetersPerMinute": 17,
       "schedule": [
-        { "startMinute": 0, "locationId": "tomas-house", "activity": "Sleeping" },
-        { "startMinute": 390, "locationId": "tomas-house", "activity": "Sharpening tools" },
-        { "startMinute": 480, "locationId": "iron-yard", "activity": "Working the forge" },
-        { "startMinute": 750, "locationId": "market-square", "activity": "Inspecting commissions" },
-        { "startMinute": 840, "locationId": "iron-yard", "activity": "Working the forge" },
-        { "startMinute": 1140, "locationId": "wayfarer-inn", "activity": "Eating alone" },
-        { "startMinute": 1260, "locationId": "tomas-house", "activity": "Sleeping" }
+        {
+          "startMinute": 0,
+          "locationId": "tomas-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        },
+        {
+          "startMinute": 390,
+          "locationId": "tomas-house",
+          "activity": "Sharpening tools",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 480,
+          "locationId": "iron-yard",
+          "activity": "Working the forge",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 750,
+          "locationId": "market-square",
+          "activity": "Inspecting commissions",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 840,
+          "locationId": "iron-yard",
+          "activity": "Working the forge",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 1140,
+          "locationId": "wayfarer-inn",
+          "activity": "Eating alone",
+          "recoveryMode": "break"
+        },
+        {
+          "startMinute": 1260,
+          "locationId": "tomas-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        }
       ]
     },
     {
@@ -53,12 +118,42 @@
       "position": { "x": 553, "y": 151 },
       "walkingMetersPerMinute": 16,
       "schedule": [
-        { "startMinute": 0, "locationId": "nessa-house", "activity": "Sleeping" },
-        { "startMinute": 420, "locationId": "healers-house", "activity": "Sorting remedies" },
-        { "startMinute": 600, "locationId": "market-square", "activity": "Holding an open clinic" },
-        { "startMinute": 780, "locationId": "healers-house", "activity": "Receiving patients" },
-        { "startMinute": 1110, "locationId": "riverside", "activity": "Gathering willow bark" },
-        { "startMinute": 1260, "locationId": "nessa-house", "activity": "Reading" }
+        {
+          "startMinute": 0,
+          "locationId": "nessa-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        },
+        {
+          "startMinute": 420,
+          "locationId": "healers-house",
+          "activity": "Sorting remedies",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 600,
+          "locationId": "market-square",
+          "activity": "Holding an open clinic",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 780,
+          "locationId": "healers-house",
+          "activity": "Receiving patients",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 1110,
+          "locationId": "riverside",
+          "activity": "Gathering willow bark",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 1260,
+          "locationId": "nessa-house",
+          "activity": "Reading",
+          "recoveryMode": "rest"
+        }
       ]
     },
     {
@@ -67,17 +162,48 @@
       "position": { "x": 831, "y": 152 },
       "walkingMetersPerMinute": 20,
       "schedule": [
-        { "startMinute": 0, "locationId": "elian-house", "activity": "Sleeping" },
-        { "startMinute": 360, "locationId": "guard-house", "activity": "Reading the night report" },
-        { "startMinute": 450, "locationId": "north-gate", "activity": "Watching arrivals" },
-        { "startMinute": 720, "locationId": "market-square", "activity": "Walking the market" },
-        { "startMinute": 810, "locationId": "north-gate", "activity": "Watching arrivals" },
+        {
+          "startMinute": 0,
+          "locationId": "elian-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        },
+        {
+          "startMinute": 360,
+          "locationId": "guard-house",
+          "activity": "Reading the night report",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 450,
+          "locationId": "north-gate",
+          "activity": "Watching arrivals",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 720,
+          "locationId": "market-square",
+          "activity": "Walking the market",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 810,
+          "locationId": "north-gate",
+          "activity": "Watching arrivals",
+          "recoveryMode": "none"
+        },
         {
           "startMinute": 1080,
           "locationId": "wayfarer-inn",
-          "activity": "Meeting the late patrol"
+          "activity": "Meeting the late patrol",
+          "recoveryMode": "none"
         },
-        { "startMinute": 1260, "locationId": "elian-house", "activity": "Sleeping" }
+        {
+          "startMinute": 1260,
+          "locationId": "elian-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        }
       ]
     },
     {
@@ -86,20 +212,42 @@
       "position": { "x": 460, "y": 644 },
       "walkingMetersPerMinute": 15,
       "schedule": [
-        { "startMinute": 0, "locationId": "sera-house", "activity": "Sleeping" },
-        { "startMinute": 330, "locationId": "alder-mill", "activity": "Checking the millrace" },
+        {
+          "startMinute": 0,
+          "locationId": "sera-house",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        },
+        {
+          "startMinute": 330,
+          "locationId": "alder-mill",
+          "activity": "Checking the millrace",
+          "recoveryMode": "none"
+        },
         {
           "startMinute": 540,
           "locationId": "market-square",
-          "activity": "Collecting grain accounts"
+          "activity": "Collecting grain accounts",
+          "recoveryMode": "none"
         },
-        { "startMinute": 630, "locationId": "alder-mill", "activity": "Milling grain" },
+        {
+          "startMinute": 630,
+          "locationId": "alder-mill",
+          "activity": "Milling grain",
+          "recoveryMode": "none"
+        },
         {
           "startMinute": 1080,
           "locationId": "riverside",
-          "activity": "Inspecting the water level"
+          "activity": "Inspecting the water level",
+          "recoveryMode": "none"
         },
-        { "startMinute": 1170, "locationId": "sera-house", "activity": "Keeping her books" }
+        {
+          "startMinute": 1170,
+          "locationId": "sera-house",
+          "activity": "Keeping her books",
+          "recoveryMode": "none"
+        }
       ]
     }
   ]

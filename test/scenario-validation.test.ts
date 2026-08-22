@@ -32,7 +32,7 @@ describe('scenario validation', () => {
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 4);
+    assert.equal(migrated.schemaVersion, 5);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
@@ -74,7 +74,7 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 4);
+    assert.equal(migratedScenario.schemaVersion, 5);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
   });
@@ -86,7 +86,7 @@ describe('scenario validation', () => {
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 4);
+    assert.equal(migratedScenario.schemaVersion, 5);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -124,6 +124,21 @@ describe('scenario validation', () => {
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
     assert.equal(migratedAgendaSnapshot.schemaVersion, 3);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
+  });
+
+  it('migrates legacy schedule activities to explicit recovery modes', () => {
+    const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 4;
+    for (const placement of legacy.characters as Array<Record<string, unknown>>) {
+      for (const block of placement.schedule as Array<Record<string, unknown>>) {
+        delete block.recoveryMode;
+      }
+    }
+
+    const migrated = parseScenario(legacy);
+    assert.equal(migrated.schemaVersion, 5);
+    assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
+    assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
   });
 
   it('requires explicit gate events in the versioned causal trace', () => {

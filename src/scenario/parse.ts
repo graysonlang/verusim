@@ -5,6 +5,7 @@ import {
   type AreaKind,
   type CharacterLibraryFile,
   type EnvironmentLibraryFile,
+  type RecoveryMode,
   type ScenarioFile,
   type ValueId,
 } from '../model/types.js';
@@ -21,6 +22,7 @@ const AREA_KINDS = new Set<AreaKind>([
 const VALUE_ID_SET = new Set<string>(VALUE_IDS);
 const DYAD_MODES = new Set(['courteous', 'contesting', 'guarded', 'ruptured', 'warm']);
 const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'want']);
+const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export class ScenarioValidationError extends Error {
@@ -223,6 +225,12 @@ function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
 }
 
+function legacyRecoveryMode(activity: unknown): RecoveryMode {
+  if (typeof activity !== 'string') return 'none';
+  const normalized = activity.trim().toLowerCase();
+  return normalized === 'sleeping' || normalized === 'sleep' ? 'sleep' : 'none';
+}
+
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
   if (file.schemaVersion === 4) return file;
@@ -273,8 +281,13 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 4) return file;
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
+  if (file.schemaVersion === 5) return file;
+  if (
+    file.schemaVersion !== 1 &&
+    file.schemaVersion !== 2 &&
+    file.schemaVersion !== 3 &&
+    file.schemaVersion !== 4
+  ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
   if (file.schemaVersion === 1 || file.schemaVersion === 2) {
@@ -297,10 +310,19 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.disclosureItems = [];
     file.disclosureOpportunities = [];
   }
-  file.agendaGoals = [];
-  file.taskOperators = [];
-  file.worldFacts = [];
-  file.schemaVersion = 4;
+  if (file.schemaVersion !== 4) {
+    file.agendaGoals = [];
+    file.taskOperators = [];
+    file.worldFacts = [];
+  }
+  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+    const placement = objectValue(placementValue, 'scenario.characters');
+    for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
+      const block = objectValue(blockValue, 'scenario.characters.schedule');
+      block.recoveryMode = legacyRecoveryMode(block.activity);
+    }
+  }
+  file.schemaVersion = 5;
   return file;
 }
 
@@ -408,7 +430,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 4);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 5);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -587,6 +609,15 @@ export function parseScenario(value: unknown): ScenarioFile {
         integerValue(block.startMinute, `${schedulePath}.startMinute`, 0, 1439);
         identifierValue(block.locationId, `${schedulePath}.locationId`);
         stringValue(block.activity, `${schedulePath}.activity`);
+        if (
+          typeof block.recoveryMode !== 'string' ||
+          !RECOVERY_MODES.has(block.recoveryMode as RecoveryMode)
+        ) {
+          throw new ScenarioValidationError(
+            `${schedulePath}.recoveryMode`,
+            'expected break, none, rest, or sleep',
+          );
+        }
         return block;
       },
     );

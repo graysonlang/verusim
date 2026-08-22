@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "highwayman-square",
   "title": "The Highwayman: Town Square",
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
@@ -160,7 +160,12 @@
       "characterId": "corvin-rusk",
       "position": { "x": 430, "y": 240 },
       "schedule": [
-        { "startMinute": 0, "locationId": "town-square", "activity": "Crossing the square" }
+        {
+          "startMinute": 0,
+          "locationId": "town-square",
+          "activity": "Crossing the square",
+          "recoveryMode": "none"
+        }
       ]
     },
     {
@@ -168,7 +173,12 @@
       "characterId": "jon-mere",
       "position": { "x": 490, "y": 260 },
       "schedule": [
-        { "startMinute": 0, "locationId": "town-square", "activity": "Opening a ledger" }
+        {
+          "startMinute": 0,
+          "locationId": "town-square",
+          "activity": "Opening a ledger",
+          "recoveryMode": "none"
+        }
       ]
     },
     {
@@ -176,7 +186,12 @@
       "characterId": "elian-voss",
       "position": { "x": 530, "y": 190 },
       "schedule": [
-        { "startMinute": 0, "locationId": "watch-house", "activity": "Watching the square" }
+        {
+          "startMinute": 0,
+          "locationId": "watch-house",
+          "activity": "Watching the square",
+          "recoveryMode": "none"
+        }
       ]
     },
     {
@@ -184,7 +199,12 @@
       "characterId": "lena-rusk",
       "position": { "x": 390, "y": 300 },
       "schedule": [
-        { "startMinute": 0, "locationId": "town-square", "activity": "Waiting by the road" }
+        {
+          "startMinute": 0,
+          "locationId": "town-square",
+          "activity": "Waiting by the road",
+          "recoveryMode": "none"
+        }
       ]
     },
     {
@@ -192,7 +212,12 @@
       "characterId": "petra-mere",
       "position": { "x": 520, "y": 310 },
       "schedule": [
-        { "startMinute": 0, "locationId": "town-square", "activity": "Waiting by the stalls" }
+        {
+          "startMinute": 0,
+          "locationId": "town-square",
+          "activity": "Waiting by the stalls",
+          "recoveryMode": "none"
+        }
       ]
     }
   ]

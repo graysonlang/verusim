@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "baker-deadline",
   "title": "Bread Before Market Close",
   "summary": "Mara must prepare market bread without flour while the common room also needs work.",
@@ -139,7 +139,8 @@
         {
           "startMinute": 0,
           "locationId": "wayfarer-inn",
-          "activity": "Preparing the inn"
+          "activity": "Preparing the inn",
+          "recoveryMode": "none"
         }
       ]
     }

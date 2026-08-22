@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "highwayman-road",
   "title": "The Highwayman: Empty Road",
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
@@ -83,13 +83,27 @@
       "instanceId": "actor",
       "characterId": "corvin-rusk",
       "position": { "x": 275, "y": 250 },
-      "schedule": [{ "startMinute": 0, "locationId": "dark-road", "activity": "Watching the road" }]
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "dark-road",
+          "activity": "Watching the road",
+          "recoveryMode": "none"
+        }
+      ]
     },
     {
       "instanceId": "merchant",
       "characterId": "jon-mere",
       "position": { "x": 325, "y": 250 },
-      "schedule": [{ "startMinute": 0, "locationId": "dark-road", "activity": "Traveling west" }]
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "dark-road",
+          "activity": "Traveling west",
+          "recoveryMode": "none"
+        }
+      ]
     }
   ]
 }

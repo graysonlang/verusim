@@ -1,4 +1,4 @@
-import { VALUE_IDS, type SimulationSnapshotFile } from '../model/types.js';
+import { VALUE_IDS, type RecoveryMode, type SimulationSnapshotFile } from '../model/types.js';
 import { parseScenario, ScenarioValidationError } from './parse.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
@@ -24,10 +24,12 @@ const TRACE_KINDS = new Set([
   'intervention',
   'intention',
   'relationship',
+  'resource',
   'scenario',
   'task',
   'value-turn',
 ]);
+const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
 const TRACE_SELECTION_RULES = new Set([
   'highest-score-then-authored-order',
   'highest-utility-then-authored-order',
@@ -39,6 +41,12 @@ const INTENTION_PHASES = new Set(['travel', 'waiting', 'work']);
 
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
+}
+
+function legacyRecoveryMode(activity: unknown): RecoveryMode {
+  if (typeof activity !== 'string') return 'none';
+  const normalized = activity.trim().toLowerCase();
+  return normalized === 'sleeping' || normalized === 'sleep' ? 'sleep' : 'none';
 }
 
 function objectValue(value: unknown, path: string): Record<string, unknown> {
@@ -132,6 +140,15 @@ function validateAgent(value: unknown, path: string): void {
     integerValue(block.startMinute, `${blockPath}.startMinute`);
     stringValue(block.locationId, `${blockPath}.locationId`);
     stringValue(block.activity, `${blockPath}.activity`);
+    if (
+      typeof block.recoveryMode !== 'string' ||
+      !RECOVERY_MODES.has(block.recoveryMode as RecoveryMode)
+    ) {
+      throw new ScenarioValidationError(
+        `${blockPath}.recoveryMode`,
+        'expected break, none, rest, or sleep',
+      );
+    }
   });
 
   arrayValue(agent.memories, `${path}.memories`).forEach((value, index) => {
@@ -488,8 +505,7 @@ function validateAgendaHistory(value: unknown, path: string): void {
 
 function migrateSnapshot(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'snapshot'));
-  if (file.schemaVersion === 3) return file;
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   if (file.schemaVersion === 1) {
@@ -502,21 +518,32 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.worldFacts = scenario.worldFacts;
     file.worldRevision = 0;
   }
-  file.trace = {
-    entries: arrayValue(file.trace, 'snapshot.trace').map((entryValue, entryIndex) => {
-      const entry = clone(objectValue(entryValue, `snapshot.trace[${entryIndex}]`));
-      const causes = arrayValue(entry.causes, `snapshot.trace[${entryIndex}].causes`);
-      delete entry.causes;
-      entry.selection = null;
-      entry.terms = causes.map((cause, causeIndex) => ({
-        id: 'legacy-cause',
-        sources: [`snapshot-v${file.schemaVersion}.trace[${entryIndex}].causes[${causeIndex}]`],
-        value: stringValue(cause, `snapshot.trace[${entryIndex}].causes[${causeIndex}]`),
-      }));
-      return entry;
-    }),
-    schemaVersion: 1,
-  };
+  if (file.schemaVersion !== 3) {
+    file.trace = {
+      entries: arrayValue(file.trace, 'snapshot.trace').map((entryValue, entryIndex) => {
+        const entry = clone(objectValue(entryValue, `snapshot.trace[${entryIndex}]`));
+        const causes = arrayValue(entry.causes, `snapshot.trace[${entryIndex}].causes`);
+        delete entry.causes;
+        entry.selection = null;
+        entry.terms = causes.map((cause, causeIndex) => ({
+          id: 'legacy-cause',
+          sources: [`snapshot-v${file.schemaVersion}.trace[${entryIndex}].causes[${causeIndex}]`],
+          value: stringValue(cause, `snapshot.trace[${entryIndex}].causes[${causeIndex}]`),
+        }));
+        return entry;
+      }),
+      schemaVersion: 1,
+    };
+  }
+  for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+    const agent = objectValue(agentValue, 'snapshot.agents');
+    for (const blockValue of arrayValue(agent.schedule, 'snapshot.agents.schedule')) {
+      const block = objectValue(blockValue, 'snapshot.agents.schedule');
+      if (block.recoveryMode === undefined) {
+        block.recoveryMode = legacyRecoveryMode(block.activity);
+      }
+    }
+  }
   file.schemaVersion = 3;
   return file;
 }

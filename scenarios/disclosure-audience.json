@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "disclosure-audience",
   "title": "Disclosure Under Mixed Audiences",
   "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
@@ -85,7 +85,12 @@
       "characterId": "nessa-arden",
       "position": { "x": 650, "y": 455 },
       "schedule": [
-        { "startMinute": 0, "locationId": "market-square", "activity": "Considering a reply" }
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Considering a reply",
+          "recoveryMode": "none"
+        }
       ]
     },
     {
@@ -93,7 +98,12 @@
       "characterId": "sera-dane",
       "position": { "x": 680, "y": 455 },
       "schedule": [
-        { "startMinute": 0, "locationId": "market-square", "activity": "Listening privately" }
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Listening privately",
+          "recoveryMode": "none"
+        }
       ]
     },
     {
@@ -101,7 +111,12 @@
       "characterId": "tomas-reed",
       "position": { "x": 710, "y": 455 },
       "schedule": [
-        { "startMinute": 0, "locationId": "market-square", "activity": "Waiting nearby" }
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Waiting nearby",
+          "recoveryMode": "none"
+        }
       ]
     }
   ]

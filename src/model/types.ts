@@ -226,9 +226,12 @@ export interface EnvironmentLibraryFile {
   schemaVersion: 1;
 }
 
+export type RecoveryMode = 'break' | 'none' | 'rest' | 'sleep';
+
 export interface ScheduleBlock {
   activity: string;
   locationId: string;
+  recoveryMode: RecoveryMode;
   startMinute: number;
 }
 
@@ -378,7 +381,7 @@ export interface ScenarioFile {
   dyads: DyadSeed[];
   environmentId: string;
   id: string;
-  schemaVersion: 4;
+  schemaVersion: 5;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -424,6 +427,7 @@ export type TraceKind =
   | 'intervention'
   | 'intention'
   | 'relationship'
+  | 'resource'
   | 'scenario'
   | 'task'
   | 'value-turn';
