@@ -13,6 +13,9 @@ import {
   createSimulation,
   createSimulationFromSnapshot,
   describeAgent,
+  evaluateEavesdropping,
+  evaluateProximity,
+  evaluateSpatialPerception,
   formatSimulationTime,
   serializeSnapshot,
   setAgentResource,
@@ -246,6 +249,46 @@ function renderInspector(
     metricRow('Arousal', observation.arousal.toFixed(2), observation.arousal),
     metricRow('Allostatic load', observation.allostaticLoad.toFixed(2), observation.allostaticLoad),
   );
+
+  const spatial = makeSection('Spatial context', 'Personal space / sight / hearing');
+  const spatialList = element('ol', 'event-list spatial-list');
+  const nearby = state.agents
+    .filter(candidate => candidate.id !== agent.id)
+    .map(candidate => ({
+      agent: candidate,
+      eavesdropping: evaluateEavesdropping(state, candidate.id, agent.id),
+      perception: evaluateSpatialPerception(state, agent.id, candidate.id),
+      proximity: evaluateProximity(state, agent.id, candidate.id),
+    }))
+    .toSorted((left, right) => left.proximity.distanceMeters - right.proximity.distanceMeters)
+    .slice(0, 6);
+  for (const entry of nearby) {
+    const item = element(
+      'li',
+      entry.proximity.discomfort > 0 || entry.eavesdropping.possible
+        ? 'spatial-entry spatial-alert'
+        : 'spatial-entry',
+    );
+    const distance = element('span', 'event-time');
+    const copy = element('span', 'spatial-copy');
+    const name = element('strong');
+    const summary = element('span');
+    const detail = element('small');
+    distance.textContent = `${entry.proximity.distanceMeters.toFixed(1)} m`;
+    name.textContent = entry.agent.profile.name;
+    summary.textContent = `${entry.proximity.band} / comfort ${entry.proximity.comfortableDistanceMeters.toFixed(1)} m / discomfort ${Math.round(entry.proximity.discomfort * 100)}%`;
+    detail.textContent = `see ${entry.perception.sight.available ? 'yes' : 'no'} ${entry.perception.sight.strength.toFixed(2)} / hear ${entry.perception.hearing.available ? 'yes' : 'no'} ${entry.perception.hearing.strength.toFixed(2)} / cover ${entry.eavesdropping.concealment.toFixed(2)} / listening ${entry.eavesdropping.reason}`;
+    copy.append(name, summary, detail);
+    item.append(distance, copy);
+    spatialList.append(item);
+  }
+  if (nearby.length === 0) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No other characters are present.';
+    spatial.body.append(empty);
+  } else {
+    spatial.body.append(spatialList);
+  }
 
   const values = makeSection('Value state', 'Live intervention');
   for (const valueId of VALUE_IDS) {
@@ -580,6 +623,7 @@ function renderInspector(
   container.replaceChildren(
     hero,
     mind.section,
+    spatial.section,
     values.section,
     resources.section,
     agenda.section,
