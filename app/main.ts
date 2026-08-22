@@ -608,6 +608,7 @@ function downloadSnapshot(state: SimulationState): void {
 
 function createWorkbench(): HTMLElement {
   const initial = createStarterSimulation();
+  let loadedBaseline = initial;
   const [state, setState] = createSignal(initial);
   const [selectedAgentId, setSelectedAgentId] = createSignal<string | null>(
     initial.agents[0]?.id ?? null,
@@ -673,6 +674,7 @@ function createWorkbench(): HTMLElement {
   fileInput.type = 'file';
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
+  resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
   fileActions.append(openScenario, saveScenario, resetScenario, fileInput);
 
   for (const [value, label] of [
@@ -864,11 +866,10 @@ function createWorkbench(): HTMLElement {
   openScenario.addEventListener('click', () => fileInput.click());
   saveScenario.addEventListener('click', () => downloadSnapshot(state()));
   resetScenario.addEventListener('click', () => {
-    const reset = createStarterSimulation();
     setSpeed(0);
-    setState(reset);
-    setSelectedAgentId(reset.agents[0]?.id ?? null);
-    setStatus('Restored the starter scenario');
+    setState(loadedBaseline);
+    setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
+    setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
     requestAnimationFrame(worldView.fit);
   });
 
@@ -889,9 +890,11 @@ function createWorkbench(): HTMLElement {
               snapshot: contents,
             })
           : createSimulation({ characterLibrary, environmentLibrary, scenario: contents });
+      loadedBaseline = loaded;
       setSpeed(0);
       setState(loaded);
       setSelectedAgentId(loaded.agents[0]?.id ?? null);
+      resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;
       setStatus(`Loaded ${file.name}`);
       requestAnimationFrame(worldView.fit);
     } catch (error) {
