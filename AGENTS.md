@@ -4,7 +4,7 @@ How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is a
 
 ## Project
 
-Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [design.md](design.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [docs/roadmap.md](docs/roadmap.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
+Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [verusim-design-spec.md](verusim-design-spec.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [docs/roadmap.md](docs/roadmap.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
 
 ## Hard rules
 

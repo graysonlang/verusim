@@ -6,6 +6,8 @@ Verusim is a headless behavioral system with multiple possible observers.
 A text adventure, a top-down RPG, the browser workbench, and the regression harness must all advance the same state transition functions and consume the same causal trace.
 
 The browser is therefore an adapter over the simulation, not the home of simulation behavior.
+The product target is a believable environment around a player character rather than an autonomous society simulation.
+NPC state remains authoritative when unobserved, but the system does not need to invent continuous off-screen activity merely to justify that state.
 
 ## Dependency direction
 
@@ -35,7 +37,7 @@ Validation errors include the failing path so authoring failures are actionable.
 `src/simulation` owns time, agent state, transitions, interventions, derived observations, and causal traces.
 Transitions are pure: the same state plus the same input produces the same result.
 Random variation is not a permitted source of action selection.
-If sampling is eventually needed for cohort generation, the chosen seed and every draw belong in generated content before runtime begins.
+If sampling is used for cohort or incident generation, its seed, sampler position, and realized event must become serializable inputs to the evaluator.
 
 `app` owns Solid signals, ordinary DOM construction, Canvas rendering, pointer gestures, file access, and downloads.
 It may display or edit simulation state but may not invent behavioral state.
@@ -64,6 +66,7 @@ This permits village-scale views now and chunked or generated environments later
 The initial schedule blocks are obligations and affordances supplied by the scenario.
 They make time and navigation inspectable before an action selector exists.
 They must not become a hidden scripting layer: later phases will let Verus decide how an agent responds to an obligation, including delay, refusal, substitution, or abandonment.
+Schedules may also make preoccupation and unavailability visible, but they are not evidence that the core is simulating autonomous off-screen activity.
 
 Phase 1 behavioral opportunities are atomic exchanges at a declared simulation minute.
 This is a narrow harness boundary, not the final interaction model.
@@ -94,7 +97,7 @@ Phase 1 supplies those terms through a deterministic pipeline:
 6. Evaluate every candidate, preserve authored order as the deterministic tie break, and record both the winner and rejected alternatives.
 7. Apply the selected direct value turns and derive remorse from harm the actor could feel plus intrinsic contract cost.
 
-Environments author concrete acts and their direct consequences.
+Scenario and environment content author facts, stakes, available acts, and direct consequences.
 They do not author utility, empathy, salience, remorse, or the winning action.
 The `narrative_expression` input remains explicit but neutral in Phase 1 fixtures until the narrative layer can calculate it.
 
@@ -121,6 +124,8 @@ Silent best-effort parsing is intentionally excluded because it makes regression
 
 ## Performance boundary
 
-Correctness and legibility come before off-screen approximation.
-The pure step function is the seam where spatial partitioning, time slicing, workers, or lower-fidelity NPC-to-NPC evaluation can later be introduced.
-No such optimization should change a scenario's results when run at reference fidelity.
+Correctness and legibility come before cadence optimization.
+Every agent uses the same evaluator; level of detail changes scheduling cadence, never behavioral fidelity.
+Closed-form catch-up is permitted only for accumulators whose transition is semantically exact over the skipped interval.
+Discrete events retain deterministic ordering, and observer proximity may gate sampling or presentation but may not alter the state that makes an agent eligible.
+ORBIT-style complementarity may eventually become a low-stakes exchange rule at every cadence, but never a distance-dependent fallback evaluator.

@@ -25,7 +25,7 @@ This is a **negative test** and a **range check**, not an equality check.
 
 We are *not* asserting the model reproduces the source's specific plot choices. We are asserting that every output falls inside the envelope of things that character could plausibly have done, and that no output falls into the set below.
 
-For each character, the suite defines a **falsifier set**: outputs that would make someone who knows the character say *"that's not them."* Each falsifier implicates a specific term, so a failure localises immediately.
+For each character, the suite defines a **falsifier set**: outputs that would make someone who knows the character say *"that's not them."* Each falsifier implicates a specific term, so a failure localizes immediately.
 
 ### A.1.1 Grading
 
@@ -36,7 +36,7 @@ For each character, the suite defines a **falsifier set**: outputs that would ma
 | **HARD FAIL** | Falsifier triggered under nominal parameters. Implicated term is wrong or missing. |
 | **INCONCLUSIVE** | Behavior is in-envelope but unreadable — a legibility failure, not a modeling one. Track separately; see §A.6. |
 
-**Run N ≥ 20 per scenario.** A single in-envelope run proves nothing when the point is that outputs should vary.
+**Run N ≥ 20 distinct seeded variants per scenario.** A single in-envelope variant proves nothing when the point is that context and generated parameters should vary. Replaying one variant must produce an identical decision and trace.
 
 ---
 
@@ -97,10 +97,10 @@ Encodings below are **targets for the generator**, expressed in runtime vocabula
 | Calculates a social angle | narrative layer wrongly present; standing motive where there should be none |
 | Conceals something | disclosure trough non-zero where it should be flat |
 | Holds a grudge across vignettes | sign-asymmetric memory decay (§14.3) over-weighted, or dyad stance decay too slow |
-| Reads a hostile agent as hostile on first contact | projection initialising from the wrong prior — his own flat parameters must produce naive over-trust |
-| Requires special-case handling to generate | **envelope parameterisation is too narrow (§A.5)** |
+| Reads a hostile agent as hostile on first contact | projection initializing from the wrong prior — his own flat parameters must produce naive over-trust |
+| Requires special-case handling to generate | **envelope parameterization is too narrow (§A.5)** |
 
-**Key assertion — the final choice.** Greg's self-sacrificial turn must be reachable as *the flat-envelope character resolving correctly*: with `E(Greg, Wirt)` near ceiling and Greg's own `self_position` not at zero (§4.2), the sum straightforwardly favours the sacrifice. If this requires an override, the `self_position` displacement is not implemented or not reachable.
+**Key assertion — the final choice.** Greg's self-sacrificial turn must be reachable as *the flat-envelope character resolving correctly*: with `E(Greg, Wirt)` near ceiling and Greg's own `self_position` not at zero (§4.2), the sum straightforwardly favors the sacrifice. If this requires an override, the `self_position` displacement is not implemented or not reachable.
 
 ---
 
@@ -125,7 +125,7 @@ Encodings below are **targets for the generator**, expressed in runtime vocabula
 | Discloses under low `E` conditions | `D` incorrectly coupled to `E` — they must be independent (§5) |
 | The reveal produces a small stance change | **exposure debt not re-pricing** (§5.3) — every prior disclosure must re-price simultaneously |
 | Abrasiveness reads as low `E` | expression layer collapsing threat-distance maintenance into coldness |
-| Rationalises the betrayal rather than carrying guilt | reinterpretation-before-revision (§13.3) firing where the narrative *accommodates* the act and shouldn't need to |
+| Rationalizes the betrayal rather than carrying guilt | reinterpretation-before-revision (§13.3) firing where the narrative *accommodates* the act and shouldn't need to |
 
 **Key assertion.** Beatrice's abrasiveness and her high `E` must be *simultaneously legible*. This is the sharpest test of the tell vocabulary in the whole suite: an observer must be able to distinguish "keeps you at distance" from "doesn't care about you." If they're indistinguishable, mark INCONCLUSIVE, not FAIL — the model is right and the surface is underspecified.
 
@@ -142,7 +142,7 @@ Encodings below are **targets for the generator**, expressed in runtime vocabula
 | Deficit integral | very deep on belonging; accumulated over years |
 | Satisfiers | belonging via **being needed**; deficit-type, no saturation |
 | Outlets | control (the mill routine) ranked first — restores agency via something tractable (§8) |
-| Commitment | quitting realises an enormous settled loss on competence and self-concept → certain negative vs uncertain negative (§16.1) |
+| Commitment | quitting realizes an enormous settled loss on competence and self-concept → certain negative vs uncertain negative (§16.1) |
 
 **Falsifier set:**
 
@@ -320,8 +320,8 @@ Each holds the protagonist dyad constant and sweeps one context field. Assertion
 
 Independent of any single character.
 
-1. **No character requires an exception.** Every encoding above must be reachable by turning existing parameters to their range edges. Any special-case handler is a **HARD FAIL** on the parameterisation, not on the character.
-2. **Every character varies across runs.** Twenty runs producing identical behavior means context terms aren't carrying variance (§1).
+1. **No in-scope character requires an exception.** Encodings A.2.1–A.2.8 must be reachable by turning shared parameters to their range edges. The tavern remains a documented general-mechanism gap, and the Beast remains a negative control. Any per-character handler is a **HARD FAIL** on the parameterization, not on the character.
+2. **Every character varies across the ensemble.** Twenty distinct seeded variants producing identical behavior means the authored context and parameter ranges are not carrying variation (§1). Replaying any one variant must remain exact.
 3. **Behavior is explicable in post.** For each output, a trace exists naming the terms that produced it. If no trace explains it, it reads as random (§1).
 4. **No episode writes itself.** The suite must *not* reproduce the source's plot. Reproduction would indicate the encodings are over-constrained — behavior determined by disposition rather than by disposition × context.
 5. **Compression holds.** Each character legible within ~12 exchanges. Failures here are INCONCLUSIVE, tracked against the tell vocabulary rather than the model.
@@ -334,7 +334,7 @@ These characters sit at parameter extremes. That is a **stylistic property of th
 
 The correct test is that they are reachable by turning existing knobs to the edge — not that the solver needs special handling at the edges.
 
-- If Greg requires an exception, the envelope parameterisation is too narrow.
+- If Greg requires an exception, the envelope parameterization is too narrow.
 - If Greg is a high ceiling with a shallow slope, a high floor, and a low threat gain, it is working.
 
 Exaggeration is a **sampling range**, not a mechanism.
@@ -355,4 +355,4 @@ The Beatrice assertion (§A.2.3) is the canonical case: distinguishing *keeps yo
 
 The suite is heavily weighted toward the **narrative layer** (§13) — Wirt, the Woodsman, the tavern, and the Beast all depend on it, and Greg is defined by its absence.
 
-Per the spec's build-order caution: the narrative layer is the likely first casualty of prioritisation, since everything else runs without it. Deferring it makes roughly half this suite unrunnable and produces a prototype that is responsive but inert. Endicott/Margueritte (§A.2.5), Pottsfield (§A.2.8), and Beatrice (§A.2.3) are the scenarios that run without it, and are the correct early targets.
+Per the spec's build-order caution: the narrative layer is the likely first casualty of prioritization, since everything else runs without it. Deferring it makes roughly half this suite unrunnable and produces a prototype that is responsive but inert. Endicott/Margueritte (§A.2.5), Pottsfield (§A.2.8), and Beatrice (§A.2.3) are the scenarios that run without it, and are the correct early targets.

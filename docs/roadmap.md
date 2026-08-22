@@ -10,6 +10,9 @@ The workbench and test harness are two observers over those same scenarios.
 Acceptance-suite ensembles use distinct, seeded authored parameter and context variants.
 Repeating one variant must produce byte-equivalent decisions and traces; variation never comes from runtime noise.
 
+The product target is a believable player-facing environment, not a continuously active society simulation.
+NPCs retain independent state and visible unavailability without requiring invented off-screen activity.
+
 ## Phase 0 — simulation substrate
 
 Status: complete.
@@ -66,7 +69,7 @@ Exit probes:
 
 ## Phase 4 — proactive agency and narrative
 
-Implement narrative claims, expression payoff, validators, rationalization, and simple world-directed goals.
+Implement narrative claims, expression payoff, validators, rationalization, simple world-directed goals, and the responder/invoker scheduling boundary.
 Separate chosen intentions from locomotion and animation so text and embodied integrations share decisions.
 
 Exit probes:
@@ -75,10 +78,11 @@ Exit probes:
 - identical narrative claims with different histories choose different expression opportunities
 - a claim-violating act defaults to reinterpretation and only rarely revises the claim
 - a validator relationship remains non-substitutable despite a net-negative interaction history
+- promoting a responder to an invoker preserves all accumulated state while enabling proactive goals
 
 ## Phase 5 — authoring and population generation
 
-Run structured formative events through runtime update rules, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, environment generation, format migrations, and scenario validation tools.
+Run structured formative events through runtime update rules, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, pre-contact dyad and mind-model seeds, environment generation, format migrations, and scenario validation tools.
 
 Exit probes:
 
@@ -87,15 +91,30 @@ Exit probes:
 - regenerating with the same seed produces byte-equivalent authored content
 - adult baselines resist ordinary runtime drift while child cohorts show long-horizon change
 
-## Phase 6 — fidelity and integration adapters
+## Phase 6 — world stimuli and somatic state
+
+Implement incident impact signatures, displays and observer-side habituation, positional respect, discomfort and pain, perceived urgency, action-set restriction, and somatic preemption.
+Resolve incident sampling and somatic open decisions before fixing their storage contracts.
+
+Exit probes:
+
+- one ambiguous incident produces divergent observer readings without privileged ground truth
+- one display produces admiration, envy, disdain, and indifference from different observers
+- ambient discomfort hastens cascade descent without changing empathy or value weights
+- pain and perceived urgency vary independently across four behavior profiles
+- emergency preemption removes ordinary actions, while incapacity turns the agent into a stimulus for heterogeneous crowd responses
+
+## Phase 7 — cadence and integration adapters
 
 Add text observation, embodied observation, and save-game snapshot adapters.
-Profile reference-fidelity NPC-to-NPC interaction before deciding whether ORBIT-style complementarity or another approximation is needed off screen.
+Introduce cadence tiers over the one evaluator and closed-form catch-up only where it is exact.
+Evaluate ORBIT-style complementarity as a cadence-independent rule for low-stakes exchange.
 
 Exit probes:
 
 - text and embodied views report different tells from one unchanged causal trace
-- reference and reduced fidelity preserve agreed ordinal outcomes in coverage scenarios
+- full-cadence and tiered scheduling agree at observation boundaries for authoritative state
+- the same low-stakes exchange settles identically whether observed or off screen
 - chunk loading and time acceleration do not alter deterministic results
 
 ## Phase 1 decisions
@@ -135,5 +154,5 @@ Recommendation: keep scenarios as initial conditions and introduce a separate sn
 
 ## Decisions that can wait
 
-Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, and reduced-fidelity NPC interaction should remain documented but unimplemented until their prerequisite phase.
+Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, the low-stakes ORBIT threshold, and somatic open decisions should remain documented but unimplemented until their prerequisite phase.
 Premature fields would look authoritative while carrying no tested consequence.

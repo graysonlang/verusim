@@ -348,9 +348,9 @@ The presented self is a **per-audience visibility vector over the one marker set
 Ordered by **coping potential**, not parallel options.
 
 ```
-Freeze  (threat not yet localised)
+Freeze  (threat not yet localized)
    ↓
-Fight / Flight  (mobilised — requires believed leverage or an exit)
+Fight / Flight  (mobilized — requires believed leverage or an exit)
    ↓
 Fawn  (requires a social target)
    ↓
@@ -538,7 +538,7 @@ Incidents enter the pipeline as ordinary events. No new appraisal path.
 
 #### Asymmetry is free
 
-Each witness computes their own `Δcharge` from their own norm weights and their `E` toward both parties. Some find it funny, some are scandalised, and one is embarrassed **on the actor's behalf** — which occurs only for observers with high `E` toward them, and is a good legibility tell for relationship closeness.
+Each witness computes their own `Δcharge` from their own norm weights and their `E` toward both parties. Some find it funny, some are scandalized, and one is embarrassed **on the actor's behalf** — which occurs only for observers with high `E` toward them, and is a good legibility tell for relationship closeness.
 
 #### Rate notes
 
@@ -548,7 +548,7 @@ Each witness computes their own `Δcharge` from their own norm weights and their
 
 ### 12.6 Displays
 
-A **display** is a visible, attributable presentation change carrying a status claim — new clothing, jewellery, a tool, a scar. Same stimulus, opposite valence, computed entirely from observer parameters. One of the cleanest small tests of the architecture.
+A **display** is a visible, attributable presentation change carrying a status claim — new clothing, jewelry, a tool, a scar. Same stimulus, opposite valence, computed entirely from observer parameters. One of the cleanest small tests of the architecture.
 
 | Observer configuration | Response |
 |---|---|
@@ -869,7 +869,7 @@ Use as **bounds checks, not fit targets**. They tell you the shape of the distri
 8. **LOD is cadence, never fidelity.** One evaluator, scheduled differently. A second reduced-fidelity path will diverge and produce observation artifacts.
 9. **Proximity gates sampling, never state.** Nothing about an agent may depend on whether the player is nearby.
 10. **Protect unavailability.** An NPC that is always available and always attentive reads as set dressing regardless of how well it is modeled.
-11. **Author facts and stakes, never behaviors.** The system guarantees reasonable output, not specific output. If the authored event doesn't produce the desired reaction, the character is not the character you thought.
+11. **Author facts, stakes, and affordances, never selected behaviors.** The system guarantees reasonable output, not specific output. If the authored event doesn't produce the desired reaction, the character is not the character you thought.
 12. **Reactions must be able to be wrong.** Appraisal that is always correct is canned animation with extra steps.
 13. **Somatic emergencies preempt, they do not modify.** Levels 1–2 are terms in the sum; levels 3+ are a gate before it. No social term may appear in the trace of a drowning agent.
 
@@ -892,7 +892,7 @@ Two things this still requires, and they are the ones most likely to be cut by a
 1. **Preexisting state that isn't about the player.** The innkeeper is already three drinks in and already grieving *when addressed*. A position that predates contact and would have existed regardless is what separates a compass from a response function.
 2. **Visible unavailability.** Occasionally preoccupied, mid-task, in a bad mood for unrelated reasons, or simply not interested right now.
 
-> **Protect #2 explicitly.** Everything else in the model can be perfect, and if every NPC is always fully available and fully attentive they will still read as set dressing — because responsiveness-on-demand is precisely what set dressing does. It gets optimised away because it reads as an obstacle to the player. It is not an obstacle; it is the signal.
+> **Protect #2 explicitly.** Everything else in the model can be perfect, and if every NPC is always fully available and fully attentive they will still read as set dressing — because responsiveness-on-demand is precisely what set dressing does. It gets optimized away because it reads as an obstacle to the player. It is not an obstacle; it is the signal.
 
 ### 20.2 LOD is cadence, not fidelity
 
@@ -946,7 +946,7 @@ This stays honest because the **predisposition is real and proximity-independent
 
 Positional coupling is O(n²) if implemented naively. Three constraints:
 
-**Capped ranked list.** Each agent tracks the top-K entries of its reference group exactly; everything below the cap contributes as a mean approximation. This has the behaviourally correct side effect that agents track a handful of specific rivals precisely and everyone else as ambient standing — which is what people do.
+**Capped ranked list.** Each agent tracks the top-K entries of its reference group exactly; everything below the cap contributes as a mean approximation. This has the behaviorally correct side effect that agents track a handful of specific rivals precisely and everyone else as ambient standing — which is what people do.
 
 **Propagate on net change, with a deadband.** Float comparison always shows a delta, so define a per-value epsilon below which nothing propagates. This doubles as the tuning knob for how twitchy the social graph is.
 
@@ -968,7 +968,7 @@ Use it as a **cadence-independent shortcut for low-stakes exchange**, not as a d
 
 Authored content enters as **ordinary runtime data** — a memory item, a value turn, a windfall, a mind-model write. Coherent behavior comes out across everyone connected to it. No branching, no per-NPC scripting, and the author never specifies a reaction.
 
-**The murder-mystery-party model is exact.** Envelopes contain *facts and stakes*, never *behaviors*. What a character does with the envelope is derived — and the same envelope in different hands produces different behavior, which is what makes an authored beat feel discovered rather than delivered.
+**The murder-mystery-party model is exact.** Envelopes contain *facts, stakes, and available affordances*, never *selected behaviors*. What a character does with the envelope is derived — and the same envelope in different hands produces different behavior, which is what makes an authored beat feel discovered rather than delivered.
 
 Agent state and personality are therefore **not the only load-bearing element**. They are principally the mechanism that converts authored input into believable derived behavior.
 
@@ -982,6 +982,7 @@ Agent state and personality are therefore **not the only load-bearing element**.
 | **Mind-model write** | §13.1 model-of-other | *"You were told the player knows something you need"* |
 | **Marker / centrality edit** | §3.2 content | initiation, disgrace, promotion, conversion |
 | **Environmental** | §12.4 channels, ambient displacement | a new institution, an occupation, a famine |
+| **Affordance / opportunity** | available action set and objective consequences | a locked door, a public request, an unattended purse |
 
 **The mind-model write is the least obvious and among the most useful.** It is a *belief about another agent*, not an event that happened to this one. It installs an estimated `E` and an instrumental interest in a dyad **before contact**, so the agent approaches with an agenda already formed.
 
@@ -1039,7 +1040,7 @@ Derivation when asked about it later, with **no further authoring**:
 
 ### 21.6 The seed is the event; the scene is the retrieval
 
-Generalising §21.5: **the interesting output is not the reaction — the reaction happened off-screen. What the player encounters is an agent being asked to re-enter it.** Everything that makes such a scene work — fragmentation, reluctance, sensitivity to who is asking and who is listening — comes from the annealed memory interacting with the disclosure envelope and the current audience.
+Generalizing §21.5: **the interesting output is not the reaction — the reaction happened off-screen. What the player encounters is an agent being asked to re-enter it.** Everything that makes such a scene work — fragmentation, reluctance, sensitivity to who is asking and who is listening — comes from the annealed memory interacting with the disclosure envelope and the current audience.
 
 **Consequence: testimony becomes a mechanic rather than an information dispenser.** Two witnesses to the same event give different accounts, and the difference is fully explicable — different `E` toward the parties, different cascade positions at the time, different annealing. **None of them is lying.**
 
@@ -1082,7 +1083,7 @@ The **goal generator** needs the per-source breakdown, because that is what sele
 
 ### 22.2 Pain and urgency are independent axes
 
-**Do not collapse these into one scalar.** They decorrelate in both directions and both directions are recognisable.
+**Do not collapse these into one scalar.** They decorrelate in both directions and both directions are recognizable.
 
 | | Pain | Urgency |
 |---|---|---|
@@ -1096,7 +1097,7 @@ The **goal generator** needs the per-source breakdown, because that is what sele
 | Arterial bleed under shock | **low** | **maximum** |
 | Hypothermia, late | low | high |
 
-The arterial-bleed row is the one that justifies the split: the character who does not realise how badly they are hurt is unreachable with a single scalar.
+The arterial-bleed row is the one that justifies the split: the character who does not realize how badly they are hurt is unreachable with a single scalar.
 
 ### 22.3 The preempt ladder
 
@@ -1159,7 +1160,7 @@ Persistent low-grade pain or illness should feed the **§6.1 deficit integral**,
 | Path | Behaviors | Discriminating test |
 |---|---|---|
 | Discomfort tax | irritability in heat, short temper when hungry or tired, restlessness, remedy-seeking errands | same provocation, vary ambient discomfort → cascade descent arrives sooner with **no change to `E` or values** |
-| Pain/urgency split | stoicism under serious injury, disproportionate fuss over minor injury, failure to recognise own danger | vary pain and urgency independently → four distinct behavior profiles |
+| Pain/urgency split | stoicism under serious injury, disproportionate fuss over minor injury, failure to recognize own danger | vary pain and urgency independently → four distinct behavior profiles |
 | Preempt ladder | drowning, choking, bleeding out, unconsciousness | at level 3+, **no social term may appear in the trace** |
 | Collapse as stimulus | rescue, freeze, flight, bystander non-response, competence-satisfier helpers | vary witness count → response probability falls as crowd grows, with no observer parameter changing |
 | Chronic malaise | apparent personality change, withdrawal, concealment from high-`E` others | long-duration low magnitude → deficit integral rises; baseline parameters unchanged |

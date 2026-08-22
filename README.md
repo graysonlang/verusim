@@ -8,7 +8,7 @@ The repository contains two connected surfaces:
 - a headless TypeScript simulation core whose serializable state and trace can be exercised by tests, interactive fiction, or embodied game worlds
 - a browser workbench for loading scenarios, navigating a top-down environment, advancing time, inspecting characters, and intervening in live state
 
-The full behavioral model is specified in [design.md](design.md).
+The full behavioral model is specified in [verusim-design-spec.md](verusim-design-spec.md), with [verusim-otgw-acceptance-suite.md](verusim-otgw-acceptance-suite.md) serving as a long-range stress-test target.
 [docs/architecture.md](docs/architecture.md) describes the boundaries established by the first implementation slice, and [docs/roadmap.md](docs/roadmap.md) organizes the remaining work around behavioral outcomes and discriminating tests.
 
 ## Current slice
@@ -42,6 +42,8 @@ The dependency stack is intentionally small:
 
 ## Repository map
 
+- `verusim-design-spec.md` — complete behavioral model and scope
+- `verusim-otgw-acceptance-suite.md` — reference characters, falsifiers, and vignette sweeps
 - `src/model/` — shared serializable types and model constants
 - `src/scenario/` — scenario parsing, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
