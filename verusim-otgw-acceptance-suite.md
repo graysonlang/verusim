@@ -13,7 +13,7 @@ The source is already structured as a harness. It holds two agents constant and 
 - **Long arc** — one dyad accumulating stance, exposure ledger, and mode transitions across the full run
 - **Per-vignette** — cold-start tests of projection (§13.1) and first-contact modeling against strangers
 
-The hardest thing it demands is not richness. It is **compression**. Each NPC must be legible from roughly a dozen exchanges. Most emotional simulation can produce rich internal state; very little can make it readable that fast. If the model produces a legible Endicott in one vignette, the legibility budget and dominant-concern selector (§19.3) are working — a harder bar than producing a character over forty hours of play.
+The hardest thing it demands is not richness. It is **compression**. Each NPC must be legible from roughly a dozen exchanges. Most emotional simulation can produce rich internal state; very little can make it readable that fast. If the model produces a legible Endicott in one vignette, the legibility budget and dominant-concern selector (§19, rule 3) are working — a harder bar than producing a character over forty hours of play.
 
 ---
 
@@ -288,7 +288,7 @@ He does not fail on empathy floor. A zero floor produces instrumental harm, whic
 
 **This character forces two open decisions together:**
 
-- **Fork #2** — is self-deception in scope? A sustained deception of this kind requires the deceiver to hold a self-story that accommodates what it is doing.
+- **Open decision 2 (§18)** — is self-deception in scope? A sustained deception of this kind requires the deceiver to hold a self-story that accommodates what it is doing.
 - **Recursive ToM** — a model of the target's *model*, not just of the target.
 
 **Recommended scope if added:** a rare, expensive per-agent capability flag on a handful of agents, **not** a general upgrade. Note that the source is honest about this cost — the Beast is the only character in it that works this way, and every other character is reachable with one level of modeling. That ratio is probably correct for a village too.
@@ -345,7 +345,7 @@ Exaggeration is a **sampling range**, not a mechanism.
 
 INCONCLUSIVE results are not failures of the model and must not be fixed by changing it.
 
-They indicate the **tell vocabulary** is underspecified for the target medium. Track separately, and resolve per fork #8 (§18) — text IF affords interiority (narrate the flinch, the pause, the unsaid thing); an embodied world affords posture, proximity, pathing, choice of action, and who an agent stands near.
+They indicate the **tell vocabulary** is underspecified for the target medium. Track separately, and resolve per open decision 8 (§18) — text IF affords interiority (narrate the flinch, the pause, the unsaid thing); an embodied world affords posture, proximity, pathing, choice of action, and who an agent stands near.
 
 The Beatrice assertion (§A.2.3) is the canonical case: distinguishing *keeps you at distance* from *doesn't care about you* is a surface problem with a correct model underneath, and conflating the two categories of failure will cause the model to be "fixed" into being wrong.
 
