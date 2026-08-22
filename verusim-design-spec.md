@@ -78,6 +78,69 @@ Keep this list short. Anything here is permanently unreachable by play.
 
 Nearly all observed behavior comes from this tier. See §§12 and 14.
 
+### 3.4 Capabilities, skills, and effective ability
+
+Capabilities are broad generation-fixed gains over information acquisition, interpretation, and execution.
+They share the constitutional lifetime but remain separate from affective constitution so `reactivity` is not confused with competence and a future physical-endurance score is not confused with emotional recovery.
+
+The initial epistemic set is deliberately small:
+
+| Capability | What it modifies | What it does not mean |
+|---|---|---|
+| `acuity` | detecting weak, peripheral, or easily missed cues | correct interpretation |
+| `evidence_calibration` | converting evidence into appropriately scaled confidence | accumulated knowledge or universal wisdom |
+| `expressive_control` | deliberately presenting, concealing, or modulating signals | universal charisma or likability |
+
+Learned skills are history-derived and domain-specific.
+Market bargaining, theology, medicine, local customs, and deception may modify a relevant check, but none becomes a broad personality label.
+Physical power, coordination, and endurance should use the same resolution contract only when task feasibility and resource expenditure consume them; adding unused scores sooner would make them decorative authority.
+
+Effective ability combines the stable capability with current resource availability:
+
+```text
+effective_capability = base_capability × available_capacity
+resolution_margin    = clamp(effective_capability − difficulty + Σ explicit_modifiers, −1, 1)
+```
+
+The initial availability projection uses the geometric mean of the resource pools that must all remain usable:
+
+| Capability | Current resource inputs |
+|---|---|
+| Acuity | executive budget × physical stamina |
+| Evidence calibration | executive budget × regulation reserve |
+| Expressive control | executive budget × regulation reserve × social battery |
+
+The geometric mean makes exhaustion consequential without adding a special tiredness trait.
+Phase 3 cascade position, pain, and attentional narrowing may contribute explicit signed modifiers rather than silently changing the base score.
+
+Resolution uses a seven-band ordinal vocabulary:
+
+| Band | Initial margin | Meaning |
+|---|---:|---|
+| Strong yes | `≥ 0.60` | clear success or strong support |
+| Weak yes | `≥ 0.20` | qualified success or support |
+| So-so | `> −0.20` | genuinely contested |
+| Weak no | `> −0.60` | resistance while the issue remains live |
+| Strong no | otherwise | decisive resistance |
+| Strike | off dial | the check is inapplicable |
+| Pass | off dial | the agent lacks enough information to resolve it |
+
+The numeric boundaries are calibration defaults; harness assertions compare bands and margins ordinally.
+Strike and Pass carry no numeric margin because missing applicability and missing knowledge are not extreme evidence.
+No random draw occurs inside the resolver.
+
+**A capability check never compels behavior.** It determines what information enters a mind model, how confidently a claim updates, or whether an operation is feasible.
+The ordinary appraisal and agenda still choose the response.
+Detecting flattery does not require rejecting it, and accepting that an heirloom has a high market price does not erase its identity cost.
+
+Named traits should remain derived when the ingredients are already present:
+
+- observant = acuity × available attention × cue relevance + domain skill
+- gullible = poor evidence calibration + weak domain knowledge + misplaced source trust + motivated belief
+- conviction = claim centrality + narrative commitment + evidence confidence + validator support + hysteresis
+- inflexibility = strong conviction + low plasticity + accumulated commitment, not low empathy by itself
+- charisma = expressive control + audience model + norm fit + dyad history + current regulation
+
 ---
 
 ## 4. The empathy envelope

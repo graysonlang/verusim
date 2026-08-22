@@ -46,7 +46,7 @@ It may display or edit simulation state but may not invent behavioral state.
 
 The implementation keeps the design's three lifetimes visible in the data model.
 
-1. Constitutional gains live on reusable character definitions and are not changed by normal stepping.
+1. Constitutional gains and broad capabilities live on reusable character definitions and are not changed by normal stepping.
 2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Runtime agents may read that seed directly while no tier-2 writer exists. Before Phase 5 introduces the rare §14.4 writes, each instance must gain a sparse, snapshot-persisted override so one instance can crystallize without mutating every agent that references the same definition.
 3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
@@ -74,6 +74,19 @@ The opportunity shape separates actor, target, context, candidates, direct value
 
 Phase 2A disclosure opportunities use the same atomic harness boundary.
 They author an owner, item, audience, network context, and disclosure benefit while leaving the outcome to the relational evaluator.
+
+## Capability resolution
+
+Character-library capabilities are generation-fixed gains, while learned skills and claim commitments remain history-derived content and resource availability remains situational state.
+The initial capability vocabulary contains acuity, evidence calibration, and expressive control because Phase 2C immediately consumes them.
+Physical capabilities remain outside the schema until task feasibility can test their consequences.
+
+The shared resolver is deterministic and medium-independent.
+It multiplies a base capability by resource-derived availability, compares that effective capability with difficulty, applies explicit signed modifiers, and returns one of the five ordinal dial positions or the nonnumeric Strike and Pass outcomes.
+Its result preserves each input and source as causal terms so observation events can add the resolution to the versioned trace without reconstructing provenance.
+
+Capability resolution changes cue acquisition, belief confidence, presentation quality, or operation feasibility.
+It never returns an action and never bypasses ordinary appraisal, identity cost, narrative commitment, or agenda selection.
 
 ## Action appraisal
 
@@ -163,7 +176,8 @@ Files use strict, versioned JSON and stable string identifiers.
 Scenarios reference library records rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
-Character-library schema version 3 contains the Phase 2A disclosure vocabulary.
+Character-library schema version 4 adds the Phase 2C epistemic capability vocabulary to the Phase 2A disclosure format.
+Explicit migrations preserve versions 1 through 3, using neutral capability defaults where older libraries expressed no distinction.
 Scenario schema version 4 adds world facts, goals, and task operators to the Phase 2A directed-dyad format.
 Explicit migrations preserve version 1 through 3 scenarios by supplying the missing behavioral collections.
 Snapshot schema version 3 persists agenda state and causal-trace schema version 1 separately from scenario versioning, and validates plan, intention, goal, fact, dyad, trace, and agent references before runtime restoration.

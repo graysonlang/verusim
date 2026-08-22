@@ -78,11 +78,18 @@ The initial planning bounds and urgency scale are explicit safety and calibratio
 
 ### Phase 2C — prediction and local norms
 
-Implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
+Status: in progress.
+
+Begin with generation-fixed acuity, evidence calibration, and expressive control; resource-derived current effectiveness; and one deterministic seven-band capability resolver with term provenance.
+Then implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
+Capability checks determine what is perceived or learned and never act as a persuasion override.
 The acceptance targets are Endicott/Margueritte and Pottsfield.
 
 Exit probes:
 
+- higher acuity detects the same cue more strongly while depleted attention and stamina can reverse that ordering against a rested observer
+- Strike records that a check does not apply, while Pass records insufficient knowledge; neither is treated as a strong negative
+- explicit domain support can move a contested result without changing the underlying capability
 - a forced correcting exchange resolves Endicott and Margueritte through standard prediction-error machinery rather than a character-specific trigger
 - sustained nondiagnostic error increases suspicion without revising the model
 - residents and visitors derive opposite subjective turns from one objective event under opaque local norms
@@ -208,5 +215,5 @@ Phase 2A keeps scenarios as initial conditions and introduces a separate version
 
 ## Decisions that can wait
 
-Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
+Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, physical capabilities, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
 Premature fields would look authoritative while carrying no tested consequence.
