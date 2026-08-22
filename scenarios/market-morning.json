@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "id": "market-morning",
+  "title": "Market Morning",
+  "summary": "A cold morning after rumors of a failed eastern crop have reached Alder's Edge.",
+  "environmentId": "alders-edge",
+  "startMinute": 470,
+  "tickMinutes": 5,
+  "ambientTurnsPerHour": {
+    "safety": -0.012,
+    "belonging": 0.003
+  },
+  "characters": [
+    {
+      "instanceId": "mara",
+      "characterId": "mara-vale",
+      "position": { "x": 391, "y": 534 },
+      "walkingMetersPerMinute": 18,
+      "schedule": [
+        { "startMinute": 0, "locationId": "mara-house", "activity": "Sleeping" },
+        { "startMinute": 360, "locationId": "mara-house", "activity": "Preparing the inn" },
+        { "startMinute": 480, "locationId": "wayfarer-inn", "activity": "Opening the common room" },
+        { "startMinute": 720, "locationId": "market-square", "activity": "Buying provisions" },
+        { "startMinute": 780, "locationId": "wayfarer-inn", "activity": "Serving travelers" },
+        { "startMinute": 1320, "locationId": "mara-house", "activity": "Sleeping" }
+      ]
+    },
+    {
+      "instanceId": "tomas",
+      "characterId": "tomas-reed",
+      "position": { "x": 983, "y": 556 },
+      "walkingMetersPerMinute": 17,
+      "schedule": [
+        { "startMinute": 0, "locationId": "tomas-house", "activity": "Sleeping" },
+        { "startMinute": 390, "locationId": "tomas-house", "activity": "Sharpening tools" },
+        { "startMinute": 480, "locationId": "iron-yard", "activity": "Working the forge" },
+        { "startMinute": 750, "locationId": "market-square", "activity": "Inspecting commissions" },
+        { "startMinute": 840, "locationId": "iron-yard", "activity": "Working the forge" },
+        { "startMinute": 1140, "locationId": "wayfarer-inn", "activity": "Eating alone" },
+        { "startMinute": 1260, "locationId": "tomas-house", "activity": "Sleeping" }
+      ]
+    },
+    {
+      "instanceId": "nessa",
+      "characterId": "nessa-arden",
+      "position": { "x": 553, "y": 151 },
+      "walkingMetersPerMinute": 16,
+      "schedule": [
+        { "startMinute": 0, "locationId": "nessa-house", "activity": "Sleeping" },
+        { "startMinute": 420, "locationId": "healers-house", "activity": "Sorting remedies" },
+        { "startMinute": 600, "locationId": "market-square", "activity": "Holding an open clinic" },
+        { "startMinute": 780, "locationId": "healers-house", "activity": "Receiving patients" },
+        { "startMinute": 1110, "locationId": "riverside", "activity": "Gathering willow bark" },
+        { "startMinute": 1260, "locationId": "nessa-house", "activity": "Reading" }
+      ]
+    },
+    {
+      "instanceId": "elian",
+      "characterId": "elian-voss",
+      "position": { "x": 831, "y": 152 },
+      "walkingMetersPerMinute": 20,
+      "schedule": [
+        { "startMinute": 0, "locationId": "elian-house", "activity": "Sleeping" },
+        { "startMinute": 360, "locationId": "guard-house", "activity": "Reading the night report" },
+        { "startMinute": 450, "locationId": "north-gate", "activity": "Watching arrivals" },
+        { "startMinute": 720, "locationId": "market-square", "activity": "Walking the market" },
+        { "startMinute": 810, "locationId": "north-gate", "activity": "Watching arrivals" },
+        {
+          "startMinute": 1080,
+          "locationId": "wayfarer-inn",
+          "activity": "Meeting the late patrol"
+        },
+        { "startMinute": 1260, "locationId": "elian-house", "activity": "Sleeping" }
+      ]
+    },
+    {
+      "instanceId": "sera",
+      "characterId": "sera-dane",
+      "position": { "x": 460, "y": 644 },
+      "walkingMetersPerMinute": 15,
+      "schedule": [
+        { "startMinute": 0, "locationId": "sera-house", "activity": "Sleeping" },
+        { "startMinute": 330, "locationId": "alder-mill", "activity": "Checking the millrace" },
+        {
+          "startMinute": 540,
+          "locationId": "market-square",
+          "activity": "Collecting grain accounts"
+        },
+        { "startMinute": 630, "locationId": "alder-mill", "activity": "Milling grain" },
+        {
+          "startMinute": 1080,
+          "locationId": "riverside",
+          "activity": "Inspecting the water level"
+        },
+        { "startMinute": 1170, "locationId": "sera-house", "activity": "Keeping her books" }
+      ]
+    }
+  ]
+}

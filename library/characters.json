@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 1,
+  "characters": [
+    {
+      "id": "mara-vale",
+      "name": "Mara Vale",
+      "role": "Innkeeper",
+      "summary": "A capable host whose generosity depends on keeping a room predictable.",
+      "constitution": {
+        "reactivity": 0.68,
+        "threshold": 0.57,
+        "recoveryRate": 0.34,
+        "socialValence": 0.41,
+        "habituationRate": 0.38,
+        "baselineArousal": 0.46
+      },
+      "identity": [
+        { "marker": "keeper of the Wayfarer", "centrality": 0.92 },
+        { "marker": "Vale family", "centrality": 0.61 }
+      ],
+      "values": {
+        "safety": {
+          "weight": 1.2,
+          "initialCharge": 0.12,
+          "initialDeficit": 0.18,
+          "initialVariance": 0.31
+        },
+        "belonging": {
+          "weight": 1.08,
+          "initialCharge": 0.28,
+          "initialDeficit": 0.1,
+          "initialVariance": 0.19
+        },
+        "respect": {
+          "weight": 0.82,
+          "initialCharge": 0.16,
+          "initialDeficit": 0.08,
+          "initialVariance": 0.12
+        },
+        "autonomy": {
+          "weight": 0.9,
+          "initialCharge": 0.22,
+          "initialDeficit": 0.07,
+          "initialVariance": 0.13
+        },
+        "competence": {
+          "weight": 1.18,
+          "initialCharge": 0.42,
+          "initialDeficit": 0.03,
+          "initialVariance": 0.08
+        },
+        "fairness": {
+          "weight": 0.86,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.11
+        }
+      },
+      "narrativeClaims": ["I keep a safe house", "No guest leaves hungry"],
+      "formativeEvents": [
+        {
+          "age": 11,
+          "value": "safety",
+          "turn": -0.66,
+          "attribution": null,
+          "copingPotential": 0.2,
+          "summary": "A winter flood took the old inn without warning."
+        },
+        {
+          "age": 24,
+          "value": "competence",
+          "turn": 0.58,
+          "attribution": "the village council",
+          "copingPotential": 0.8,
+          "summary": "She kept forty stranded travelers fed through a closed pass."
+        }
+      ]
+    },
+    {
+      "id": "tomas-reed",
+      "name": "Tomas Reed",
+      "role": "Blacksmith",
+      "summary": "A precise craftsperson who hears technical criticism more clearly than affection.",
+      "constitution": {
+        "reactivity": 0.52,
+        "threshold": 0.64,
+        "recoveryRate": 0.28,
+        "socialValence": -0.46,
+        "habituationRate": 0.23,
+        "baselineArousal": 0.34
+      },
+      "identity": [
+        { "marker": "master smith", "centrality": 0.95 },
+        { "marker": "east ward", "centrality": 0.48 }
+      ],
+      "values": {
+        "safety": {
+          "weight": 0.76,
+          "initialCharge": 0.3,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "belonging": {
+          "weight": 0.7,
+          "initialCharge": -0.08,
+          "initialDeficit": 0.17,
+          "initialVariance": 0.22
+        },
+        "respect": {
+          "weight": 1.32,
+          "initialCharge": -0.18,
+          "initialDeficit": 0.3,
+          "initialVariance": 0.29
+        },
+        "autonomy": {
+          "weight": 1.0,
+          "initialCharge": 0.4,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "competence": {
+          "weight": 1.45,
+          "initialCharge": 0.36,
+          "initialDeficit": 0.12,
+          "initialVariance": 0.07
+        },
+        "fairness": {
+          "weight": 0.9,
+          "initialCharge": 0.05,
+          "initialDeficit": 0.09,
+          "initialVariance": 0.17
+        }
+      },
+      "narrativeClaims": ["My work speaks plainly", "I do not need praise"],
+      "formativeEvents": [
+        {
+          "age": 15,
+          "value": "respect",
+          "turn": -0.74,
+          "attribution": "Master Orra",
+          "copingPotential": 0.18,
+          "summary": "His master mocked his first commissioned blade before the whole guild."
+        },
+        {
+          "age": 29,
+          "value": "competence",
+          "turn": 0.62,
+          "attribution": "the river guard",
+          "copingPotential": 0.9,
+          "summary": "A gate hinge he forged held through the spring flood."
+        }
+      ]
+    },
+    {
+      "id": "nessa-arden",
+      "name": "Nessa Arden",
+      "role": "Healer",
+      "summary": "A patient observer who protects other people's confidences at personal cost.",
+      "constitution": {
+        "reactivity": 0.38,
+        "threshold": 0.72,
+        "recoveryRate": 0.55,
+        "socialValence": 0.12,
+        "habituationRate": 0.29,
+        "baselineArousal": 0.3
+      },
+      "identity": [
+        { "marker": "village healer", "centrality": 0.88 },
+        { "marker": "keeper of confidences", "centrality": 0.83 }
+      ],
+      "values": {
+        "safety": {
+          "weight": 0.88,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.07,
+          "initialVariance": 0.14
+        },
+        "belonging": {
+          "weight": 1.03,
+          "initialCharge": 0.16,
+          "initialDeficit": 0.08,
+          "initialVariance": 0.15
+        },
+        "respect": {
+          "weight": 0.65,
+          "initialCharge": 0.28,
+          "initialDeficit": 0.02,
+          "initialVariance": 0.08
+        },
+        "autonomy": {
+          "weight": 0.91,
+          "initialCharge": 0.14,
+          "initialDeficit": 0.07,
+          "initialVariance": 0.1
+        },
+        "competence": {
+          "weight": 1.16,
+          "initialCharge": 0.25,
+          "initialDeficit": 0.09,
+          "initialVariance": 0.12
+        },
+        "fairness": {
+          "weight": 1.3,
+          "initialCharge": -0.04,
+          "initialDeficit": 0.14,
+          "initialVariance": 0.18
+        }
+      },
+      "narrativeClaims": ["People are safe when they speak to me", "Care is not a debt"],
+      "formativeEvents": [
+        {
+          "age": 9,
+          "value": "belonging",
+          "turn": 0.52,
+          "attribution": "her grandmother",
+          "copingPotential": 0.72,
+          "summary": "Her grandmother told her a family secret and trusted her to hold it."
+        },
+        {
+          "age": 20,
+          "value": "fairness",
+          "turn": -0.5,
+          "attribution": "the apothecary guild",
+          "copingPotential": 0.35,
+          "summary": "The guild denied medicine to a laborer who could not prepay."
+        }
+      ]
+    },
+    {
+      "id": "elian-voss",
+      "name": "Elian Voss",
+      "role": "Gate warden",
+      "summary": "A sociable guard who invests heavily in rules that promise mutual protection.",
+      "constitution": {
+        "reactivity": 0.47,
+        "threshold": 0.61,
+        "recoveryRate": 0.45,
+        "socialValence": 0.63,
+        "habituationRate": 0.42,
+        "baselineArousal": 0.49
+      },
+      "identity": [
+        { "marker": "north gate warden", "centrality": 0.84 },
+        { "marker": "Voss family", "centrality": 0.7 }
+      ],
+      "values": {
+        "safety": {
+          "weight": 1.22,
+          "initialCharge": -0.02,
+          "initialDeficit": 0.16,
+          "initialVariance": 0.26
+        },
+        "belonging": {
+          "weight": 1.15,
+          "initialCharge": 0.38,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "respect": {
+          "weight": 0.92,
+          "initialCharge": 0.26,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "autonomy": {
+          "weight": 0.68,
+          "initialCharge": 0.1,
+          "initialDeficit": 0.1,
+          "initialVariance": 0.13
+        },
+        "competence": {
+          "weight": 0.95,
+          "initialCharge": 0.22,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.11
+        },
+        "fairness": {
+          "weight": 1.36,
+          "initialCharge": 0.12,
+          "initialDeficit": 0.08,
+          "initialVariance": 0.14
+        }
+      },
+      "narrativeClaims": ["A rule should shelter everyone", "I notice who passes my gate"],
+      "formativeEvents": [
+        {
+          "age": 8,
+          "value": "safety",
+          "turn": -0.48,
+          "attribution": "a passing militia",
+          "copingPotential": 0.24,
+          "summary": "A militia ignored the village boundary and took the family's winter stores."
+        },
+        {
+          "age": 19,
+          "value": "belonging",
+          "turn": 0.46,
+          "attribution": "the river guard",
+          "copingPotential": 0.82,
+          "summary": "The guard company pooled wages after his father's injury."
+        }
+      ]
+    },
+    {
+      "id": "sera-dane",
+      "name": "Sera Dane",
+      "role": "Miller",
+      "summary": "A reserved miller whose sense of autonomy is bound to control of her work.",
+      "constitution": {
+        "reactivity": 0.73,
+        "threshold": 0.48,
+        "recoveryRate": 0.25,
+        "socialValence": -0.3,
+        "habituationRate": 0.57,
+        "baselineArousal": 0.56
+      },
+      "identity": [
+        { "marker": "owner of Alder Mill", "centrality": 0.94 },
+        { "marker": "south bank", "centrality": 0.52 }
+      ],
+      "values": {
+        "safety": {
+          "weight": 1.04,
+          "initialCharge": 0.06,
+          "initialDeficit": 0.14,
+          "initialVariance": 0.2
+        },
+        "belonging": {
+          "weight": 0.78,
+          "initialCharge": 0.02,
+          "initialDeficit": 0.13,
+          "initialVariance": 0.24
+        },
+        "respect": {
+          "weight": 0.98,
+          "initialCharge": -0.11,
+          "initialDeficit": 0.2,
+          "initialVariance": 0.2
+        },
+        "autonomy": {
+          "weight": 1.46,
+          "initialCharge": -0.24,
+          "initialDeficit": 0.32,
+          "initialVariance": 0.27
+        },
+        "competence": {
+          "weight": 1.17,
+          "initialCharge": 0.3,
+          "initialDeficit": 0.08,
+          "initialVariance": 0.1
+        },
+        "fairness": {
+          "weight": 0.82,
+          "initialCharge": -0.02,
+          "initialDeficit": 0.11,
+          "initialVariance": 0.18
+        }
+      },
+      "narrativeClaims": ["The mill stands because I do", "What is mine stays mine"],
+      "formativeEvents": [
+        {
+          "age": 14,
+          "value": "autonomy",
+          "turn": -0.7,
+          "attribution": "her uncle",
+          "copingPotential": 0.15,
+          "summary": "Her uncle sold a harvest she had milled and kept the payment."
+        },
+        {
+          "age": 31,
+          "value": "competence",
+          "turn": 0.61,
+          "attribution": "the south bank families",
+          "copingPotential": 0.86,
+          "summary": "She rebuilt the waterwheel before the first frost."
+        }
+      ]
+    }
+  ]
+}
