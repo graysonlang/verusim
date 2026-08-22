@@ -22,7 +22,9 @@ import {
   parseScenario,
   ScenarioValidationError,
 } from '../scenario/parse.js';
+import { parseSnapshot } from '../scenario/snapshot.js';
 import { resolveOpportunity } from './decision.js';
+import { resolveDisclosureOpportunity } from './disclosure.js';
 
 const DAY_MINUTES = 1440;
 const MAX_MEMORIES = 16;
@@ -156,19 +158,66 @@ function validateReferences(content: ScenarioContent): void {
       }
     });
   });
-  content.scenario.socialRelations.forEach((relation, index) => {
-    if (!instanceIds.has(relation.observerId)) {
+  content.scenario.dyads.forEach((dyad, index) => {
+    if (!instanceIds.has(dyad.observerId)) {
       throw new ScenarioValidationError(
-        `scenario.socialRelations[${index}].observerId`,
-        `unknown agent "${relation.observerId}"`,
+        `scenario.dyads[${index}].observerId`,
+        `unknown agent "${dyad.observerId}"`,
       );
     }
-    if (!instanceIds.has(relation.subjectId)) {
+    if (!instanceIds.has(dyad.subjectId)) {
       throw new ScenarioValidationError(
-        `scenario.socialRelations[${index}].subjectId`,
-        `unknown agent "${relation.subjectId}"`,
+        `scenario.dyads[${index}].subjectId`,
+        `unknown agent "${dyad.subjectId}"`,
       );
     }
+  });
+  const disclosureItemIds = new Set(content.scenario.disclosureItems.map(item => item.id));
+  content.scenario.disclosureItems.forEach((item, index) => {
+    const path = `scenario.disclosureItems[${index}]`;
+    if (!instanceIds.has(item.ownerId)) {
+      throw new ScenarioValidationError(`${path}.ownerId`, `unknown agent "${item.ownerId}"`);
+    }
+    item.knownByIds.forEach((agentId, agentIndex) => {
+      if (!instanceIds.has(agentId)) {
+        throw new ScenarioValidationError(
+          `${path}.knownByIds[${agentIndex}]`,
+          `unknown agent "${agentId}"`,
+        );
+      }
+    });
+  });
+  content.scenario.disclosureOpportunities.forEach((opportunity, index) => {
+    const path = `scenario.disclosureOpportunities[${index}]`;
+    if (!instanceIds.has(opportunity.ownerId)) {
+      throw new ScenarioValidationError(
+        `${path}.ownerId`,
+        `unknown agent "${opportunity.ownerId}"`,
+      );
+    }
+    if (!disclosureItemIds.has(opportunity.itemId)) {
+      throw new ScenarioValidationError(
+        `${path}.itemId`,
+        `unknown disclosure item "${opportunity.itemId}"`,
+      );
+    }
+    const item = content.scenario.disclosureItems.find(
+      candidate => candidate.id === opportunity.itemId,
+    );
+    if (item?.ownerId !== opportunity.ownerId) {
+      throw new ScenarioValidationError(
+        `${path}.itemId`,
+        'disclosure item must belong to the opportunity owner',
+      );
+    }
+    opportunity.audienceIds.forEach((agentId, agentIndex) => {
+      if (!instanceIds.has(agentId)) {
+        throw new ScenarioValidationError(
+          `${path}.audienceIds[${agentIndex}]`,
+          `unknown agent "${agentId}"`,
+        );
+      }
+    });
   });
   content.scenario.behaviorOpportunities.forEach((opportunity, index) => {
     const path = `scenario.behaviorOpportunities[${index}]`;
@@ -232,8 +281,18 @@ export function createSimulation(input: {
   return {
     agents,
     decisions: [],
+    disclosureDecisions: [],
+    disclosureItems: content.scenario.disclosureItems.map(item => ({
+      ...item,
+      knownByIds: [...item.knownByIds],
+    })),
+    dyads: content.scenario.dyads.map(dyad => ({
+      ...dyad,
+      features: { ...dyad.features },
+    })),
     environment,
     minute: content.scenario.startMinute,
+    resolvedDisclosureOpportunityIds: [],
     resolvedOpportunityIds: [],
     scenario: content.scenario,
     tick: 0,
@@ -251,6 +310,109 @@ export function createSimulation(input: {
         tick: 0,
       },
     ],
+  };
+}
+
+export function createSimulationFromSnapshot(input: {
+  characterLibrary: unknown;
+  environmentLibrary: unknown;
+  snapshot: unknown;
+}): SimulationState {
+  const snapshot = parseSnapshot(input.snapshot);
+  const base = createSimulation({
+    characterLibrary: input.characterLibrary,
+    environmentLibrary: input.environmentLibrary,
+    scenario: snapshot.scenario,
+  });
+  if (snapshot.environmentId !== base.environment.id) {
+    throw new ScenarioValidationError(
+      'snapshot.environmentId',
+      `unknown environment "${snapshot.environmentId}"`,
+    );
+  }
+  const baseAgents = new Map(base.agents.map(agent => [agent.id, agent]));
+  if (snapshot.agents.length !== base.agents.length) {
+    throw new ScenarioValidationError(
+      'snapshot.agents',
+      'must contain exactly the scenario agent instances',
+    );
+  }
+  const locationIds = new Set(base.environment.locations.map(location => location.id));
+  const agents = snapshot.agents.map((saved, index) => {
+    const agent = baseAgents.get(saved.id);
+    if (agent === undefined) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].id`,
+        `unknown agent "${saved.id}"`,
+      );
+    }
+    if (saved.profileId !== agent.profile.id) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].profileId`,
+        `expected character "${agent.profile.id}"`,
+      );
+    }
+    if (saved.currentLocationId !== null && !locationIds.has(saved.currentLocationId)) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].currentLocationId`,
+        `unknown location "${saved.currentLocationId}"`,
+      );
+    }
+    saved.schedule.forEach((block, blockIndex) => {
+      if (!locationIds.has(block.locationId)) {
+        throw new ScenarioValidationError(
+          `snapshot.agents[${index}].schedule[${blockIndex}].locationId`,
+          `unknown location "${block.locationId}"`,
+        );
+      }
+    });
+    return {
+      cascade: saved.cascade,
+      currentActivity: saved.currentActivity,
+      currentLocationId: saved.currentLocationId,
+      destination: { ...saved.destination },
+      id: saved.id,
+      memories: saved.memories.map(memory => ({ ...memory })),
+      position: { ...saved.position },
+      profile: agent.profile,
+      resources: { ...saved.resources },
+      schedule: saved.schedule.map(block => ({ ...block })),
+      values: Object.fromEntries(
+        VALUE_IDS.map(valueId => [valueId, { ...saved.values[valueId] }]),
+      ) as ValueMap<ValueState>,
+      walkingMetersPerMinute: saved.walkingMetersPerMinute,
+    };
+  });
+  const agentIds = new Set(agents.map(agent => agent.id));
+  snapshot.dyads.forEach((dyad, index) => {
+    if (!agentIds.has(dyad.observerId) || !agentIds.has(dyad.subjectId)) {
+      throw new ScenarioValidationError(
+        `snapshot.dyads[${index}]`,
+        'dyad must reference snapshot agents',
+      );
+    }
+  });
+  snapshot.disclosureItems.forEach((item, index) => {
+    if (!agentIds.has(item.ownerId) || item.knownByIds.some(id => !agentIds.has(id))) {
+      throw new ScenarioValidationError(
+        `snapshot.disclosureItems[${index}]`,
+        'disclosure item must reference snapshot agents',
+      );
+    }
+  });
+
+  return {
+    ...base,
+    agents,
+    decisions: snapshot.decisions,
+    disclosureDecisions: snapshot.disclosureDecisions,
+    disclosureItems: snapshot.disclosureItems,
+    dyads: snapshot.dyads,
+    minute: snapshot.minute,
+    resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
+    resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
+    tick: snapshot.tick,
+    trace: snapshot.trace,
   };
 }
 
@@ -385,6 +547,15 @@ function advanceOneTick(state: SimulationState): SimulationState {
       !state.resolvedOpportunityIds.includes(opportunity.id),
   );
   for (const opportunity of dueOpportunities) next = resolveOpportunity(next, opportunity);
+  const dueDisclosureOpportunities = state.scenario.disclosureOpportunities.filter(
+    opportunity =>
+      opportunity.atMinute > state.minute &&
+      opportunity.atMinute <= nextMinute &&
+      !state.resolvedDisclosureOpportunityIds.includes(opportunity.id),
+  );
+  for (const opportunity of dueDisclosureOpportunities) {
+    next = resolveDisclosureOpportunity(next, opportunity);
+  }
   return next;
 }
 

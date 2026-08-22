@@ -6,9 +6,12 @@ import scenario from '../scenarios/market-morning.json';
 import {
   advanceSimulation,
   createSimulation,
+  createSimulationFromSnapshot,
   describeAgent,
   parseScenario,
+  parseSnapshot,
   serializeScenario,
+  serializeSnapshot,
   setAgentResource,
   setAgentValueCharge,
 } from '../src/index.js';
@@ -71,19 +74,36 @@ describe('simulation runtime', () => {
     assert.equal(changedResource.trace.at(-1)?.kind, 'intervention');
   });
 
-  it('serializes a resumable scenario through the public parser', () => {
+  it('keeps authored scenarios separate from resumable snapshots', () => {
     const advanced = advanceSimulation(starterSimulation(), 4);
-    const serialized = serializeScenario(advanced);
-    assert.deepEqual(parseScenario(serialized), serialized);
-    const resumed = createSimulation({
+    const authored = serializeScenario(advanced);
+    const snapshot = serializeSnapshot(advanced);
+    assert.equal(authored.startMinute, scenario.startMinute);
+    assert.equal(snapshot.minute, advanced.minute);
+    assert.deepEqual(parseScenario(authored), authored);
+    assert.deepEqual(parseSnapshot(snapshot), snapshot);
+    const resumed = createSimulationFromSnapshot({
       characterLibrary: characters,
       environmentLibrary: environments,
-      scenario: serialized,
+      snapshot,
     });
-    assert.equal(resumed.minute, advanced.minute);
-    assert.deepEqual(
-      resumed.agents.map(agent => agent.position),
-      advanced.agents.map(agent => agent.position),
+    assert.deepEqual(resumed, advanced);
+  });
+
+  it('validates live snapshot references before restoring state', () => {
+    const snapshot = serializeSnapshot(starterSimulation());
+    const firstAgent = snapshot.agents[0];
+    const firstBlock = firstAgent?.schedule[0];
+    assert.ok(firstBlock);
+    firstBlock.locationId = 'missing-location';
+    assert.throws(
+      () =>
+        createSimulationFromSnapshot({
+          characterLibrary: characters,
+          environmentLibrary: environments,
+          snapshot,
+        }),
+      /snapshot\.agents\[0\]\.schedule\[0\]\.locationId/,
     );
   });
 });

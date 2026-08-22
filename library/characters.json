@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "characters": [
     {
       "id": "mara-vale",
@@ -15,6 +15,13 @@
         "baselineArousal": 0.46
       },
       "contractAdherence": 0.72,
+      "disclosure": {
+        "intimateSafety": 0.92,
+        "strangerSafety": 0.7,
+        "troughDepth": 0.55,
+        "troughPosition": 0.5,
+        "troughWidth": 0.22
+      },
       "empathy": {
         "floor": 0.24,
         "ceiling": 0.96,
@@ -105,6 +112,13 @@
         "baselineArousal": 0.34
       },
       "contractAdherence": 0.68,
+      "disclosure": {
+        "intimateSafety": 0.82,
+        "strangerSafety": 0.58,
+        "troughDepth": 0.68,
+        "troughPosition": 0.5,
+        "troughWidth": 0.18
+      },
       "empathy": {
         "floor": 0.18,
         "ceiling": 0.92,
@@ -195,6 +209,13 @@
         "baselineArousal": 0.3
       },
       "contractAdherence": 0.88,
+      "disclosure": {
+        "intimateSafety": 0.9,
+        "strangerSafety": 0.62,
+        "troughDepth": 0.6,
+        "troughPosition": 0.55,
+        "troughWidth": 0.2
+      },
       "empathy": {
         "floor": 0.34,
         "ceiling": 0.98,
@@ -285,6 +306,13 @@
         "baselineArousal": 0.49
       },
       "contractAdherence": 0.91,
+      "disclosure": {
+        "intimateSafety": 0.78,
+        "strangerSafety": 0.5,
+        "troughDepth": 0.58,
+        "troughPosition": 0.48,
+        "troughWidth": 0.2
+      },
       "empathy": {
         "floor": 0.28,
         "ceiling": 0.96,
@@ -375,6 +403,13 @@
         "baselineArousal": 0.56
       },
       "contractAdherence": 0.61,
+      "disclosure": {
+        "intimateSafety": 0.88,
+        "strangerSafety": 0.76,
+        "troughDepth": 0.48,
+        "troughPosition": 0.52,
+        "troughWidth": 0.24
+      },
       "empathy": {
         "floor": 0.16,
         "ceiling": 0.91,

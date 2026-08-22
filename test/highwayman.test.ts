@@ -19,7 +19,7 @@ import {
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
-  schemaVersion: 2,
+  schemaVersion: 3,
 };
 const environmentLibrary = {
   environments: [...environments.environments, ...highwaymanEnvironments.environments],
@@ -163,7 +163,7 @@ describe('highwayman factorial', () => {
 
   it('coarsens familiarity as perceived threat rises', () => {
     const familiar = structuredClone(roadScenario);
-    const relation = familiar.socialRelations[0];
+    const relation = familiar.dyads[0];
     assert.ok(relation);
     relation.features.familiarity = 1;
     const state = createHighwaymanSimulation(familiar);

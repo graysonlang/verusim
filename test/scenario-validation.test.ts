@@ -3,18 +3,47 @@ import { describe, it } from 'node:test';
 import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import scenario from '../scenarios/market-morning.json';
-import { createSimulation, parseScenario } from '../src/index.js';
+import { createSimulation, parseCharacterLibrary, parseScenario } from '../src/index.js';
 
 describe('scenario validation', () => {
-  it('migrates Phase 0 scenarios to the Phase 1 content shape', () => {
+  it('migrates Phase 0 scenarios to the Phase 2A content shape', () => {
     const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
     legacy.schemaVersion = 1;
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 2);
+    assert.equal(migrated.schemaVersion, 3);
     assert.deepEqual(migrated.behaviorOpportunities, []);
-    assert.deepEqual(migrated.socialRelations, []);
+    assert.deepEqual(migrated.disclosureItems, []);
+    assert.deepEqual(migrated.disclosureOpportunities, []);
+    assert.deepEqual(migrated.dyads, []);
+  });
+
+  it('migrates Phase 1 character and dyad content explicitly', () => {
+    const legacyCharacters = structuredClone(characters) as unknown as Record<string, unknown>;
+    legacyCharacters.schemaVersion = 2;
+    const profiles = legacyCharacters.characters as Record<string, unknown>[];
+    for (const profile of profiles) delete profile.disclosure;
+    const migratedCharacters = parseCharacterLibrary(legacyCharacters);
+    assert.equal(migratedCharacters.schemaVersion, 3);
+    assert.equal(migratedCharacters.characters[0]?.disclosure.troughPosition, 0.52);
+
+    const legacyScenario = structuredClone(scenario) as unknown as Record<string, unknown>;
+    legacyScenario.schemaVersion = 2;
+    delete legacyScenario.dyads;
+    delete legacyScenario.disclosureItems;
+    delete legacyScenario.disclosureOpportunities;
+    legacyScenario.socialRelations = [
+      {
+        observerId: 'mara',
+        subjectId: 'tomas',
+        features: { category: 0, familiarity: 0.4, kinship: 0, reciprocity: 0.2, similarity: 0.3 },
+      },
+    ];
+    const migratedScenario = parseScenario(legacyScenario);
+    assert.equal(migratedScenario.schemaVersion, 3);
+    assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
+    assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
   });
 
   it('reports malformed schedules at their authored path', () => {

@@ -5,13 +5,19 @@
 export { SOCIAL_FEATURE_IDS, VALUE_IDS } from './model/types.js';
 export type * from './model/types.js';
 export { parseCharacterLibrary, parseEnvironmentLibrary, parseScenario } from './scenario/parse.js';
-export { serializeScenario } from './scenario/serialize.js';
+export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
+export { parseSnapshot } from './scenario/snapshot.js';
 export { appraiseAction } from './simulation/appraisal.js';
 export { evaluateOpportunity, resolveOpportunity } from './simulation/decision.js';
+export {
+  evaluateDisclosureOpportunity,
+  resolveDisclosureOpportunity,
+} from './simulation/disclosure.js';
 export { evaluateEmpathy } from './simulation/empathy.js';
 export {
   advanceSimulation,
   createSimulation,
+  createSimulationFromSnapshot,
   setAgentResource,
   setAgentValueCharge,
 } from './simulation/runtime.js';

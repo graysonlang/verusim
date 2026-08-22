@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 3,
+  "id": "disclosure-audience",
+  "title": "Disclosure Under Mixed Audiences",
+  "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
+  "environmentId": "alders-edge",
+  "startMinute": 600,
+  "tickMinutes": 5,
+  "dyads": [
+    {
+      "observerId": "owner",
+      "subjectId": "friend",
+      "features": {
+        "kinship": 0.7,
+        "familiarity": 0.9,
+        "similarity": 0.8,
+        "reciprocity": 0.8,
+        "category": 0.6
+      },
+      "stance": 0.45,
+      "integratedHistory": 0.4,
+      "behaviorVariance": 0.08,
+      "estimatedEmpathy": 0.95,
+      "estimatedDisclosure": 0.7,
+      "estimateConfidence": 0.8,
+      "predictionError": 0.05,
+      "mode": "warm"
+    },
+    {
+      "observerId": "owner",
+      "subjectId": "hostile",
+      "features": {
+        "kinship": 0,
+        "familiarity": 0.5,
+        "similarity": 0.2,
+        "reciprocity": 0.4,
+        "category": 0.7
+      },
+      "stance": -0.45,
+      "integratedHistory": -0.3,
+      "behaviorVariance": 0.25,
+      "estimatedEmpathy": 0.05,
+      "estimatedDisclosure": 0.25,
+      "estimateConfidence": 0.75,
+      "predictionError": 0.12,
+      "mode": "guarded"
+    }
+  ],
+  "disclosureItems": [
+    {
+      "id": "family-debt",
+      "ownerId": "owner",
+      "summary": "the family debt",
+      "shameCharge": 0.9,
+      "knownByIds": []
+    }
+  ],
+  "disclosureOpportunities": [
+    {
+      "id": "private-question",
+      "ownerId": "owner",
+      "itemId": "family-debt",
+      "audienceIds": ["friend"],
+      "atMinute": 605,
+      "disclosureBenefit": 0.45,
+      "networkConductivity": 1
+    },
+    {
+      "id": "public-follow-up",
+      "ownerId": "owner",
+      "itemId": "family-debt",
+      "audienceIds": ["friend", "hostile"],
+      "atMinute": 610,
+      "disclosureBenefit": 0.45,
+      "networkConductivity": 1
+    }
+  ],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "owner",
+      "characterId": "nessa-arden",
+      "position": { "x": 650, "y": 455 },
+      "schedule": [
+        { "startMinute": 0, "locationId": "market-square", "activity": "Considering a reply" }
+      ]
+    },
+    {
+      "instanceId": "friend",
+      "characterId": "sera-dane",
+      "position": { "x": 680, "y": 455 },
+      "schedule": [
+        { "startMinute": 0, "locationId": "market-square", "activity": "Listening privately" }
+      ]
+    },
+    {
+      "instanceId": "hostile",
+      "characterId": "tomas-reed",
+      "position": { "x": 710, "y": 455 },
+      "schedule": [
+        { "startMinute": 0, "locationId": "market-square", "activity": "Waiting nearby" }
+      ]
+    }
+  ]
+}

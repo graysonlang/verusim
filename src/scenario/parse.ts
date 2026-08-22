@@ -18,6 +18,7 @@ const AREA_KINDS = new Set<AreaKind>([
   'water',
 ]);
 const VALUE_ID_SET = new Set<string>(VALUE_IDS);
+const DYAD_MODES = new Set(['courteous', 'contesting', 'guarded', 'ruptured', 'warm']);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export class ScenarioValidationError extends Error {
@@ -141,6 +142,15 @@ function validateEmpathyEnvelope(value: unknown, path: string): void {
   validateSocialFeatureWeights(envelope.featureWeights, `${path}.featureWeights`);
 }
 
+function validateDisclosureEnvelope(value: unknown, path: string): void {
+  const envelope = objectValue(value, path);
+  numberValue(envelope.intimateSafety, `${path}.intimateSafety`, 0, 1);
+  numberValue(envelope.strangerSafety, `${path}.strangerSafety`, 0, 1);
+  numberValue(envelope.troughDepth, `${path}.troughDepth`, 0, 1);
+  numberValue(envelope.troughPosition, `${path}.troughPosition`, 0, 1);
+  numberValue(envelope.troughWidth, `${path}.troughWidth`, 0.01, 1);
+}
+
 function validateValueDisposition(value: unknown, path: string): void {
   const disposition = objectValue(value, path);
   numberValue(disposition.initialCharge, `${path}.initialCharge`, -1, 1);
@@ -164,8 +174,8 @@ function clone<Value>(value: Value): Value {
 
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
-  if (file.schemaVersion === 2) return file;
-  if (file.schemaVersion !== 1) {
+  if (file.schemaVersion === 3) return file;
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
     throw new ScenarioValidationError(
       'characterLibrary.schemaVersion',
       'unsupported schema version',
@@ -174,41 +184,66 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const characters = arrayValue(file.characters, 'characterLibrary.characters');
   for (const value of characters) {
     const character = objectValue(value, 'characterLibrary.characters');
-    character.contractAdherence = 0.65;
-    character.empathy = {
-      ceiling: 1,
-      featureWeights: {
-        category: 0.6,
-        familiarity: 1,
-        kinship: 1,
-        reciprocity: 0.8,
-        similarity: 0.5,
-      },
-      floor: 0.22,
-      selfPosition: 0,
-      steepness: 3,
-      threatSensitivity: 0.5,
+    if (file.schemaVersion === 1) {
+      character.contractAdherence = 0.65;
+      character.empathy = {
+        ceiling: 1,
+        featureWeights: {
+          category: 0.6,
+          familiarity: 1,
+          kinship: 1,
+          reciprocity: 0.8,
+          similarity: 0.5,
+        },
+        floor: 0.22,
+        selfPosition: 0,
+        steepness: 3,
+        threatSensitivity: 0.5,
+      };
+    }
+    character.disclosure = {
+      intimateSafety: 0.92,
+      strangerSafety: 0.72,
+      troughDepth: 0.58,
+      troughPosition: 0.52,
+      troughWidth: 0.2,
     };
   }
-  file.schemaVersion = 2;
+  file.schemaVersion = 3;
   return file;
 }
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 2) return file;
-  if (file.schemaVersion !== 1) {
+  if (file.schemaVersion === 3) return file;
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
-  file.behaviorOpportunities = [];
-  file.socialRelations = [];
-  file.schemaVersion = 2;
+  if (file.schemaVersion === 1) {
+    file.behaviorOpportunities = [];
+    file.socialRelations = [];
+  }
+  file.dyads = arrayValue(file.socialRelations, 'scenario.socialRelations').map(value => ({
+    ...objectValue(value, 'scenario.socialRelations'),
+    behaviorVariance: 0,
+    estimateConfidence: 0.1,
+    estimatedDisclosure: 0.5,
+    estimatedEmpathy: 0.5,
+    integratedHistory: 0,
+    mode: 'courteous',
+    predictionError: 0,
+    stance: 0,
+  }));
+  delete file.socialRelations;
+  file.disclosureItems = [];
+  file.disclosureOpportunities = [];
+  file.schemaVersion = 3;
   return file;
 }
 
 export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
   const file = migrateCharacterLibrary(value);
-  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 2);
+  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 3);
   const characters = arrayValue(file.characters, 'characterLibrary.characters').map(
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
@@ -219,6 +254,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       stringValue(character.summary, `${path}.summary`);
       validateConstitution(character.constitution, `${path}.constitution`);
       numberValue(character.contractAdherence, `${path}.contractAdherence`, 0, 1);
+      validateDisclosureEnvelope(character.disclosure, `${path}.disclosure`);
       validateEmpathyEnvelope(character.empathy, `${path}.empathy`);
 
       const values = objectValue(character.values, `${path}.values`);
@@ -308,7 +344,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 2);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 3);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -394,17 +430,67 @@ export function parseScenario(value: unknown): ScenarioFile {
   });
   uniqueIds(characters, 'scenario.characters');
 
-  const relations = arrayValue(file.socialRelations, 'scenario.socialRelations').map(
+  const dyads = arrayValue(file.dyads, 'scenario.dyads').map((entry, index) => {
+    const path = `scenario.dyads[${index}]`;
+    const dyad = objectValue(entry, path);
+    identifierValue(dyad.observerId, `${path}.observerId`);
+    identifierValue(dyad.subjectId, `${path}.subjectId`);
+    validateSocialFeatures(dyad.features, `${path}.features`);
+    numberValue(dyad.stance, `${path}.stance`, -1, 1);
+    numberValue(dyad.integratedHistory, `${path}.integratedHistory`, -1, 1);
+    numberValue(dyad.behaviorVariance, `${path}.behaviorVariance`, 0, 1);
+    numberValue(dyad.estimatedEmpathy, `${path}.estimatedEmpathy`, 0, 1);
+    numberValue(dyad.estimatedDisclosure, `${path}.estimatedDisclosure`, 0, 1);
+    numberValue(dyad.estimateConfidence, `${path}.estimateConfidence`, 0, 1);
+    numberValue(dyad.predictionError, `${path}.predictionError`, 0, 1);
+    if (typeof dyad.mode !== 'string' || !DYAD_MODES.has(dyad.mode)) {
+      throw new ScenarioValidationError(`${path}.mode`, 'expected a known dyad mode');
+    }
+    return { ...dyad, id: `dyad-${dyad.observerId}-${dyad.subjectId}` };
+  });
+  uniqueIds(dyads, 'scenario.dyads');
+
+  const disclosureItems = arrayValue(file.disclosureItems, 'scenario.disclosureItems').map(
     (entry, index) => {
-      const path = `scenario.socialRelations[${index}]`;
-      const relation = objectValue(entry, path);
-      identifierValue(relation.observerId, `${path}.observerId`);
-      identifierValue(relation.subjectId, `${path}.subjectId`);
-      validateSocialFeatures(relation.features, `${path}.features`);
-      return { ...relation, id: `relation-${relation.observerId}-${relation.subjectId}` };
+      const path = `scenario.disclosureItems[${index}]`;
+      const item = objectValue(entry, path);
+      identifierValue(item.id, `${path}.id`);
+      identifierValue(item.ownerId, `${path}.ownerId`);
+      stringValue(item.summary, `${path}.summary`);
+      numberValue(item.shameCharge, `${path}.shameCharge`, 0, 1);
+      arrayValue(item.knownByIds, `${path}.knownByIds`).forEach((agentId, agentIndex) => {
+        identifierValue(agentId, `${path}.knownByIds[${agentIndex}]`);
+      });
+      return item;
     },
   );
-  uniqueIds(relations, 'scenario.socialRelations');
+  uniqueIds(disclosureItems, 'scenario.disclosureItems');
+
+  const disclosureOpportunities = arrayValue(
+    file.disclosureOpportunities,
+    'scenario.disclosureOpportunities',
+  ).map((entry, index) => {
+    const path = `scenario.disclosureOpportunities[${index}]`;
+    const opportunity = objectValue(entry, path);
+    identifierValue(opportunity.id, `${path}.id`);
+    identifierValue(opportunity.ownerId, `${path}.ownerId`);
+    identifierValue(opportunity.itemId, `${path}.itemId`);
+    integerValue(opportunity.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    numberValue(opportunity.disclosureBenefit, `${path}.disclosureBenefit`, 0, 4);
+    numberValue(opportunity.networkConductivity, `${path}.networkConductivity`, 0, 1);
+    const audiences = arrayValue(opportunity.audienceIds, `${path}.audienceIds`);
+    if (audiences.length === 0) {
+      throw new ScenarioValidationError(`${path}.audienceIds`, 'expected at least one audience');
+    }
+    audiences.forEach((agentId, agentIndex) => {
+      identifierValue(agentId, `${path}.audienceIds[${agentIndex}]`);
+    });
+    if (new Set(audiences).size !== audiences.length) {
+      throw new ScenarioValidationError(`${path}.audienceIds`, 'duplicate agent identifier');
+    }
+    return opportunity;
+  });
+  uniqueIds(disclosureOpportunities, 'scenario.disclosureOpportunities');
 
   const opportunities = arrayValue(
     file.behaviorOpportunities,

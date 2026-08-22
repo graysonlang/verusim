@@ -44,7 +44,7 @@ export function evaluateEmpathy(
     distance = envelope.selfPosition;
   } else {
     features =
-      state.scenario.socialRelations.find(
+      state.dyads.find(
         relation => relation.observerId === observerId && relation.subjectId === subjectId,
       )?.features ?? DISTANT_FEATURES;
     let weightedDistance = 0;

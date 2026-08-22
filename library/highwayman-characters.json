@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "characters": [
     {
       "id": "corvin-rusk",
@@ -15,6 +15,13 @@
         "baselineArousal": 0.32
       },
       "contractAdherence": 0.05,
+      "disclosure": {
+        "intimateSafety": 0.65,
+        "strangerSafety": 0.82,
+        "troughDepth": 0.62,
+        "troughPosition": 0.5,
+        "troughWidth": 0.18
+      },
       "empathy": {
         "floor": 0.01,
         "ceiling": 0.92,
@@ -94,6 +101,13 @@
         "baselineArousal": 0.32
       },
       "contractAdherence": 0.05,
+      "disclosure": {
+        "intimateSafety": 0.9,
+        "strangerSafety": 0.72,
+        "troughDepth": 0.52,
+        "troughPosition": 0.52,
+        "troughWidth": 0.22
+      },
       "empathy": {
         "floor": 0.42,
         "ceiling": 0.92,
@@ -173,6 +187,13 @@
         "baselineArousal": 0.4
       },
       "contractAdherence": 0.76,
+      "disclosure": {
+        "intimateSafety": 0.82,
+        "strangerSafety": 0.5,
+        "troughDepth": 0.7,
+        "troughPosition": 0.5,
+        "troughWidth": 0.18
+      },
       "empathy": {
         "floor": 0.25,
         "ceiling": 0.95,
@@ -252,6 +273,13 @@
         "baselineArousal": 0.38
       },
       "contractAdherence": 0.55,
+      "disclosure": {
+        "intimateSafety": 0.9,
+        "strangerSafety": 0.66,
+        "troughDepth": 0.58,
+        "troughPosition": 0.5,
+        "troughWidth": 0.2
+      },
       "empathy": {
         "floor": 0.18,
         "ceiling": 0.96,
@@ -331,6 +359,13 @@
         "baselineArousal": 0.38
       },
       "contractAdherence": 0.7,
+      "disclosure": {
+        "intimateSafety": 0.9,
+        "strangerSafety": 0.6,
+        "troughDepth": 0.62,
+        "troughPosition": 0.5,
+        "troughWidth": 0.2
+      },
       "empathy": {
         "floor": 0.18,
         "ceiling": 0.96,

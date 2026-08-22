@@ -1,38 +1,41 @@
-import {
-  VALUE_IDS,
-  type CharacterPlacement,
-  type ScenarioFile,
-  type SimulationState,
-  type ValueMap,
-  type ValueState,
-} from '../model/types.js';
+import type { ScenarioFile, SimulationSnapshotFile, SimulationState } from '../model/types.js';
+
+function clone<Value>(value: Value): Value {
+  return JSON.parse(JSON.stringify(value)) as Value;
+}
 
 export function serializeScenario(state: SimulationState): ScenarioFile {
-  const sourcePlacements = new Map(
-    state.scenario.characters.map(placement => [placement.instanceId, placement]),
-  );
-  const characters: CharacterPlacement[] = state.agents.map(agent => {
-    const source = sourcePlacements.get(agent.id);
-    if (source === undefined)
-      throw new Error(`Simulation agent "${agent.id}" has no scenario placement`);
-    const initialValues = {} as ValueMap<ValueState>;
-    for (const valueId of VALUE_IDS) initialValues[valueId] = { ...agent.values[valueId] };
-    return {
-      characterId: agent.profile.id,
-      initialResources: { ...agent.resources },
-      initialValues,
-      instanceId: agent.id,
-      position: { ...agent.position },
-      schedule: source.schedule.map(block => ({ ...block })),
+  return clone(state.scenario);
+}
+
+export function serializeSnapshot(state: SimulationState): SimulationSnapshotFile {
+  return clone({
+    agents: state.agents.map(agent => ({
+      cascade: agent.cascade,
+      currentActivity: agent.currentActivity,
+      currentLocationId: agent.currentLocationId,
+      destination: agent.destination,
+      id: agent.id,
+      memories: agent.memories,
+      position: agent.position,
+      profileId: agent.profile.id,
+      resources: agent.resources,
+      schedule: agent.schedule,
+      values: agent.values,
       walkingMetersPerMinute: agent.walkingMetersPerMinute,
-    };
+    })),
+    decisions: state.decisions,
+    disclosureDecisions: state.disclosureDecisions,
+    disclosureItems: state.disclosureItems,
+    dyads: state.dyads,
+    environmentId: state.environment.id,
+    minute: state.minute,
+    resolvedDisclosureOpportunityIds: state.resolvedDisclosureOpportunityIds,
+    resolvedOpportunityIds: state.resolvedOpportunityIds,
+    scenario: state.scenario,
+    schemaVersion: 1,
+    tick: state.tick,
+    trace: state.trace,
+    type: 'verusim-snapshot',
   });
-  return {
-    ...state.scenario,
-    behaviorOpportunities: state.scenario.behaviorOpportunities.filter(
-      opportunity => !state.resolvedOpportunityIds.includes(opportunity.id),
-    ),
-    characters,
-    startMinute: state.minute,
-  };
 }

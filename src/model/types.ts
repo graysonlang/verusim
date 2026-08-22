@@ -72,9 +72,18 @@ export interface EmpathyEnvelope {
   threatSensitivity: number;
 }
 
+export interface DisclosureEnvelope {
+  intimateSafety: number;
+  strangerSafety: number;
+  troughDepth: number;
+  troughPosition: number;
+  troughWidth: number;
+}
+
 export interface CharacterDefinition {
   constitution: Constitution;
   contractAdherence: number;
+  disclosure: DisclosureEnvelope;
   empathy: EmpathyEnvelope;
   formativeEvents: FormativeEvent[];
   id: string;
@@ -88,7 +97,7 @@ export interface CharacterDefinition {
 
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
-  schemaVersion: 2;
+  schemaVersion: 3;
 }
 
 export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'path' | 'water';
@@ -148,10 +157,40 @@ export interface CharacterPlacement {
   walkingMetersPerMinute?: number;
 }
 
-export interface SocialRelation {
+export type DyadMode = 'courteous' | 'contesting' | 'guarded' | 'ruptured' | 'warm';
+
+export interface DyadSeed {
+  behaviorVariance: number;
+  estimateConfidence: number;
+  estimatedDisclosure: number;
+  estimatedEmpathy: number;
   features: SocialFeatureMap;
+  integratedHistory: number;
+  mode: DyadMode;
   observerId: string;
+  predictionError: number;
+  stance: number;
   subjectId: string;
+}
+
+export type DyadState = DyadSeed;
+
+export interface DisclosureItemSeed {
+  id: string;
+  knownByIds: string[];
+  ownerId: string;
+  shameCharge: number;
+  summary: string;
+}
+
+export interface DisclosureOpportunity {
+  atMinute: number;
+  audienceIds: string[];
+  disclosureBenefit: number;
+  id: string;
+  itemId: string;
+  networkConductivity: number;
+  ownerId: string;
 }
 
 export interface ActionImpact {
@@ -189,10 +228,12 @@ export interface ScenarioFile {
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
   behaviorOpportunities: BehaviorOpportunity[];
   characters: CharacterPlacement[];
+  disclosureItems: DisclosureItemSeed[];
+  disclosureOpportunities: DisclosureOpportunity[];
+  dyads: DyadSeed[];
   environmentId: string;
   id: string;
-  schemaVersion: 2;
-  socialRelations: SocialRelation[];
+  schemaVersion: 3;
   startMinute: number;
   summary: string;
   tickMinutes: number;
@@ -203,7 +244,7 @@ export interface RuntimeMemory {
   id: string;
   minute: number;
   summary: string;
-  type: 'activity' | 'aftermath' | 'formative' | 'intervention';
+  type: 'activity' | 'aftermath' | 'disclosure' | 'formative' | 'intervention';
 }
 
 export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 'flop';
@@ -232,7 +273,10 @@ export interface TraceEntry {
     | 'aftermath'
     | 'appraisal'
     | 'decision'
+    | 'disclosure-appraisal'
+    | 'disclosure-decision'
     | 'intervention'
+    | 'relationship'
     | 'scenario'
     | 'value-turn';
   minute: number;
@@ -243,8 +287,12 @@ export interface TraceEntry {
 export interface SimulationState {
   agents: SimulationAgent[];
   decisions: DecisionRecord[];
+  disclosureDecisions: DisclosureDecisionRecord[];
+  disclosureItems: DisclosureItemSeed[];
+  dyads: DyadState[];
   environment: EnvironmentDefinition;
   minute: number;
+  resolvedDisclosureOpportunityIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
   tick: number;
@@ -330,4 +378,60 @@ export interface DecisionRecord {
   selectedCandidateId: string;
   targetId: string | null;
   tick: number;
+}
+
+export interface DisclosureAudienceEvaluation {
+  audienceId: string;
+  disclosureSafety: number;
+  embeddedness: number;
+  estimatedEmpathy: number;
+  exposureRisk: number;
+  subjectiveCost: number;
+}
+
+export interface DisclosureDecisionRecord {
+  audiences: DisclosureAudienceEvaluation[];
+  disclosureBenefit: number;
+  id: string;
+  itemId: string;
+  minute: number;
+  opportunityId: string;
+  outcome: 'conceal' | 'disclose';
+  ownerId: string;
+  tick: number;
+  utility: number;
+  worstAudienceId: string | null;
+  worstCost: number;
+}
+
+export interface SimulationAgentSnapshot {
+  cascade: CascadePosition;
+  currentActivity: string;
+  currentLocationId: string | null;
+  destination: Point;
+  id: string;
+  memories: RuntimeMemory[];
+  position: Point;
+  profileId: string;
+  resources: ResourceState;
+  schedule: ScheduleBlock[];
+  values: ValueMap<ValueState>;
+  walkingMetersPerMinute: number;
+}
+
+export interface SimulationSnapshotFile {
+  agents: SimulationAgentSnapshot[];
+  decisions: DecisionRecord[];
+  disclosureDecisions: DisclosureDecisionRecord[];
+  disclosureItems: DisclosureItemSeed[];
+  dyads: DyadState[];
+  environmentId: string;
+  minute: number;
+  resolvedDisclosureOpportunityIds: string[];
+  resolvedOpportunityIds: string[];
+  scenario: ScenarioFile;
+  schemaVersion: 1;
+  tick: number;
+  trace: TraceEntry[];
+  type: 'verusim-snapshot';
 }

@@ -1,12 +1,12 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "highwayman-road",
   "title": "The Highwayman: Empty Road",
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
   "environmentId": "old-king-road",
   "startMinute": 600,
   "tickMinutes": 5,
-  "socialRelations": [
+  "dyads": [
     {
       "observerId": "actor",
       "subjectId": "merchant",
@@ -16,9 +16,19 @@
         "similarity": 0,
         "reciprocity": 0,
         "category": 0
-      }
+      },
+      "stance": 0,
+      "integratedHistory": 0,
+      "behaviorVariance": 0,
+      "estimatedEmpathy": 0.5,
+      "estimatedDisclosure": 0.5,
+      "estimateConfidence": 0.1,
+      "predictionError": 0,
+      "mode": "courteous"
     }
   ],
+  "disclosureItems": [],
+  "disclosureOpportunities": [],
   "behaviorOpportunities": [
     {
       "id": "roadside-encounter",
