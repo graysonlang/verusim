@@ -1,16 +1,21 @@
 {
-  "name": "@graysonlang/repo-template",
+  "name": "@graysonlang/verusim",
   "version": "0.1.0",
   "private": true,
-  "description": "Project template for @graysonlang/esp, with VS Code build and debug configuration, TypeScript validation, and a test harness",
-  "keywords": [],
-  "homepage": "https://github.com/graysonlang/repo-template#readme",
+  "description": "A deterministic behavioral simulation substrate for explicable, non-scripted NPCs",
+  "keywords": [
+    "behavioral-simulation",
+    "game-development",
+    "npc",
+    "solid-js"
+  ],
+  "homepage": "https://github.com/graysonlang/verusim#readme",
   "bugs": {
-    "url": "https://github.com/graysonlang/repo-template/issues"
+    "url": "https://github.com/graysonlang/verusim/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/graysonlang/repo-template.git"
+    "url": "git+https://github.com/graysonlang/verusim.git"
   },
   "license": "MIT",
   "author": "Grayson Lang",
@@ -36,6 +41,9 @@
   },
   "config": {
     "esp_dev_cert_name": "graysonlang-esp-dev"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.14"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",

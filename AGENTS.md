@@ -2,13 +2,9 @@
 
 How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is about *how to work*; what the project *is* belongs in [README.md](README.md) and `docs/`.
 
-Replace the Project section below when you use this template. Everything under Hard rules is intended to carry across projects unchanged.
-
 ## Project
 
-<!-- Replace: one paragraph on what this is, plus pointers to the docs an agent should read before writing code. -->
-
-This is a template repo built on [`@graysonlang/esp`](https://github.com/graysonlang/esp) — an esbuild plugin set and build runner. The checked-in surface is deliberately small; anything that can be a dependency lives in esp.
+Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [design.md](design.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [docs/roadmap.md](docs/roadmap.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
 
 ## Hard rules
 
