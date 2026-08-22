@@ -23,6 +23,57 @@ export type SocialFeatureId = (typeof SOCIAL_FEATURE_IDS)[number];
 
 export type SocialFeatureMap = { [Key in SocialFeatureId]: number };
 
+export const CAPABILITY_IDS = ['acuity', 'evidenceCalibration', 'expressiveControl'] as const;
+
+export type CapabilityId = (typeof CAPABILITY_IDS)[number];
+
+export type CapabilityMap<Value> = { [Key in CapabilityId]: Value };
+
+export type CapabilityResolutionBand =
+  | 'strong-yes'
+  | 'weak-yes'
+  | 'so-so'
+  | 'weak-no'
+  | 'strong-no'
+  | 'strike'
+  | 'pass';
+
+export interface CapabilityModifier {
+  id: string;
+  source: string;
+  value: number;
+}
+
+export interface CapabilityCheck {
+  applicable: boolean;
+  availableCapacity: number;
+  availableCapacitySources: string[];
+  baseCapability: number;
+  capabilitySource: string;
+  capabilityId: CapabilityId;
+  difficulty: number;
+  difficultySource: string;
+  known: boolean;
+  modifiers: CapabilityModifier[];
+}
+
+export type AgentCapabilityCheck = Omit<
+  CapabilityCheck,
+  'availableCapacity' | 'availableCapacitySources' | 'baseCapability' | 'capabilitySource'
+>;
+
+export interface CapabilityResolution {
+  availableCapacity: number;
+  band: CapabilityResolutionBand;
+  baseCapability: number;
+  capabilityId: CapabilityId;
+  difficulty: number;
+  effectiveCapability: number;
+  margin: number | null;
+  modifiers: CapabilityModifier[];
+  terms: TraceTerm[];
+}
+
 export interface Point {
   x: number;
   y: number;
@@ -81,6 +132,7 @@ export interface DisclosureEnvelope {
 }
 
 export interface CharacterDefinition {
+  capabilities: CapabilityMap<number>;
   constitution: Constitution;
   contractAdherence: number;
   disclosure: DisclosureEnvelope;
@@ -97,7 +149,7 @@ export interface CharacterDefinition {
 
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
-  schemaVersion: 3;
+  schemaVersion: 4;
 }
 
 export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'path' | 'water';

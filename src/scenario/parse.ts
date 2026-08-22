@@ -1,4 +1,5 @@
 import {
+  CAPABILITY_IDS,
   SOCIAL_FEATURE_IDS,
   VALUE_IDS,
   type AreaKind,
@@ -116,6 +117,13 @@ function validateConstitution(value: unknown, path: string): void {
   numberValue(constitution.threshold, `${path}.threshold`, 0, 1);
 }
 
+function validateCapabilities(value: unknown, path: string): void {
+  const capabilities = objectValue(value, path);
+  for (const capabilityId of CAPABILITY_IDS) {
+    numberValue(capabilities[capabilityId], `${path}.${capabilityId}`, 0, 1);
+  }
+}
+
 function validateSocialFeatures(value: unknown, path: string): void {
   const features = objectValue(value, path);
   for (const featureId of SOCIAL_FEATURE_IDS) {
@@ -217,8 +225,8 @@ function clone<Value>(value: Value): Value {
 
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
-  if (file.schemaVersion === 3) return file;
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+  if (file.schemaVersion === 4) return file;
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
     throw new ScenarioValidationError(
       'characterLibrary.schemaVersion',
       'unsupported schema version',
@@ -244,15 +252,22 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
         threatSensitivity: 0.5,
       };
     }
-    character.disclosure = {
-      intimateSafety: 0.92,
-      strangerSafety: 0.72,
-      troughDepth: 0.58,
-      troughPosition: 0.52,
-      troughWidth: 0.2,
+    if (file.schemaVersion === 1 || file.schemaVersion === 2) {
+      character.disclosure = {
+        intimateSafety: 0.92,
+        strangerSafety: 0.72,
+        troughDepth: 0.58,
+        troughPosition: 0.52,
+        troughWidth: 0.2,
+      };
+    }
+    character.capabilities = {
+      acuity: 0.5,
+      evidenceCalibration: 0.5,
+      expressiveControl: 0.5,
     };
   }
-  file.schemaVersion = 3;
+  file.schemaVersion = 4;
   return file;
 }
 
@@ -291,7 +306,7 @@ function migrateScenario(value: unknown): Record<string, unknown> {
 
 export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
   const file = migrateCharacterLibrary(value);
-  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 3);
+  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 4);
   const characters = arrayValue(file.characters, 'characterLibrary.characters').map(
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
@@ -300,6 +315,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       stringValue(character.name, `${path}.name`);
       stringValue(character.role, `${path}.role`);
       stringValue(character.summary, `${path}.summary`);
+      validateCapabilities(character.capabilities, `${path}.capabilities`);
       validateConstitution(character.constitution, `${path}.constitution`);
       numberValue(character.contractAdherence, `${path}.contractAdherence`, 0, 1);
       validateDisclosureEnvelope(character.disclosure, `${path}.disclosure`);

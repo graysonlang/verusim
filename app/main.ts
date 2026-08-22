@@ -5,9 +5,11 @@ import highwaymanCharacters from '../library/highwayman-characters.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
 import scenario from '../scenarios/market-morning.json';
 import {
+  CAPABILITY_IDS,
   VALUE_IDS,
   advanceSimulation,
   buildInfo,
+  capabilityAvailability,
   createSimulation,
   createSimulationFromSnapshot,
   describeAgent,
@@ -16,6 +18,7 @@ import {
   setAgentResource,
   setAgentValueCharge,
   setWorldFactAmount,
+  type CapabilityId,
   type ResourceState,
   type SimulationAgent,
   type SimulationState,
@@ -27,7 +30,7 @@ import { createWorldView } from './world-view.js';
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
-  schemaVersion: 3,
+  schemaVersion: 4,
 };
 const environmentLibrary = {
   environments: [...environments.environments, ...highwaymanEnvironments.environments],
@@ -85,6 +88,12 @@ const CONSTITUTION_LABELS: Record<keyof SimulationAgent['profile']['constitution
   recoveryRate: 'Recovery',
   socialValence: 'Social valence',
   threshold: 'Threshold',
+};
+
+const CAPABILITY_LABELS: Record<CapabilityId, string> = {
+  acuity: 'Acuity',
+  evidenceCalibration: 'Evidence calibration',
+  expressiveControl: 'Expressive control',
 };
 
 function makeSection(
@@ -237,6 +246,19 @@ function renderInspector(
     constitutionGrid.append(term, definition);
   }
   constitution.body.append(constitutionGrid);
+
+  const capabilities = makeSection('Capabilities', 'Base / current effective');
+  for (const capabilityId of CAPABILITY_IDS) {
+    const base = agent.profile.capabilities[capabilityId];
+    const available = capabilityAvailability(agent, capabilityId);
+    capabilities.body.append(
+      metricRow(
+        CAPABILITY_LABELS[capabilityId],
+        `${base.toFixed(2)} / ${(base * available).toFixed(2)}`,
+        base * available,
+      ),
+    );
+  }
 
   const evaluationShape = makeSection('Evaluation shape', 'History-derived');
   const evaluationGrid = element('dl', 'definition-grid');
@@ -503,6 +525,7 @@ function renderInspector(
     agenda.section,
     facts.section,
     constitution.section,
+    capabilities.section,
     evaluationShape.section,
     identity.section,
     decisionSection.section,

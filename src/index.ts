@@ -2,7 +2,7 @@
 // esbuild's `define` (see scripts/build.mjs). They are not runtime globals.
 /* global __APP_VERSION__, __COMMIT_SHA__ */
 
-export { SOCIAL_FEATURE_IDS, VALUE_IDS } from './model/types.js';
+export { CAPABILITY_IDS, SOCIAL_FEATURE_IDS, VALUE_IDS } from './model/types.js';
 export type * from './model/types.js';
 export { parseCharacterLibrary, parseEnvironmentLibrary, parseScenario } from './scenario/parse.js';
 export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
@@ -14,6 +14,12 @@ export {
   setWorldFactAmount,
 } from './simulation/agenda.js';
 export { appraiseAction } from './simulation/appraisal.js';
+export {
+  capabilityAvailability,
+  capabilityBand,
+  resolveAgentCapabilityCheck,
+  resolveCapabilityCheck,
+} from './simulation/capability.js';
 export { evaluateOpportunity, resolveOpportunity } from './simulation/decision.js';
 export {
   evaluateDisclosureOpportunity,

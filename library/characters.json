@@ -1,11 +1,16 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "characters": [
     {
       "id": "mara-vale",
       "name": "Mara Vale",
       "role": "Innkeeper",
       "summary": "A capable host whose generosity depends on keeping a room predictable.",
+      "capabilities": {
+        "acuity": 0.72,
+        "evidenceCalibration": 0.67,
+        "expressiveControl": 0.81
+      },
       "constitution": {
         "reactivity": 0.68,
         "threshold": 0.57,
@@ -103,6 +108,11 @@
       "name": "Tomas Reed",
       "role": "Blacksmith",
       "summary": "A precise craftsperson who hears technical criticism more clearly than affection.",
+      "capabilities": {
+        "acuity": 0.84,
+        "evidenceCalibration": 0.76,
+        "expressiveControl": 0.42
+      },
       "constitution": {
         "reactivity": 0.52,
         "threshold": 0.64,
@@ -200,6 +210,11 @@
       "name": "Nessa Arden",
       "role": "Healer",
       "summary": "A patient observer who protects other people's confidences at personal cost.",
+      "capabilities": {
+        "acuity": 0.9,
+        "evidenceCalibration": 0.82,
+        "expressiveControl": 0.58
+      },
       "constitution": {
         "reactivity": 0.38,
         "threshold": 0.72,
@@ -297,6 +312,11 @@
       "name": "Elian Voss",
       "role": "Gate warden",
       "summary": "A sociable guard who invests heavily in rules that promise mutual protection.",
+      "capabilities": {
+        "acuity": 0.61,
+        "evidenceCalibration": 0.63,
+        "expressiveControl": 0.79
+      },
       "constitution": {
         "reactivity": 0.47,
         "threshold": 0.61,
@@ -394,6 +414,11 @@
       "name": "Sera Dane",
       "role": "Miller",
       "summary": "A reserved miller whose sense of autonomy is bound to control of her work.",
+      "capabilities": {
+        "acuity": 0.78,
+        "evidenceCalibration": 0.74,
+        "expressiveControl": 0.39
+      },
       "constitution": {
         "reactivity": 0.73,
         "threshold": 0.48,

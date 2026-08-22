@@ -48,8 +48,18 @@ describe('scenario validation', () => {
     const profiles = legacyCharacters.characters as Record<string, unknown>[];
     for (const profile of profiles) delete profile.disclosure;
     const migratedCharacters = parseCharacterLibrary(legacyCharacters);
-    assert.equal(migratedCharacters.schemaVersion, 3);
+    assert.equal(migratedCharacters.schemaVersion, 4);
+    assert.equal(migratedCharacters.characters[0]?.capabilities.acuity, 0.5);
     assert.equal(migratedCharacters.characters[0]?.disclosure.troughPosition, 0.52);
+
+    const relationalCharacters = structuredClone(characters) as unknown as Record<string, unknown>;
+    relationalCharacters.schemaVersion = 3;
+    for (const profile of relationalCharacters.characters as Record<string, unknown>[]) {
+      delete profile.capabilities;
+    }
+    const migratedRelationalCharacters = parseCharacterLibrary(relationalCharacters);
+    assert.equal(migratedRelationalCharacters.schemaVersion, 4);
+    assert.equal(migratedRelationalCharacters.characters[0]?.capabilities.expressiveControl, 0.5);
 
     const legacyScenario = structuredClone(scenario) as unknown as Record<string, unknown>;
     legacyScenario.schemaVersion = 2;
@@ -158,6 +168,17 @@ describe('scenario validation', () => {
     assert.throws(
       () => parseScenario(malformed),
       /scenario\.characters\[0\]\.schedule\[1\]\.startMinute/,
+    );
+  });
+
+  it('reports malformed capabilities at their authored path', () => {
+    const malformed = structuredClone(characters);
+    const first = malformed.characters[0];
+    assert.ok(first);
+    first.capabilities.acuity = 1.2;
+    assert.throws(
+      () => parseCharacterLibrary(malformed),
+      /characterLibrary\.characters\[0\]\.capabilities\.acuity/,
     );
   });
 
