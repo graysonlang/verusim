@@ -45,7 +45,7 @@ It may display or edit simulation state but may not invent behavioral state.
 The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains live on reusable character definitions and are not changed by normal stepping.
-2. History-derived content also lives on definitions initially, expressed through identity markers, value weights, narratives, and formative events.
+2. History-derived content also lives on definitions initially, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events.
 3. Situational state lives on scenario instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, and memories.
 
 A future persistence format may separate authored scenario content from a live simulation snapshot.
@@ -65,9 +65,13 @@ The initial schedule blocks are obligations and affordances supplied by the scen
 They make time and navigation inspectable before an action selector exists.
 They must not become a hidden scripting layer: later phases will let Verus decide how an agent responds to an obligation, including delay, refusal, substitution, or abandonment.
 
+Phase 1 behavioral opportunities are atomic exchanges at a declared simulation minute.
+This is a narrow harness boundary, not the final interaction model.
+The opportunity shape separates actor, target, context, candidates, direct value turns, and costs so later multi-step interactions can retain the same candidate evaluator at each interruptible phase.
+
 ## Action appraisal
 
-The first core evaluator implements only the top-level equation from the design:
+The core evaluator implements the top-level equation from the design:
 
 ```text
 turn_felt = sum(impact empathy x actor value weight x value charge turn)
@@ -79,8 +83,20 @@ act_utility = turn_felt
 ```
 
 Each term remains separate in the result so a trace can explain the selected action.
-Envelope geometry, value-weight inflation, context composition, contract adherence, and narrative expression will calculate those inputs in later phases.
-Keeping them outside the equation now avoids burying unresolved assumptions in a single score.
+
+Phase 1 supplies those terms through a deterministic pipeline:
+
+1. Inflate the actor's value weights nonlinearly from current charge and deficit integral.
+2. Resolve empathy independently for every affected subject from social distance and envelope falloff.
+3. Coarsen familiarity and lower the empathy floor under perceived threat while sharpening kinship.
+4. Compute intrinsic contract cost from character adherence and the candidate's contract departure.
+5. Compute repercussion probability from witness allegiance, witness count, network conductivity, and enforcement presence, then multiply by candidate severity.
+6. Evaluate every candidate, preserve authored order as the deterministic tie break, and record both the winner and rejected alternatives.
+7. Apply the selected direct value turns and derive remorse from harm the actor could feel plus intrinsic contract cost.
+
+Environments author concrete acts and their direct consequences.
+They do not author utility, empathy, salience, remorse, or the winning action.
+The `narrative_expression` input remains explicit but neutral in Phase 1 fixtures until the narrative layer can calculate it.
 
 ## Observability
 
@@ -99,7 +115,8 @@ Files use strict, versioned JSON and stable string identifiers.
 Scenarios reference library records rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
-Format migrations will be explicit functions keyed by `schemaVersion` once a second format exists.
+Character-library and scenario schema version 2 add the Phase 1 empathy and opportunity vocabulary.
+Explicit migrations preserve version 1 content by supplying neutral Phase 1 defaults and empty behavioral collections.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

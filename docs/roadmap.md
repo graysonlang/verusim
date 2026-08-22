@@ -7,9 +7,12 @@ Each phase must end with a small scenario that makes a wrong mechanism visibly f
 
 The workbench and test harness are two observers over those same scenarios.
 
+Acceptance-suite ensembles use distinct, seeded authored parameter and context variants.
+Repeating one variant must produce byte-equivalent decisions and traces; variation never comes from runtime noise.
+
 ## Phase 0 — simulation substrate
 
-Status: initial implementation.
+Status: complete.
 
 Establish versioned content files, reusable libraries, pure deterministic stepping, causal traces, state intervention, import/export, a pannable world view, roster navigation, inspection, and time transport.
 Implement the top-level action appraisal equation without guessing the deeper inputs.
@@ -17,6 +20,8 @@ Implement the top-level action appraisal equation without guessing the deeper in
 Exit probe: load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace.
 
 ## Phase 1 — the highwayman vertical slice
+
+Status: complete.
 
 Implement value charge and salience, empathy-envelope distance and falloff, contract adherence, multiplicative repercussion context, candidate actions, and causal selection traces.
 This is the smallest slice that produces a genuinely behavioral choice rather than schedule playback.
@@ -28,7 +33,26 @@ Exit probes:
 - changing witness identity alters repercussion while holding actor, target, and empathy fixed
 - ordinal action rankings survive coefficient retuning
 
-## Phase 2 — accumulation and coping
+The implementation also preserves rejected alternatives, derives a remorse aftermath from felt harm, migrates Phase 0 content, and exposes the complete decision breakdown in the workbench.
+
+## Phase 2 — relational inference
+
+Implement dyad records, disclosure cost, exposure ledgers, worst-observer composition, one-level mind models, prediction-error gating, local norm appraisal, stance momentum, asymmetric rupture, and sleep-tick consolidation.
+Move fast interpersonal state onto the relationship while keeping one cascade and one resource ledger on the agent.
+
+The early targets are the acceptance appendix's Endicott/Margueritte, Beatrice, and Pottsfield vignettes because they exercise the relational machinery without first requiring the narrative layer.
+
+Exit probes:
+
+- a forced correcting exchange resolves Endicott and Margueritte through standard prediction-error machinery rather than a character-specific trigger
+- one hostile observer collapses Beatrice's disclosure even among safe observers
+- abrasiveness and high empathy remain simultaneously available to the observation layer
+- residents and visitors derive opposite subjective turns from one objective event under opaque local norms
+- therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
+- graduated asks reach a state that one equivalent large ask cannot
+- episodic memories disappear while their semantic stance remains
+
+## Phase 3 — accumulation and coping
 
 Implement resources, allostatic load, the defense cascade with dwell and hysteresis, outlet operations, satisfier flavor, habituation, and reinforcement schedules.
 Add environment affordances so the same outlet slot resolves to different available instances.
@@ -40,21 +64,9 @@ Exit probes:
 - descent is fast, recovery is slow, and borderline input does not cause rung flicker
 - positive and negative turns both scale with reactivity
 
-## Phase 3 — dyads, disclosure, and memory
-
-Move fast interpersonal state onto dyad records.
-Implement familiarity and kinship as independent axes, disclosure cost, exposure ledgers, worst-observer composition, stance momentum, asymmetric rupture, prediction error, and sleep-tick consolidation.
-
-Exit probes:
-
-- therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
-- graduated asks reach a state that one equivalent large ask cannot
-- one hostile observer collapses disclosure even among safe observers
-- episodic memories disappear while their semantic stance remains
-
 ## Phase 4 — proactive agency and narrative
 
-Implement narrative claims, expression payoff, validators, rationalization, simple world-directed goals, action opportunities, and one-level mind models.
+Implement narrative claims, expression payoff, validators, rationalization, and simple world-directed goals.
 Separate chosen intentions from locomotion and animation so text and embodied integrations share decisions.
 
 Exit probes:
@@ -86,30 +98,33 @@ Exit probes:
 - reference and reduced fidelity preserve agreed ordinal outcomes in coverage scenarios
 - chunk loading and time acceleration do not alter deterministic results
 
-## Decisions to resolve before Phase 1
+## Phase 1 decisions
 
-The design's open list is sound, but four decisions affect the next code boundary most directly.
+Phase 1 uses the following bounded decisions.
 
 ### Player observability
 
 Choose the first real integration target: text-first, embodied-first, or explicitly both from the first vertical slice.
 The model can stay shared, but the minimum useful trace and tell vocabulary changes materially.
 
-Recommendation: define both interfaces, then implement text tells first because they expose appraisal failures cheaply while the spatial workbench continues to show movement and proximity.
+Both interfaces consume the causal trace.
+The workbench exposes numeric internals for development; player-facing tell vocabulary remains a Phase 2 concern.
 
 ### Action and affordance vocabulary
 
 Define how environments advertise candidate actions without scripting character choice.
 A useful starting shape is an operation plus target, expected value turns, resource costs, preconditions, and observable expression.
 
-Recommendation: keep concrete acts in environment content and behavioral operations in the core; selection evaluates available acts rather than inventing them.
+Concrete acts and direct consequences live in scenario opportunities.
+Character-dependent operations such as empathy, salience, contract cost, repercussion, and aftermath live in the core.
 
 ### Time semantics
 
 Decide whether social exchanges resolve atomically within a tick or through interruptible phases such as approach, bid, response, and aftermath.
 Atomic exchanges are easy to test but cannot express interruption, context collapse, or movement during a conversation.
 
-Recommendation: use explicit multi-step interactions while allowing tests to advance until the interaction reaches a stable boundary.
+Phase 1 opportunities resolve atomically.
+Their actor, context, candidate, and consequence boundaries are designed to become phases of interruptible interactions without replacing the evaluator.
 
 ### Scenario truth versus save-game truth
 

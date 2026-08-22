@@ -1,6 +1,8 @@
 import { createEffect, createRoot, createSignal, onCleanup } from 'solid-js';
 import characters from '../library/characters.json';
 import environments from '../library/environments.json';
+import highwaymanCharacters from '../library/highwayman-characters.json';
+import highwaymanEnvironments from '../library/highwayman-environments.json';
 import scenario from '../scenarios/market-morning.json';
 import {
   VALUE_IDS,
@@ -20,6 +22,15 @@ import {
 import indexPath from './index.html';
 import './styles.css';
 import { createWorldView } from './world-view.js';
+
+const characterLibrary = {
+  characters: [...characters.characters, ...highwaymanCharacters.characters],
+  schemaVersion: 2,
+};
+const environmentLibrary = {
+  environments: [...environments.environments, ...highwaymanEnvironments.environments],
+  schemaVersion: 1,
+};
 
 export function getFilePaths(): { index: string } {
   return { index: indexPath };
@@ -43,8 +54,8 @@ function button(label: string, className = 'button'): HTMLButtonElement {
 
 function createStarterSimulation(): SimulationState {
   return createSimulation({
-    characterLibrary: characters,
-    environmentLibrary: environments,
+    characterLibrary,
+    environmentLibrary,
     scenario,
   });
 }
@@ -217,6 +228,23 @@ function renderInspector(
   }
   constitution.body.append(constitutionGrid);
 
+  const evaluationShape = makeSection('Evaluation shape', 'History-derived');
+  const evaluationGrid = element('dl', 'definition-grid');
+  for (const [label, value] of [
+    ['Empathy floor', agent.profile.empathy.floor],
+    ['Empathy ceiling', agent.profile.empathy.ceiling],
+    ['Envelope steepness', agent.profile.empathy.steepness],
+    ['Threat sensitivity', agent.profile.empathy.threatSensitivity],
+    ['Contract adherence', agent.profile.contractAdherence],
+  ] as const) {
+    const term = element('dt');
+    const definition = element('dd');
+    term.textContent = label;
+    definition.textContent = value.toFixed(2);
+    evaluationGrid.append(term, definition);
+  }
+  evaluationShape.body.append(evaluationGrid);
+
   const identity = makeSection('Identity and narrative');
   const markers = element('div', 'marker-list');
   for (const item of agent.profile.identity) {
@@ -231,6 +259,39 @@ function renderInspector(
     claims.append(item);
   }
   identity.body.append(markers, claims);
+
+  const decisionSection = makeSection('Latest Verus decision');
+  const decision = state.decisions.filter(item => item.actorId === agent.id).at(-1);
+  if (decision === undefined) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No behavioral opportunity has resolved for this character.';
+    decisionSection.body.append(empty);
+  } else {
+    const decisionList = element('ol', 'decision-list');
+    for (const candidate of decision.candidates) {
+      const item = element(
+        'li',
+        candidate.candidateId === decision.selectedCandidateId
+          ? 'decision-candidate selected'
+          : 'decision-candidate',
+      );
+      const heading = element('div');
+      const label = element('strong');
+      const utility = element('output');
+      const terms = element('small');
+      const empathy = element('small');
+      label.textContent = candidate.label;
+      utility.textContent = candidate.appraisal.utility.toFixed(3);
+      terms.textContent = `felt ${candidate.appraisal.turnFelt.toFixed(3)} / repercussion -${candidate.appraisal.repercussionCost.toFixed(3)} / contract -${candidate.appraisal.contractViolationCost.toFixed(3)} / narrative +${candidate.appraisal.narrativeExpression.toFixed(3)}`;
+      empathy.textContent = candidate.empathy
+        .map(item => `E(${item.subjectId}) ${item.empathy.toFixed(3)}`)
+        .join(' / ');
+      heading.append(label, utility);
+      item.append(heading, terms, empathy);
+      decisionList.append(item);
+    }
+    decisionSection.body.append(decisionList);
+  }
 
   const memories = makeSection('Memory', `${agent.memories.length} retained`);
   const memoryList = element('ol', 'event-list');
@@ -267,7 +328,9 @@ function renderInspector(
     values.section,
     resources.section,
     constitution.section,
+    evaluationShape.section,
     identity.section,
+    decisionSection.section,
     memories.section,
     trace.section,
   );
@@ -493,8 +556,8 @@ function createWorkbench(): HTMLElement {
     if (file === undefined) return;
     try {
       const loaded = createSimulation({
-        characterLibrary: characters,
-        environmentLibrary: environments,
+        characterLibrary,
+        environmentLibrary,
         scenario: JSON.parse(await file.text()) as unknown,
       });
       setSpeed(0);

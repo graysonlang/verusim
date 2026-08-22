@@ -13,18 +13,20 @@ The full behavioral model is specified in [design.md](design.md).
 
 ## Current slice
 
-The current implementation establishes the project substrate rather than claiming the full design is complete.
+The current implementation establishes the project substrate and the Phase 1 behavioral vertical slice rather than claiming the full design is complete.
 It includes:
 
 - versioned JSON character, environment, and scenario formats
 - references from scenario placements to reusable character and environment libraries
 - deterministic simulation stepping, schedule-based movement, ambient value turns, and bounded trace history
-- a pure implementation of the top-level Verus action appraisal equation with an inspectable term breakdown
+- environment-authored behavioral opportunities with character-dependent action selection
+- nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
+- highwayman road and town-square fixtures covering the first ordinal behavioral factorial
 - a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable Canvas world, roster navigation, time controls, live state editing, scenario import/export, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
 
-Schedules in this slice provide environmental obligations and visible activity while the behavioral action selector is built.
-They are not presented as emergent decisions.
+Schedules provide environmental obligations and visible activity, while behavioral opportunities advertise concrete acts that Verus may select.
+Schedules are not presented as emergent decisions, and opportunities specify consequences rather than character preferences.
 
 ## Technology
 
