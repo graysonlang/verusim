@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 2,
+  "id": "highwayman-road",
+  "title": "The Highwayman: Empty Road",
+  "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
+  "environmentId": "old-king-road",
+  "startMinute": 600,
+  "tickMinutes": 5,
+  "socialRelations": [
+    {
+      "observerId": "actor",
+      "subjectId": "merchant",
+      "features": {
+        "kinship": 0,
+        "familiarity": 0,
+        "similarity": 0,
+        "reciprocity": 0,
+        "category": 0
+      }
+    }
+  ],
+  "behaviorOpportunities": [
+    {
+      "id": "roadside-encounter",
+      "actorId": "actor",
+      "targetId": "merchant",
+      "atMinute": 605,
+      "context": {
+        "witnessIds": [],
+        "networkConductivity": 0,
+        "enforcementPresence": 0,
+        "perceivedThreat": 0
+      },
+      "candidates": [
+        {
+          "id": "rob",
+          "label": "Rob the merchant",
+          "operation": "take",
+          "contractViolation": 0.35,
+          "repercussionSeverity": 2,
+          "narrativeExpression": 0,
+          "impacts": [
+            {
+              "subjectId": "actor",
+              "turns": { "safety": 0.55, "autonomy": 0.25, "competence": 0.1 }
+            },
+            {
+              "subjectId": "merchant",
+              "turns": { "safety": -0.8, "autonomy": -0.7, "fairness": -0.6 }
+            }
+          ]
+        },
+        {
+          "id": "greet",
+          "label": "Offer a courteous greeting",
+          "operation": "acknowledge",
+          "contractViolation": 0,
+          "repercussionSeverity": 0,
+          "narrativeExpression": 0,
+          "impacts": [
+            { "subjectId": "actor", "turns": { "belonging": 0.04 } },
+            { "subjectId": "merchant", "turns": { "respect": 0.08 } }
+          ]
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "instanceId": "actor",
+      "characterId": "corvin-rusk",
+      "position": { "x": 275, "y": 250 },
+      "schedule": [{ "startMinute": 0, "locationId": "dark-road", "activity": "Watching the road" }]
+    },
+    {
+      "instanceId": "merchant",
+      "characterId": "jon-mere",
+      "position": { "x": 325, "y": 250 },
+      "schedule": [{ "startMinute": 0, "locationId": "dark-road", "activity": "Traveling west" }]
+    }
+  ]
+}

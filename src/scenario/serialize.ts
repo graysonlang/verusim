@@ -29,6 +29,9 @@ export function serializeScenario(state: SimulationState): ScenarioFile {
   });
   return {
     ...state.scenario,
+    behaviorOpportunities: state.scenario.behaviorOpportunities.filter(
+      opportunity => !state.resolvedOpportunityIds.includes(opportunity.id),
+    ),
     characters,
     startMinute: state.minute,
   };

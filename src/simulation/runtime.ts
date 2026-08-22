@@ -22,6 +22,7 @@ import {
   parseScenario,
   ScenarioValidationError,
 } from '../scenario/parse.js';
+import { resolveOpportunity } from './decision.js';
 
 const DAY_MINUTES = 1440;
 const MAX_MEMORIES = 16;
@@ -138,6 +139,7 @@ function validateReferences(content: ScenarioContent): void {
     );
   }
   const locationIds = new Set(environment.locations.map(location => location.id));
+  const instanceIds = new Set(content.scenario.characters.map(placement => placement.instanceId));
   content.scenario.characters.forEach((placement, index) => {
     if (!characters.has(placement.characterId)) {
       throw new ScenarioValidationError(
@@ -152,6 +154,53 @@ function validateReferences(content: ScenarioContent): void {
           `unknown location "${block.locationId}"`,
         );
       }
+    });
+  });
+  content.scenario.socialRelations.forEach((relation, index) => {
+    if (!instanceIds.has(relation.observerId)) {
+      throw new ScenarioValidationError(
+        `scenario.socialRelations[${index}].observerId`,
+        `unknown agent "${relation.observerId}"`,
+      );
+    }
+    if (!instanceIds.has(relation.subjectId)) {
+      throw new ScenarioValidationError(
+        `scenario.socialRelations[${index}].subjectId`,
+        `unknown agent "${relation.subjectId}"`,
+      );
+    }
+  });
+  content.scenario.behaviorOpportunities.forEach((opportunity, index) => {
+    const path = `scenario.behaviorOpportunities[${index}]`;
+    if (!instanceIds.has(opportunity.actorId)) {
+      throw new ScenarioValidationError(
+        `${path}.actorId`,
+        `unknown agent "${opportunity.actorId}"`,
+      );
+    }
+    if (opportunity.targetId !== null && !instanceIds.has(opportunity.targetId)) {
+      throw new ScenarioValidationError(
+        `${path}.targetId`,
+        `unknown agent "${opportunity.targetId}"`,
+      );
+    }
+    opportunity.context.witnessIds.forEach((witnessId, witnessIndex) => {
+      if (!instanceIds.has(witnessId)) {
+        throw new ScenarioValidationError(
+          `${path}.context.witnessIds[${witnessIndex}]`,
+          `unknown agent "${witnessId}"`,
+        );
+      }
+    });
+    opportunity.candidates.forEach((candidate, candidateIndex) => {
+      candidate.impacts.forEach((impact, impactIndex) => {
+        if (!instanceIds.has(impact.subjectId)) {
+          throw new ScenarioValidationError(
+            `${path}.candidates[${candidateIndex}].impacts[${impactIndex}].subjectId`,
+            `unknown agent "${impact.subjectId}"`,
+          );
+        }
+      });
     });
   });
 }
@@ -182,8 +231,10 @@ export function createSimulation(input: {
 
   return {
     agents,
+    decisions: [],
     environment,
     minute: content.scenario.startMinute,
+    resolvedOpportunityIds: [],
     scenario: content.scenario,
     tick: 0,
     trace: [
@@ -320,13 +371,21 @@ function advanceOneTick(state: SimulationState): SimulationState {
   for (const result of results) {
     for (const entry of result.trace) trace = appendBounded(trace, entry, MAX_TRACE_ENTRIES);
   }
-  return {
+  let next: SimulationState = {
     ...state,
     agents: results.map(result => result.agent),
     minute: nextMinute,
     tick: nextTick,
     trace,
   };
+  const dueOpportunities = state.scenario.behaviorOpportunities.filter(
+    opportunity =>
+      opportunity.atMinute > state.minute &&
+      opportunity.atMinute <= nextMinute &&
+      !state.resolvedOpportunityIds.includes(opportunity.id),
+  );
+  for (const opportunity of dueOpportunities) next = resolveOpportunity(next, opportunity);
+  return next;
 }
 
 export function advanceSimulation(state: SimulationState, ticks = 1): SimulationState {

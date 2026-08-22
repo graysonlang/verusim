@@ -11,6 +11,18 @@ export type ValueId = (typeof VALUE_IDS)[number];
 
 export type ValueMap<Value> = { [Key in ValueId]: Value };
 
+export const SOCIAL_FEATURE_IDS = [
+  'kinship',
+  'familiarity',
+  'similarity',
+  'reciprocity',
+  'category',
+] as const;
+
+export type SocialFeatureId = (typeof SOCIAL_FEATURE_IDS)[number];
+
+export type SocialFeatureMap = { [Key in SocialFeatureId]: number };
+
 export interface Point {
   x: number;
   y: number;
@@ -51,8 +63,19 @@ export interface FormativeEvent {
   value: ValueId;
 }
 
+export interface EmpathyEnvelope {
+  ceiling: number;
+  featureWeights: SocialFeatureMap;
+  floor: number;
+  selfPosition: number;
+  steepness: number;
+  threatSensitivity: number;
+}
+
 export interface CharacterDefinition {
   constitution: Constitution;
+  contractAdherence: number;
+  empathy: EmpathyEnvelope;
   formativeEvents: FormativeEvent[];
   id: string;
   identity: IdentityMarker[];
@@ -65,7 +88,7 @@ export interface CharacterDefinition {
 
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
-  schemaVersion: 1;
+  schemaVersion: 2;
 }
 
 export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'path' | 'water';
@@ -125,12 +148,51 @@ export interface CharacterPlacement {
   walkingMetersPerMinute?: number;
 }
 
+export interface SocialRelation {
+  features: SocialFeatureMap;
+  observerId: string;
+  subjectId: string;
+}
+
+export interface ActionImpact {
+  subjectId: string;
+  turns: Partial<ValueMap<number>>;
+}
+
+export interface ActionCandidate {
+  contractViolation: number;
+  id: string;
+  impacts: ActionImpact[];
+  label: string;
+  narrativeExpression: number;
+  operation: string;
+  repercussionSeverity: number;
+}
+
+export interface DecisionContext {
+  enforcementPresence: number;
+  networkConductivity: number;
+  perceivedThreat: number;
+  witnessIds: string[];
+}
+
+export interface BehaviorOpportunity {
+  actorId: string;
+  atMinute: number;
+  candidates: ActionCandidate[];
+  context: DecisionContext;
+  id: string;
+  targetId: string | null;
+}
+
 export interface ScenarioFile {
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
+  behaviorOpportunities: BehaviorOpportunity[];
   characters: CharacterPlacement[];
   environmentId: string;
   id: string;
-  schemaVersion: 1;
+  schemaVersion: 2;
+  socialRelations: SocialRelation[];
   startMinute: number;
   summary: string;
   tickMinutes: number;
@@ -141,7 +203,7 @@ export interface RuntimeMemory {
   id: string;
   minute: number;
   summary: string;
-  type: 'activity' | 'formative' | 'intervention';
+  type: 'activity' | 'aftermath' | 'formative' | 'intervention';
 }
 
 export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 'flop';
@@ -165,7 +227,14 @@ export interface TraceEntry {
   agentId: string | null;
   causes: string[];
   id: string;
-  kind: 'activity' | 'intervention' | 'scenario' | 'value-turn';
+  kind:
+    | 'activity'
+    | 'aftermath'
+    | 'appraisal'
+    | 'decision'
+    | 'intervention'
+    | 'scenario'
+    | 'value-turn';
   minute: number;
   summary: string;
   tick: number;
@@ -173,8 +242,10 @@ export interface TraceEntry {
 
 export interface SimulationState {
   agents: SimulationAgent[];
+  decisions: DecisionRecord[];
   environment: EnvironmentDefinition;
   minute: number;
+  resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
   tick: number;
   trace: TraceEntry[];
@@ -216,4 +287,47 @@ export interface ActionAppraisal {
   repercussionCost: number;
   turnFelt: number;
   utility: number;
+}
+
+export interface EmpathyEvaluation {
+  distance: number;
+  empathy: number;
+  effectiveFloor: number;
+  features: SocialFeatureMap;
+  observerId: string;
+  subjectId: string;
+}
+
+export interface WitnessEvaluation {
+  actorEmpathy: number;
+  reportProbability: number;
+  targetEmpathy: number;
+  witnessId: string;
+}
+
+export interface RepercussionEvaluation {
+  cost: number;
+  probability: number;
+  witnesses: WitnessEvaluation[];
+}
+
+export interface CandidateEvaluation {
+  appraisal: ActionAppraisal;
+  candidateId: string;
+  effectiveValueWeights: ValueMap<number>;
+  empathy: EmpathyEvaluation[];
+  label: string;
+  operation: string;
+  repercussion: RepercussionEvaluation;
+}
+
+export interface DecisionRecord {
+  actorId: string;
+  candidates: CandidateEvaluation[];
+  id: string;
+  minute: number;
+  opportunityId: string;
+  selectedCandidateId: string;
+  targetId: string | null;
+  tick: number;
 }

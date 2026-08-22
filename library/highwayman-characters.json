@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 2,
+  "characters": [
+    {
+      "id": "corvin-rusk",
+      "name": "Corvin Rusk",
+      "role": "Highwayman",
+      "summary": "A distant opportunist who treats strangers as pieces of the road.",
+      "constitution": {
+        "reactivity": 0.46,
+        "threshold": 0.7,
+        "recoveryRate": 0.38,
+        "socialValence": -0.2,
+        "habituationRate": 0.35,
+        "baselineArousal": 0.32
+      },
+      "contractAdherence": 0.05,
+      "empathy": {
+        "floor": 0.01,
+        "ceiling": 0.92,
+        "steepness": 4,
+        "selfPosition": 0,
+        "threatSensitivity": 0.45,
+        "featureWeights": {
+          "kinship": 1.2,
+          "familiarity": 1,
+          "similarity": 0.5,
+          "reciprocity": 0.8,
+          "category": 0.6
+        }
+      },
+      "identity": [{ "marker": "Rusk family", "centrality": 0.75 }],
+      "values": {
+        "safety": {
+          "weight": 1,
+          "initialCharge": 0.1,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.12
+        },
+        "belonging": {
+          "weight": 1,
+          "initialCharge": 0.12,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.1
+        },
+        "respect": {
+          "weight": 1,
+          "initialCharge": 0.08,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "autonomy": {
+          "weight": 1,
+          "initialCharge": 0.16,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.08
+        },
+        "competence": {
+          "weight": 1,
+          "initialCharge": 0.1,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.09
+        },
+        "fairness": {
+          "weight": 1,
+          "initialCharge": 0.04,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.1
+        }
+      },
+      "narrativeClaims": ["The road gives nothing freely"],
+      "formativeEvents": [
+        {
+          "age": 13,
+          "value": "safety",
+          "turn": -0.58,
+          "attribution": "a traveling creditor",
+          "copingPotential": 0.2,
+          "summary": "A creditor emptied his family's cart while strangers watched."
+        }
+      ]
+    },
+    {
+      "id": "orin-hale",
+      "name": "Orin Hale",
+      "role": "Traveler",
+      "summary": "An ordinary traveler with broad concern and little respect for road law.",
+      "constitution": {
+        "reactivity": 0.46,
+        "threshold": 0.7,
+        "recoveryRate": 0.38,
+        "socialValence": -0.2,
+        "habituationRate": 0.35,
+        "baselineArousal": 0.32
+      },
+      "contractAdherence": 0.05,
+      "empathy": {
+        "floor": 0.42,
+        "ceiling": 0.92,
+        "steepness": 4,
+        "selfPosition": 0,
+        "threatSensitivity": 0.45,
+        "featureWeights": {
+          "kinship": 1.2,
+          "familiarity": 1,
+          "similarity": 0.5,
+          "reciprocity": 0.8,
+          "category": 0.6
+        }
+      },
+      "identity": [{ "marker": "independent traveler", "centrality": 0.65 }],
+      "values": {
+        "safety": {
+          "weight": 1,
+          "initialCharge": 0.1,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.12
+        },
+        "belonging": {
+          "weight": 1,
+          "initialCharge": 0.12,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.1
+        },
+        "respect": {
+          "weight": 1,
+          "initialCharge": 0.08,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "autonomy": {
+          "weight": 1,
+          "initialCharge": 0.16,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.08
+        },
+        "competence": {
+          "weight": 1,
+          "initialCharge": 0.1,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.09
+        },
+        "fairness": {
+          "weight": 1,
+          "initialCharge": 0.04,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.1
+        }
+      },
+      "narrativeClaims": ["I answer for what I do"],
+      "formativeEvents": [
+        {
+          "age": 17,
+          "value": "fairness",
+          "turn": 0.34,
+          "attribution": "a roadside host",
+          "copingPotential": 0.7,
+          "summary": "A host returned a purse he had left beneath a table."
+        }
+      ]
+    },
+    {
+      "id": "jon-mere",
+      "name": "Jon Mere",
+      "role": "Merchant",
+      "summary": "A traveling cloth merchant carrying a season's receipts.",
+      "constitution": {
+        "reactivity": 0.5,
+        "threshold": 0.58,
+        "recoveryRate": 0.42,
+        "socialValence": 0.15,
+        "habituationRate": 0.3,
+        "baselineArousal": 0.4
+      },
+      "contractAdherence": 0.76,
+      "empathy": {
+        "floor": 0.25,
+        "ceiling": 0.95,
+        "steepness": 3,
+        "selfPosition": 0,
+        "threatSensitivity": 0.55,
+        "featureWeights": {
+          "kinship": 1,
+          "familiarity": 1,
+          "similarity": 0.6,
+          "reciprocity": 0.9,
+          "category": 0.7
+        }
+      },
+      "identity": [{ "marker": "Mere trading house", "centrality": 0.8 }],
+      "values": {
+        "safety": {
+          "weight": 1.2,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.08,
+          "initialVariance": 0.14
+        },
+        "belonging": {
+          "weight": 0.9,
+          "initialCharge": 0.18,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "respect": {
+          "weight": 1,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.1
+        },
+        "autonomy": {
+          "weight": 1.1,
+          "initialCharge": 0.22,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "competence": {
+          "weight": 1.1,
+          "initialCharge": 0.26,
+          "initialDeficit": 0.03,
+          "initialVariance": 0.08
+        },
+        "fairness": {
+          "weight": 1,
+          "initialCharge": 0.15,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        }
+      },
+      "narrativeClaims": ["A bargain binds both hands"],
+      "formativeEvents": [
+        {
+          "age": 22,
+          "value": "competence",
+          "turn": 0.42,
+          "attribution": "the Mere trading house",
+          "copingPotential": 0.8,
+          "summary": "He returned from his first solo route with every account balanced."
+        }
+      ]
+    },
+    {
+      "id": "lena-rusk",
+      "name": "Lena Rusk",
+      "role": "Actor's cousin",
+      "summary": "A family witness whose loyalty lies with the actor.",
+      "constitution": {
+        "reactivity": 0.45,
+        "threshold": 0.62,
+        "recoveryRate": 0.45,
+        "socialValence": 0.2,
+        "habituationRate": 0.35,
+        "baselineArousal": 0.38
+      },
+      "contractAdherence": 0.55,
+      "empathy": {
+        "floor": 0.18,
+        "ceiling": 0.96,
+        "steepness": 3.2,
+        "selfPosition": 0,
+        "threatSensitivity": 0.58,
+        "featureWeights": {
+          "kinship": 1.6,
+          "familiarity": 0.9,
+          "similarity": 0.5,
+          "reciprocity": 0.8,
+          "category": 0.6
+        }
+      },
+      "identity": [{ "marker": "Rusk family", "centrality": 0.88 }],
+      "values": {
+        "safety": {
+          "weight": 1,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "belonging": {
+          "weight": 1.2,
+          "initialCharge": 0.3,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.08
+        },
+        "respect": {
+          "weight": 0.9,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "autonomy": {
+          "weight": 0.9,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "competence": {
+          "weight": 0.9,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "fairness": {
+          "weight": 1,
+          "initialCharge": 0.18,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        }
+      },
+      "narrativeClaims": ["Family answers family"],
+      "formativeEvents": [
+        {
+          "age": 10,
+          "value": "belonging",
+          "turn": 0.48,
+          "attribution": "the Rusk family",
+          "copingPotential": 0.8,
+          "summary": "Her cousins took turns sitting beside her through a fever."
+        }
+      ]
+    },
+    {
+      "id": "petra-mere",
+      "name": "Petra Mere",
+      "role": "Merchant's cousin",
+      "summary": "A family witness whose loyalty lies with the merchant.",
+      "constitution": {
+        "reactivity": 0.45,
+        "threshold": 0.62,
+        "recoveryRate": 0.45,
+        "socialValence": 0.2,
+        "habituationRate": 0.35,
+        "baselineArousal": 0.38
+      },
+      "contractAdherence": 0.7,
+      "empathy": {
+        "floor": 0.18,
+        "ceiling": 0.96,
+        "steepness": 3.2,
+        "selfPosition": 0,
+        "threatSensitivity": 0.58,
+        "featureWeights": {
+          "kinship": 1.6,
+          "familiarity": 0.9,
+          "similarity": 0.5,
+          "reciprocity": 0.8,
+          "category": 0.6
+        }
+      },
+      "identity": [{ "marker": "Mere family", "centrality": 0.88 }],
+      "values": {
+        "safety": {
+          "weight": 1,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        },
+        "belonging": {
+          "weight": 1.2,
+          "initialCharge": 0.3,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.08
+        },
+        "respect": {
+          "weight": 0.9,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "autonomy": {
+          "weight": 0.9,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "competence": {
+          "weight": 0.9,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.04,
+          "initialVariance": 0.09
+        },
+        "fairness": {
+          "weight": 1,
+          "initialCharge": 0.18,
+          "initialDeficit": 0.05,
+          "initialVariance": 0.1
+        }
+      },
+      "narrativeClaims": ["The house protects its own"],
+      "formativeEvents": [
+        {
+          "age": 12,
+          "value": "belonging",
+          "turn": 0.5,
+          "attribution": "the Mere family",
+          "copingPotential": 0.82,
+          "summary": "The trading house absorbed a debt rather than send her parents away."
+        }
+      ]
+    }
+  ]
+}

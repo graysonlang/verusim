@@ -6,6 +6,17 @@ import scenario from '../scenarios/market-morning.json';
 import { createSimulation, parseScenario } from '../src/index.js';
 
 describe('scenario validation', () => {
+  it('migrates Phase 0 scenarios to the Phase 1 content shape', () => {
+    const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 1;
+    delete legacy.behaviorOpportunities;
+    delete legacy.socialRelations;
+    const migrated = parseScenario(legacy);
+    assert.equal(migrated.schemaVersion, 2);
+    assert.deepEqual(migrated.behaviorOpportunities, []);
+    assert.deepEqual(migrated.socialRelations, []);
+  });
+
   it('reports malformed schedules at their authored path', () => {
     const malformed = structuredClone(scenario);
     malformed.characters[0]?.schedule.reverse();

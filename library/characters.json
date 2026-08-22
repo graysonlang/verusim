@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "characters": [
     {
       "id": "mara-vale",
@@ -13,6 +13,21 @@
         "socialValence": 0.41,
         "habituationRate": 0.38,
         "baselineArousal": 0.46
+      },
+      "contractAdherence": 0.72,
+      "empathy": {
+        "floor": 0.24,
+        "ceiling": 0.96,
+        "steepness": 2.8,
+        "selfPosition": 0,
+        "threatSensitivity": 0.62,
+        "featureWeights": {
+          "kinship": 1,
+          "familiarity": 1.2,
+          "similarity": 0.55,
+          "reciprocity": 0.9,
+          "category": 0.65
+        }
       },
       "identity": [
         { "marker": "keeper of the Wayfarer", "centrality": 0.92 },
@@ -89,6 +104,21 @@
         "habituationRate": 0.23,
         "baselineArousal": 0.34
       },
+      "contractAdherence": 0.68,
+      "empathy": {
+        "floor": 0.18,
+        "ceiling": 0.92,
+        "steepness": 3.4,
+        "selfPosition": 0,
+        "threatSensitivity": 0.45,
+        "featureWeights": {
+          "kinship": 0.85,
+          "familiarity": 1.15,
+          "similarity": 0.7,
+          "reciprocity": 1.1,
+          "category": 0.45
+        }
+      },
       "identity": [
         { "marker": "master smith", "centrality": 0.95 },
         { "marker": "east ward", "centrality": 0.48 }
@@ -163,6 +193,21 @@
         "socialValence": 0.12,
         "habituationRate": 0.29,
         "baselineArousal": 0.3
+      },
+      "contractAdherence": 0.88,
+      "empathy": {
+        "floor": 0.34,
+        "ceiling": 0.98,
+        "steepness": 2.2,
+        "selfPosition": 0,
+        "threatSensitivity": 0.36,
+        "featureWeights": {
+          "kinship": 0.9,
+          "familiarity": 1.35,
+          "similarity": 0.6,
+          "reciprocity": 1.1,
+          "category": 0.35
+        }
       },
       "identity": [
         { "marker": "village healer", "centrality": 0.88 },
@@ -239,6 +284,21 @@
         "habituationRate": 0.42,
         "baselineArousal": 0.49
       },
+      "contractAdherence": 0.91,
+      "empathy": {
+        "floor": 0.28,
+        "ceiling": 0.96,
+        "steepness": 2.5,
+        "selfPosition": 0,
+        "threatSensitivity": 0.7,
+        "featureWeights": {
+          "kinship": 1.25,
+          "familiarity": 0.95,
+          "similarity": 0.45,
+          "reciprocity": 0.8,
+          "category": 1.15
+        }
+      },
       "identity": [
         { "marker": "north gate warden", "centrality": 0.84 },
         { "marker": "Voss family", "centrality": 0.7 }
@@ -313,6 +373,21 @@
         "socialValence": -0.3,
         "habituationRate": 0.57,
         "baselineArousal": 0.56
+      },
+      "contractAdherence": 0.61,
+      "empathy": {
+        "floor": 0.16,
+        "ceiling": 0.91,
+        "steepness": 3.6,
+        "selfPosition": 0,
+        "threatSensitivity": 0.66,
+        "featureWeights": {
+          "kinship": 1.05,
+          "familiarity": 0.9,
+          "similarity": 0.5,
+          "reciprocity": 1.2,
+          "category": 0.75
+        }
       },
       "identity": [
         { "marker": "owner of Alder Mill", "centrality": 0.94 },

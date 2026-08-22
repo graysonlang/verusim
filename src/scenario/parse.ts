@@ -1,4 +1,5 @@
 import {
+  SOCIAL_FEATURE_IDS,
   VALUE_IDS,
   type AreaKind,
   type CharacterLibraryFile,
@@ -74,8 +75,8 @@ function integerValue(value: unknown, path: string, minimum: number, maximum: nu
   return result;
 }
 
-function literalOne(value: unknown, path: string): void {
-  if (value !== 1) throw new ScenarioValidationError(path, 'unsupported schema version');
+function schemaVersion(value: unknown, path: string, expected: number): void {
+  if (value !== expected) throw new ScenarioValidationError(path, 'unsupported schema version');
 }
 
 function uniqueIds(items: Record<string, unknown>[], path: string): void {
@@ -113,6 +114,33 @@ function validateConstitution(value: unknown, path: string): void {
   numberValue(constitution.threshold, `${path}.threshold`, 0, 1);
 }
 
+function validateSocialFeatures(value: unknown, path: string): void {
+  const features = objectValue(value, path);
+  for (const featureId of SOCIAL_FEATURE_IDS) {
+    numberValue(features[featureId], `${path}.${featureId}`, 0, 1);
+  }
+}
+
+function validateSocialFeatureWeights(value: unknown, path: string): void {
+  const features = objectValue(value, path);
+  for (const featureId of SOCIAL_FEATURE_IDS) {
+    numberValue(features[featureId], `${path}.${featureId}`, 0, 4);
+  }
+}
+
+function validateEmpathyEnvelope(value: unknown, path: string): void {
+  const envelope = objectValue(value, path);
+  const floor = numberValue(envelope.floor, `${path}.floor`, 0, 1);
+  const ceiling = numberValue(envelope.ceiling, `${path}.ceiling`, 0, 1);
+  if (ceiling < floor) {
+    throw new ScenarioValidationError(`${path}.ceiling`, 'expected ceiling at or above floor');
+  }
+  numberValue(envelope.steepness, `${path}.steepness`, 0.01, 12);
+  numberValue(envelope.selfPosition, `${path}.selfPosition`, 0, 1);
+  numberValue(envelope.threatSensitivity, `${path}.threatSensitivity`, 0, 1);
+  validateSocialFeatureWeights(envelope.featureWeights, `${path}.featureWeights`);
+}
+
 function validateValueDisposition(value: unknown, path: string): void {
   const disposition = objectValue(value, path);
   numberValue(disposition.initialCharge, `${path}.initialCharge`, -1, 1);
@@ -134,9 +162,53 @@ function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
 }
 
+function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
+  const file = clone(objectValue(value, 'characterLibrary'));
+  if (file.schemaVersion === 2) return file;
+  if (file.schemaVersion !== 1) {
+    throw new ScenarioValidationError(
+      'characterLibrary.schemaVersion',
+      'unsupported schema version',
+    );
+  }
+  const characters = arrayValue(file.characters, 'characterLibrary.characters');
+  for (const value of characters) {
+    const character = objectValue(value, 'characterLibrary.characters');
+    character.contractAdherence = 0.65;
+    character.empathy = {
+      ceiling: 1,
+      featureWeights: {
+        category: 0.6,
+        familiarity: 1,
+        kinship: 1,
+        reciprocity: 0.8,
+        similarity: 0.5,
+      },
+      floor: 0.22,
+      selfPosition: 0,
+      steepness: 3,
+      threatSensitivity: 0.5,
+    };
+  }
+  file.schemaVersion = 2;
+  return file;
+}
+
+function migrateScenario(value: unknown): Record<string, unknown> {
+  const file = clone(objectValue(value, 'scenario'));
+  if (file.schemaVersion === 2) return file;
+  if (file.schemaVersion !== 1) {
+    throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
+  }
+  file.behaviorOpportunities = [];
+  file.socialRelations = [];
+  file.schemaVersion = 2;
+  return file;
+}
+
 export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
-  const file = objectValue(value, 'characterLibrary');
-  literalOne(file.schemaVersion, 'characterLibrary.schemaVersion');
+  const file = migrateCharacterLibrary(value);
+  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 2);
   const characters = arrayValue(file.characters, 'characterLibrary.characters').map(
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
@@ -146,6 +218,8 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       stringValue(character.role, `${path}.role`);
       stringValue(character.summary, `${path}.summary`);
       validateConstitution(character.constitution, `${path}.constitution`);
+      numberValue(character.contractAdherence, `${path}.contractAdherence`, 0, 1);
+      validateEmpathyEnvelope(character.empathy, `${path}.empathy`);
 
       const values = objectValue(character.values, `${path}.values`);
       for (const valueId of VALUE_IDS) {
@@ -192,7 +266,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
 
 export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile {
   const file = objectValue(value, 'environmentLibrary');
-  literalOne(file.schemaVersion, 'environmentLibrary.schemaVersion');
+  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 1);
   const environments = arrayValue(file.environments, 'environmentLibrary.environments').map(
     (item, index) => {
       const path = `environmentLibrary.environments[${index}]`;
@@ -233,8 +307,8 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 }
 
 export function parseScenario(value: unknown): ScenarioFile {
-  const file = objectValue(value, 'scenario');
-  literalOne(file.schemaVersion, 'scenario.schemaVersion');
+  const file = migrateScenario(value);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 2);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -319,6 +393,78 @@ export function parseScenario(value: unknown): ScenarioFile {
     return { ...placement, id: placement.instanceId };
   });
   uniqueIds(characters, 'scenario.characters');
+
+  const relations = arrayValue(file.socialRelations, 'scenario.socialRelations').map(
+    (entry, index) => {
+      const path = `scenario.socialRelations[${index}]`;
+      const relation = objectValue(entry, path);
+      identifierValue(relation.observerId, `${path}.observerId`);
+      identifierValue(relation.subjectId, `${path}.subjectId`);
+      validateSocialFeatures(relation.features, `${path}.features`);
+      return { ...relation, id: `relation-${relation.observerId}-${relation.subjectId}` };
+    },
+  );
+  uniqueIds(relations, 'scenario.socialRelations');
+
+  const opportunities = arrayValue(
+    file.behaviorOpportunities,
+    'scenario.behaviorOpportunities',
+  ).map((entry, index) => {
+    const path = `scenario.behaviorOpportunities[${index}]`;
+    const opportunity = objectValue(entry, path);
+    identifierValue(opportunity.id, `${path}.id`);
+    identifierValue(opportunity.actorId, `${path}.actorId`);
+    if (opportunity.targetId !== null) identifierValue(opportunity.targetId, `${path}.targetId`);
+    integerValue(opportunity.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+
+    const contextPath = `${path}.context`;
+    const context = objectValue(opportunity.context, contextPath);
+    numberValue(context.enforcementPresence, `${contextPath}.enforcementPresence`, 0, 1);
+    numberValue(context.networkConductivity, `${contextPath}.networkConductivity`, 0, 1);
+    numberValue(context.perceivedThreat, `${contextPath}.perceivedThreat`, 0, 1);
+    arrayValue(context.witnessIds, `${contextPath}.witnessIds`).forEach(
+      (witnessId, witnessIndex) => {
+        identifierValue(witnessId, `${contextPath}.witnessIds[${witnessIndex}]`);
+      },
+    );
+
+    const candidates = arrayValue(opportunity.candidates, `${path}.candidates`).map(
+      (candidateEntry, candidateIndex) => {
+        const candidatePath = `${path}.candidates[${candidateIndex}]`;
+        const candidate = objectValue(candidateEntry, candidatePath);
+        identifierValue(candidate.id, `${candidatePath}.id`);
+        stringValue(candidate.label, `${candidatePath}.label`);
+        identifierValue(candidate.operation, `${candidatePath}.operation`);
+        numberValue(candidate.contractViolation, `${candidatePath}.contractViolation`, 0, 1);
+        numberValue(candidate.narrativeExpression, `${candidatePath}.narrativeExpression`, -2, 2);
+        numberValue(candidate.repercussionSeverity, `${candidatePath}.repercussionSeverity`, 0, 4);
+        arrayValue(candidate.impacts, `${candidatePath}.impacts`).forEach(
+          (impactEntry, impactIndex) => {
+            const impactPath = `${candidatePath}.impacts[${impactIndex}]`;
+            const impact = objectValue(impactEntry, impactPath);
+            identifierValue(impact.subjectId, `${impactPath}.subjectId`);
+            const turns = objectValue(impact.turns, `${impactPath}.turns`);
+            for (const [valueId, turn] of Object.entries(turns)) {
+              if (!VALUE_ID_SET.has(valueId)) {
+                throw new ScenarioValidationError(
+                  `${impactPath}.turns.${valueId}`,
+                  'unknown value',
+                );
+              }
+              numberValue(turn, `${impactPath}.turns.${valueId}`, -1, 1);
+            }
+          },
+        );
+        return candidate;
+      },
+    );
+    if (candidates.length === 0) {
+      throw new ScenarioValidationError(`${path}.candidates`, 'expected at least one candidate');
+    }
+    uniqueIds(candidates, `${path}.candidates`);
+    return opportunity;
+  });
+  uniqueIds(opportunities, 'scenario.behaviorOpportunities');
   return clone(file) as unknown as ScenarioFile;
 }
 

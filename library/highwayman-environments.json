@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "environments": [
+    {
+      "id": "old-king-road",
+      "name": "The Old King's Road",
+      "width": 900,
+      "height": 500,
+      "areas": [
+        { "id": "road-grass", "kind": "grass", "x": 0, "y": 0, "width": 900, "height": 500 },
+        {
+          "id": "west-trees",
+          "kind": "forest",
+          "x": 0,
+          "y": 0,
+          "width": 220,
+          "height": 500,
+          "label": "Old Wood"
+        },
+        { "id": "east-trees", "kind": "forest", "x": 700, "y": 0, "width": 200, "height": 500 },
+        { "id": "king-road", "kind": "path", "x": 180, "y": 220, "width": 560, "height": 65 },
+        {
+          "id": "square-yard",
+          "kind": "market",
+          "x": 330,
+          "y": 130,
+          "width": 260,
+          "height": 240,
+          "label": "Town Square"
+        },
+        {
+          "id": "watch-house-building",
+          "kind": "building",
+          "x": 590,
+          "y": 145,
+          "width": 105,
+          "height": 88
+        }
+      ],
+      "locations": [
+        {
+          "id": "dark-road",
+          "kind": "road",
+          "name": "Dark Road",
+          "x": 230,
+          "y": 220,
+          "width": 120,
+          "height": 65
+        },
+        {
+          "id": "town-square",
+          "kind": "public",
+          "name": "Town Square",
+          "x": 350,
+          "y": 150,
+          "width": 220,
+          "height": 200
+        },
+        {
+          "id": "watch-house",
+          "kind": "workplace",
+          "name": "Watch House",
+          "x": 590,
+          "y": 145,
+          "width": 105,
+          "height": 88
+        }
+      ]
+    }
+  ]
+}
