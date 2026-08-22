@@ -139,6 +139,18 @@ describe('scenario validation', () => {
     assert.equal(migrated.schemaVersion, 5);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
+
+    const snapshot = serializeSnapshot(
+      createSimulation({
+        characterLibrary: characters,
+        environmentLibrary: environments,
+        scenario,
+      }),
+    ) as unknown as Record<string, unknown>;
+    const snapshotAgents = snapshot.agents as Array<Record<string, unknown>>;
+    const snapshotSchedule = snapshotAgents[0]?.schedule as Array<Record<string, unknown>>;
+    delete snapshotSchedule[0]?.recoveryMode;
+    assert.equal(parseSnapshot(snapshot).agents[0]?.schedule[0]?.recoveryMode, 'sleep');
   });
 
   it('requires explicit gate events in the versioned causal trace', () => {

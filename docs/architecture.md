@@ -197,12 +197,26 @@ Files use strict, versioned JSON and stable string identifiers.
 Scenarios reference library records rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
+Schedule blocks and task operators carry an explicit `recoveryMode` of `none`, `break`, `rest`, or `sleep`.
+The mode is behavioral data rather than an inference from the activity label: scheduled recovery only begins after arrival and prorates the first tick by time actually spent at the destination, while a recovery task restores resources during its work phase.
+The initial per-hour recovery profiles are shared calibration defaults:
+
+| Mode | Executive budget | Physical stamina | Regulation reserve | Social battery |
+|---|---:|---:|---:|---:|
+| Break | 0.08 | 0.03 | 0.05 | 0.12 |
+| Rest | 0.10 | 0.08 | 0.08 | 0.14 |
+| Sleep | 0.15 | 0.14 | 0.12 | 0.12 |
+
+Resource recovery is applied by the same deterministic tick transition used by the workbench and tests, clamps each pool to `[0, 1]`, and emits an hourly `resource` trace while recovery remains effective.
+Derived affect keeps value valence and resource strain separate.
+Social battery below `0.50` contributes up to `0.38` negative valence and physical stamina below `0.30` contributes up to `0.16`; this can impair mood without mutating value charge or allostatic load.
+
 Character-library schema version 4 adds the Phase 2C epistemic capability vocabulary to the Phase 2A disclosure format.
 Explicit migrations preserve versions 1 through 3, using neutral capability defaults where older libraries expressed no distinction.
-Scenario schema version 4 adds world facts, goals, and task operators to the Phase 2A directed-dyad format.
-Explicit migrations preserve version 1 through 3 scenarios by supplying the missing behavioral collections.
+Scenario schema version 5 adds explicit schedule and task recovery modes to the version 4 world-fact, goal, and task-operator format.
+Explicit migrations preserve version 1 through 4 scenarios by supplying missing behavioral collections, mapping legacy sleeping blocks to sleep recovery, and leaving other activities and tasks non-restorative.
 Snapshot schema version 3 persists agenda state and causal-trace schema version 1 separately from scenario versioning, and validates plan, intention, goal, fact, dyad, trace, and agent references before runtime restoration.
-Explicit snapshot migrations preserve versions 1 and 2; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Explicit snapshot migrations preserve versions 1 and 2, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

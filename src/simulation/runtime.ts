@@ -6,6 +6,7 @@ import {
   type EnvironmentDefinition,
   type LocationDefinition,
   type Point,
+  type RecoveryMode,
   type ResourceState,
   type RuntimeMemory,
   type ScenarioContent,
@@ -38,6 +39,38 @@ const DEFAULT_RESOURCES: ResourceState = {
   physicalStamina: 0.82,
   regulationReserve: 0.76,
   socialBattery: 0.7,
+};
+const RESOURCE_IDS: Array<keyof ResourceState> = [
+  'executiveBudget',
+  'physicalStamina',
+  'regulationReserve',
+  'socialBattery',
+];
+const RECOVERY_RATES_PER_HOUR: Record<RecoveryMode, ResourceState> = {
+  break: {
+    executiveBudget: 0.08,
+    physicalStamina: 0.03,
+    regulationReserve: 0.05,
+    socialBattery: 0.12,
+  },
+  none: {
+    executiveBudget: 0,
+    physicalStamina: 0,
+    regulationReserve: 0,
+    socialBattery: 0,
+  },
+  rest: {
+    executiveBudget: 0.1,
+    physicalStamina: 0.08,
+    regulationReserve: 0.08,
+    socialBattery: 0.14,
+  },
+  sleep: {
+    executiveBudget: 0.15,
+    physicalStamina: 0.14,
+    regulationReserve: 0.12,
+    socialBattery: 0.12,
+  },
 };
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -632,6 +665,26 @@ function advanceValueState(
   return { charge, deficitIntegral, variance: state.variance };
 }
 
+interface ResourceRecoveryResult {
+  deltas: ResourceState;
+  resources: ResourceState;
+}
+
+function advanceResources(
+  resources: ResourceState,
+  recoveryMode: RecoveryMode,
+  tickMinutes: number,
+): ResourceRecoveryResult {
+  const rates = RECOVERY_RATES_PER_HOUR[recoveryMode];
+  const next = {} as ResourceState;
+  const deltas = {} as ResourceState;
+  for (const resourceId of RESOURCE_IDS) {
+    next[resourceId] = clamp(resources[resourceId] + (rates[resourceId] * tickMinutes) / 60, 0, 1);
+    deltas[resourceId] = next[resourceId] - resources[resourceId];
+  }
+  return { deltas, resources: next };
+}
+
 interface AgentAdvanceResult {
   agent: SimulationAgent;
   trace: TraceEntry[];
@@ -677,6 +730,22 @@ function advanceAgent(
       state.scenario.tickMinutes,
     );
   }
+  const scheduleRecoveryMode = task === null && arrived ? (block?.recoveryMode ?? 'none') : 'none';
+  const taskRecoveryMode =
+    task !== null && arrived && intention?.phase === 'work' ? task.recoveryMode : 'none';
+  const recoveryMode = task === null ? scheduleRecoveryMode : taskRecoveryMode;
+  const arrivalMinutes = remaining / agent.walkingMetersPerMinute;
+  const recoveryMinutes =
+    recoveryMode === 'none'
+      ? 0
+      : task === null
+        ? clamp(state.scenario.tickMinutes - arrivalMinutes, 0, state.scenario.tickMinutes)
+        : state.scenario.tickMinutes;
+  const recovery = advanceResources(agent.resources, recoveryMode, recoveryMinutes);
+  const recoverySource =
+    task === null
+      ? `agents.${agent.id}.schedule.recoveryMode`
+      : `scenario.taskOperators.${task.id}.recoveryMode`;
 
   let memories = agent.memories;
   const trace: TraceEntry[] = [];
@@ -699,10 +768,12 @@ function advanceAgent(
           ? [
               traceTerm('schedule', block?.startMinute ?? 0, `agents.${agent.id}.schedule`),
               traceTerm('location', locationId, `environment.locations.${locationId}`),
+              traceTerm('recovery-mode', recoveryMode, `agents.${agent.id}.schedule.recoveryMode`),
             ]
           : [
               traceTerm('intention', task.id, `intentions.${agent.id}`),
               traceTerm('location', locationId, `environment.locations.${locationId}`),
+              traceTerm('recovery-mode', task.recoveryMode, recoverySource),
             ],
       tick: nextTick,
     });
@@ -732,6 +803,37 @@ function advanceAgent(
         tick: nextTick,
       });
     }
+    if (
+      recoveryMode !== 'none' &&
+      RESOURCE_IDS.some(resourceId => recovery.deltas[resourceId] > 0)
+    ) {
+      trace.push({
+        agentId: agent.id,
+        id: `${nextTick}:${agent.id}:resource`,
+        kind: 'resource',
+        minute: nextMinute,
+        selection: null,
+        summary: `${agent.profile.name} recovers through ${recoveryMode}`,
+        terms: [
+          traceTerm('recovery-mode', recoveryMode, recoverySource),
+          ...RESOURCE_IDS.map(resourceId =>
+            traceTerm(
+              `recovery-rate:${resourceId}`,
+              RECOVERY_RATES_PER_HOUR[recoveryMode][resourceId],
+              `simulation.recovery.${recoveryMode}.${resourceId}`,
+            ),
+          ),
+          ...RESOURCE_IDS.map(resourceId =>
+            traceTerm(
+              `resource:${resourceId}`,
+              recovery.resources[resourceId],
+              `agents.${agent.id}.resources.${resourceId}`,
+            ),
+          ),
+        ],
+        tick: nextTick,
+      });
+    }
   }
 
   return {
@@ -742,6 +844,7 @@ function advanceAgent(
       destination,
       memories,
       position,
+      resources: recovery.resources,
       values,
     },
     trace,

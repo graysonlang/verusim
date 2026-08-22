@@ -9,6 +9,7 @@ import {
   createSimulationFromSnapshot,
   serializeSnapshot,
   setWorldFactAmount,
+  type ScenarioFile,
   type SimulationState,
 } from '../src/index.js';
 
@@ -89,6 +90,32 @@ describe('agenda planning', () => {
     const completed = advanceSimulation(initial, 8);
     assert.equal(completed.agendaGoals[0]?.status, 'completed');
     assert.equal(completed.worldFacts.find(fact => fact.id === 'common-room-ready')?.amount, 2);
+  });
+
+  it('allows an agenda task to restore resources while it is being performed', () => {
+    const recovering = structuredClone(bakerScenario) as unknown as ScenarioFile;
+    const roomGoal = recovering.agendaGoals.find(goal => goal.id === 'prepare-common-room');
+    const roomTask = recovering.taskOperators.find(task => task.id === 'prepare-common-room');
+    const mara = recovering.characters.find(character => character.instanceId === 'mara');
+    assert.ok(roomGoal);
+    assert.ok(roomTask);
+    assert.ok(mara);
+    recovering.agendaGoals = [roomGoal];
+    recovering.taskOperators = [roomTask];
+    roomTask.recoveryMode = 'rest';
+    roomTask.resourceCosts = {};
+    mara.initialResources = {
+      executiveBudget: 0.1,
+      physicalStamina: 0.1,
+      regulationReserve: 0.1,
+      socialBattery: 0.1,
+    };
+
+    const completed = advanceSimulation(createBakerSimulation(recovering), 5);
+    const completedMara = completed.agents.find(agent => agent.id === 'mara');
+    assert.ok(completedMara);
+    assert.equal(completed.agendaGoals[0]?.status, 'completed');
+    for (const amount of Object.values(completedMara.resources)) assert.ok(amount > 0.1);
   });
 
   it('replans when a committed task loses its prerequisite', () => {

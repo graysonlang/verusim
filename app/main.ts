@@ -248,6 +248,7 @@ function renderInspector(
     metricRow('Valence', observation.valence.toFixed(2), (observation.valence + 1) / 2),
     metricRow('Arousal', observation.arousal.toFixed(2), observation.arousal),
     metricRow('Allostatic load', observation.allostaticLoad.toFixed(2), observation.allostaticLoad),
+    metricRow('Resource strain', observation.resourceStrain.toFixed(2), observation.resourceStrain),
   );
 
   const spatial = makeSection('Spatial context', 'Personal space / sight / hearing');

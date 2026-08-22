@@ -164,7 +164,7 @@ export function indicatorsForAgent(
   const indicators: AgentIndicator[] = [
     {
       agentId: agent.id,
-      detail: `Mood: ${observation.mood}; valence ${observation.valence.toFixed(2)}; arousal ${observation.arousal.toFixed(2)}`,
+      detail: `Mood: ${observation.mood}; valence ${observation.valence.toFixed(2)}; arousal ${observation.arousal.toFixed(2)}; resource strain ${observation.resourceStrain.toFixed(2)}`,
       glyph: moodGlyph(observation.mood),
       kind: 'mood',
       label: observation.mood,

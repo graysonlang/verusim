@@ -82,6 +82,7 @@ Status: in progress.
 
 Begin with generation-fixed acuity, evidence calibration, and expressive control; resource-derived current effectiveness; and one deterministic seven-band capability resolver with term provenance.
 Add a deterministic spatial-appraisal foundation that keeps physical proximity separate from relational distance, resolves directed personal-space discomfort, evaluates sight and hearing independently through semantic cover, and requires hearing without detection for covert eavesdropping.
+Add the first resource feedback loop by letting depleted social battery impair derived mood and by restoring the shared resource ledger through explicitly authored break, rest, and sleep modes on schedules and tasks.
 Then implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
 Capability checks determine what is perceived or learned and never act as a persuasion override.
 The acceptance targets are Endicott/Margueritte and Pottsfield.
@@ -93,6 +94,8 @@ Exit probes:
 - explicit domain support can move a contested result without changing the underlying capability
 - the same physical separation feels more invasive across a guarded unfamiliar dyad than a warm familiar one
 - depleting social battery expands comfortable distance without changing sensory perception
+- depleted social battery pulls otherwise neutral mood downward without rewriting value charge
+- authored sleep, rest, and break periods restore resources deterministically, while a differently labeled `none` block does not
 - a nearby listener in an open square may hear a conversation but cannot eavesdrop covertly without visual concealment
 - moving that listener behind cover enables covert listening without increasing hearing strength
 - a forced correcting exchange resolves Endicott and Margueritte through standard prediction-error machinery rather than a character-specific trigger
@@ -112,7 +115,7 @@ Exit probes:
 
 ## Phase 3 — accumulation and coping
 
-Implement resources, allostatic load, the defense cascade with dwell and hysteresis, outlet operations, satisfier flavor, habituation, and reinforcement schedules.
+Expand the current resource ledger beyond task costs and authored recovery into activity and masking drains, then implement allostatic load, the defense cascade with dwell and hysteresis, outlet operations, satisfier flavor, habituation, and reinforcement schedules.
 Add environment affordances so the same outlet slot resolves to different available instances.
 Add a minimal shared tell vocabulary for cascade position, dominant concern, and outlet firing so probes can distinguish model failures from projection failures before the full adapters arrive.
 Include a reduced innkeeper fixture with a directly seeded deficit integral, allowing accumulation and outlet choice to be demonstrated before formative-event generation and incident sampling land.

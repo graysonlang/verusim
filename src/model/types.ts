@@ -336,6 +336,7 @@ export interface TaskOperator {
   label: string;
   locationId: string;
   preconditions: FactCondition[];
+  recoveryMode: RecoveryMode;
   resourceCosts: Partial<ResourceState>;
   valueTurns: Partial<ValueMap<number>>;
 }

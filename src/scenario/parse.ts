@@ -315,6 +315,10 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.taskOperators = [];
     file.worldFacts = [];
   }
+  for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+    const task = objectValue(taskValue, 'scenario.taskOperators');
+    task.recoveryMode = 'none';
+  }
   for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
     const placement = objectValue(placementValue, 'scenario.characters');
     for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
@@ -543,6 +547,15 @@ export function parseScenario(value: unknown): ScenarioFile {
         throw new ScenarioValidationError(`${path}.actorIds`, 'duplicate actor identifier');
       }
       validateFactConditions(task.preconditions, `${path}.preconditions`, false);
+      if (
+        typeof task.recoveryMode !== 'string' ||
+        !RECOVERY_MODES.has(task.recoveryMode as RecoveryMode)
+      ) {
+        throw new ScenarioValidationError(
+          `${path}.recoveryMode`,
+          'expected break, none, rest, or sleep',
+        );
+      }
       const effects = arrayValue(task.effects, `${path}.effects`);
       if (effects.length === 0) {
         throw new ScenarioValidationError(`${path}.effects`, 'expected at least one effect');

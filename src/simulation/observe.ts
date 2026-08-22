@@ -18,8 +18,10 @@ export interface AgentObservation {
   arousal: number;
   dominantValue: ValueId;
   mood: string;
+  resourceStrain: number;
   stateOfMind: string;
   valence: number;
+  valueValence: number;
 }
 
 export function describeAgent(agent: SimulationAgent): AgentObservation {
@@ -42,7 +44,11 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
     allostaticLoad += Math.max(0, -state.charge) + state.deficitIntegral;
   }
 
-  const valence = clamp(weightedCharge / Math.max(totalWeight, 0.001), -1, 1);
+  const valueValence = clamp(weightedCharge / Math.max(totalWeight, 0.001), -1, 1);
+  const socialDepletion = clamp((0.5 - agent.resources.socialBattery) / 0.5, 0, 1);
+  const physicalDepletion = clamp((0.3 - agent.resources.physicalStamina) / 0.3, 0, 1);
+  const resourceStrain = clamp(socialDepletion * 0.38 + physicalDepletion * 0.16, 0, 1);
+  const valence = clamp(valueValence - resourceStrain, -1, 1);
   allostaticLoad = clamp(allostaticLoad / VALUE_IDS.length, 0, 1);
   const arousal = clamp(
     agent.profile.constitution.baselineArousal +
@@ -64,7 +70,16 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
       ? `Present with ${agent.currentActivity.toLowerCase()}`
       : `Protecting ${VALUE_LABELS[dominantValue]}`;
 
-  return { allostaticLoad, arousal, dominantValue, mood, stateOfMind, valence };
+  return {
+    allostaticLoad,
+    arousal,
+    dominantValue,
+    mood,
+    resourceStrain,
+    stateOfMind,
+    valence,
+    valueValence,
+  };
 }
 
 export function formatSimulationTime(minute: number): string {

@@ -387,6 +387,10 @@ Bottom-right is the addiction arc. Two parameters, no "addictive personality" fl
 
 The regulation reserve governs whether appraisals get filtered before reaching expression. **When it's empty, the mask comes off.** Pools are shared and do not fully reset between scenes — this is what makes accumulation legible ("the final straw").
 
+Resource depletion can change derived affect without rewriting the value ledger. In particular, a low social battery usually pulls mood downward, while sufficiently positive value charge can still offset that strain. Low physical stamina may contribute a smaller mood cost. This keeps "I care about this" separate from "I do not currently have the energy for this."
+
+Recovery belongs to the authored meaning of an activity, not its display label. A schedule block or task operator declares whether it provides a break, rest, sleep, or no recovery. This lets reading restore one character while remaining work for another, and lets either solitude or company restore social battery when the authored context fits that character's `social_valence`.
+
 ### 8.4 The mask economy
 
 ```

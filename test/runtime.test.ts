@@ -4,6 +4,7 @@ import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import scenario from '../scenarios/market-morning.json';
 import {
+  VALUE_IDS,
   advanceSimulation,
   createSimulation,
   createSimulationFromSnapshot,
@@ -14,6 +15,9 @@ import {
   serializeSnapshot,
   setAgentResource,
   setAgentValueCharge,
+  type RecoveryMode,
+  type ScenarioFile,
+  type SimulationAgent,
 } from '../src/index.js';
 
 function starterSimulation() {
@@ -22,6 +26,39 @@ function starterSimulation() {
     environmentLibrary: environments,
     scenario,
   });
+}
+
+function recoverySimulation(mode: RecoveryMode) {
+  const authored = structuredClone(scenario) as unknown as ScenarioFile;
+  authored.startMinute = 0;
+  authored.ambientTurnsPerHour = {};
+  const mara = authored.characters.find(placement => placement.instanceId === 'mara');
+  assert.ok(mara);
+  mara.initialResources = {
+    executiveBudget: 0.1,
+    physicalStamina: 0.1,
+    regulationReserve: 0.1,
+    socialBattery: 0.1,
+  };
+  const firstBlock = mara.schedule[0];
+  assert.ok(firstBlock);
+  firstBlock.activity = 'Quietly calibrating a clock';
+  firstBlock.recoveryMode = mode;
+  return createSimulation({
+    characterLibrary: characters,
+    environmentLibrary: environments,
+    scenario: authored,
+  });
+}
+
+function neutralAgent(agent: SimulationAgent): SimulationAgent {
+  const values = Object.fromEntries(
+    VALUE_IDS.map(valueId => [
+      valueId,
+      { ...agent.values[valueId], charge: 0, deficitIntegral: 0 },
+    ]),
+  ) as SimulationAgent['values'];
+  return { ...agent, values };
 }
 
 describe('simulation runtime', () => {
@@ -58,6 +95,60 @@ describe('simulation runtime', () => {
     const observation = describeAgent(tomas);
     assert.equal(observation.dominantValue, 'respect');
     assert.equal(observation.stateOfMind, 'Protecting respect');
+  });
+
+  it('lets depleted social battery impair otherwise neutral mood', () => {
+    const mara = starterSimulation().agents.find(agent => agent.id === 'mara');
+    assert.ok(mara);
+    const neutral = neutralAgent(mara);
+    const rested = describeAgent({
+      ...neutral,
+      resources: { ...neutral.resources, physicalStamina: 1, socialBattery: 1 },
+    });
+    const depleted = describeAgent({
+      ...neutral,
+      resources: { ...neutral.resources, physicalStamina: 1, socialBattery: 0 },
+    });
+
+    assert.equal(rested.mood, 'steady');
+    assert.equal(rested.resourceStrain, 0);
+    assert.equal(depleted.mood, 'low');
+    assert.ok(Math.abs(depleted.resourceStrain - 0.38) < 1e-12);
+    assert.ok(Math.abs(depleted.valence - (rested.valence - 0.38)) < 1e-12);
+  });
+
+  it('recharges resources from explicit sleep, rest, and break schedules', () => {
+    const recovered = new Map<RecoveryMode, SimulationAgent>();
+    for (const mode of ['break', 'rest', 'sleep'] as const) {
+      const advanced = advanceSimulation(recoverySimulation(mode), 12);
+      const mara = advanced.agents.find(agent => agent.id === 'mara');
+      assert.ok(mara);
+      recovered.set(mode, mara);
+      for (const amount of Object.values(mara.resources)) assert.ok(amount > 0.1);
+      const resourceTrace = advanced.trace.entries.find(
+        entry => entry.agentId === 'mara' && entry.kind === 'resource',
+      );
+      assert.ok(resourceTrace);
+      assert.equal(resourceTrace.terms.find(term => term.id === 'recovery-mode')?.value, mode);
+    }
+
+    const idle = advanceSimulation(recoverySimulation('none'), 12);
+    const idleMara = idle.agents.find(agent => agent.id === 'mara');
+    assert.ok(idleMara);
+    assert.deepEqual(idleMara.resources, {
+      executiveBudget: 0.1,
+      physicalStamina: 0.1,
+      regulationReserve: 0.1,
+      socialBattery: 0.1,
+    });
+    assert.ok(
+      (recovered.get('sleep')?.resources.physicalStamina ?? 0) >
+        (recovered.get('rest')?.resources.physicalStamina ?? 0),
+    );
+    assert.ok(
+      (recovered.get('rest')?.resources.physicalStamina ?? 0) >
+        (recovered.get('break')?.resources.physicalStamina ?? 0),
+    );
   });
 
   it('records workbench interventions without mutating prior state', () => {
