@@ -232,7 +232,7 @@ respect_charge = absolute_component
 
 - `positional_weight` is per-agent (history-derived), and `reference_group` is drawn from the agent's kinship/similarity features — you compare yourself to people you consider comparable.
 - **Consequence: another agent rising lowers my charge with nothing happening to me.** This is the only mechanism in the model that produces **envy**, and envy is a large fraction of village-scale social friction.
-- Distinguish envy (positional loss, no act against me) from resentment (§13.5, attributed withholding) and from humiliation (a direct turn). They produce different targets and different outlets.
+- Distinguish envy (positional loss, no act against me) from resentment (§13.6, attributed withholding) and from humiliation (a direct turn). They produce different targets and different outlets.
 
 Optionally positional: safety (relative security in a scarcity context), competence (relative skill in a shared craft). Belonging and autonomy should stay absolute — positional belonging produces pathological output.
 
@@ -532,7 +532,7 @@ Incidents enter the pipeline as ordinary events. No new appraisal path.
 
 #### Two fields do most of the work
 
-**`attribution: ambiguous`** does not resolve — it hands the question to the observer's mind-model (§13.1). The answer comes from estimated `E(them, me)` and prediction-error history, so the *same* spilled wine is an accident from a friend and a message from a rival, **with no ground truth required**. This is the primary misinterpretation source and it feeds the suspicion loop (§13.4) directly.
+**`attribution: ambiguous`** does not resolve — it hands the question to the observer's mind-model (§13.1). The answer comes from estimated `E(them, me)` and prediction-error history, so the *same* spilled wine is an accident from a friend and a message from a rival, **with no ground truth required**. This is the primary misinterpretation source and it feeds the suspicion loop (§13.5) directly.
 
 **`volition: involuntary`** is the sharpest case. A norm violation the actor did not choose cannot be disowned as an action, so it attributes to **identity rather than behavior** — the shame branch (§16.1), not the guilt branch. This is why it mortifies out of all proportion to material impact, and why the correct output is concealment or flight, *not* apology and repair.
 
@@ -603,7 +603,25 @@ Rationalization, hypocrisy-without-malice, denial, and bias-feeling-reasonable-f
 
 **Non-substitutable validators.** The narrative needs a witness. Flag which dyads are load-bearing for it. The lackey's boss is the sole entity confirming his story, so the relationship cannot be traded for an equivalent one and mistreatment doesn't reduce its value. Cleanest account of staying in net-negative relationships.
 
-### 13.4 Prediction error
+### 13.4 Attributed narrative and reputation
+
+Other people and groups also assign claims: *she is reliable*, *he is a coward*, *they are outsiders*.
+Store these as **attributed narratives on a dyad or group**, not as one global reputation score and not as immediate edits to the subject's self-narrative.
+Different audiences may hold incompatible claims without either becoming privileged truth.
+
+Each repeated attribution has three possible dispositions through existing machinery:
+
+| Disposition | Condition and consequence |
+|---|---|
+| **Accept** | compatible with a self-claim, or supplied by a non-substitutable validator; expression becomes easier in that relationship or group |
+| **Resist** | conflicts with a load-bearing self-claim; each instance spends regulation reserve and creates observable strain |
+| **Wear in** | sustained attribution survives failed resistance; the self-claim moves toward it only through the adult §14.4 years-scale gate and hard rate cap |
+
+Reputation is therefore the distributed stock of attributed claims plus their sources, audiences, evidence, and confidence.
+It changes opportunity, prediction, and social cost through what observers believe; it does not overwrite constitutional gains or become an omniscient public score.
+Accepting and resisting must project different tells even when the outward act is superficially compliant.
+
+### 13.5 Prediction error
 
 Every interaction: predict the other's response from the model, observe, compute error. Does three jobs:
 
@@ -613,7 +631,7 @@ Every interaction: predict the other's response from the model, observe, compute
 
 **Superstition is the same mechanism pointed at the world instead of a person** — pattern-attribution under uncertainty with a coping payoff, on a variable-ratio schedule, genuinely reducing the uncertainty term. If the implementation gets one and not the other, the attribution path is asymmetric where it shouldn't be.
 
-### 13.5 Entitlement
+### 13.6 Entitlement
 
 **Derived scalar, not a new parameter.** §13.2 already stores `I deserve Z` as one of the three claim forms.
 
@@ -748,7 +766,7 @@ Organize by **generative path**, not by act. Grouping by act hides the thing wor
 | Ambient displacement | collective tribal narrowing, hospitality contraction, moral panic, mutual aid under adversity | one environmental stressor → correlated shift across all agents |
 | Incidents (§12.5) | gaffes, breakages, spills, accidental disclosure, windfalls, feuds started by nothing | one `attribution: ambiguous` event, several observers → divergent readings from mind-model alone, no ground truth |
 | Positional status (§6.5, §12.6) | envy, disdain, admiration, conspicuous escalation, status jockeying over disambiguating handles | one display, several observers → opposite valence from identical stimulus; wearer's yield decays over exposures |
-| Entitlement (§13.5) | resentment, contempt, escalation under appeasement, grievance-framed harm | provide *more* to an entitled agent → shortfall persists at the new level |
+| Entitlement (§13.6) | resentment, contempt, escalation under appeasement, grievance-framed harm | provide *more* to an entitled agent → shortfall persists at the new level |
 
 **Sunk cost** is emergent, not a rule: quitting is *itself* a value turn (converts a provisional loss into a settled one, landing on competence and self-concept), so quitting carries a *certain* negative while continuing carries an *uncertain* one. Each additional investment raises the cost of quitting. Combined with the commitment/hysteresis term.
 
@@ -915,14 +933,18 @@ Cadence tiers are a **schedule**, not a set of code paths.
 
 Accumulating quantities do not need protection from degradation — they need **closed-form catch-up**.
 
-Store `last_evaluated_tick` and the accrual rate; integrate forward on promotion. Exact rather than approximate, and cheaper than a replay.
+Store `last_evaluated_tick` and the primitive accrual inputs; integrate forward on promotion only across intervals containing no discrete events for that agent.
+If discrete events occurred, step them in deterministic order.
+Ambient conditions are piecewise-constant inputs across the interval and must be integrated rather than skipped, so an off-screen agent is not exempt from a famine or other shared pressure.
 
 Applies to:
 
 - deficit integrals and variance (§6.1)
-- allostatic load (§6.3)
 - resource pools (§8.3)
 - rupture counts (open decision #5)
+
+Allostatic load (§6.3) and any later derived aggregate are recomputed from the caught-up primitives rather than integrated independently.
+This prevents the summary from drifting away from the state it summarizes.
 
 The exposure ledger (§5.3) and dyad state (§14.1) are event-driven rather than accruing, so they need no catch-up — they simply do not change while unobserved and uninteracted-with.
 

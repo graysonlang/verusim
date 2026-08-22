@@ -159,7 +159,7 @@ Encodings below are **targets for the generator**, expressed in runtime vocabula
 
 ### A.2.5 Endicott and Margueritte
 
-**Primary mechanism:** pure mind-model test (§13.1, §13.4). **No new machinery permitted.**
+**Primary mechanism:** pure mind-model test (§13.1, §13.5). **No new machinery permitted.**
 
 Two agents, each holding a badly wrong model of the other, each accumulating prediction error, each with a disclosure trough preventing the correcting exchange. The vignette resolves when a third party forces the exchange and both models correct simultaneously.
 
@@ -167,14 +167,14 @@ Two agents, each holding a badly wrong model of the other, each accumulating pre
 |---|---|
 | Estimated `E(them, me)` | badly low in both directions |
 | Estimated `D(them, me)` | high — each reads the other's concealment as hostility |
-| Prediction error | sustained and high, with **no new evidence arriving** — the self-sealing loop (§13.4) |
+| Prediction error | sustained and high, with **no new evidence arriving** — the self-sealing loop (§13.5) |
 | Disclosure | mid-distance trough deep enough to prevent the correcting disclosure |
 
 **Falsifier set:**
 
 | Falsifier | Implicated term |
 |---|---|
-| Either model corrects without a forcing event | update gating too loose — only large prediction errors may revise (§13.4) |
+| Either model corrects without a forcing event | update gating too loose — only large prediction errors may revise (§13.5) |
 | Sustained error fails to produce suspicion | the paranoia loop is not wired |
 | Resolution requires an authored trigger | **HARD FAIL** — this vignette exists to prove the loop runs on standard machinery |
 | Either agent reasons about the other's *model* of them | recursive ToM leaking in where one level should suffice (§16.3) |
@@ -200,7 +200,7 @@ Two agents, each holding a badly wrong model of the other, each accumulating pre
 |---|---|
 | The protective motive is legible on first contact | expression/display-rule layer too transparent — the misreading is the *point* |
 | The behavior traces to a low floor | the model is collapsing act into cause; §16.1 requires the aftermath ledger to distinguish them |
-| Revealing the true motive produces no stance revision in observers | mind-model update on large prediction error not firing (§13.4) |
+| Revealing the true motive produces no stance revision in observers | mind-model update on large prediction error not firing (§13.5) |
 
 **Key assertion.** A player-facing observer's model of Auntie Whispers must be *wrong and reasonable* — correctly derived from available evidence, and corrected by a large prediction error. This validates that §13.1 models are genuinely estimates rather than privileged reads of ground truth.
 
@@ -252,9 +252,9 @@ Two agents, each holding a badly wrong model of the other, each accumulating pre
 
 **Primary mechanism:** externally *imposed* narrative — the inverse of §13.
 
-The current spec holds narratives as internally maintained claims. This vignette is a group **assigning** a claim to an agent, and the friction is between the imposed claim and the self-claim.
+The self-narrative holds internally maintained claims. This vignette exercises §13.4 by having a group **assign** a claim to an agent, with the friction landing between the imposed claim and the self-claim.
 
-**Proposed addition (not in `verusim-design-spec.md`):**
+**Design mechanism (§13.4):**
 
 ```
 attributed_narrative[dyad | group] : claim

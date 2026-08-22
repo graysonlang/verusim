@@ -6,6 +6,18 @@ How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is a
 
 Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [verusim-design-spec.md](verusim-design-spec.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [docs/roadmap.md](docs/roadmap.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
 
+The design spec is authoritative for behavioral intent, architecture for implementation contracts, and the roadmap for sequencing.
+If they conflict, flag and reconcile the conflict rather than silently choosing one.
+
+## Model invariants
+
+- Transitions are pure and deterministic. Runtime randomness never selects an action; generated inputs carry a serializable seed, sampler position, and realized result.
+- Level of detail changes cadence, never evaluator fidelity. Do not add a reduced-fidelity behavioral path for distant agents.
+- Proximity may gate sampling or presentation, never authoritative state.
+- Somatic levels 1–2 modify appraisal; levels 3+ gate it before social terms are evaluated. A preempting gate is a positive causal-trace event, not merely an absent term.
+- Authored content supplies facts, stakes, affordances, and direct consequences, never a selected behavior.
+- New phenomena should compose shared mechanisms. Do not add per-character handlers or phenomenon-specific subsystems when the existing parameterization should explain the result.
+
 ## Hard rules
 
 These are not stylistic preferences. Violating one produces a diff the owner has to undo by hand.
@@ -37,6 +49,13 @@ No AI-attribution trailers of any kind: no `Co-Authored-By: Claude`, no "Generat
 Commit incremental, logically grouped changes as you go. The message is a concise one-liner.
 
 ## Working in this repo
+
+### Behavioral changes
+
+Each implementation phase ends with a scenario that makes the wrong mechanism visibly fail.
+Harness assertions are ordinal rather than tied to calibration constants, and they inspect aftermath state when coincident actions could hide different mechanisms.
+Malformed content fails at an actionable authored path; do not add silent best-effort parsing.
+Record new unresolved design choices in the spec's open-decision sections rather than adding untested fields that appear authoritative.
 
 ### Verification gate
 

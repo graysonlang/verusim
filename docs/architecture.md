@@ -47,7 +47,7 @@ It may display or edit simulation state but may not invent behavioral state.
 The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains live on reusable character definitions and are not changed by normal stepping.
-2. History-derived content also lives on definitions initially, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events.
+2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Runtime agents may read that seed directly while no tier-2 writer exists. Before Phase 5 introduces the rare §14.4 writes, each instance must gain a sparse, snapshot-persisted override so one instance can crystallize without mutating every agent that references the same definition.
 3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
 Authored scenarios and live snapshots are distinct formats.
@@ -152,6 +152,11 @@ Every chosen action must eventually produce both:
 - an internal trace of terms, rejected alternatives, and causal references for debugging and regression tests
 - an observation projection suitable for the active medium, such as prose, posture, proximity, pathing, or speech
 
+The causal trace is a strict, independently versioned contract rather than a debug string stream.
+Schema version 1 stores typed entries whose terms preserve their scalar values and source paths.
+Candidate appraisal entries keep `turn_felt`, `repercussion_cost`, `contract_violation_cost`, and `narrative_expression` separate; selection entries name the winner and the deterministic rule, including authored-order tie breaking.
+Somatic preemption will emit a first-class `gate` entry before ordinary appraisal, allowing the harness to assert both that the gate fired and that no social term was evaluated.
+
 ## Storage contracts
 
 Files use strict, versioned JSON and stable string identifiers.
@@ -161,13 +166,16 @@ Runtime validation rejects duplicate identifiers, missing references, malformed 
 Character-library schema version 3 contains the Phase 2A disclosure vocabulary.
 Scenario schema version 4 adds world facts, goals, and task operators to the Phase 2A directed-dyad format.
 Explicit migrations preserve version 1 through 3 scenarios by supplying the missing behavioral collections.
-Snapshot schema version 2 persists agenda state separately from scenario versioning and validates plan, intention, goal, fact, dyad, and agent references before runtime restoration.
+Snapshot schema version 3 persists agenda state and causal-trace schema version 1 separately from scenario versioning, and validates plan, intention, goal, fact, dyad, trace, and agent references before runtime restoration.
+Explicit snapshot migrations preserve versions 1 and 2; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary
 
 Correctness and legibility come before cadence optimization.
 Every agent uses the same evaluator; level of detail changes scheduling cadence, never behavioral fidelity.
-Closed-form catch-up is permitted only for accumulators whose transition is semantically exact over the skipped interval.
-Discrete events retain deterministic ordering, and observer proximity may gate sampling or presentation but may not alter the state that makes an agent eligible.
+Closed-form catch-up is permitted only for primitive accumulators whose transition is semantically exact across an interval containing no discrete events for that agent.
+Intervals with discrete events step those events in deterministic order, while ambient conditions are integrated as piecewise-constant inputs rather than skipped.
+Derived aggregates such as allostatic load are recomputed from caught-up primitives instead of being integrated independently.
+Observer proximity may gate sampling or presentation but may not alter the state that makes an agent eligible.
 ORBIT-style complementarity may eventually become a low-stakes exchange rule at every cadence, but never a distance-dependent fallback evaluator.

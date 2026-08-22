@@ -93,7 +93,7 @@ Implement stance momentum, asymmetric rupture, exposure-debt repricing, dyad mod
 
 Exit probes:
 
-- abrasiveness and high empathy remain simultaneously available to the observation layer
+- abrasiveness and high empathy remain simultaneously distinguishable in authoritative state
 - graduated asks reach a state that one equivalent large ask cannot
 - a drop in estimated regard re-prices the full stock of prior disclosures
 - episodic memories disappear while their semantic stance remains
@@ -102,6 +102,8 @@ Exit probes:
 
 Implement resources, allostatic load, the defense cascade with dwell and hysteresis, outlet operations, satisfier flavor, habituation, and reinforcement schedules.
 Add environment affordances so the same outlet slot resolves to different available instances.
+Add a minimal shared tell vocabulary for cascade position, dominant concern, and outlet firing so probes can distinguish model failures from projection failures before the full adapters arrive.
+Include a reduced innkeeper fixture with a directly seeded deficit integral, allowing accumulation and outlet choice to be demonstrated before formative-event generation and incident sampling land.
 
 Exit probes:
 
@@ -110,11 +112,14 @@ Exit probes:
 - descent is fast, recovery is slow, and borderline input does not cause rung flicker
 - positive and negative turns both scale with reactivity
 - therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
+- the seeded innkeeper reaches an outlet from accumulated deficit rather than a one-event threshold
+- cascade positions and outlet firings produce stable minimal tells without exposing raw meters
 
 ## Phase 4 — narrative-driven agency
 
-Implement narrative claims, expression payoff, validators, rationalization, aspiration-derived goal generation, and the responder/invoker scheduling boundary over the shared agenda.
+Implement narrative claims, expression payoff, validators, rationalization, attributed narratives, reputation, aspiration-derived goal generation, and the responder/invoker scheduling boundary over the shared agenda.
 Narrative and identity supply new goal sources rather than a second planner.
+External claims live on dyads or groups rather than in one global reputation score; acceptance, resistance, and years-gated wear-in share narrative and plasticity machinery.
 
 Exit probes:
 
@@ -122,11 +127,13 @@ Exit probes:
 - identical narrative claims with different histories choose different expression opportunities
 - a claim-violating act defaults to reinterpretation and only rarely revises the claim
 - a validator relationship remains non-substitutable despite a net-negative interaction history
+- repeated external attribution is accepted, resisted at a regulation cost, or wears into a self-claim only at the §14.4 rate cap
+- two audiences can hold incompatible reputations for one agent without either becoming privileged global truth
 - promoting a responder to an invoker preserves all accumulated state while enabling proactive goals
 
 ## Phase 5 — authoring and population generation
 
-Run structured formative events through runtime update rules, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, pre-contact dyad and mind-model seeds, environment generation, format migrations, and scenario validation tools.
+Run structured formative events through runtime update rules, add a sparse per-instance override for history-derived content before enabling §14.4 writes, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, pre-contact dyad and mind-model seeds, environment generation, format migrations, and scenario validation tools.
 
 Exit probes:
 
@@ -150,7 +157,7 @@ Exit probes:
 
 ## Phase 7 — cadence and integration adapters
 
-Add text observation, embodied observation, and save-game snapshot adapters.
+Expand the Phase 3 tell vocabulary into text observation, embodied observation, and save-game snapshot adapters.
 Introduce cadence tiers over the one evaluator and closed-form catch-up only where it is exact.
 Evaluate ORBIT-style complementarity as a cadence-independent rule for low-stakes exchange.
 
@@ -171,7 +178,7 @@ Choose the first real integration target: text-first, embodied-first, or explici
 The model can stay shared, but the minimum useful trace and tell vocabulary changes materially.
 
 Both interfaces consume the causal trace.
-The workbench exposes numeric internals for development; player-facing tell vocabulary remains a Phase 2 concern.
+The workbench exposes numeric internals for development; a minimal player-facing tell vocabulary lands with Phase 3 and the complete medium adapters land in Phase 7.
 
 ### Action and affordance vocabulary
 
