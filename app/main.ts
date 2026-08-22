@@ -101,6 +101,18 @@ function indicatorStrip(
   return strip;
 }
 
+function roleBadge(agent: SimulationAgent): HTMLElement {
+  const badge = element('span', 'role-badge');
+  const label = element('span', 'role-label');
+  const role = element('strong');
+  label.textContent = 'Role';
+  role.textContent = agent.profile.role;
+  badge.title = `Role / archetype: ${agent.profile.role}`;
+  badge.setAttribute('aria-label', badge.title);
+  badge.append(label, role);
+  return badge;
+}
+
 function createStarterSimulation(): SimulationState {
   return createSimulation({
     characterLibrary,
@@ -214,6 +226,7 @@ function renderInspector(
   const eyebrow = element('p', 'eyebrow');
   const name = element('h2');
   const summary = element('p', 'character-summary');
+  const cardMeta = element('div', 'character-card-meta');
   const signals = indicatorStrip(
     state,
     agent,
@@ -221,10 +234,11 @@ function renderInspector(
     'character-signals',
     indicatorSettings.verbosity !== 'minimal',
   );
-  eyebrow.textContent = `${agent.profile.role} / ${locationName(state, agent)}`;
+  eyebrow.textContent = locationName(state, agent);
   name.textContent = agent.profile.name;
   summary.textContent = agent.profile.summary;
-  hero.append(eyebrow, name, summary, signals);
+  cardMeta.append(roleBadge(agent), signals);
+  hero.append(eyebrow, name, summary, cardMeta);
 
   const mind = makeSection('State of mind', observation.stateOfMind);
   mind.body.append(
@@ -786,6 +800,7 @@ function createWorkbench(): HTMLElement {
     const items = filtered.map(agent => {
       const item = button('', 'roster-item');
       const copy = element('span', 'roster-copy');
+      const heading = element('span', 'roster-heading');
       const name = element('strong');
       const activity = element('span');
       const location = element('span', 'roster-location');
@@ -799,7 +814,8 @@ function createWorkbench(): HTMLElement {
       name.textContent = agent.profile.name;
       activity.textContent = agent.currentActivity;
       location.textContent = locationName(current, agent);
-      copy.append(name, activity);
+      heading.append(name, roleBadge(agent));
+      copy.append(heading, activity);
       item.append(copy, location, signals);
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));

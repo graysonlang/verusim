@@ -273,21 +273,65 @@ input[type="search"]::placeholder {
   min-width: 0;
 }
 
-.roster-copy strong {
+.roster-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.roster-heading > strong {
   overflow: hidden;
+  min-width: 0;
   font-size: 12px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.roster-copy span,
+.roster-copy > span:not(.roster-heading),
 .roster-location {
   overflow: hidden;
   color: var(--muted);
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.role-badge {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 20px;
+  flex: 0 1 auto;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid rgb(240 201 102 / 28%);
+  border-radius: 4px;
+  background: rgb(240 201 102 / 8%);
+  color: #ead9a6;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.role-label {
+  padding: 0 4px;
+  border-right: 1px solid rgb(240 201 102 / 20%);
+  background: rgb(240 201 102 / 9%);
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 6px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.role-badge strong {
+  overflow: hidden;
+  padding: 0 5px;
+  font-size: 8px;
+  font-weight: 650;
+  text-overflow: ellipsis;
 }
 
 .roster-location {
@@ -619,9 +663,27 @@ input[type="search"]::placeholder {
   line-height: 1.5;
 }
 
+.character-card-meta {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
 .character-signals {
   flex-wrap: wrap;
   gap: 5px;
+}
+
+.character-card-meta > .role-badge {
+  min-height: 22px;
+  line-height: 20px;
+}
+
+.character-card-meta > .role-badge strong {
+  padding-right: 7px;
+  padding-left: 7px;
+  font-size: 9px;
 }
 
 .inspector-section {
