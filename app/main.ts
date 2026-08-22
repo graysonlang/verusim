@@ -8,7 +8,6 @@ import {
   CAPABILITY_IDS,
   VALUE_IDS,
   advanceSimulation,
-  buildInfo,
   capabilityAvailability,
   createSimulation,
   createSimulationFromSnapshot,
@@ -27,6 +26,7 @@ import {
   type SimulationState,
   type ValueId,
 } from '../src/index.js';
+import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
 import indexPath from './index.html';
 import './styles.css';
 import {
@@ -68,6 +68,38 @@ function button(label: string, className = 'button'): HTMLButtonElement {
   node.type = 'button';
   node.textContent = label;
   return node;
+}
+
+function hamburgerIcon(): SVGSVGElement {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const icon = document.createElementNS(namespace, 'svg');
+  const path = document.createElementNS(namespace, 'path');
+  icon.classList.add('menu-icon');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('height', '16');
+  icon.setAttribute('viewBox', '0 0 16 16');
+  icon.setAttribute('width', '16');
+  path.setAttribute('d', 'M2 4h12M2 8h12M2 12h12');
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', 'currentColor');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-width', '1.5');
+  icon.append(path);
+  return icon;
+}
+
+function menuAction(label: string, actionId?: string, shortcut?: string): HTMLButtonElement {
+  const control = button('', 'menu-item');
+  const copy = element('span');
+  copy.textContent = label;
+  control.append(copy);
+  if (actionId !== undefined) control.dataset.action = actionId;
+  if (shortcut !== undefined) {
+    const key = element('kbd');
+    key.textContent = shortcut;
+    control.append(key);
+  }
+  return control;
 }
 
 function indicatorBadge(indicator: AgentIndicator, showLabel: boolean): HTMLElement {
@@ -665,20 +697,19 @@ function createWorkbench(): HTMLElement {
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
-  const brand = element('div', 'brand');
-  const brandMark = element('span', 'brand-mark');
-  const brandCopy = element('div');
-  const brandName = element('strong');
-  const scenarioName = element('span');
+  const menuButton = button('', 'menu-button');
+  const appMenu = element('nav', 'app-menu');
   const fileActions = element('div', 'file-actions');
   const openScenario = button('Open file');
   const saveScenario = button('Save snapshot');
-  const resetScenario = button('Reset', 'button subtle');
   const fileInput = element('input');
+  const signalControls = element('section', 'header-signals');
+  const signalLabel = element('strong');
   const transport = element('div', 'transport');
   const step = button('Step', 'button transport-button');
   const play = button('Play', 'button transport-button primary');
   const speedSelect = element('select');
+  const resetScenario = button('Reset', 'button subtle');
   const time = element('time', 'simulation-time');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
@@ -698,9 +729,6 @@ function createWorkbench(): HTMLElement {
   const selectedName = element('strong');
   const selectedActivity = element('span');
   const stageLegend = element('div', 'stage-legend');
-  const indicatorPanel = element('section', 'indicator-panel');
-  const indicatorHeader = element('div', 'indicator-header');
-  const indicatorTitle = element('strong');
   const indicatorSelect = element('select', 'indicator-verbosity');
   const indicatorToggles = element('div', 'indicator-toggles');
   const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
@@ -709,18 +737,43 @@ function createWorkbench(): HTMLElement {
   const footer = element('footer', 'status-bar');
   const statusText = element('span');
   const simulationStats = element('span');
-  const build = element('span');
+  const quickActionsOverlay = element('div', 'quick-actions-overlay');
+  const quickActionsPalette = element('section', 'quick-actions-palette');
+  const quickActionsTitle = element('h2', 'visually-hidden');
+  const quickActionsInput = element('input');
+  const quickActionsResults = element('div', 'quick-actions-results');
+  const primaryShortcut = (key: string): string =>
+    `${/Mac|iPhone|iPad|iPod/i.test(navigator.platform) ? 'Command' : 'Ctrl'}+${key}`;
 
-  brandName.textContent = 'Verusim';
-  scenarioName.textContent = initial.scenario.title;
-  brandCopy.append(brandName, scenarioName);
-  brand.append(brandMark, brandCopy);
+  menuButton.append(hamburgerIcon());
+  menuButton.title = 'Main menu';
+  menuButton.setAttribute('aria-controls', 'app-menu');
+  menuButton.setAttribute('aria-expanded', 'false');
+  menuButton.setAttribute('aria-label', 'Main menu');
+  appMenu.id = 'app-menu';
+  appMenu.hidden = true;
+  appMenu.setAttribute('aria-label', 'Main menu');
+  const menuSeparatorOne = element('div', 'menu-separator');
+  menuSeparatorOne.setAttribute('aria-hidden', 'true');
+  const menuSeparatorTwo = element('div', 'menu-separator');
+  menuSeparatorTwo.setAttribute('aria-hidden', 'true');
+  const quickActionsButton = menuAction('Quick actions...', undefined, primaryShortcut('/'));
+  appMenu.append(
+    menuAction('Open file...', 'open-file', 'Shift+O'),
+    menuAction('Save snapshot', 'save-snapshot'),
+    menuSeparatorOne,
+    menuAction('Reset loaded scenario', 'reset-scenario'),
+    menuAction('Step simulation', 'step', 'ArrowRight'),
+    menuAction('Play / pause', 'play-pause', 'Space'),
+    menuSeparatorTwo,
+    quickActionsButton,
+  );
 
   fileInput.type = 'file';
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
-  fileActions.append(openScenario, saveScenario, resetScenario, fileInput);
+  fileActions.append(menuButton, openScenario, saveScenario, fileInput);
 
   for (const [value, label] of [
     ['0', 'Paused'],
@@ -734,8 +787,7 @@ function createWorkbench(): HTMLElement {
     speedSelect.append(option);
   }
   speedSelect.setAttribute('aria-label', 'Playback speed');
-  transport.append(step, play, speedSelect, time);
-  header.append(brand, fileActions, transport);
+  transport.append(step, play, speedSelect, resetScenario, time);
 
   rosterTitle.textContent = 'Characters';
   rosterTitleWrap.append(rosterTitle, rosterCount);
@@ -754,7 +806,7 @@ function createWorkbench(): HTMLElement {
   stageTools.append(zoomOut, zoomIn, fit, zoomReadout);
   selectedReadout.append(selectedName, selectedActivity);
   stageLegend.textContent = 'Drag to pan / scroll to zoom / select an agent';
-  indicatorTitle.textContent = 'Field signals';
+  signalLabel.textContent = 'Signals';
   for (const [value, label] of [
     ['off', 'Off'],
     ['minimal', 'Minimal'],
@@ -768,7 +820,6 @@ function createWorkbench(): HTMLElement {
   }
   indicatorSelect.setAttribute('aria-label', 'Indicator verbosity');
   indicatorSelect.dataset.testid = 'indicator-verbosity';
-  indicatorHeader.append(indicatorTitle, indicatorSelect);
   for (const kind of INDICATOR_KINDS) {
     const toggle = button(INDICATOR_LABELS[kind], `indicator-toggle signal-${kind}`);
     toggle.setAttribute('aria-label', `Show ${INDICATOR_LABELS[kind].toLowerCase()}`);
@@ -776,13 +827,29 @@ function createWorkbench(): HTMLElement {
     indicatorButtons.set(kind, toggle);
     indicatorToggles.append(toggle);
   }
-  indicatorPanel.append(indicatorHeader, indicatorToggles);
-  stage.append(canvas, stageTools, indicatorPanel, selectedReadout, stageLegend);
+  signalControls.setAttribute('aria-label', 'Field signals');
+  signalControls.append(signalLabel, indicatorSelect, indicatorToggles);
+  header.append(fileActions, signalControls, transport);
+  stage.append(canvas, stageTools, selectedReadout, stageLegend);
 
   inspector.append(inspectorContent);
-  build.textContent = `v${buildInfo.version} / ${buildInfo.commit}`;
-  footer.append(statusText, simulationStats, build);
-  shell.append(header, roster, stage, inspector, footer);
+  footer.append(statusText, simulationStats);
+  quickActionsTitle.id = 'quick-actions-title';
+  quickActionsTitle.textContent = 'Quick actions';
+  quickActionsInput.id = 'quick-actions-input';
+  quickActionsInput.type = 'search';
+  quickActionsInput.placeholder = 'Search actions...';
+  quickActionsInput.autocomplete = 'off';
+  quickActionsInput.spellcheck = false;
+  quickActionsResults.dataset.testid = 'quick-actions-results';
+  quickActionsPalette.setAttribute('aria-labelledby', quickActionsTitle.id);
+  quickActionsPalette.setAttribute('aria-modal', 'true');
+  quickActionsPalette.setAttribute('role', 'dialog');
+  quickActionsPalette.append(quickActionsTitle, quickActionsInput, quickActionsResults);
+  quickActionsOverlay.setAttribute('aria-hidden', 'true');
+  quickActionsOverlay.inert = true;
+  quickActionsOverlay.append(quickActionsPalette);
+  shell.append(appMenu, header, roster, stage, inspector, footer, quickActionsOverlay);
 
   const worldView = createWorldView({
     canvas,
@@ -801,6 +868,205 @@ function createWorkbench(): HTMLElement {
     setState(current => advanceSimulation(current, ticks));
   }
 
+  function togglePlayback(): void {
+    setSpeed(current => (current === 0 ? 1 : 0));
+  }
+
+  function resetLoadedScenario(): void {
+    setSpeed(0);
+    setState(loadedBaseline);
+    setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
+    setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
+    requestAnimationFrame(worldView.fit);
+  }
+
+  const actions: readonly QuickAction[] = [
+    {
+      id: 'open-file',
+      keywords: ['file', 'import', 'scenario', 'snapshot'],
+      label: 'Open file...',
+      run: () => fileInput.click(),
+      shortcut: 'Shift+O',
+    },
+    {
+      id: 'save-snapshot',
+      keywords: ['file', 'download', 'export'],
+      label: 'Save snapshot',
+      run: () => downloadSnapshot(state()),
+    },
+    {
+      id: 'reset-scenario',
+      keywords: ['restore', 'restart', 'loaded state'],
+      label: 'Reset loaded scenario',
+      run: resetLoadedScenario,
+    },
+    {
+      id: 'step',
+      keywords: ['simulation', 'transport', 'time'],
+      label: 'Step simulation',
+      run: () => advance(1),
+      shortcut: 'ArrowRight',
+    },
+    {
+      id: 'play-pause',
+      keywords: ['simulation', 'transport', 'time'],
+      label: 'Play / pause',
+      run: togglePlayback,
+      shortcut: 'Space',
+    },
+    {
+      enabled: () => selectedAgentId() !== null,
+      id: 'focus-selected',
+      keywords: ['agent', 'character', 'center', 'view'],
+      label: 'Focus selected character',
+      run: () => {
+        const selected = selectedAgentId();
+        if (selected !== null) worldView.focusAgent(selected);
+      },
+      shortcut: 'F',
+    },
+    {
+      id: 'fit-environment',
+      keywords: ['canvas', 'frame', 'view', 'zoom'],
+      label: 'Fit environment',
+      run: worldView.fit,
+    },
+    {
+      id: 'zoom-in',
+      keywords: ['canvas', 'view'],
+      label: 'Zoom in',
+      run: () => worldView.zoomBy(1.25),
+    },
+    {
+      id: 'zoom-out',
+      keywords: ['canvas', 'view'],
+      label: 'Zoom out',
+      run: () => worldView.zoomBy(0.8),
+    },
+    ...(['off', 'minimal', 'standard', 'detailed'] as const).map(verbosity => ({
+      id: `signals-${verbosity}`,
+      keywords: ['indicator', 'overlay', 'verbosity'],
+      label: `Signals: ${verbosity}`,
+      run: () => setIndicatorSettings(current => ({ ...current, verbosity })),
+    })),
+    ...INDICATOR_KINDS.map(kind => ({
+      id: `toggle-signal-${kind}`,
+      keywords: ['indicator', 'overlay', INDICATOR_LABELS[kind]],
+      label: `Toggle ${INDICATOR_LABELS[kind].toLowerCase()} signals`,
+      run: () =>
+        setIndicatorSettings(current => ({
+          ...current,
+          visible: { ...current.visible, [kind]: !current.visible[kind] },
+        })),
+    })),
+  ];
+  const actionsById = new Map(actions.map(action => [action.id, action]));
+  const menuButtons = Array.from(appMenu.querySelectorAll<HTMLButtonElement>('button'));
+  const menuActionButtons = menuButtons.filter(control => control.dataset.action !== undefined);
+  let filteredQuickActions: readonly QuickAction[] = actions;
+  let quickActionFocus = 0;
+
+  function syncMenuActions(): void {
+    for (const control of menuActionButtons) {
+      const action = actionsById.get(control.dataset.action ?? '');
+      control.disabled = action === undefined || !isActionEnabled(action);
+    }
+  }
+
+  function setMenuOpen(open: boolean, focusFirst = false): void {
+    appMenu.hidden = !open;
+    menuButton.setAttribute('aria-expanded', String(open));
+    if (open && focusFirst) menuButtons.find(control => !control.disabled)?.focus();
+  }
+
+  function setQuickActionFocus(index: number): void {
+    quickActionFocus = index;
+    quickActionsResults
+      .querySelectorAll<HTMLButtonElement>('.quick-action')
+      .forEach((control, controlIndex) => {
+        control.classList.toggle('focused', controlIndex === index);
+      });
+  }
+
+  function closeQuickActions(restoreFocus = false): void {
+    if (!quickActionsOverlay.classList.contains('open')) return;
+    quickActionsOverlay.classList.remove('open');
+    quickActionsOverlay.setAttribute('aria-hidden', 'true');
+    quickActionsOverlay.inert = true;
+    if (restoreFocus) menuButton.focus();
+  }
+
+  function executeAction(action: QuickAction): void {
+    if (!isActionEnabled(action)) return;
+    closeQuickActions();
+    setMenuOpen(false);
+    try {
+      void Promise.resolve(action.run()).catch(error => {
+        setStatus(error instanceof Error ? error.message : String(error));
+      });
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  function executeActionById(actionId: string): void {
+    const action = actionsById.get(actionId);
+    if (action !== undefined) executeAction(action);
+  }
+
+  function renderQuickActions(query: string): void {
+    filteredQuickActions = filterActions(actions, query);
+    quickActionsResults.replaceChildren();
+    if (filteredQuickActions.length === 0) {
+      const empty = element('p', 'quick-actions-empty');
+      empty.textContent = 'No actions found';
+      quickActionsResults.append(empty);
+      quickActionFocus = -1;
+      return;
+    }
+    quickActionFocus = filteredQuickActions.findIndex(isActionEnabled);
+    filteredQuickActions.forEach((action, index) => {
+      const control = button('', `quick-action${index === quickActionFocus ? ' focused' : ''}`);
+      const label = element('span');
+      control.disabled = !isActionEnabled(action);
+      label.textContent = action.label;
+      control.append(label);
+      if (action.shortcut !== undefined) {
+        const shortcut = element('kbd');
+        shortcut.textContent = action.shortcut;
+        control.append(shortcut);
+      }
+      control.addEventListener('mouseenter', () => {
+        if (!control.disabled) setQuickActionFocus(index);
+      });
+      control.addEventListener('click', () => executeAction(action));
+      quickActionsResults.append(control);
+    });
+  }
+
+  function openQuickActions(): void {
+    setMenuOpen(false);
+    quickActionsInput.value = '';
+    renderQuickActions('');
+    quickActionsOverlay.inert = false;
+    quickActionsOverlay.setAttribute('aria-hidden', 'false');
+    quickActionsOverlay.classList.add('open');
+    requestAnimationFrame(() => quickActionsInput.focus());
+  }
+
+  function moveQuickActionFocus(direction: -1 | 1): void {
+    if (filteredQuickActions.length === 0) return;
+    let next = quickActionFocus;
+    for (let offset = 0; offset < filteredQuickActions.length; offset += 1) {
+      next = (next + direction + filteredQuickActions.length) % filteredQuickActions.length;
+      const action = filteredQuickActions[next];
+      if (action !== undefined && isActionEnabled(action)) {
+        setQuickActionFocus(next);
+        return;
+      }
+    }
+  }
+
   createEffect(() => {
     const playbackSpeed = speed();
     play.textContent = playbackSpeed === 0 ? 'Play' : 'Pause';
@@ -813,7 +1079,6 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
-    scenarioName.textContent = current.scenario.title;
     time.textContent = formatSimulationTime(current.minute);
     simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} agents / ${current.trace.entries.length} trace entries`;
   });
@@ -825,7 +1090,7 @@ function createWorkbench(): HTMLElement {
   createEffect(() => {
     const settings = indicatorSettings();
     indicatorSelect.value = settings.verbosity;
-    indicatorPanel.classList.toggle('is-off', settings.verbosity === 'off');
+    signalControls.classList.toggle('is-off', settings.verbosity === 'off');
     for (const [kind, toggle] of indicatorButtons) {
       toggle.setAttribute('aria-pressed', String(settings.visible[kind]));
       toggle.classList.toggle('is-hidden', !settings.visible[kind]);
@@ -888,8 +1153,8 @@ function createWorkbench(): HTMLElement {
   });
 
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
-  step.addEventListener('click', () => advance(1));
-  play.addEventListener('click', () => setSpeed(current => (current === 0 ? 1 : 0)));
+  step.addEventListener('click', () => executeActionById('step'));
+  play.addEventListener('click', () => executeActionById('play-pause'));
   speedSelect.addEventListener('change', () => setSpeed(Number(speedSelect.value)));
   indicatorSelect.addEventListener('change', () => {
     setIndicatorSettings(current => ({
@@ -898,24 +1163,68 @@ function createWorkbench(): HTMLElement {
     }));
   });
   for (const [kind, toggle] of indicatorButtons) {
-    toggle.addEventListener('click', () => {
-      setIndicatorSettings(current => ({
-        ...current,
-        visible: { ...current.visible, [kind]: !current.visible[kind] },
-      }));
-    });
+    toggle.addEventListener('click', () => executeActionById(`toggle-signal-${kind}`));
   }
-  zoomOut.addEventListener('click', () => worldView.zoomBy(0.8));
-  zoomIn.addEventListener('click', () => worldView.zoomBy(1.25));
-  fit.addEventListener('click', worldView.fit);
-  openScenario.addEventListener('click', () => fileInput.click());
-  saveScenario.addEventListener('click', () => downloadSnapshot(state()));
-  resetScenario.addEventListener('click', () => {
-    setSpeed(0);
-    setState(loadedBaseline);
-    setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
-    setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
-    requestAnimationFrame(worldView.fit);
+  zoomOut.addEventListener('click', () => executeActionById('zoom-out'));
+  zoomIn.addEventListener('click', () => executeActionById('zoom-in'));
+  fit.addEventListener('click', () => executeActionById('fit-environment'));
+  openScenario.addEventListener('click', () => executeActionById('open-file'));
+  saveScenario.addEventListener('click', () => executeActionById('save-snapshot'));
+  resetScenario.addEventListener('click', () => executeActionById('reset-scenario'));
+  menuButton.addEventListener('click', () => {
+    syncMenuActions();
+    setMenuOpen(appMenu.hidden);
+  });
+  menuButton.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    syncMenuActions();
+    setMenuOpen(true, true);
+  });
+  appMenu.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest<HTMLButtonElement>('button[data-action]');
+    if (control === null || !appMenu.contains(control)) return;
+    executeActionById(control.dataset.action ?? '');
+  });
+  appMenu.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setMenuOpen(false);
+      menuButton.focus();
+      return;
+    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const enabledButtons = menuButtons.filter(control => !control.disabled);
+    if (enabledButtons.length === 0) return;
+    const currentIndex = enabledButtons.indexOf(document.activeElement as HTMLButtonElement);
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    const nextIndex = (currentIndex + direction + enabledButtons.length) % enabledButtons.length;
+    enabledButtons[nextIndex]?.focus();
+  });
+  quickActionsButton.addEventListener('click', openQuickActions);
+  quickActionsInput.addEventListener('input', () => renderQuickActions(quickActionsInput.value));
+  quickActionsInput.addEventListener('keydown', event => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveQuickActionFocus(event.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const action = filteredQuickActions[quickActionFocus];
+      if (action !== undefined) executeAction(action);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      closeQuickActions(true);
+    }
+  });
+  quickActionsOverlay.addEventListener('pointerdown', event => {
+    if (event.target === quickActionsOverlay) closeQuickActions(true);
   });
 
   fileInput.addEventListener('change', async () => {
@@ -947,23 +1256,64 @@ function createWorkbench(): HTMLElement {
     }
   });
 
-  function onKeyDown(event: KeyboardEvent): void {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement)
-      return;
-    if (event.code === 'Space') {
-      event.preventDefault();
-      setSpeed(current => (current === 0 ? 1 : 0));
-    } else if (event.code === 'ArrowRight') {
-      event.preventDefault();
-      advance(1);
-    } else if (event.key.toLowerCase() === 'f') {
-      const selected = selectedAgentId();
-      if (selected !== null) worldView.focusAgent(selected);
+  function onDocumentPointerDown(event: PointerEvent): void {
+    if (!(event.target instanceof Node)) return;
+    if (!appMenu.hidden && !appMenu.contains(event.target) && !menuButton.contains(event.target)) {
+      setMenuOpen(false);
     }
   }
 
+  function onKeyDown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key === '/') {
+      event.preventDefault();
+      if (quickActionsOverlay.classList.contains('open')) closeQuickActions(true);
+      else openQuickActions();
+      return;
+    }
+    if (event.key === 'Escape' && !appMenu.hidden) {
+      event.preventDefault();
+      setMenuOpen(false);
+      menuButton.focus();
+      return;
+    }
+    if (quickActionsOverlay.classList.contains('open')) return;
+    const target = event.target;
+    if (
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      (target instanceof HTMLElement && target.isContentEditable)
+    ) {
+      return;
+    }
+    if (
+      event.shiftKey &&
+      !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      event.code === 'KeyO'
+    ) {
+      event.preventDefault();
+      executeActionById('open-file');
+      return;
+    }
+    if (event.code === 'Space') {
+      event.preventDefault();
+      executeActionById('play-pause');
+    } else if (event.code === 'ArrowRight') {
+      event.preventDefault();
+      executeActionById('step');
+    } else if (event.key.toLowerCase() === 'f') {
+      executeActionById('focus-selected');
+    }
+  }
+
+  document.addEventListener('pointerdown', onDocumentPointerDown);
   window.addEventListener('keydown', onKeyDown);
-  onCleanup(() => window.removeEventListener('keydown', onKeyDown));
+  onCleanup(() => {
+    document.removeEventListener('pointerdown', onDocumentPointerDown);
+    window.removeEventListener('keydown', onKeyDown);
+  });
   requestAnimationFrame(worldView.fit);
   return shell;
 }
