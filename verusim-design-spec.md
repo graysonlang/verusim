@@ -632,6 +632,36 @@ A name collision (or any duplicated individuating handle) is a related but **dis
 - It only lands if the agent's individuation channel is load-bearing for belonging, **or** the name is itself a high-centrality marker (inherited, earned, tied to a parent).
 - **Decay mechanism differs from displays.** Displays fade by habituation. Collisions resolve by **social repair** — the group generates disambiguating handles. Who keeps the plain name and who becomes "Young Tom" is settled by seniority and standing, so *the assignment is itself a status event* (§6.5).
 
+### 12.7 Physical proximity, perception, and concealment
+
+Physical distance is not the social distance `d` from the empathy envelope (§4).
+Two strangers and two intimates can stand the same number of meters apart while experiencing different levels of intrusion.
+
+Each directed pair resolves a **comfortable distance** from a shared proxemic convention, individual social valence, relationship familiarity and kinship, and the current dyad mode.
+Crossing that boundary produces a graded intrusion appraisal rather than an "invaded personal space" trait.
+Its immediate signature is an autonomy turn, with an additional safety turn when the intruder is socially distant or the dyad is guarded.
+Pathing and avoidance may later consume that appraisal, but the appraisal itself does not select an action.
+
+Seeing and hearing resolve independently.
+Both combine physical distance, the observer's currently available acuity, signal strength, and environment geometry.
+Buildings can block both channels strongly; vegetation can provide strong visual cover while attenuating ordinary speech only slightly.
+Being close enough to hear therefore does not imply being able to see, and being visible does not imply that speech is audible.
+
+Concealment is observer-relative rather than a property of an agent or location.
+An interloper is concealed from a speaker only when the listener can receive the relevant signal while the speaker cannot detect the listener.
+Open space supplies no concealment by itself: someone within earshot in the middle of a square is an exposed bystander, not a covert eavesdropper.
+Cover can make the same-distance listener covert without improving their hearing.
+
+Keep three truths separate:
+
+1. Geometry determines who could receive a signal and what blocks it.
+2. Each observer's capabilities and resources determine what they actually perceive.
+3. Mind models and norms determine what they infer from that perception.
+
+The exposure ledger records who actually learned an item, including an undetected listener.
+The disclosure decision can price only audiences the owner believes are present.
+This permits a concealed eavesdropper to create exposure debt without granting the owner privileged knowledge that the eavesdropping occurred.
+
 ---
 
 ## 13. Mind models and narrative

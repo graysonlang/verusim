@@ -35,6 +35,11 @@ export {
 } from './simulation/runtime.js';
 export { describeAgent, formatSimulationTime } from './simulation/observe.js';
 export { effectiveValueWeights } from './simulation/salience.js';
+export {
+  evaluateEavesdropping,
+  evaluateProximity,
+  evaluateSpatialPerception,
+} from './simulation/spatial.js';
 
 export const buildInfo = Object.freeze({
   version: __APP_VERSION__,

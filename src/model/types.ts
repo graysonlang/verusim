@@ -84,6 +84,51 @@ export interface Bounds extends Point {
   width: number;
 }
 
+export type ProximityBand = 'contact' | 'intimate' | 'personal' | 'social' | 'public';
+
+export interface ProximityAssessment {
+  band: ProximityBand;
+  comfortableDistanceMeters: number;
+  discomfort: number;
+  distanceMeters: number;
+  observerId: string;
+  relationshipCloseness: number;
+  subjectId: string;
+  terms: TraceTerm[];
+  valueTurns: Partial<ValueMap<number>>;
+}
+
+export interface SensoryAssessment {
+  acuity: number;
+  available: boolean;
+  maxRangeMeters: number;
+  occlusion: number;
+  strength: number;
+}
+
+export interface SpatialPerceptionAssessment {
+  distanceMeters: number;
+  hearing: SensoryAssessment;
+  observerId: string;
+  sight: SensoryAssessment;
+  subjectId: string;
+  terms: TraceTerm[];
+}
+
+export type EavesdroppingReason = 'concealed' | 'exposed' | 'out-of-earshot';
+
+export interface EavesdroppingAssessment {
+  concealment: number;
+  detectedBySpeaker: boolean;
+  hearing: SensoryAssessment;
+  listenerId: string;
+  possible: boolean;
+  proximity: ProximityAssessment;
+  reason: EavesdroppingReason;
+  speakerId: string;
+  terms: TraceTerm[];
+}
+
 export interface Constitution {
   baselineArousal: number;
   habituationRate: number;

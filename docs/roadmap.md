@@ -81,6 +81,7 @@ The initial planning bounds and urgency scale are explicit safety and calibratio
 Status: in progress.
 
 Begin with generation-fixed acuity, evidence calibration, and expressive control; resource-derived current effectiveness; and one deterministic seven-band capability resolver with term provenance.
+Add a deterministic spatial-appraisal foundation that keeps physical proximity separate from relational distance, resolves directed personal-space discomfort, evaluates sight and hearing independently through semantic cover, and requires hearing without detection for covert eavesdropping.
 Then implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
 Capability checks determine what is perceived or learned and never act as a persuasion override.
 The acceptance targets are Endicott/Margueritte and Pottsfield.
@@ -90,6 +91,9 @@ Exit probes:
 - higher acuity detects the same cue more strongly while depleted attention and stamina can reverse that ordering against a rested observer
 - Strike records that a check does not apply, while Pass records insufficient knowledge; neither is treated as a strong negative
 - explicit domain support can move a contested result without changing the underlying capability
+- the same physical separation feels more invasive across a guarded unfamiliar dyad than a warm familiar one
+- a nearby listener in an open square may hear a conversation but cannot eavesdrop covertly without visual concealment
+- moving that listener behind cover enables covert listening without increasing hearing strength
 - a forced correcting exchange resolves Endicott and Margueritte through standard prediction-error machinery rather than a character-specific trigger
 - sustained nondiagnostic error increases suspicion without revising the model
 - residents and visitors derive opposite subjective turns from one objective event under opaque local norms

@@ -154,6 +154,26 @@ Each audience is evaluated separately and the maximum subjective cost wins; safe
 Successful disclosure adds the audience to the item's exposure ledger.
 Both disclosure and concealment preserve their appraisal terms, worst observer, utility, and outcome in bounded decision and causal-trace history.
 
+## Spatial appraisal
+
+Physical proximity is distinct from the relational distance used by empathy and disclosure envelopes.
+The shared spatial evaluator derives a directed comfortable distance from the observer's social valence, dyad familiarity, kinship, reciprocity, and mode.
+Crossing that boundary produces a graded discomfort value-turn signature for autonomy and safety; it does not mutate state or select an avoidance action by itself.
+
+Sight and hearing are separate deterministic channels over meter-scale positions.
+Effective acuity combines the character's generation-fixed acuity with current executive and stamina availability.
+Distance falloff then composes with signal strength and semantic environment occlusion.
+The initial area defaults treat buildings as strong visual and acoustic barriers and forests as strong visual cover with mild acoustic attenuation.
+These defaults remain centralized in the spatial evaluator until environment authoring needs per-area material overrides.
+
+Eavesdropping is a two-observer composition: the listener must hear the speaker while the speaker fails to see the listener.
+An open-space listener within earshot is therefore exposed rather than covert.
+The result preserves distance, acuity, occlusion, signal strength, and detection terms for later observation traces.
+
+The Phase 2C foundation is deliberately read-only.
+The workbench and tests consume it now; disclosure opportunities should derive perceived and actual audiences from it only after interaction positioning stops collapsing every co-located agent onto one location center.
+That sequencing prevents an improved perception model from laundering a movement placeholder into behavioral truth.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.
