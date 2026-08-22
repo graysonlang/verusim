@@ -13,7 +13,7 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation establishes the project substrate and the Phase 1 behavioral vertical slice rather than claiming the full design is complete.
+The current implementation establishes the project substrate, the Phase 1 behavioral vertical slice, and the Phase 2A relational foundation rather than claiming the full design is complete.
 It includes:
 
 - versioned JSON character, environment, and scenario formats
@@ -22,11 +22,14 @@ It includes:
 - environment-authored behavioral opportunities with character-dependent action selection
 - nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
 - highwayman road and town-square fixtures covering the first ordinal behavioral factorial
-- a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable Canvas world, roster navigation, time controls, live state editing, scenario import/export, and trace inspection
+- directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
+- immutable authored scenarios separated from versioned live snapshots with exact dyad, exposure, decision, and trace resume
+- a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable Canvas world, roster navigation, time controls, live state editing, scenario and snapshot loading, snapshot export, relational inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
 
 Schedules provide environmental obligations and visible activity, while behavioral opportunities advertise concrete acts that Verus may select.
 Schedules are not presented as emergent decisions, and opportunities specify consequences rather than character preferences.
+Disclosure opportunities similarly provide stakes and audiences while Verus derives disclosure safety, exposure cost, the worst observer, and the outcome.
 
 ## Technology
 

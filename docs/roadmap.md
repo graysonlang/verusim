@@ -40,19 +40,45 @@ The implementation also preserves rejected alternatives, derives a remorse after
 
 ## Phase 2 — relational inference
 
-Implement dyad records, disclosure cost, exposure ledgers, worst-observer composition, one-level mind models, prediction-error gating, local norm appraisal, stance momentum, asymmetric rupture, and sleep-tick consolidation.
-Move fast interpersonal state onto the relationship while keeping one cascade and one resource ledger on the agent.
+Status: in progress.
 
-The early targets are the acceptance appendix's Endicott/Margueritte, Beatrice, and Pottsfield vignettes because they exercise the relational machinery without first requiring the narrative layer.
+Phase 2 is split by dependency so relational inference does not silently depend on Phase 3's defense cascade.
+Fast interpersonal state lives on directed dyads while the agent retains one cascade and one resource ledger.
+
+### Phase 2A — disclosure and persistence boundary
+
+Status: complete.
+
+Separate authored scenarios from live snapshots.
+Implement scenario-seeded runtime dyads, an empathy-independent disclosure envelope, item-level exposure ledgers, worst-observer composition, deterministic disclosure opportunities, causal traces, migrations, and workbench inspection.
+
+Exit probes:
+
+- one hostile observer collapses Beatrice's disclosure even among safe observers
+- high empathy and low disclosure safety remain simultaneously representable
+- successful disclosure updates the exposure ledger while concealment does not
+- authored scenario truth remains unchanged while a snapshot resumes dyads, exposure, decisions, and trace exactly
+
+### Phase 2B — prediction and local norms
+
+Implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
+The acceptance targets are Endicott/Margueritte and Pottsfield.
 
 Exit probes:
 
 - a forced correcting exchange resolves Endicott and Margueritte through standard prediction-error machinery rather than a character-specific trigger
-- one hostile observer collapses Beatrice's disclosure even among safe observers
-- abrasiveness and high empathy remain simultaneously available to the observation layer
+- sustained nondiagnostic error increases suspicion without revising the model
 - residents and visitors derive opposite subjective turns from one objective event under opaque local norms
-- therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
+
+### Phase 2C — momentum, exposure debt, and consolidation
+
+Implement stance momentum, asymmetric rupture, exposure-debt repricing, dyad modes with hysteresis, and sleep-tick memory consolidation.
+
+Exit probes:
+
+- abrasiveness and high empathy remain simultaneously available to the observation layer
 - graduated asks reach a state that one equivalent large ask cannot
+- a drop in estimated regard re-prices the full stock of prior disclosures
 - episodic memories disappear while their semantic stance remains
 
 ## Phase 3 — accumulation and coping
@@ -66,6 +92,7 @@ Exit probes:
 - the same agent in three environments keeps an outlet operation while changing its concrete act
 - descent is fast, recovery is slow, and borderline input does not cause rung flicker
 - positive and negative turns both scale with reactivity
+- therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
 
 ## Phase 4 — proactive agency and narrative
 
@@ -150,7 +177,7 @@ Their actor, context, candidate, and consequence boundaries are designed to beco
 Decide whether scenario files are immutable initial conditions, resumable snapshots, or two distinct formats.
 Conflating them eventually makes fixtures hard to review and migrations dangerous.
 
-Recommendation: keep scenarios as initial conditions and introduce a separate snapshot format before long-lived dyad memory lands.
+Phase 2A keeps scenarios as initial conditions and introduces a separate versioned snapshot format before long-lived dyad memory lands.
 
 ## Decisions that can wait
 

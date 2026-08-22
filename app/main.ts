@@ -9,9 +9,10 @@ import {
   advanceSimulation,
   buildInfo,
   createSimulation,
+  createSimulationFromSnapshot,
   describeAgent,
   formatSimulationTime,
-  serializeScenario,
+  serializeSnapshot,
   setAgentResource,
   setAgentValueCharge,
   type ResourceState,
@@ -25,7 +26,7 @@ import { createWorldView } from './world-view.js';
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
-  schemaVersion: 2,
+  schemaVersion: 3,
 };
 const environmentLibrary = {
   environments: [...environments.environments, ...highwaymanEnvironments.environments],
@@ -235,6 +236,9 @@ function renderInspector(
     ['Empathy ceiling', agent.profile.empathy.ceiling],
     ['Envelope steepness', agent.profile.empathy.steepness],
     ['Threat sensitivity', agent.profile.empathy.threatSensitivity],
+    ['Disclosure intimate safety', agent.profile.disclosure.intimateSafety],
+    ['Disclosure stranger safety', agent.profile.disclosure.strangerSafety],
+    ['Disclosure trough depth', agent.profile.disclosure.troughDepth],
     ['Contract adherence', agent.profile.contractAdherence],
   ] as const) {
     const term = element('dt');
@@ -293,6 +297,60 @@ function renderInspector(
     decisionSection.body.append(decisionList);
   }
 
+  const relationships = makeSection(
+    'Relationships',
+    `${state.dyads.filter(dyad => dyad.observerId === agent.id).length} directed records`,
+  );
+  const relationshipList = element('ol', 'event-list trace-list');
+  for (const dyad of state.dyads.filter(item => item.observerId === agent.id)) {
+    const item = element('li');
+    const subject = state.agents.find(candidate => candidate.id === dyad.subjectId);
+    const mode = element('span', 'event-time');
+    const copy = element('span');
+    const estimates = element('small');
+    const exposedItems = state.disclosureItems.filter(
+      disclosureItem =>
+        disclosureItem.ownerId === agent.id && disclosureItem.knownByIds.includes(dyad.subjectId),
+    );
+    mode.textContent = dyad.mode;
+    copy.textContent = subject?.profile.name ?? dyad.subjectId;
+    estimates.textContent = `stance ${dyad.stance.toFixed(2)} / E estimate ${dyad.estimatedEmpathy.toFixed(2)} / D estimate ${dyad.estimatedDisclosure.toFixed(2)} / confidence ${dyad.estimateConfidence.toFixed(2)} / exposed items ${exposedItems.length}`;
+    item.append(mode, copy, estimates);
+    relationshipList.append(item);
+  }
+  if (relationshipList.childElementCount === 0) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No directed dyad records are seeded for this character.';
+    relationships.body.append(empty);
+  } else {
+    relationships.body.append(relationshipList);
+  }
+
+  const disclosureSection = makeSection('Latest disclosure decision');
+  const disclosure = state.disclosureDecisions.filter(item => item.ownerId === agent.id).at(-1);
+  if (disclosure === undefined) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No disclosure opportunity has resolved for this character.';
+    disclosureSection.body.append(empty);
+  } else {
+    const summary = element('p', 'disclosure-summary');
+    const audienceList = element('ol', 'event-list trace-list');
+    summary.textContent = `${disclosure.outcome} / utility ${disclosure.utility.toFixed(3)} / worst audience ${disclosure.worstAudienceId ?? 'none'}`;
+    for (const audience of disclosure.audiences) {
+      const item = element('li');
+      const audienceAgent = state.agents.find(candidate => candidate.id === audience.audienceId);
+      const cost = element('span', 'event-time');
+      const copy = element('span');
+      const terms = element('small');
+      cost.textContent = audience.subjectiveCost.toFixed(3);
+      copy.textContent = audienceAgent?.profile.name ?? audience.audienceId;
+      terms.textContent = `D safety ${audience.disclosureSafety.toFixed(3)} / estimated E ${audience.estimatedEmpathy.toFixed(3)} / exposure ${audience.exposureRisk.toFixed(3)}`;
+      item.append(cost, copy, terms);
+      audienceList.append(item);
+    }
+    disclosureSection.body.append(summary, audienceList);
+  }
+
   const memories = makeSection('Memory', `${agent.memories.length} retained`);
   const memoryList = element('ol', 'event-list');
   for (const memory of agent.memories.slice(-8).reverse()) {
@@ -331,17 +389,19 @@ function renderInspector(
     evaluationShape.section,
     identity.section,
     decisionSection.section,
+    relationships.section,
+    disclosureSection.section,
     memories.section,
     trace.section,
   );
 }
 
-function downloadScenario(state: SimulationState): void {
-  const contents = `${JSON.stringify(serializeScenario(state), null, 2)}\n`;
+function downloadSnapshot(state: SimulationState): void {
+  const contents = `${JSON.stringify(serializeSnapshot(state), null, 2)}\n`;
   const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${state.scenario.id}.scenario.json`;
+  link.download = `${state.scenario.id}.snapshot.json`;
   link.click();
   URL.revokeObjectURL(url);
 }
@@ -364,8 +424,8 @@ function createWorkbench(): HTMLElement {
   const brandName = element('strong');
   const scenarioName = element('span');
   const fileActions = element('div', 'file-actions');
-  const openScenario = button('Open scenario');
-  const saveScenario = button('Save scenario');
+  const openScenario = button('Open file');
+  const saveScenario = button('Save snapshot');
   const resetScenario = button('Reset', 'button subtle');
   const fileInput = element('input');
   const transport = element('div', 'transport');
@@ -540,7 +600,7 @@ function createWorkbench(): HTMLElement {
   zoomIn.addEventListener('click', () => worldView.zoomBy(1.25));
   fit.addEventListener('click', worldView.fit);
   openScenario.addEventListener('click', () => fileInput.click());
-  saveScenario.addEventListener('click', () => downloadScenario(state()));
+  saveScenario.addEventListener('click', () => downloadSnapshot(state()));
   resetScenario.addEventListener('click', () => {
     const reset = createStarterSimulation();
     setSpeed(0);
@@ -555,11 +615,18 @@ function createWorkbench(): HTMLElement {
     fileInput.value = '';
     if (file === undefined) return;
     try {
-      const loaded = createSimulation({
-        characterLibrary,
-        environmentLibrary,
-        scenario: JSON.parse(await file.text()) as unknown,
-      });
+      const contents = JSON.parse(await file.text()) as unknown;
+      const loaded =
+        typeof contents === 'object' &&
+        contents !== null &&
+        'type' in contents &&
+        contents.type === 'verusim-snapshot'
+          ? createSimulationFromSnapshot({
+              characterLibrary,
+              environmentLibrary,
+              snapshot: contents,
+            })
+          : createSimulation({ characterLibrary, environmentLibrary, scenario: contents });
       setSpeed(0);
       setState(loaded);
       setSelectedAgentId(loaded.agents[0]?.id ?? null);

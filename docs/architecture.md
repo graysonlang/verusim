@@ -48,10 +48,11 @@ The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains live on reusable character definitions and are not changed by normal stepping.
 2. History-derived content also lives on definitions initially, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events.
-3. Situational state lives on scenario instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, and memories.
+3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, and exposure ledgers.
 
-A future persistence format may separate authored scenario content from a live simulation snapshot.
-The initial Save Scenario action writes a resumable scenario with the current time, positions, and situational overrides while retaining character-library references.
+Authored scenarios and live snapshots are distinct formats.
+A scenario supplies immutable initial conditions and reusable library references.
+A snapshot wraps those references with current agents, dyads, exposure items, resolved opportunities, decisions, and causal trace so resuming does not rewrite the authored fixture.
 
 ## Time and scale
 
@@ -71,6 +72,9 @@ Schedules may also make preoccupation and unavailability visible, but they are n
 Phase 1 behavioral opportunities are atomic exchanges at a declared simulation minute.
 This is a narrow harness boundary, not the final interaction model.
 The opportunity shape separates actor, target, context, candidates, direct value turns, and costs so later multi-step interactions can retain the same candidate evaluator at each interruptible phase.
+
+Phase 2A disclosure opportunities use the same atomic harness boundary.
+They author an owner, item, audience, network context, and disclosure benefit while leaving the outcome to the relational evaluator.
 
 ## Action appraisal
 
@@ -101,6 +105,19 @@ Scenario and environment content author facts, stakes, available acts, and direc
 They do not author utility, empathy, salience, remorse, or the winning action.
 The `narrative_expression` input remains explicit but neutral in Phase 1 fixtures until the narrative layer can calculate it.
 
+## Relational appraisal
+
+Directed dyad records separate an observer's state toward a subject from the reverse direction.
+Scenario dyads seed social features, stance, integrated history, behavioral variance, estimated empathy and disclosure, estimate confidence, prediction error, and mode.
+Runtime state owns their later movement.
+
+Disclosure remains independent from empathy.
+The owner's disclosure envelope produces safety from relational distance, while estimated audience empathy contributes only to exposure risk alongside embeddedness and network conductivity.
+Each audience is evaluated separately and the maximum subjective cost wins; safe observers cannot average away one hostile observer.
+
+Successful disclosure adds the audience to the item's exposure ledger.
+Both disclosure and concealment preserve their appraisal terms, worst observer, utility, and outcome in bounded decision and causal-trace history.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.
@@ -118,8 +135,9 @@ Files use strict, versioned JSON and stable string identifiers.
 Scenarios reference library records rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
-Character-library and scenario schema version 2 add the Phase 1 empathy and opportunity vocabulary.
-Explicit migrations preserve version 1 content by supplying neutral Phase 1 defaults and empty behavioral collections.
+Character-library and scenario schema version 3 add the Phase 2A disclosure and directed-dyad vocabulary.
+Explicit migrations preserve version 1 and 2 content by supplying neutral Phase 1 and Phase 2A defaults.
+Snapshot schema version 1 is separate from scenario versioning and is validated before runtime restoration.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

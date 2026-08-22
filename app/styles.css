@@ -620,6 +620,14 @@ input[type="search"]::placeholder {
   font-size: 11px;
 }
 
+.disclosure-summary {
+  margin: 0 0 8px;
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
 .decision-list {
   display: grid;
   gap: 6px;
