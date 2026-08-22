@@ -10,8 +10,7 @@ function getOptions(args, verbose, logger) {
     bundle: true,
     define: createDefines(),
     entryPoints: {
-      index: 'src/index.js',
-      main: 'app/main.js',
+      main: 'app/main.ts',
     },
     format: 'esm',
     loader: {
