@@ -1001,7 +1001,48 @@ An explicit per-agent capability, because the cost difference is large.
 
 **Promotion requires no rewrite.** If a background agent becomes story-relevant, populate the narrative field; they begin generating goals. Same agent, same accumulated history, now with an agenda.
 
-### 21.4 Crowd reactions are derived, not canned
+### 21.4 Agenda and bounded causal planning
+
+Goal-directed activity has five distinct layers:
+
+- **Aspiration** — a persistent direction such as maintaining a respected trade or providing for a family. It generates concrete goals when the world supplies a relevant occasion.
+- **Goal** — a desired world condition with a source, stakes, commitment, activation time, and optional deadline.
+- **Task operator** — a reusable act with preconditions, world effects, duration, location, resource costs, direct value turns, contract departure, and an availability window.
+- **Plan** — a temporary causal route assembled from the current world facts and available operators.
+- **Intention** — the first task of the selected plan to which the agent is presently committed.
+
+Authors supply goal stakes, facts, and operators, never task priority or a selected sequence.
+A fixed task priority is selected behavior in disguise.
+The planner searches only for feasible causal routes; Verus appraises those routes using the same current value salience, resources, contract adherence, and later narrative terms as other behavior.
+
+Temporal pressure comes from **slack**:
+
+```
+slack = deadline − now − estimated_remaining_duration
+```
+
+Urgency rises nonlinearly as slack disappears.
+This makes working faster, delegating, substituting, or abandoning reachable consequences of the same deadline without a “rush” trigger.
+Task availability windows provide hard environmental facts such as a closing market; urgency changes subjective priority but cannot make an impossible route feasible.
+
+Planning is bounded and receding-horizon.
+The system derives a causal plan, commits only its first task, and replans after that task changes the world or when its preconditions fail.
+This produces prerequisite discovery — flour before bread, fuel before a fire, access before a conversation — while preventing an old action list from overriding new evidence.
+Intentions carry enough persistence to avoid tick-by-tick thrashing and have explicit travel, waiting, and work phases.
+
+Schedules remain ordinary obligations and default visible activity, not commands.
+An active intention supersedes schedule movement until completion or invalidation.
+The intention is medium-independent state: a text adapter may resolve travel abstractly while an embodied adapter renders locomotion, but both consume the same selected task and causal trace.
+
+Needs are goal sources rather than goals themselves.
+Hunger may generate *obtain an edible meal*; cold may generate *reach warmth*; belonging deficit may generate a concrete satisfier opportunity.
+Agents must change the world or a relationship rather than directly optimize an internal meter.
+Magnitude-gated emergencies may preempt the agenda, while ordinary needs compete through the same appraisal.
+
+Only invokers need continuous goal generation.
+Responders may still carry authored goals, preexisting plans, or visible intentions, preserving independent business without requiring autonomous society simulation in empty rooms.
+
+### 21.5 Crowd reactions are derived, not canned
 
 A shouting match or a drawn weapon produces a **heterogeneous** crowd response, derived from three per-agent quantities that already exist: threat appraisal, `E` toward each participant, and cascade prior.
 
@@ -1014,7 +1055,7 @@ Two properties to protect:
 1. **Reactions must be able to be wrong.** An extra who misreads a staged argument as real, or over-reacts to a weapon drawn in jest, is the entire payoff of appraisal-based reaction over canned animation. If reactions are always correct, this is canned animation with extra steps.
 2. **Aftermath must persist.** The extra who fled is still shaken an hour later, avoids that corner of the room, and has updated their model of whoever drew. Canned reactions have no memory; this is the cheapest available demonstration that these are not canned.
 
-### 21.5 Worked example — the witness
+### 21.6 Worked example — the witness
 
 *Reference case: a bystander at high `E` who watched a companion be seriously harmed and could do nothing.*
 
@@ -1038,13 +1079,13 @@ Derivation when asked about it later, with **no further authoring**:
 | §12.1 worst-observer operator | the account degrades sharply with an audience present |
 | Regulation reserve depletes over the exchange | if pushed, she leaves — because the budget emptied, not because a dialogue tree ended |
 
-### 21.6 The seed is the event; the scene is the retrieval
+### 21.7 The seed is the event; the scene is the retrieval
 
-Generalizing §21.5: **the interesting output is not the reaction — the reaction happened off-screen. What the player encounters is an agent being asked to re-enter it.** Everything that makes such a scene work — fragmentation, reluctance, sensitivity to who is asking and who is listening — comes from the annealed memory interacting with the disclosure envelope and the current audience.
+Generalizing §21.6: **the interesting output is not the reaction — the reaction happened off-screen. What the player encounters is an agent being asked to re-enter it.** Everything that makes such a scene work — fragmentation, reluctance, sensitivity to who is asking and who is listening — comes from the annealed memory interacting with the disclosure envelope and the current audience.
 
 **Consequence: testimony becomes a mechanic rather than an information dispenser.** Two witnesses to the same event give different accounts, and the difference is fully explicable — different `E` toward the parties, different cascade positions at the time, different annealing. **None of them is lying.**
 
-### 21.7 Authoring discipline
+### 21.8 Authoring discipline
 
 The system's guarantee is that authored input produces **reasonable** output, not **specific** output.
 
@@ -1167,8 +1208,9 @@ Persistent low-grade pain or illness should feed the **§6.1 deficit integral**,
 
 ### 22.7 Open decisions
 
+Decision 15 is resolved by §21.4: ordinary discomfort remedies compete as goals, while sufficiently urgent physical states preempt the agenda through the existing preempt ladder.
+
 | # | Decision | Notes |
 |---|---|---|
-| 15 | Does the goal generator treat discomfort remedies as **interrupts** or as ordinary competing goals? | Interrupts are more realistic for high magnitudes and risk NPCs who abandon conversations to fetch a cloak. Likely magnitude-gated. |
 | 16 | Is level 2 impairment **visible** to observers by default? | Affects whether the player can read injury without inspection, and whether NPCs offer help unprompted. |
 | 17 | Should discomfort sources be simulated per-agent or sampled from environment + activity? | Per-agent is exact and costs a ledger per NPC; sampling is nearly free and consistent with §20.4 proximity seeding. |

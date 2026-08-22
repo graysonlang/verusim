@@ -13,7 +13,7 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation establishes the project substrate, the Phase 1 behavioral vertical slice, and the Phase 2A relational foundation rather than claiming the full design is complete.
+The current implementation establishes the project substrate, the Phase 1 behavioral vertical slice, the Phase 2A relational foundation, and the agenda-planning foundation rather than claiming the full design is complete.
 It includes:
 
 - versioned JSON character, environment, and scenario formats
@@ -23,13 +23,16 @@ It includes:
 - nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
 - highwayman road and town-square fixtures covering the first ordinal behavioral factorial
 - directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
+- authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
 - immutable authored scenarios separated from versioned live snapshots with exact dyad, exposure, decision, and trace resume
-- a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable Canvas world, roster navigation, time controls, live state editing, scenario and snapshot loading, snapshot export, relational inspection, and trace inspection
+- a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable Canvas world, roster navigation, time controls, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
 
 Schedules provide environmental obligations and visible activity, while behavioral opportunities advertise concrete acts that Verus may select.
 Schedules are not presented as emergent decisions, and opportunities specify consequences rather than character preferences.
 Disclosure opportunities similarly provide stakes and audiences while Verus derives disclosure safety, exposure cost, the worst observer, and the outcome.
+Agenda goals provide desired facts, stakes, commitment, and deadlines while task operators provide preconditions, effects, duration, location, and costs.
+The planner derives a route and commits only its first task, so completed tasks and external changes can alter what comes next without rewriting the authored goal.
 
 ## Technology
 

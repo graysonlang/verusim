@@ -38,11 +38,11 @@ Exit probes:
 
 The implementation also preserves rejected alternatives, derives a remorse aftermath from felt harm, migrates Phase 0 content, and exposes the complete decision breakdown in the workbench.
 
-## Phase 2 — relational inference
+## Phase 2 — relational and agenda foundations
 
 Status: in progress.
 
-Phase 2 is split by dependency so relational inference does not silently depend on Phase 3's defense cascade.
+Phase 2 is split by dependency so relational inference and goal-directed execution do not silently depend on Phase 3's defense cascade.
 Fast interpersonal state lives on directed dyads while the agent retains one cascade and one resource ledger.
 
 ### Phase 2A — disclosure and persistence boundary
@@ -59,7 +59,24 @@ Exit probes:
 - successful disclosure updates the exposure ledger while concealment does not
 - authored scenario truth remains unchanged while a snapshot resumes dyads, exposure, decisions, and trace exactly
 
-### Phase 2B — prediction and local norms
+### Phase 2B — agenda and task planning
+
+Status: complete.
+
+Implement authored goals, numeric world facts, reusable task operators, bounded prerequisite planning, temporal availability, deadline pressure, persistent first-task intentions, replanning, causal traces, snapshots, and workbench inspection.
+Keep physical and emotional goal generators in their prerequisite phases while giving them a stable agenda target now.
+
+Exit probes:
+
+- missing flour produces fetch flour → bake bread → sell bread without an authored sequence
+- a tight market deadline selects costly rushed work while available slack selects careful work
+- moving the deadline later lets a valuable non-urgent obligation win first
+- losing a prerequisite cancels the current intention and derives a replacement plan
+- an in-progress intention and plan resume and replay exactly from a snapshot
+
+The initial planning bounds and urgency scale are explicit safety and calibration defaults, not settled psychological constants.
+
+### Phase 2C — prediction and local norms
 
 Implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
 The acceptance targets are Endicott/Margueritte and Pottsfield.
@@ -70,7 +87,7 @@ Exit probes:
 - sustained nondiagnostic error increases suspicion without revising the model
 - residents and visitors derive opposite subjective turns from one objective event under opaque local norms
 
-### Phase 2C — momentum, exposure debt, and consolidation
+### Phase 2D — momentum, exposure debt, and consolidation
 
 Implement stance momentum, asymmetric rupture, exposure-debt repricing, dyad modes with hysteresis, and sleep-tick memory consolidation.
 
@@ -94,10 +111,10 @@ Exit probes:
 - positive and negative turns both scale with reactivity
 - therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
 
-## Phase 4 — proactive agency and narrative
+## Phase 4 — narrative-driven agency
 
-Implement narrative claims, expression payoff, validators, rationalization, simple world-directed goals, and the responder/invoker scheduling boundary.
-Separate chosen intentions from locomotion and animation so text and embodied integrations share decisions.
+Implement narrative claims, expression payoff, validators, rationalization, aspiration-derived goal generation, and the responder/invoker scheduling boundary over the shared agenda.
+Narrative and identity supply new goal sources rather than a second planner.
 
 Exit probes:
 
@@ -158,8 +175,8 @@ The workbench exposes numeric internals for development; player-facing tell voca
 
 ### Action and affordance vocabulary
 
-Define how environments advertise candidate actions without scripting character choice.
-A useful starting shape is an operation plus target, expected value turns, resource costs, preconditions, and observable expression.
+Agenda task operators now advertise preconditions, world-fact effects, duration, location, availability windows, value turns, resource costs, and contract departure without scripting character choice.
+Behavioral opportunities retain their separate atomic actor, target, context, and consequence vocabulary.
 
 Concrete acts and direct consequences live in scenario opportunities.
 Character-dependent operations such as empathy, salience, contract cost, repercussion, and aftermath live in the core.
@@ -172,6 +189,9 @@ Atomic exchanges are easy to test but cannot express interruption, context colla
 Phase 1 opportunities resolve atomically.
 Their actor, context, candidate, and consequence boundaries are designed to become phases of interruptible interactions without replacing the evaluator.
 
+Agenda tasks execute through persistent travel, waiting, and work phases.
+The planner commits only the first task of a derived plan and replans after its effects, preserving one decision path across text and embodied execution.
+
 ### Scenario truth versus save-game truth
 
 Decide whether scenario files are immutable initial conditions, resumable snapshots, or two distinct formats.
@@ -181,5 +201,5 @@ Phase 2A keeps scenarios as initial conditions and introduces a separate version
 
 ## Decisions that can wait
 
-Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, the low-stakes ORBIT threshold, and somatic open decisions should remain documented but unimplemented until their prerequisite phase.
+Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
 Premature fields would look authoritative while carrying no tested consequence.

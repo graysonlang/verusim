@@ -31,7 +31,7 @@ library JSON + scenario JSON
 `src/model` contains JSON-safe shared vocabulary.
 It cannot depend on a renderer, Solid, or browser APIs.
 
-`src/scenario` validates authored content, resolves character and environment references, and converts live state back into a scenario file.
+`src/scenario` validates authored content, resolves character and environment references, and keeps immutable scenario serialization separate from resumable snapshot serialization.
 Validation errors include the failing path so authoring failures are actionable.
 
 `src/simulation` owns time, agent state, transitions, interventions, derived observations, and causal traces.
@@ -48,11 +48,11 @@ The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains live on reusable character definitions and are not changed by normal stepping.
 2. History-derived content also lives on definitions initially, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events.
-3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, and exposure ledgers.
+3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
 Authored scenarios and live snapshots are distinct formats.
 A scenario supplies immutable initial conditions and reusable library references.
-A snapshot wraps those references with current agents, dyads, exposure items, resolved opportunities, decisions, and causal trace so resuming does not rewrite the authored fixture.
+A snapshot wraps those references with current agents, dyads, exposure items, world facts, agendas, plans, intentions, resolved opportunities, decisions, and causal trace so resuming does not rewrite the authored fixture.
 
 ## Time and scale
 
@@ -64,10 +64,9 @@ World coordinates are meters in an unbounded two-dimensional plane.
 An environment provides a designed extent for framing and authored areas for observation; the camera is not clamped to that extent.
 This permits village-scale views now and chunked or generated environments later without changing the camera contract.
 
-The initial schedule blocks are obligations and affordances supplied by the scenario.
-They make time and navigation inspectable before an action selector exists.
-They must not become a hidden scripting layer: later phases will let Verus decide how an agent responds to an obligation, including delay, refusal, substitution, or abandonment.
-Schedules may also make preoccupation and unavailability visible, but they are not evidence that the core is simulating autonomous off-screen activity.
+Schedule blocks remain authored environmental obligations and default activity.
+An active intention supersedes schedule locomotion and activity until its task completes or becomes invalid.
+This lets schedules make ordinary routine visible without making them the hidden source of goal-directed behavior.
 
 Phase 1 behavioral opportunities are atomic exchanges at a declared simulation minute.
 This is a narrow harness boundary, not the final interaction model.
@@ -105,6 +104,30 @@ Scenario and environment content author facts, stakes, available acts, and direc
 They do not author utility, empathy, salience, remorse, or the winning action.
 The `narrative_expression` input remains explicit but neutral in Phase 1 fixtures until the narrative layer can calculate it.
 
+## Agenda planning
+
+The agenda layer separates motivation, deliberation, commitment, and execution.
+A goal declares desired world facts, value stakes, source, commitment, activation time, and an optional deadline.
+A task operator declares preconditions, fact effects, duration, location, resource costs, direct value turns, contract departure, and availability window.
+Neither declares a selected behavior.
+
+Planning uses a bounded deterministic search over operators relevant to the desired facts.
+It searches backward for relevance and forward for feasible routes, including travel time, task duration, resource availability, deadlines, and opening windows.
+Authored order is the stable tie break.
+The initial eight-task depth, 256-node search, and 24-candidate result caps are explicit safety bounds rather than behavioral semantics.
+
+Candidate plans are appraised with the actor's effective value weights and self-envelope position.
+Goal stakes are evaluated as the difference between success and failure turns; commitment and deadline urgency scale that delayed consequence, while direct task turns, contract cost, and resource scarcity retain separate terms.
+Urgency comes from remaining slack rather than a fixed task priority.
+The initial quadratic 1×–4× urgency range is a calibration default whose ordinal deadline probes must survive later tuning.
+
+The selected plan becomes an intention only for its first task.
+That intention persists through travel, waiting, and work, then the agent replans from the resulting world facts.
+This receding-horizon boundary permits prerequisite discovery and response to change without treating a stale plan as a script.
+
+Schedules, behavioral opportunities, disclosure opportunities, and agenda tasks share the same simulation clock.
+The chosen intention is simulation state rather than a movement command, so text and embodied adapters can execute the same decision at different presentation granularity.
+
 ## Relational appraisal
 
 Directed dyad records separate an observer's state toward a subject from the reverse direction.
@@ -135,9 +158,10 @@ Files use strict, versioned JSON and stable string identifiers.
 Scenarios reference library records rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
-Character-library and scenario schema version 3 add the Phase 2A disclosure and directed-dyad vocabulary.
-Explicit migrations preserve version 1 and 2 content by supplying neutral Phase 1 and Phase 2A defaults.
-Snapshot schema version 1 is separate from scenario versioning and is validated before runtime restoration.
+Character-library schema version 3 contains the Phase 2A disclosure vocabulary.
+Scenario schema version 4 adds world facts, goals, and task operators to the Phase 2A directed-dyad format.
+Explicit migrations preserve version 1 through 3 scenarios by supplying the missing behavioral collections.
+Snapshot schema version 2 persists agenda state separately from scenario versioning and validates plan, intention, goal, fact, dyad, and agent references before runtime restoration.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

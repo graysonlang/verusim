@@ -620,12 +620,45 @@ input[type="search"]::placeholder {
   font-size: 11px;
 }
 
+.agenda-summary,
 .disclosure-summary {
   margin: 0 0 8px;
   color: var(--paper);
   font-family: var(--mono);
   font-size: 9px;
   text-transform: uppercase;
+}
+
+.agenda-path {
+  display: block;
+  margin: -3px 0 9px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.agenda-candidates {
+  margin-top: 8px;
+}
+
+.fact-field {
+  display: grid;
+  grid-template-columns: 1fr 72px;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.fact-field input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: rgb(0 0 0 / 18%);
+  color: var(--paper);
+  font: inherit;
 }
 
 .decision-list {

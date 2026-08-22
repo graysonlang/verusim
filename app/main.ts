@@ -15,6 +15,7 @@ import {
   serializeSnapshot,
   setAgentResource,
   setAgentValueCharge,
+  setWorldFactAmount,
   type ResourceState,
   type SimulationAgent,
   type SimulationState,
@@ -249,6 +250,108 @@ function renderInspector(
   }
   evaluationShape.body.append(evaluationGrid);
 
+  const agenda = makeSection(
+    'Agenda',
+    `${state.agendaGoals.filter(goal => goal.actorId === agent.id).length} goals`,
+  );
+  const intention = state.intentions.find(item => item.actorId === agent.id);
+  const activePlan = state.plans.find(item => item.actorId === agent.id);
+  if (intention !== undefined && activePlan !== undefined) {
+    const task = state.scenario.taskOperators.find(item => item.id === intention.taskId);
+    const summary = element('p', 'agenda-summary');
+    const planPath = element('small', 'agenda-path');
+    summary.textContent = `${intention.phase} / ${task?.label ?? intention.taskId} / ${intention.remainingMinutes} minutes remaining`;
+    planPath.textContent = `plan ${activePlan.taskIds.join(' -> ')} / score ${activePlan.score.toFixed(3)} / estimated ${formatSimulationTime(activePlan.estimatedCompletionMinute)}`;
+    agenda.body.append(summary, planPath);
+  }
+  const agentGoals = state.agendaGoals.filter(goal => goal.actorId === agent.id);
+  if (agentGoals.length === 0) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No authored or generated goals are active for this character.';
+    agenda.body.append(empty);
+  } else {
+    const goalList = element('ol', 'event-list trace-list');
+    for (const goal of agentGoals) {
+      const item = element('li');
+      const status = element('span', 'event-time');
+      const copy = element('span');
+      const terms = element('small');
+      const progress = goal.desired
+        .map(condition => {
+          const current = state.worldFacts.find(fact => fact.id === condition.factId)?.amount ?? 0;
+          return `${condition.factId} ${current}/${condition.minimum}`;
+        })
+        .join(' / ');
+      status.textContent = goal.status;
+      copy.textContent = goal.label;
+      terms.textContent = `${goal.source} / commitment ${goal.commitment.toFixed(2)} / ${goal.deadlineMinute === null ? 'no deadline' : `due ${formatSimulationTime(goal.deadlineMinute)}`} / ${progress}`;
+      item.append(status, copy, terms);
+      goalList.append(item);
+    }
+    agenda.body.append(goalList);
+  }
+  const agendaDecision = state.agendaDecisions.filter(item => item.actorId === agent.id).at(-1);
+  if (agendaDecision !== undefined && agendaDecision.candidates.length > 0) {
+    const candidateList = element('ol', 'decision-list agenda-candidates');
+    for (const candidate of agendaDecision.candidates
+      .toSorted((left, right) => right.score - left.score)
+      .slice(0, 4)) {
+      const item = element(
+        'li',
+        candidate.id === agendaDecision.selectedPlanId
+          ? 'decision-candidate selected'
+          : 'decision-candidate',
+      );
+      const heading = element('div');
+      const label = element('strong');
+      const score = element('output');
+      const terms = element('small');
+      label.textContent = candidate.taskIds.join(' -> ');
+      score.textContent = candidate.score.toFixed(3);
+      terms.textContent = `goal ${candidate.goalUtility.toFixed(3)} x commitment and urgency ${candidate.urgency.toFixed(2)} / task ${candidate.taskUtility.toFixed(3)} / resources -${candidate.resourceCost.toFixed(3)} / complete ${formatSimulationTime(candidate.estimatedCompletionMinute)}`;
+      heading.append(label, score);
+      item.append(heading, terms);
+      candidateList.append(item);
+    }
+    agenda.body.append(candidateList);
+  }
+
+  const factIds = new Set<string>();
+  for (const goal of agentGoals) {
+    for (const condition of goal.desired) factIds.add(condition.factId);
+  }
+  for (const task of state.scenario.taskOperators.filter(item =>
+    item.actorIds.includes(agent.id),
+  )) {
+    for (const condition of task.preconditions) factIds.add(condition.factId);
+    for (const effect of task.effects) factIds.add(effect.factId);
+  }
+  const facts = makeSection('World facts', 'Live intervention');
+  if (factIds.size === 0) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No agenda-relevant world facts are exposed for this character.';
+    facts.body.append(empty);
+  } else {
+    for (const fact of state.worldFacts.filter(item => factIds.has(item.id))) {
+      const field = element('label', 'fact-field');
+      const label = element('span');
+      const input = element('input');
+      label.textContent = fact.id;
+      input.type = 'number';
+      input.min = '0';
+      input.max = '1000000';
+      input.step = '1';
+      input.value = String(fact.amount);
+      input.addEventListener('change', () => {
+        if (Number.isFinite(input.valueAsNumber)) {
+          setState(setWorldFactAmount(state, fact.id, input.valueAsNumber));
+        }
+      });
+      field.append(label, input);
+      facts.body.append(field);
+    }
+  }
+
   const identity = makeSection('Identity and narrative');
   const markers = element('div', 'marker-list');
   for (const item of agent.profile.identity) {
@@ -385,6 +488,8 @@ function renderInspector(
     mind.section,
     values.section,
     resources.section,
+    agenda.section,
+    facts.section,
     constitution.section,
     evaluationShape.section,
     identity.section,
