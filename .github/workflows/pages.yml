@@ -1,0 +1,79 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Opt-in gate, so a fresh repo made from this template does not get a red X
+    # on its first push for Pages it never asked for. Automatic deploys stay off
+    # until the repo defines an Actions variable ENABLE_PAGES=true (Settings ->
+    # Secrets and variables -> Actions -> Variables). Manual runs from the
+    # Actions tab always work, so the workflow can be tried before enabling it.
+    # Deleting the `if:` line below works just as well, and is the better move
+    # for a project that has settled on publishing — it drops the variable and
+    # deploys on every push to main.
+    #
+    # Whichever route, Pages itself has to be switched over first: Settings ->
+    # Pages -> Build and deployment -> Source -> GitHub Actions. The default
+    # source is branch-based, which this workflow cannot deploy to, so enabling
+    # the job before changing it just trades a skipped run for a failing one.
+    #
+    # `vars` is not available in `on:`, so the gate has to live here. A skipped
+    # job is a neutral result rather than a failure, and `deploy` needs `build`,
+    # so skipping this skips the whole deploy.
+    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_PAGES == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `build` runs esbuild with --lint --minify, so this also gates on the linter.
+      # Output goes to www/ (the `outdir` in scripts/build.mjs) — keep the
+      # upload path below in step with it.
+      - name: Build
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: www
+          include-hidden-files: true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
