@@ -11,6 +11,20 @@ import {
   serializeSnapshot,
 } from '../src/index.js';
 
+function replaceWithLegacyTrace(snapshot: Record<string, unknown>): void {
+  const currentTrace = snapshot.trace as {
+    entries: Array<Record<string, unknown>>;
+  };
+  snapshot.trace = currentTrace.entries.map(entry => {
+    const legacyEntry = { ...entry };
+    const terms = legacyEntry.terms as Array<{ id: string; value: unknown }>;
+    delete legacyEntry.selection;
+    delete legacyEntry.terms;
+    legacyEntry.causes = terms.map(term => `${term.id}:${String(term.value)}`);
+    return legacyEntry;
+  });
+}
+
 describe('scenario validation', () => {
   it('migrates Phase 0 scenarios to the agenda content shape', () => {
     const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
@@ -72,17 +86,7 @@ describe('scenario validation', () => {
         scenario,
       }),
     ) as unknown as Record<string, unknown>;
-    const currentTrace = snapshot.trace as {
-      entries: Array<Record<string, unknown>>;
-    };
-    snapshot.trace = currentTrace.entries.map(entry => {
-      const legacyEntry = { ...entry };
-      const terms = legacyEntry.terms as Array<{ id: string; value: unknown }>;
-      delete legacyEntry.selection;
-      delete legacyEntry.terms;
-      legacyEntry.causes = terms.map(term => `${term.id}:${String(term.value)}`);
-      return legacyEntry;
-    });
+    replaceWithLegacyTrace(snapshot);
     snapshot.schemaVersion = 1;
     snapshot.scenario = relationalScenario;
     delete snapshot.agendaDecisions;
@@ -97,6 +101,19 @@ describe('scenario validation', () => {
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
     assert.deepEqual(migratedSnapshot.worldFacts, []);
+
+    const agendaSnapshot = serializeSnapshot(
+      createSimulation({
+        characterLibrary: characters,
+        environmentLibrary: environments,
+        scenario,
+      }),
+    ) as unknown as Record<string, unknown>;
+    replaceWithLegacyTrace(agendaSnapshot);
+    agendaSnapshot.schemaVersion = 2;
+    const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 3);
+    assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
   });
 
   it('requires explicit gate events in the versioned causal trace', () => {

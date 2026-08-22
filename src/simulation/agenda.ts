@@ -503,6 +503,11 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
       selection: null,
       summary: `${candidate.id}: score ${candidate.score.toFixed(4)}`,
       terms: [
+        traceTerm(
+          'candidate',
+          candidate.id,
+          `agendaDecisions.${decision.id}.candidates.${candidate.id}`,
+        ),
         traceTerm('goal', candidate.goalId, `agendaGoals.${candidate.goalId}`),
         traceTerm(
           'goal-utility',

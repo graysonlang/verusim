@@ -191,6 +191,7 @@ function appraisalTrace(
         `${candidateSource}.narrativeExpression`,
       ),
       traceTerm('utility', appraisal.utility, `decisions.${state.tick}:${opportunity.id}`),
+      traceTerm('candidate', candidate.candidateId, candidateSource),
       ...candidate.empathy.map(evaluation =>
         traceTerm(
           `empathy:${evaluation.subjectId}`,
