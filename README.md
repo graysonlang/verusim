@@ -1,7 +1,7 @@
 # Verusim
 
 Verusim is a deterministic behavioral simulation substrate for non-scripted NPCs.
-Its target is behavior that is explicable in hindsight but cannot be scheduled in advance: choices arise from the interaction among a character, another agent, their shared history, and the current environment rather than from authored behavior flags or random variation.
+Its target is behavior that is explicable in hindsight but cannot be scheduled in advance: choices arise from the interaction among characters, their shared history, and the current environment rather than from authored behavior flags or random variation.
 
 The repository contains two connected surfaces:
 

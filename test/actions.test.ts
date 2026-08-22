@@ -13,7 +13,7 @@ const actions: readonly QuickAction[] = [
   {
     enabled: () => false,
     id: 'focus',
-    keywords: ['agent', 'view'],
+    keywords: ['character', 'view'],
     label: 'Focus selected character',
     run: () => undefined,
   },

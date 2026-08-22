@@ -180,6 +180,7 @@ That sequencing prevents an improved perception model from laundering a movement
 Player-facing integrations should show behavior and tells rather than raw meters.
 The browser application is a developer workbench, so it deliberately exposes numeric state and permits direct intervention.
 That exception is useful for factorial sweeps and does not define a game UI contract.
+Workbench and player-facing copy calls simulated people **characters**; `agent` remains an internal model, API, and storage term only.
 
 Every chosen action must eventually produce both:
 

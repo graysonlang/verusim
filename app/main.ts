@@ -634,7 +634,7 @@ function renderInspector(
   }
   memories.body.append(memoryList);
 
-  const trace = makeSection('Causal trace', 'Selected agent');
+  const trace = makeSection('Causal trace', 'Selected character');
   const traceList = element('ol', 'event-list trace-list');
   for (const entry of latestEntries(state, agent.id)) {
     const item = element('li');
@@ -713,6 +713,7 @@ function createWorkbench(): HTMLElement {
   const time = element('time', 'simulation-time');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
+  const scenarioName = element('h1', 'scenario-title');
   const rosterTitleWrap = element('div');
   const rosterTitle = element('h2');
   const rosterCount = element('span', 'count');
@@ -789,12 +790,13 @@ function createWorkbench(): HTMLElement {
   speedSelect.setAttribute('aria-label', 'Playback speed');
   transport.append(step, play, speedSelect, resetScenario, time);
 
+  scenarioName.textContent = initial.scenario.title;
   rosterTitle.textContent = 'Characters';
   rosterTitleWrap.append(rosterTitle, rosterCount);
   searchInput.type = 'search';
   searchInput.placeholder = 'Find a character';
   searchInput.setAttribute('aria-label', 'Find a character');
-  rosterHeader.append(rosterTitleWrap, searchInput);
+  rosterHeader.append(scenarioName, rosterTitleWrap, searchInput);
   roster.append(rosterHeader, rosterList);
 
   canvas.setAttribute('aria-label', 'Top-down scenario environment');
@@ -805,7 +807,7 @@ function createWorkbench(): HTMLElement {
   fit.title = 'Frame environment';
   stageTools.append(zoomOut, zoomIn, fit, zoomReadout);
   selectedReadout.append(selectedName, selectedActivity);
-  stageLegend.textContent = 'Drag to pan / scroll to zoom / select an agent';
+  stageLegend.textContent = 'Drag to pan / scroll to zoom / select a character';
   signalLabel.textContent = 'Signals';
   for (const [value, label] of [
     ['off', 'Off'],
@@ -917,7 +919,7 @@ function createWorkbench(): HTMLElement {
     {
       enabled: () => selectedAgentId() !== null,
       id: 'focus-selected',
-      keywords: ['agent', 'character', 'center', 'view'],
+      keywords: ['character', 'center', 'view'],
       label: 'Focus selected character',
       run: () => {
         const selected = selectedAgentId();
@@ -1079,8 +1081,9 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
+    scenarioName.textContent = current.scenario.title;
     time.textContent = formatSimulationTime(current.minute);
-    simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} agents / ${current.trace.entries.length} trace entries`;
+    simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} characters / ${current.trace.entries.length} trace entries`;
   });
 
   createEffect(() => {
