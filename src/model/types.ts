@@ -93,6 +93,7 @@ export interface ProximityAssessment {
   distanceMeters: number;
   observerId: string;
   relationshipCloseness: number;
+  socialBattery: number;
   subjectId: string;
   terms: TraceTerm[];
   valueTurns: Partial<ValueMap<number>>;

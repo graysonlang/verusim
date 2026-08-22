@@ -157,8 +157,9 @@ Both disclosure and concealment preserve their appraisal terms, worst observer, 
 ## Spatial appraisal
 
 Physical proximity is distinct from the relational distance used by empathy and disclosure envelopes.
-The shared spatial evaluator derives a directed comfortable distance from the observer's social valence, dyad familiarity, kinship, reciprocity, and mode.
+The shared spatial evaluator derives a directed comfortable distance from the observer's social valence, current social battery, dyad familiarity, kinship, reciprocity, and mode.
 Crossing that boundary produces a graded discomfort value-turn signature for autonomy and safety; it does not mutate state or select an avoidance action by itself.
+Social-battery depletion expands the desired boundary and increases discomfort at the same physical separation, but does not change sight or hearing.
 
 Sight and hearing are separate deterministic channels over meter-scale positions.
 Effective acuity combines the character's generation-fixed acuity with current executive and stamina availability.

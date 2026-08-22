@@ -637,9 +637,10 @@ A name collision (or any duplicated individuating handle) is a related but **dis
 Physical distance is not the social distance `d` from the empathy envelope (§4).
 Two strangers and two intimates can stand the same number of meters apart while experiencing different levels of intrusion.
 
-Each directed pair resolves a **comfortable distance** from a shared proxemic convention, individual social valence, relationship familiarity and kinship, and the current dyad mode.
+Each directed pair resolves a **comfortable distance** from a shared proxemic convention, individual social valence, current social battery, relationship familiarity and kinship, and the current dyad mode.
 Crossing that boundary produces a graded intrusion appraisal rather than an "invaded personal space" trait.
 Its immediate signature is an autonomy turn, with an additional safety turn when the intruder is socially distant or the dyad is guarded.
+Social-battery depletion expands the desired boundary and makes the same physical separation more costly; it does not make an agent less able to see or hear.
 Pathing and avoidance may later consume that appraisal, but the appraisal itself does not select an action.
 
 Seeing and hearing resolve independently.

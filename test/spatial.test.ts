@@ -48,6 +48,42 @@ describe('spatial appraisal', () => {
     assert.ok(hostile.terms.every(term => term.sources.length > 0));
   });
 
+  it('expands personal-space needs as social battery depletes', () => {
+    const positioned = withPositions(createState(), {
+      hostile: { x: 651, y: 455 },
+      owner: { x: 650, y: 455 },
+    });
+    const rested = {
+      ...positioned,
+      agents: positioned.agents.map(agent =>
+        agent.id === 'owner'
+          ? { ...agent, resources: { ...agent.resources, socialBattery: 1 } }
+          : agent,
+      ),
+    };
+    const depleted = {
+      ...positioned,
+      agents: positioned.agents.map(agent =>
+        agent.id === 'owner'
+          ? { ...agent, resources: { ...agent.resources, socialBattery: 0.05 } }
+          : agent,
+      ),
+    };
+    const restedProximity = evaluateProximity(rested, 'owner', 'hostile');
+    const depletedProximity = evaluateProximity(depleted, 'owner', 'hostile');
+    const restedPerception = evaluateSpatialPerception(rested, 'owner', 'hostile');
+    const depletedPerception = evaluateSpatialPerception(depleted, 'owner', 'hostile');
+
+    assert.equal(restedProximity.distanceMeters, depletedProximity.distanceMeters);
+    assert.ok(
+      restedProximity.comfortableDistanceMeters < depletedProximity.comfortableDistanceMeters,
+    );
+    assert.ok(restedProximity.discomfort < depletedProximity.discomfort);
+    assert.equal(restedPerception.sight.strength, depletedPerception.sight.strength);
+    assert.equal(restedPerception.hearing.strength, depletedPerception.hearing.strength);
+    assert.ok(depletedProximity.terms.some(term => term.id === 'social-battery'));
+  });
+
   it('separates audibility from concealment in an open square', () => {
     const state = withPositions(createState(), {
       hostile: { x: 658, y: 455 },

@@ -92,6 +92,7 @@ Exit probes:
 - Strike records that a check does not apply, while Pass records insufficient knowledge; neither is treated as a strong negative
 - explicit domain support can move a contested result without changing the underlying capability
 - the same physical separation feels more invasive across a guarded unfamiliar dyad than a warm familiar one
+- depleting social battery expands comfortable distance without changing sensory perception
 - a nearby listener in an open square may hear a conversation but cannot eavesdrop covertly without visual concealment
 - moving that listener behind cover enables covert listening without increasing hearing strength
 - a forced correcting exchange resolves Endicott and Margueritte through standard prediction-error machinery rather than a character-specific trigger

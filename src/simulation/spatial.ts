@@ -134,13 +134,15 @@ export function evaluateProximity(
   const distanceMeters = distance(observer.position, subject.position);
   const relationship = relationshipCloseness(state, observerId, subjectId);
   const reservedness = (1 - observer.profile.constitution.socialValence) / 2;
+  const socialDepletion = 1 - observer.resources.socialBattery;
   const comfortableDistanceMeters = clamp(
     0.45 +
       (1 - relationship.closeness) * 0.9 +
       reservedness * 0.35 +
+      socialDepletion * 0.65 +
       MODE_DISTANCE_METERS[relationship.mode],
     0.35,
-    2.1,
+    2.75,
   );
   const discomfort = clamp(
     (comfortableDistanceMeters - distanceMeters) / comfortableDistanceMeters,
@@ -170,8 +172,14 @@ export function evaluateProximity(
       'comfortable-distance-meters',
       comfortableDistanceMeters,
       `agents.${observerId}.profile.constitution.socialValence`,
+      `agents.${observerId}.resources.socialBattery`,
       `dyads.${observerId}:${subjectId}.mode`,
       'simulation.spatial.proximityConvention',
+    ),
+    traceTerm(
+      'social-battery',
+      observer.resources.socialBattery,
+      `agents.${observerId}.resources.socialBattery`,
     ),
     traceTerm(
       'proximity-discomfort',
@@ -188,6 +196,7 @@ export function evaluateProximity(
     distanceMeters,
     observerId,
     relationshipCloseness: relationship.closeness,
+    socialBattery: observer.resources.socialBattery,
     subjectId,
     terms,
     valueTurns,
