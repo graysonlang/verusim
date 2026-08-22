@@ -359,7 +359,8 @@ input[type="search"]::placeholder {
   white-space: nowrap;
 }
 
-.role-badge {
+.role-badge,
+.location-badge {
   display: inline-flex;
   min-width: 0;
   min-height: 20px;
@@ -374,7 +375,8 @@ input[type="search"]::placeholder {
   white-space: nowrap;
 }
 
-.role-label {
+.role-label,
+.location-label {
   padding: 0 4px;
   border-right: 1px solid rgb(240 201 102 / 20%);
   background: rgb(240 201 102 / 9%);
@@ -386,12 +388,25 @@ input[type="search"]::placeholder {
   text-transform: uppercase;
 }
 
-.role-badge strong {
+.role-badge strong,
+.location-badge strong {
   overflow: hidden;
   padding: 0 5px;
   font-size: 8px;
   font-weight: 650;
   text-overflow: ellipsis;
+}
+
+.location-badge {
+  border-color: rgb(135 178 166 / 28%);
+  background: rgb(135 178 166 / 8%);
+  color: #c4ddd4;
+}
+
+.location-label {
+  border-right-color: rgb(135 178 166 / 20%);
+  background: rgb(135 178 166 / 9%);
+  color: #9fc8bb;
 }
 
 .roster-location {
@@ -674,15 +689,6 @@ input[type="search"]::placeholder {
     radial-gradient(circle at 100% 0%, rgb(240 201 102 / 9%), transparent 42%), var(--panel-deep);
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  color: var(--accent);
-  font-size: 9px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .character-hero h2 {
   margin: 0;
   font-family: ui-serif, Georgia, serif;
@@ -711,12 +717,14 @@ input[type="search"]::placeholder {
   gap: 5px;
 }
 
-.character-card-meta > .role-badge {
+.character-card-meta > .role-badge,
+.character-card-meta > .location-badge {
   min-height: 22px;
   line-height: 20px;
 }
 
-.character-card-meta > .role-badge strong {
+.character-card-meta > .role-badge strong,
+.character-card-meta > .location-badge strong {
   padding-right: 7px;
   padding-left: 7px;
   font-size: 9px;

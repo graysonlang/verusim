@@ -148,6 +148,19 @@ function roleBadge(agent: SimulationAgent): HTMLElement {
   return badge;
 }
 
+function locationBadge(state: SimulationState, agent: SimulationAgent): HTMLElement {
+  const badge = element('span', 'location-badge');
+  const label = element('span', 'location-label');
+  const location = element('strong');
+  const name = locationName(state, agent);
+  label.textContent = 'Location';
+  location.textContent = name;
+  badge.title = `Current location: ${name}`;
+  badge.setAttribute('aria-label', badge.title);
+  badge.append(label, location);
+  return badge;
+}
+
 function createStarterSimulation(): SimulationState {
   return createSimulation({
     characterLibrary,
@@ -258,7 +271,6 @@ function renderInspector(
 ): void {
   const observation = describeAgent(agent);
   const hero = element('section', 'character-hero');
-  const eyebrow = element('p', 'eyebrow');
   const name = element('h2');
   const summary = element('p', 'character-summary');
   const cardMeta = element('div', 'character-card-meta');
@@ -269,11 +281,10 @@ function renderInspector(
     'character-signals',
     indicatorSettings.verbosity !== 'minimal',
   );
-  eyebrow.textContent = locationName(state, agent);
   name.textContent = agent.profile.name;
   summary.textContent = agent.profile.summary;
-  cardMeta.append(roleBadge(agent), signals);
-  hero.append(eyebrow, name, summary, cardMeta);
+  cardMeta.append(roleBadge(agent), locationBadge(state, agent), signals);
+  hero.append(name, summary, cardMeta);
 
   const mind = makeSection('State of mind', observation.stateOfMind);
   mind.body.append(
