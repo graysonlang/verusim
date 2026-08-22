@@ -26,6 +26,16 @@ import {
 } from '../src/index.js';
 import indexPath from './index.html';
 import './styles.css';
+import {
+  INDICATOR_KINDS,
+  INDICATOR_LABELS,
+  defaultIndicatorSettings,
+  indicatorsForAgent,
+  type AgentIndicator,
+  type IndicatorKind,
+  type IndicatorSettings,
+  type IndicatorVerbosity,
+} from './indicators.js';
 import { createWorldView } from './world-view.js';
 
 const characterLibrary = {
@@ -55,6 +65,40 @@ function button(label: string, className = 'button'): HTMLButtonElement {
   node.type = 'button';
   node.textContent = label;
   return node;
+}
+
+function indicatorBadge(indicator: AgentIndicator, showLabel: boolean): HTMLElement {
+  const badge = element(
+    'span',
+    `signal-badge signal-${indicator.kind} signal-tone-${indicator.tone}`,
+  );
+  const glyph = element('span', 'signal-glyph');
+  glyph.textContent = indicator.glyph;
+  badge.append(glyph);
+  if (showLabel) {
+    const label = element('span', 'signal-label');
+    label.textContent = indicator.label;
+    badge.append(label);
+  } else {
+    badge.classList.add('compact');
+  }
+  badge.title = indicator.detail;
+  badge.setAttribute('aria-label', indicator.detail);
+  return badge;
+}
+
+function indicatorStrip(
+  state: SimulationState,
+  agent: SimulationAgent,
+  settings: IndicatorSettings,
+  className: string,
+  showLabels: boolean,
+): HTMLElement {
+  const strip = element('span', `signal-strip ${className}`);
+  for (const indicator of indicatorsForAgent(state, agent, settings)) {
+    strip.append(indicatorBadge(indicator, showLabels));
+  }
+  return strip;
 }
 
 function createStarterSimulation(): SimulationState {
@@ -162,6 +206,7 @@ function renderInspector(
   container: HTMLElement,
   state: SimulationState,
   agent: SimulationAgent,
+  indicatorSettings: IndicatorSettings,
   setState: (next: SimulationState) => void,
 ): void {
   const observation = describeAgent(agent);
@@ -169,16 +214,17 @@ function renderInspector(
   const eyebrow = element('p', 'eyebrow');
   const name = element('h2');
   const summary = element('p', 'character-summary');
-  const badges = element('div', 'badges');
-  const mood = element('span', `badge mood-${observation.mood}`);
-  const role = element('span', 'badge quiet');
+  const signals = indicatorStrip(
+    state,
+    agent,
+    indicatorSettings,
+    'character-signals',
+    indicatorSettings.verbosity !== 'minimal',
+  );
   eyebrow.textContent = `${agent.profile.role} / ${locationName(state, agent)}`;
   name.textContent = agent.profile.name;
   summary.textContent = agent.profile.summary;
-  mood.textContent = observation.mood;
-  role.textContent = agent.currentActivity;
-  badges.append(mood, role);
-  hero.append(eyebrow, name, summary, badges);
+  hero.append(eyebrow, name, summary, signals);
 
   const mind = makeSection('State of mind', observation.stateOfMind);
   mind.body.append(
@@ -555,6 +601,7 @@ function createWorkbench(): HTMLElement {
   const [search, setSearch] = createSignal('');
   const [speed, setSpeed] = createSignal(0);
   const [status, setStatus] = createSignal('Scenario ready');
+  const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
@@ -591,6 +638,12 @@ function createWorkbench(): HTMLElement {
   const selectedName = element('strong');
   const selectedActivity = element('span');
   const stageLegend = element('div', 'stage-legend');
+  const indicatorPanel = element('section', 'indicator-panel');
+  const indicatorHeader = element('div', 'indicator-header');
+  const indicatorTitle = element('strong');
+  const indicatorSelect = element('select', 'indicator-verbosity');
+  const indicatorToggles = element('div', 'indicator-toggles');
+  const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
   const inspector = element('aside', 'inspector');
   const inspectorContent = element('div', 'inspector-content');
   const footer = element('footer', 'status-bar');
@@ -640,7 +693,30 @@ function createWorkbench(): HTMLElement {
   stageTools.append(zoomOut, zoomIn, fit, zoomReadout);
   selectedReadout.append(selectedName, selectedActivity);
   stageLegend.textContent = 'Drag to pan / scroll to zoom / select an agent';
-  stage.append(canvas, stageTools, selectedReadout, stageLegend);
+  indicatorTitle.textContent = 'Field signals';
+  for (const [value, label] of [
+    ['off', 'Off'],
+    ['minimal', 'Minimal'],
+    ['standard', 'Standard'],
+    ['detailed', 'Detailed'],
+  ] as const) {
+    const option = element('option');
+    option.value = value;
+    option.textContent = label;
+    indicatorSelect.append(option);
+  }
+  indicatorSelect.setAttribute('aria-label', 'Indicator verbosity');
+  indicatorSelect.dataset.testid = 'indicator-verbosity';
+  indicatorHeader.append(indicatorTitle, indicatorSelect);
+  for (const kind of INDICATOR_KINDS) {
+    const toggle = button(INDICATOR_LABELS[kind], `indicator-toggle signal-${kind}`);
+    toggle.setAttribute('aria-label', `Show ${INDICATOR_LABELS[kind].toLowerCase()}`);
+    toggle.dataset.testid = `indicator-toggle-${kind}`;
+    indicatorButtons.set(kind, toggle);
+    indicatorToggles.append(toggle);
+  }
+  indicatorPanel.append(indicatorHeader, indicatorToggles);
+  stage.append(canvas, stageTools, indicatorPanel, selectedReadout, stageLegend);
 
   inspector.append(inspectorContent);
   build.textContent = `v${buildInfo.version} / ${buildInfo.commit}`;
@@ -649,6 +725,7 @@ function createWorkbench(): HTMLElement {
 
   const worldView = createWorldView({
     canvas,
+    indicatorSettings,
     onSelect: setSelectedAgentId,
     selectedAgentId,
     state,
@@ -685,6 +762,16 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
+    const settings = indicatorSettings();
+    indicatorSelect.value = settings.verbosity;
+    indicatorPanel.classList.toggle('is-off', settings.verbosity === 'off');
+    for (const [kind, toggle] of indicatorButtons) {
+      toggle.setAttribute('aria-pressed', String(settings.visible[kind]));
+      toggle.classList.toggle('is-hidden', !settings.visible[kind]);
+    }
+  });
+
+  createEffect(() => {
     zoomReadout.textContent = `${Math.round(worldView.camera().zoom * 100)}%`;
   });
 
@@ -697,18 +784,23 @@ function createWorkbench(): HTMLElement {
     );
     rosterCount.textContent = String(filtered.length);
     const items = filtered.map(agent => {
-      const observation = describeAgent(agent);
       const item = button('', 'roster-item');
-      const dot = element('span', `mood-dot mood-${observation.mood}`);
       const copy = element('span', 'roster-copy');
       const name = element('strong');
       const activity = element('span');
       const location = element('span', 'roster-location');
+      const signals = indicatorStrip(
+        current,
+        agent,
+        indicatorSettings(),
+        'roster-signals',
+        indicatorSettings().verbosity === 'detailed',
+      );
       name.textContent = agent.profile.name;
       activity.textContent = agent.currentActivity;
       location.textContent = locationName(current, agent);
       copy.append(name, activity);
-      item.append(dot, copy, location);
+      item.append(copy, location, signals);
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
       item.addEventListener('click', () => selectAndFocus(agent.id));
@@ -729,13 +821,27 @@ function createWorkbench(): HTMLElement {
     selectedReadout.hidden = false;
     selectedName.textContent = agent.profile.name;
     selectedActivity.textContent = `${agent.currentActivity} / ${locationName(current, agent)}`;
-    renderInspector(inspectorContent, current, agent, setState);
+    renderInspector(inspectorContent, current, agent, indicatorSettings(), setState);
   });
 
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
   step.addEventListener('click', () => advance(1));
   play.addEventListener('click', () => setSpeed(current => (current === 0 ? 1 : 0)));
   speedSelect.addEventListener('change', () => setSpeed(Number(speedSelect.value)));
+  indicatorSelect.addEventListener('change', () => {
+    setIndicatorSettings(current => ({
+      ...current,
+      verbosity: indicatorSelect.value as IndicatorVerbosity,
+    }));
+  });
+  for (const [kind, toggle] of indicatorButtons) {
+    toggle.addEventListener('click', () => {
+      setIndicatorSettings(current => ({
+        ...current,
+        visible: { ...current.visible, [kind]: !current.visible[kind] },
+      }));
+    });
+  }
   zoomOut.addEventListener('click', () => worldView.zoomBy(0.8));
   zoomIn.addEventListener('click', () => worldView.zoomBy(1.25));
   fit.addEventListener('click', worldView.fit);

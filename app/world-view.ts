@@ -5,6 +5,13 @@ import type {
   SimulationAgent,
   SimulationState,
 } from '../src/model/types.js';
+import {
+  areaIndicatorsForState,
+  indicatorsForAgent,
+  type AgentIndicator,
+  type IndicatorKind,
+  type IndicatorSettings,
+} from './indicators.js';
 
 interface Camera {
   x: number;
@@ -14,6 +21,7 @@ interface Camera {
 
 interface WorldViewOptions {
   canvas: HTMLCanvasElement;
+  indicatorSettings: Accessor<IndicatorSettings>;
   onSelect: (agentId: string) => void;
   selectedAgentId: Accessor<string | null>;
   state: Accessor<SimulationState>;
@@ -34,6 +42,14 @@ const AREA_COLORS: Record<EnvironmentArea['kind'], string> = {
   market: '#b7aa8a',
   path: '#aa936b',
   water: '#3e7582',
+};
+
+const INDICATOR_COLORS: Record<Exclude<IndicatorKind, 'area'>, string> = {
+  action: '#d98b5f',
+  event: '#b995cf',
+  mood: '#e6ca72',
+  speech: '#eee6d2',
+  thought: '#80aaa5',
 };
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -139,11 +155,205 @@ function drawAreaTexture(context: CanvasRenderingContext2D, area: EnvironmentAre
   }
 }
 
+function drawAreaIndicators(
+  context: CanvasRenderingContext2D,
+  state: SimulationState,
+  camera: Camera,
+  settings: IndicatorSettings,
+): void {
+  const indicators = areaIndicatorsForState(state, settings);
+  if (indicators.length === 0) return;
+  const hasNegative = indicators.some(indicator => indicator.tone === 'negative');
+  const hasPositive = indicators.some(indicator => indicator.tone === 'positive');
+  context.save();
+  context.fillStyle = hasNegative
+    ? hasPositive
+      ? 'rgb(128 103 143 / 8%)'
+      : 'rgb(180 92 72 / 7%)'
+    : 'rgb(89 154 133 / 7%)';
+  context.fillRect(0, 0, state.environment.width, state.environment.height);
+  context.setLineDash([10 / camera.zoom, 8 / camera.zoom]);
+  context.strokeStyle = hasNegative
+    ? hasPositive
+      ? 'rgb(194 157 211 / 58%)'
+      : 'rgb(224 139 109 / 55%)'
+    : 'rgb(126 193 168 / 55%)';
+  context.lineWidth = 2 / camera.zoom;
+  context.strokeRect(
+    7 / camera.zoom,
+    7 / camera.zoom,
+    state.environment.width - 14 / camera.zoom,
+    state.environment.height - 14 / camera.zoom,
+  );
+  context.setLineDash([]);
+  if (settings.verbosity !== 'minimal' && camera.zoom >= 0.32) {
+    const copy = indicators
+      .map(indicator => (settings.verbosity === 'detailed' ? indicator.detail : indicator.label))
+      .join(' / ');
+    context.font = `600 ${10 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
+    context.textAlign = 'center';
+    context.fillStyle = 'rgb(247 226 210 / 75%)';
+    context.fillText(`~ Area effect: ${copy}`, state.environment.width / 2, 25 / camera.zoom);
+  }
+  context.restore();
+}
+
+function roundedShape(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+): void {
+  context.beginPath();
+  context.roundRect(x, y, width, height, radius);
+}
+
+function indicatorShape(
+  context: CanvasRenderingContext2D,
+  indicator: AgentIndicator,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): void {
+  if (indicator.kind === 'mood') {
+    roundedShape(context, x, y, width, height, height / 2);
+  } else if (indicator.kind === 'thought') {
+    roundedShape(context, x, y, width, height, height / 2);
+  } else if (indicator.kind === 'speech') {
+    roundedShape(context, x, y, width, height, 5);
+  } else if (indicator.kind === 'action') {
+    context.beginPath();
+    context.moveTo(x + 5, y);
+    context.lineTo(x + width - 7, y);
+    context.lineTo(x + width, y + height / 2);
+    context.lineTo(x + width - 7, y + height);
+    context.lineTo(x + 5, y + height);
+    context.lineTo(x, y + height / 2);
+    context.closePath();
+  } else {
+    const inset = Math.min(5, width / 4);
+    context.beginPath();
+    context.moveTo(x + inset, y);
+    context.lineTo(x + width - inset, y);
+    context.lineTo(x + width, y + height / 2);
+    context.lineTo(x + width - inset, y + height);
+    context.lineTo(x + inset, y + height);
+    context.lineTo(x, y + height / 2);
+    context.closePath();
+  }
+}
+
+function drawIndicator(
+  context: CanvasRenderingContext2D,
+  indicator: AgentIndicator,
+  x: number,
+  y: number,
+  showLabel: boolean,
+): number {
+  const height = 21;
+  const label =
+    indicator.label.length > 24 ? `${indicator.label.slice(0, 23)}...` : indicator.label;
+  context.font = '600 9px ui-sans-serif, system-ui, sans-serif';
+  const width = showLabel
+    ? Math.min(170, Math.max(32, context.measureText(`${indicator.glyph} ${label}`).width + 16))
+    : 25;
+  context.save();
+  context.shadowColor = 'rgb(0 0 0 / 42%)';
+  context.shadowBlur = 6;
+  context.shadowOffsetY = 2;
+  indicatorShape(context, indicator, x, y, width, height);
+  context.fillStyle =
+    indicator.kind === 'mood' && indicator.tone === 'negative'
+      ? '#d98268'
+      : indicator.kind === 'mood' && indicator.tone === 'positive'
+        ? '#efd06f'
+        : INDICATOR_COLORS[indicator.kind];
+  context.fill();
+  context.shadowColor = 'transparent';
+  context.lineWidth = 1;
+  context.strokeStyle = 'rgb(24 29 25 / 72%)';
+  context.stroke();
+  if (indicator.kind === 'speech') {
+    context.beginPath();
+    context.moveTo(x + 7, y + height - 1);
+    context.lineTo(x + 11, y + height + 5);
+    context.lineTo(x + 15, y + height - 1);
+    context.fill();
+    context.stroke();
+  } else if (indicator.kind === 'thought') {
+    context.beginPath();
+    context.arc(x + 8, y + height + 3, 2.5, 0, Math.PI * 2);
+    context.arc(x + 4, y + height + 7, 1.5, 0, Math.PI * 2);
+    context.fill();
+  }
+  context.fillStyle = '#20251f';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(
+    showLabel ? `${indicator.glyph} ${label}` : indicator.glyph,
+    x + width / 2,
+    y + 10.5,
+  );
+  context.restore();
+  return width;
+}
+
+function drawAgentIndicators(
+  context: CanvasRenderingContext2D,
+  state: SimulationState,
+  camera: Camera,
+  selectedAgentId: string | null,
+  settings: IndicatorSettings,
+  width: number,
+  height: number,
+): void {
+  if (settings.verbosity === 'off') return;
+  for (const agent of state.agents) {
+    const selected = agent.id === selectedAgentId;
+    if (camera.zoom < 0.3 && !selected) continue;
+    const projected = indicatorsForAgent(state, agent, settings);
+    const indicators = selected
+      ? projected
+      : projected
+          .toSorted((left, right) => right.priority - left.priority)
+          .slice(0, settings.verbosity === 'detailed' ? 5 : 3);
+    if (indicators.length === 0) continue;
+    const point = {
+      x: width / 2 + (agent.position.x - camera.x) * camera.zoom,
+      y: height / 2 + (agent.position.y - camera.y) * camera.zoom,
+    };
+    const showLabels = selected && settings.verbosity !== 'minimal';
+    if (showLabels) {
+      const rowHeight = 27;
+      const top = point.y - 43 - rowHeight * indicators.length;
+      for (const [index, indicator] of indicators.entries()) {
+        context.font = '600 9px ui-sans-serif, system-ui, sans-serif';
+        const width = Math.min(
+          170,
+          Math.max(32, context.measureText(`${indicator.glyph} ${indicator.label}`).width + 16),
+        );
+        drawIndicator(context, indicator, point.x - width / 2, top + index * rowHeight, true);
+      }
+    } else {
+      const gap = 4;
+      const totalWidth = indicators.length * 25 + (indicators.length - 1) * gap;
+      let x = point.x - totalWidth / 2;
+      for (const indicator of indicators) {
+        x += drawIndicator(context, indicator, x, point.y - 48, false) + gap;
+      }
+    }
+  }
+}
+
 function drawWorld(
   context: CanvasRenderingContext2D,
   state: SimulationState,
   camera: Camera,
   selectedAgentId: string | null,
+  indicatorSettings: IndicatorSettings,
   width: number,
   height: number,
 ): void {
@@ -173,6 +383,8 @@ function drawWorld(
       context.fillText(area.label, area.x + area.width / 2, area.y + area.height / 2);
     }
   }
+
+  drawAreaIndicators(context, state, camera, indicatorSettings);
 
   if (camera.zoom >= 0.55) {
     for (const location of state.environment.locations) {
@@ -224,6 +436,7 @@ function drawWorld(
     context.fillText(agent.profile.name, agent.position.x, agent.position.y - 15 / camera.zoom);
   }
   context.restore();
+  drawAgentIndicators(context, state, camera, selectedAgentId, indicatorSettings, width, height);
 }
 
 export function createWorldView(options: WorldViewOptions): WorldView {
@@ -331,6 +544,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   createEffect(() => {
     const state = options.state();
     const selectedAgentId = options.selectedAgentId();
+    const indicatorSettings = options.indicatorSettings();
     const currentCamera = camera();
     viewportRevision();
     const width = Math.max(canvas.clientWidth, 1);
@@ -345,7 +559,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const context = canvas.getContext('2d');
     if (context === null) return;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    drawWorld(context, state, currentCamera, selectedAgentId, width, height);
+    drawWorld(context, state, currentCamera, selectedAgentId, indicatorSettings, width, height);
   });
 
   onCleanup(() => {
