@@ -15,6 +15,7 @@ import {
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
 import { effectiveValueWeights } from './salience.js';
+import { appendTrace, traceTerm } from './trace.js';
 
 const MAX_DECISIONS = 80;
 const MAX_MEMORIES = 16;
@@ -154,21 +155,52 @@ function appraisalTrace(
   candidate: CandidateEvaluation,
 ): TraceEntry {
   const appraisal = candidate.appraisal;
+  const candidateSource = `scenario.behaviorOpportunities.${opportunity.id}.candidates.${candidate.candidateId}`;
+  const actorSource = `agents.${opportunity.actorId}`;
   return {
     agentId: opportunity.actorId,
-    causes: [
-      `turn-felt:${appraisal.turnFelt.toFixed(4)}`,
-      `repercussion:${appraisal.repercussionCost.toFixed(4)}`,
-      `contract:${appraisal.contractViolationCost.toFixed(4)}`,
-      `narrative:${appraisal.narrativeExpression.toFixed(4)}`,
-      ...candidate.empathy.map(
-        evaluation => `empathy:${evaluation.subjectId}:${evaluation.empathy.toFixed(4)}`,
-      ),
-    ],
     id: `${state.tick}:${opportunity.id}:appraisal:${candidate.candidateId}`,
     kind: 'appraisal',
     minute: state.minute,
+    selection: null,
     summary: `${candidate.label}: utility ${appraisal.utility.toFixed(4)}`,
+    terms: [
+      traceTerm(
+        'turn-felt',
+        appraisal.turnFelt,
+        `${actorSource}.values`,
+        `${actorSource}.profile.values`,
+        `${candidateSource}.impacts`,
+        `${candidateSource}.empathy`,
+      ),
+      traceTerm(
+        'repercussion-cost',
+        appraisal.repercussionCost,
+        `${candidateSource}.repercussionSeverity`,
+        `scenario.behaviorOpportunities.${opportunity.id}.context`,
+      ),
+      traceTerm(
+        'contract-violation-cost',
+        appraisal.contractViolationCost,
+        `${actorSource}.profile.contractAdherence`,
+        `${candidateSource}.contractViolation`,
+      ),
+      traceTerm(
+        'narrative-expression',
+        appraisal.narrativeExpression,
+        `${candidateSource}.narrativeExpression`,
+      ),
+      traceTerm('utility', appraisal.utility, `decisions.${state.tick}:${opportunity.id}`),
+      ...candidate.empathy.map(evaluation =>
+        traceTerm(
+          `empathy:${evaluation.subjectId}`,
+          evaluation.empathy,
+          `${actorSource}.profile.empathy`,
+          `${candidateSource}.impacts.${evaluation.subjectId}`,
+          `agents.${evaluation.subjectId}.profile.identity`,
+        ),
+      ),
+    ],
     tick: state.tick,
   };
 }
@@ -230,37 +262,58 @@ export function resolveOpportunity(
 
   let trace = state.trace;
   for (const candidate of decision.candidates) {
-    trace = appendBounded(trace, appraisalTrace(state, opportunity, candidate), MAX_TRACE_ENTRIES);
+    trace = appendTrace(trace, appraisalTrace(state, opportunity, candidate), MAX_TRACE_ENTRIES);
   }
-  trace = appendBounded(
+  trace = appendTrace(
     trace,
     {
       agentId: opportunity.actorId,
-      causes: [
-        `opportunity:${opportunity.id}`,
-        `selected-utility:${selectedEvaluation.appraisal.utility.toFixed(4)}`,
-      ],
       id: `${state.tick}:${opportunity.id}:decision`,
       kind: 'decision',
       minute: state.minute,
+      selection: {
+        rule: 'highest-utility-then-authored-order',
+        selectedId: selectedCandidate.id,
+      },
       summary: `${findAgent(state, opportunity.actorId).profile.name}: ${selectedCandidate.label}`,
+      terms: [
+        traceTerm(
+          'opportunity',
+          opportunity.id,
+          `scenario.behaviorOpportunities.${opportunity.id}`,
+        ),
+        traceTerm(
+          'selected-utility',
+          selectedEvaluation.appraisal.utility,
+          `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.utility`,
+        ),
+      ],
       tick: state.tick,
     },
     MAX_TRACE_ENTRIES,
   );
   if (remorse >= 0.05) {
-    trace = appendBounded(
+    trace = appendTrace(
       trace,
       {
         agentId: opportunity.actorId,
-        causes: [
-          `other-harm-felt:${negativeOtherTurn.toFixed(4)}`,
-          `contract-cost:${selectedEvaluation.appraisal.contractViolationCost.toFixed(4)}`,
-        ],
         id: `${state.tick}:${opportunity.id}:aftermath`,
         kind: 'aftermath',
         minute: state.minute,
+        selection: null,
         summary: `${findAgent(state, opportunity.actorId).profile.name} carries remorse from ${selectedCandidate.label.toLowerCase()}`,
+        terms: [
+          traceTerm(
+            'other-harm-felt',
+            negativeOtherTurn,
+            `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.contributions`,
+          ),
+          traceTerm(
+            'contract-cost',
+            selectedEvaluation.appraisal.contractViolationCost,
+            `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.contractViolationCost`,
+          ),
+        ],
         tick: state.tick,
       },
       MAX_TRACE_ENTRIES,

@@ -69,8 +69,8 @@ describe('disclosure and exposure', () => {
     assert.deepEqual(item.knownByIds, ['friend']);
     assert.equal(result.disclosureDecisions.at(-1)?.outcome, 'disclose');
     assert.equal(result.resolvedDisclosureOpportunityIds.at(-1), 'private-question');
-    assert.ok(result.trace.some(entry => entry.kind === 'disclosure-appraisal'));
-    assert.ok(result.trace.some(entry => entry.kind === 'disclosure-decision'));
+    assert.ok(result.trace.entries.some(entry => entry.kind === 'disclosure-appraisal'));
+    assert.ok(result.trace.entries.some(entry => entry.kind === 'disclosure-decision'));
   });
 
   it('replays private disclosure followed by mixed-audience concealment', () => {

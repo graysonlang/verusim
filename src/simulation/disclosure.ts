@@ -9,6 +9,7 @@ import {
   type SocialFeatureMap,
   type TraceEntry,
 } from '../model/types.js';
+import { appendTrace, traceTerm } from './trace.js';
 
 const MAX_DISCLOSURE_DECISIONS = 80;
 const MAX_MEMORIES = 16;
@@ -118,20 +119,47 @@ function appraisalTrace(
 ): TraceEntry {
   return {
     agentId: opportunity.ownerId,
-    causes: [
-      `benefit:${decision.disclosureBenefit.toFixed(4)}`,
-      `worst-cost:${decision.worstCost.toFixed(4)}`,
-      `worst-audience:${decision.worstAudienceId ?? 'none'}`,
-      ...decision.audiences.flatMap(audience => [
-        `disclosure-safety:${audience.audienceId}:${audience.disclosureSafety.toFixed(4)}`,
-        `estimated-empathy:${audience.audienceId}:${audience.estimatedEmpathy.toFixed(4)}`,
-        `exposure-risk:${audience.audienceId}:${audience.exposureRisk.toFixed(4)}`,
-      ]),
-    ],
     id: `${state.tick}:${opportunity.id}:disclosure-appraisal`,
     kind: 'disclosure-appraisal',
     minute: state.minute,
+    selection: null,
     summary: `Disclosure utility ${decision.utility.toFixed(4)}`,
+    terms: [
+      traceTerm(
+        'benefit',
+        decision.disclosureBenefit,
+        `scenario.disclosureOpportunities.${opportunity.id}.disclosureBenefit`,
+      ),
+      traceTerm(
+        'worst-cost',
+        decision.worstCost,
+        `disclosureDecisions.${decision.id}.audiences.${decision.worstAudienceId ?? 'none'}.subjectiveCost`,
+      ),
+      traceTerm(
+        'worst-audience',
+        decision.worstAudienceId,
+        `disclosureDecisions.${decision.id}.audiences`,
+      ),
+      ...decision.audiences.flatMap(audience => [
+        traceTerm(
+          `disclosure-safety:${audience.audienceId}`,
+          audience.disclosureSafety,
+          `agents.${opportunity.ownerId}.profile.disclosure`,
+          `dyads.${opportunity.ownerId}:${audience.audienceId}.features`,
+        ),
+        traceTerm(
+          `estimated-empathy:${audience.audienceId}`,
+          audience.estimatedEmpathy,
+          `dyads.${opportunity.ownerId}:${audience.audienceId}.estimatedEmpathy`,
+        ),
+        traceTerm(
+          `exposure-risk:${audience.audienceId}`,
+          audience.exposureRisk,
+          `scenario.disclosureOpportunities.${opportunity.id}.networkConductivity`,
+          `dyads.${opportunity.ownerId}:${audience.audienceId}.features`,
+        ),
+      ]),
+    ],
     tick: state.tick,
   };
 }
@@ -161,24 +189,33 @@ export function resolveDisclosureOpportunity(
     type: 'disclosure',
   };
 
-  let trace = appendBounded(
+  let trace = appendTrace(
     state.trace,
     appraisalTrace(state, opportunity, decision),
     MAX_TRACE_ENTRIES,
   );
-  trace = appendBounded(
+  trace = appendTrace(
     trace,
     {
       agentId: opportunity.ownerId,
-      causes: [
-        `opportunity:${opportunity.id}`,
-        `utility:${decision.utility.toFixed(4)}`,
-        `worst-audience:${decision.worstAudienceId ?? 'none'}`,
-      ],
       id: `${state.tick}:${opportunity.id}:disclosure-decision`,
       kind: 'disclosure-decision',
       minute: state.minute,
+      selection: { rule: 'positive-utility', selectedId: decision.outcome },
       summary,
+      terms: [
+        traceTerm(
+          'opportunity',
+          opportunity.id,
+          `scenario.disclosureOpportunities.${opportunity.id}`,
+        ),
+        traceTerm('utility', decision.utility, `disclosureDecisions.${decision.id}.utility`),
+        traceTerm(
+          'worst-audience',
+          decision.worstAudienceId,
+          `disclosureDecisions.${decision.id}.worstAudienceId`,
+        ),
+      ],
       tick: state.tick,
     },
     MAX_TRACE_ENTRIES,

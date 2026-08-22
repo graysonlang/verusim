@@ -72,6 +72,17 @@ describe('scenario validation', () => {
         scenario,
       }),
     ) as unknown as Record<string, unknown>;
+    const currentTrace = snapshot.trace as {
+      entries: Array<Record<string, unknown>>;
+    };
+    snapshot.trace = currentTrace.entries.map(entry => {
+      const legacyEntry = { ...entry };
+      const terms = legacyEntry.terms as Array<{ id: string; value: unknown }>;
+      delete legacyEntry.selection;
+      delete legacyEntry.terms;
+      legacyEntry.causes = terms.map(term => `${term.id}:${String(term.value)}`);
+      return legacyEntry;
+    });
     snapshot.schemaVersion = 1;
     snapshot.scenario = relationalScenario;
     delete snapshot.agendaDecisions;
@@ -81,9 +92,47 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 2);
+    assert.equal(migratedSnapshot.schemaVersion, 3);
+    assert.equal(migratedSnapshot.trace.schemaVersion, 1);
+    assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
     assert.deepEqual(migratedSnapshot.worldFacts, []);
+  });
+
+  it('requires explicit gate events in the versioned causal trace', () => {
+    const snapshot = serializeSnapshot(
+      createSimulation({
+        characterLibrary: characters,
+        environmentLibrary: environments,
+        scenario,
+      }),
+    );
+    snapshot.trace.entries.push({
+      agentId: 'mara',
+      id: '0:mara:gate:emergency',
+      kind: 'gate',
+      minute: snapshot.minute,
+      selection: { rule: 'preempt-gate', selectedId: 'emergency' },
+      summary: 'Emergency preempted ordinary appraisal',
+      terms: [
+        {
+          id: 'somatic-level',
+          sources: ['agents.mara.somatic.level'],
+          value: 3,
+        },
+      ],
+      tick: snapshot.tick,
+    });
+    assert.deepEqual(parseSnapshot(snapshot), snapshot);
+
+    const malformed = structuredClone(snapshot);
+    const gate = malformed.trace.entries.at(-1);
+    assert.ok(gate);
+    gate.selection = null;
+    assert.throws(
+      () => parseSnapshot(malformed),
+      /snapshot\.trace\.entries\[.*\]\.selection: gate entries require an explicit selection/,
+    );
   });
 
   it('reports malformed schedules at their authored path', () => {

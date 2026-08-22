@@ -27,6 +27,7 @@ import { parseSnapshot } from '../scenario/snapshot.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
+import { appendTrace, createTrace, traceTerm } from './trace.js';
 
 const DAY_MINUTES = 1440;
 const MAX_MEMORIES = 16;
@@ -374,20 +375,27 @@ export function createSimulation(input: {
     resolvedOpportunityIds: [],
     scenario: content.scenario,
     tick: 0,
-    trace: [
+    trace: createTrace([
       {
         agentId: null,
-        causes: [
-          `environment:${environment.id}`,
-          ...agents.map(agent => `character:${agent.profile.id}`),
-        ],
         id: '0:scenario',
         kind: 'scenario',
         minute: content.scenario.startMinute,
+        selection: null,
         summary: `Loaded ${content.scenario.title}`,
+        terms: [
+          traceTerm('environment', environment.id, 'scenario.environmentId'),
+          ...agents.map(agent =>
+            traceTerm(
+              `character:${agent.id}`,
+              agent.profile.id,
+              `scenario.characters.${agent.id}.characterId`,
+            ),
+          ),
+        ],
         tick: 0,
       },
-    ],
+    ]),
     worldFacts: content.scenario.worldFacts.map(fact => ({ ...fact })),
     worldRevision: 0,
   };
@@ -681,14 +689,21 @@ function advanceAgent(
     );
     trace.push({
       agentId: agent.id,
-      causes:
-        task === null
-          ? [`schedule:${block?.startMinute ?? 0}`, `location:${locationId}`]
-          : [`intention:${task.id}`, `location:${locationId}`],
       id: `${nextTick}:${agent.id}:activity`,
       kind: 'activity',
       minute: nextMinute,
+      selection: null,
       summary,
+      terms:
+        task === null
+          ? [
+              traceTerm('schedule', block?.startMinute ?? 0, `agents.${agent.id}.schedule`),
+              traceTerm('location', locationId, `environment.locations.${locationId}`),
+            ]
+          : [
+              traceTerm('intention', task.id, `intentions.${agent.id}`),
+              traceTerm('location', locationId, `environment.locations.${locationId}`),
+            ],
       tick: nextTick,
     });
   }
@@ -702,11 +717,18 @@ function advanceAgent(
     if (activeTurns.length > 0) {
       trace.push({
         agentId: agent.id,
-        causes: activeTurns.map(valueId => `ambient:${valueId}`),
         id: `${nextTick}:${agent.id}:ambient`,
         kind: 'value-turn',
         minute: nextMinute,
+        selection: null,
         summary: `${agent.profile.name} remains under the scenario's ambient pressure`,
+        terms: activeTurns.map(valueId =>
+          traceTerm(
+            `ambient:${valueId}`,
+            state.scenario.ambientTurnsPerHour?.[valueId] ?? 0,
+            `scenario.ambientTurnsPerHour.${valueId}`,
+          ),
+        ),
         tick: nextTick,
       });
     }
@@ -733,7 +755,7 @@ function advanceOneTick(state: SimulationState): SimulationState {
   const results = prepared.agents.map(agent => advanceAgent(prepared, agent, nextMinute, nextTick));
   let trace = prepared.trace;
   for (const result of results) {
-    for (const entry of result.trace) trace = appendBounded(trace, entry, MAX_TRACE_ENTRIES);
+    for (const entry of result.trace) trace = appendTrace(trace, entry, MAX_TRACE_ENTRIES);
   }
   let next: SimulationState = {
     ...prepared,
@@ -774,15 +796,18 @@ function interventionEntry(
   state: SimulationState,
   agent: SimulationAgent,
   summary: string,
-  cause: string,
+  termId: string,
+  value: number,
+  source: string,
 ): TraceEntry {
   return {
     agentId: agent.id,
-    causes: [cause],
-    id: `${state.tick}:${agent.id}:intervention:${state.trace.length}`,
+    id: `${state.tick}:${agent.id}:intervention:${state.trace.entries.length}`,
     kind: 'intervention',
     minute: state.minute,
+    selection: null,
     summary,
+    terms: [traceTerm(termId, value, source)],
     tick: state.tick,
   };
 }
@@ -797,7 +822,14 @@ export function setAgentValueCharge(
   if (agent === undefined) throw new RangeError(`Unknown agent "${agentId}"`);
   const nextCharge = clamp(charge, -1, 1);
   const summary = `Set ${agent.profile.name}'s ${valueId} charge to ${nextCharge.toFixed(2)}`;
-  const entry = interventionEntry(state, agent, summary, `workbench:value:${valueId}`);
+  const entry = interventionEntry(
+    state,
+    agent,
+    summary,
+    `value:${valueId}`,
+    nextCharge,
+    `intervention.agents.${agentId}.values.${valueId}.charge`,
+  );
   return {
     ...state,
     agents: state.agents.map(candidate =>
@@ -816,7 +848,7 @@ export function setAgentValueCharge(
           }
         : candidate,
     ),
-    trace: appendBounded(state.trace, entry, MAX_TRACE_ENTRIES),
+    trace: appendTrace(state.trace, entry, MAX_TRACE_ENTRIES),
   };
 }
 
@@ -830,7 +862,14 @@ export function setAgentResource(
   if (agent === undefined) throw new RangeError(`Unknown agent "${agentId}"`);
   const nextAmount = clamp(amount, 0, 1);
   const summary = `Set ${agent.profile.name}'s ${resourceId} to ${nextAmount.toFixed(2)}`;
-  const entry = interventionEntry(state, agent, summary, `workbench:resource:${resourceId}`);
+  const entry = interventionEntry(
+    state,
+    agent,
+    summary,
+    `resource:${resourceId}`,
+    nextAmount,
+    `intervention.agents.${agentId}.resources.${resourceId}`,
+  );
   return {
     ...state,
     agents: state.agents.map(candidate =>
@@ -838,6 +877,6 @@ export function setAgentResource(
         ? { ...candidate, resources: { ...candidate.resources, [resourceId]: nextAmount } }
         : candidate,
     ),
-    trace: appendBounded(state.trace, entry, MAX_TRACE_ENTRIES),
+    trace: appendTrace(state.trace, entry, MAX_TRACE_ENTRIES),
   };
 }

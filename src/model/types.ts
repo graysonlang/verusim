@@ -313,28 +313,56 @@ export interface SimulationAgent {
   walkingMetersPerMinute: number;
 }
 
+export type TraceKind =
+  | 'activity'
+  | 'aftermath'
+  | 'agenda'
+  | 'appraisal'
+  | 'decision'
+  | 'disclosure-appraisal'
+  | 'disclosure-decision'
+  | 'gate'
+  | 'goal'
+  | 'intervention'
+  | 'intention'
+  | 'relationship'
+  | 'scenario'
+  | 'task'
+  | 'value-turn';
+
+export type TraceScalar = boolean | number | string | null;
+
+export interface TraceTerm {
+  id: string;
+  sources: string[];
+  value: TraceScalar;
+}
+
+export type TraceSelectionRule =
+  | 'highest-score-then-authored-order'
+  | 'highest-utility-then-authored-order'
+  | 'positive-utility'
+  | 'preempt-gate';
+
+export interface TraceSelection {
+  rule: TraceSelectionRule;
+  selectedId: string | null;
+}
+
 export interface TraceEntry {
   agentId: string | null;
-  causes: string[];
   id: string;
-  kind:
-    | 'activity'
-    | 'aftermath'
-    | 'appraisal'
-    | 'agenda'
-    | 'decision'
-    | 'disclosure-appraisal'
-    | 'disclosure-decision'
-    | 'intervention'
-    | 'intention'
-    | 'goal'
-    | 'relationship'
-    | 'scenario'
-    | 'task'
-    | 'value-turn';
+  kind: TraceKind;
   minute: number;
+  selection: TraceSelection | null;
   summary: string;
+  terms: TraceTerm[];
   tick: number;
+}
+
+export interface CausalTrace {
+  entries: TraceEntry[];
+  schemaVersion: 1;
 }
 
 export interface SimulationState {
@@ -353,7 +381,7 @@ export interface SimulationState {
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
   tick: number;
-  trace: TraceEntry[];
+  trace: CausalTrace;
   worldFacts: WorldFact[];
   worldRevision: number;
 }
@@ -548,9 +576,9 @@ export interface SimulationSnapshotFile {
   resolvedDisclosureOpportunityIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 2;
+  schemaVersion: 3;
   tick: number;
-  trace: TraceEntry[];
+  trace: CausalTrace;
   type: 'verusim-snapshot';
   worldFacts: WorldFact[];
   worldRevision: number;

@@ -20,6 +20,7 @@ import {
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
 import { effectiveValueWeights } from './salience.js';
+import { appendTrace, traceTerm } from './trace.js';
 
 const MAX_AGENDA_DECISIONS = 80;
 const MAX_MEMORIES = 16;
@@ -317,7 +318,7 @@ function planCandidates(
 }
 
 function addTrace(state: SimulationState, entry: TraceEntry): SimulationState {
-  return { ...state, trace: appendBounded(state.trace, entry, MAX_TRACE_ENTRIES) };
+  return { ...state, trace: appendTrace(state.trace, entry, MAX_TRACE_ENTRIES) };
 }
 
 function addMemory(
@@ -362,18 +363,23 @@ function resolveGoal(
   });
   return addTrace(next, {
     agentId: agent.id,
-    causes: [
-      `goal:${goal.id}`,
-      `source:${goal.source}`,
-      `outcome:${status}`,
-      ...VALUE_IDS.filter(valueId => (turns[valueId] ?? 0) !== 0).map(
-        valueId => `turn:${valueId}:${(turns[valueId] ?? 0).toFixed(4)}`,
-      ),
-    ],
     id: `${state.tick}:${goal.id}:goal:${status}`,
     kind: 'goal',
     minute: state.minute,
+    selection: null,
     summary,
+    terms: [
+      traceTerm('goal', goal.id, `agendaGoals.${goal.id}`),
+      traceTerm('source', goal.source, `agendaGoals.${goal.id}.source`),
+      traceTerm('outcome', status, `agendaGoals.${goal.id}.desired`),
+      ...VALUE_IDS.filter(valueId => (turns[valueId] ?? 0) !== 0).map(valueId =>
+        traceTerm(
+          `turn:${valueId}`,
+          turns[valueId] ?? 0,
+          `agendaGoals.${goal.id}.${status === 'completed' ? 'successTurns' : 'failureTurns'}.${valueId}`,
+        ),
+      ),
+    ],
     tick: state.tick,
   });
 }
@@ -394,11 +400,15 @@ function settleGoals(state: SimulationState): SimulationState {
       if (goal === undefined) continue;
       next = addTrace(next, {
         agentId: goal.actorId,
-        causes: [`source:${goal.source}`, `commitment:${goal.commitment.toFixed(4)}`],
         id: `${next.tick}:${goal.id}:goal:active`,
         kind: 'goal',
         minute: next.minute,
+        selection: null,
         summary: `Activated goal: ${goal.label}`,
+        terms: [
+          traceTerm('source', goal.source, `agendaGoals.${goal.id}.source`),
+          traceTerm('commitment', goal.commitment, `agendaGoals.${goal.id}.commitment`),
+        ],
         tick: next.tick,
       });
     }
@@ -487,36 +497,69 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
   for (const candidate of candidates) {
     next = addTrace(next, {
       agentId: actorId,
-      causes: [
-        `goal:${candidate.goalId}`,
-        `goal-utility:${candidate.goalUtility.toFixed(4)}`,
-        `task-utility:${candidate.taskUtility.toFixed(4)}`,
-        `resource-cost:${candidate.resourceCost.toFixed(4)}`,
-        ...(Object.keys(candidate.resourceCosts) as (keyof ResourceState)[])
-          .filter(resourceId => candidate.resourceCosts[resourceId] > 0)
-          .map(
-            resourceId =>
-              `resource:${resourceId}:-${candidate.resourceCosts[resourceId].toFixed(4)}`,
-          ),
-        `urgency:${candidate.urgency.toFixed(4)}`,
-        `completion:${candidate.estimatedCompletionMinute}`,
-        ...candidate.taskIds.map(taskId => `task:${taskId}`),
-      ],
       id: `${state.tick}:${actorId}:agenda:${candidate.id}`,
       kind: 'agenda',
       minute: state.minute,
+      selection: null,
       summary: `${candidate.id}: score ${candidate.score.toFixed(4)}`,
+      terms: [
+        traceTerm('goal', candidate.goalId, `agendaGoals.${candidate.goalId}`),
+        traceTerm(
+          'goal-utility',
+          candidate.goalUtility,
+          `agendaGoals.${candidate.goalId}.successTurns`,
+          `agendaGoals.${candidate.goalId}.failureTurns`,
+          `agents.${actorId}.values`,
+        ),
+        traceTerm(
+          'task-utility',
+          candidate.taskUtility,
+          ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.valueTurns`),
+        ),
+        traceTerm(
+          'resource-cost',
+          candidate.resourceCost,
+          ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.resourceCosts`),
+          `agents.${actorId}.resources`,
+        ),
+        ...(Object.keys(candidate.resourceCosts) as (keyof ResourceState)[])
+          .filter(resourceId => candidate.resourceCosts[resourceId] > 0)
+          .map(resourceId =>
+            traceTerm(
+              `resource:${resourceId}`,
+              -candidate.resourceCosts[resourceId],
+              ...candidate.taskIds.map(
+                taskId => `scenario.taskOperators.${taskId}.resourceCosts.${resourceId}`,
+              ),
+            ),
+          ),
+        traceTerm(
+          'urgency',
+          candidate.urgency,
+          `agendaGoals.${candidate.goalId}.deadlineMinute`,
+          `agendaDecisions.${decision.id}.candidates.${candidate.id}.estimatedCompletionMinute`,
+        ),
+        traceTerm(
+          'completion',
+          candidate.estimatedCompletionMinute,
+          ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.durationMinutes`),
+        ),
+        ...candidate.taskIds.map(taskId =>
+          traceTerm('task', taskId, `scenario.taskOperators.${taskId}`),
+        ),
+      ],
       tick: state.tick,
     });
   }
   if (selected === null) {
     return addTrace(next, {
       agentId: actorId,
-      causes: goals.map(goal => `blocked-goal:${goal.id}`),
       id: `${state.tick}:${actorId}:agenda:blocked`,
       kind: 'agenda',
       minute: state.minute,
+      selection: { rule: 'highest-score-then-authored-order', selectedId: null },
       summary: `${agent.profile.name} found no feasible plan`,
+      terms: goals.map(goal => traceTerm('blocked-goal', goal.id, `agendaGoals.${goal.id}`)),
       tick: state.tick,
     });
   }
@@ -541,16 +584,17 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
   };
   return addTrace(next, {
     agentId: actorId,
-    causes: [
-      `goal:${plan.goalId}`,
-      `plan:${plan.id}`,
-      `score:${plan.score.toFixed(4)}`,
-      `phase:${intention.phase}`,
-    ],
     id: `${state.tick}:${actorId}:intention:${task.id}`,
     kind: 'intention',
     minute: state.minute,
+    selection: { rule: 'highest-score-then-authored-order', selectedId: plan.id },
     summary: `${agent.profile.name} intends to ${task.label.toLowerCase()}`,
+    terms: [
+      traceTerm('goal', plan.goalId, `agendaGoals.${plan.goalId}`),
+      traceTerm('plan', plan.id, `plans.${plan.id}`),
+      traceTerm('score', plan.score, `agendaDecisions.${decision.id}.candidates.${plan.id}.score`),
+      traceTerm('phase', intention.phase, `intentions.${actorId}.phase`),
+    ],
     tick: state.tick,
   });
 }
@@ -579,11 +623,21 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
     };
     next = addTrace(next, {
       agentId: intention.actorId,
-      causes: [`task:${task.id}`, 'reason:precondition-or-window-changed'],
       id: `${state.tick}:${intention.actorId}:intention:canceled:${task.id}`,
       kind: 'intention',
       minute: state.minute,
+      selection: null,
       summary: `Canceled intention: ${task.label}`,
+      terms: [
+        traceTerm('task', task.id, `scenario.taskOperators.${task.id}`),
+        traceTerm(
+          'reason',
+          'precondition-or-window-changed',
+          `scenario.taskOperators.${task.id}.preconditions`,
+          `scenario.taskOperators.${task.id}.availableUntilMinute`,
+          'worldFacts',
+        ),
+      ],
       tick: state.tick,
     });
   }
@@ -633,11 +687,15 @@ export function setWorldFactAmount(
     },
     {
       agentId: null,
-      causes: [`workbench:world-fact:${factId}`, `world-revision:${worldRevision}`],
       id: `${state.tick}:world-fact:${factId}:${worldRevision}`,
       kind: 'intervention',
       minute: state.minute,
+      selection: null,
       summary: `Set ${factId} to ${nextAmount}`,
+      terms: [
+        traceTerm('world-fact', nextAmount, `intervention.worldFacts.${factId}`),
+        traceTerm('world-revision', worldRevision, 'worldRevision'),
+      ],
       tick: state.tick,
     },
   );
@@ -675,11 +733,22 @@ function completeTask(
     };
     canceled = addTrace(canceled, {
       agentId: intention.actorId,
-      causes: [`task:${task.id}`, 'reason:completion-precondition-failed'],
       id: `${state.tick}:${intention.actorId}:task:failed:${task.id}`,
       kind: 'task',
       minute: state.minute,
+      selection: null,
       summary: `${agent.profile.name} could not complete ${task.label.toLowerCase()}`,
+      terms: [
+        traceTerm('task', task.id, `scenario.taskOperators.${task.id}`),
+        traceTerm(
+          'reason',
+          'completion-precondition-failed',
+          `scenario.taskOperators.${task.id}.preconditions`,
+          `scenario.taskOperators.${task.id}.resourceCosts`,
+          `agents.${agent.id}.resources`,
+          'worldFacts',
+        ),
+      ],
       tick: state.tick,
     });
     return canceled;
@@ -718,17 +787,28 @@ function completeTask(
   });
   next = addTrace(next, {
     agentId: agent.id,
-    causes: [
-      `task:${task.id}`,
-      ...task.effects.map(effect => `fact:${effect.factId}:${effect.delta.toFixed(4)}`),
-      ...(Object.keys(task.resourceCosts) as (keyof ResourceState)[]).map(
-        resourceId => `resource:${resourceId}:-${(task.resourceCosts[resourceId] ?? 0).toFixed(4)}`,
-      ),
-    ],
     id: `${state.tick}:${agent.id}:task:${task.id}`,
     kind: 'task',
     minute: state.minute,
+    selection: null,
     summary,
+    terms: [
+      traceTerm('task', task.id, `scenario.taskOperators.${task.id}`),
+      ...task.effects.map(effect =>
+        traceTerm(
+          `fact:${effect.factId}`,
+          effect.delta,
+          `scenario.taskOperators.${task.id}.effects.${effect.factId}`,
+        ),
+      ),
+      ...(Object.keys(task.resourceCosts) as (keyof ResourceState)[]).map(resourceId =>
+        traceTerm(
+          `resource:${resourceId}`,
+          -(task.resourceCosts[resourceId] ?? 0),
+          `scenario.taskOperators.${task.id}.resourceCosts.${resourceId}`,
+        ),
+      ),
+    ],
     tick: state.tick,
   });
   return settleGoals(next);

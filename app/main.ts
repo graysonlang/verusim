@@ -126,11 +126,19 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-function latestEntries(state: SimulationState, agentId: string): SimulationState['trace'] {
-  return state.trace
+function latestEntries(
+  state: SimulationState,
+  agentId: string,
+): SimulationState['trace']['entries'] {
+  return state.trace.entries
     .filter(entry => entry.agentId === null || entry.agentId === agentId)
     .slice(-7)
     .reverse();
+}
+
+function traceValue(value: boolean | number | string | null): string {
+  if (typeof value === 'number') return value.toFixed(4);
+  return value === null ? 'none' : String(value);
 }
 
 function locationName(state: SimulationState, agent: SimulationAgent): string {
@@ -477,7 +485,11 @@ function renderInspector(
     const causes = element('small');
     time.textContent = formatSimulationTime(entry.minute);
     copy.textContent = entry.summary;
-    causes.textContent = entry.causes.join(' / ');
+    const terms = entry.terms.map(term => `${term.id}:${traceValue(term.value)}`);
+    if (entry.selection !== null) {
+      terms.push(`selected:${entry.selection.selectedId ?? 'none'} (${entry.selection.rule})`);
+    }
+    causes.textContent = terms.join(' / ');
     item.append(time, copy, causes);
     traceList.append(item);
   }
@@ -642,7 +654,7 @@ function createWorkbench(): HTMLElement {
     const current = state();
     scenarioName.textContent = current.scenario.title;
     time.textContent = formatSimulationTime(current.minute);
-    simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} agents / ${current.trace.length} trace entries`;
+    simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} agents / ${current.trace.entries.length} trace entries`;
   });
 
   createEffect(() => {

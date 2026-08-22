@@ -19,6 +19,7 @@ const TRACE_KINDS = new Set([
   'decision',
   'disclosure-appraisal',
   'disclosure-decision',
+  'gate',
   'goal',
   'intervention',
   'intention',
@@ -26,6 +27,12 @@ const TRACE_KINDS = new Set([
   'scenario',
   'task',
   'value-turn',
+]);
+const TRACE_SELECTION_RULES = new Set([
+  'highest-score-then-authored-order',
+  'highest-utility-then-authored-order',
+  'positive-utility',
+  'preempt-gate',
 ]);
 const GOAL_STATUSES = new Set(['active', 'blocked', 'completed', 'failed', 'pending']);
 const INTENTION_PHASES = new Set(['travel', 'waiting', 'work']);
@@ -140,8 +147,12 @@ function validateAgent(value: unknown, path: string): void {
 }
 
 function validateTrace(value: unknown, path: string): void {
-  arrayValue(value, path).forEach((entryValue, index) => {
-    const entryPath = `${path}[${index}]`;
+  const trace = objectValue(value, path);
+  if (trace.schemaVersion !== 1) {
+    throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
+  }
+  arrayValue(trace.entries, `${path}.entries`).forEach((entryValue, index) => {
+    const entryPath = `${path}.entries[${index}]`;
     const entry = objectValue(entryValue, entryPath);
     stringValue(entry.id, `${entryPath}.id`);
     if (entry.agentId !== null) stringValue(entry.agentId, `${entryPath}.agentId`);
@@ -151,9 +162,54 @@ function validateTrace(value: unknown, path: string): void {
     if (typeof entry.kind !== 'string' || !TRACE_KINDS.has(entry.kind)) {
       throw new ScenarioValidationError(`${entryPath}.kind`, 'expected a known trace kind');
     }
-    arrayValue(entry.causes, `${entryPath}.causes`).forEach((cause, causeIndex) => {
-      stringValue(cause, `${entryPath}.causes[${causeIndex}]`);
+    arrayValue(entry.terms, `${entryPath}.terms`).forEach((termValue, termIndex) => {
+      const termPath = `${entryPath}.terms[${termIndex}]`;
+      const term = objectValue(termValue, termPath);
+      stringValue(term.id, `${termPath}.id`);
+      const sources = arrayValue(term.sources, `${termPath}.sources`);
+      if (sources.length === 0) {
+        throw new ScenarioValidationError(`${termPath}.sources`, 'expected at least one source');
+      }
+      sources.forEach((source, sourceIndex) => {
+        stringValue(source, `${termPath}.sources[${sourceIndex}]`);
+      });
+      if (
+        term.value !== null &&
+        typeof term.value !== 'boolean' &&
+        typeof term.value !== 'string' &&
+        (typeof term.value !== 'number' || !Number.isFinite(term.value))
+      ) {
+        throw new ScenarioValidationError(
+          `${termPath}.value`,
+          'expected a finite number, string, boolean, or null',
+        );
+      }
     });
+    if (entry.selection === null) {
+      if (entry.kind === 'gate') {
+        throw new ScenarioValidationError(
+          `${entryPath}.selection`,
+          'gate entries require an explicit selection',
+        );
+      }
+      return;
+    }
+    const selection = objectValue(entry.selection, `${entryPath}.selection`);
+    if (selection.selectedId !== null) {
+      stringValue(selection.selectedId, `${entryPath}.selection.selectedId`);
+    }
+    if (typeof selection.rule !== 'string' || !TRACE_SELECTION_RULES.has(selection.rule)) {
+      throw new ScenarioValidationError(
+        `${entryPath}.selection.rule`,
+        'expected a known selection rule',
+      );
+    }
+    if (entry.kind === 'gate' && selection.rule !== 'preempt-gate') {
+      throw new ScenarioValidationError(
+        `${entryPath}.selection.rule`,
+        'gate entries must use the preempt-gate rule',
+      );
+    }
   });
 }
 
@@ -432,19 +488,36 @@ function validateAgendaHistory(value: unknown, path: string): void {
 
 function migrateSnapshot(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'snapshot'));
-  if (file.schemaVersion === 2) return file;
-  if (file.schemaVersion !== 1) {
+  if (file.schemaVersion === 3) return file;
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
-  const scenario = parseScenario(file.scenario);
-  file.scenario = scenario;
-  file.agendaDecisions = [];
-  file.agendaGoals = [];
-  file.intentions = [];
-  file.plans = [];
-  file.worldFacts = scenario.worldFacts;
-  file.worldRevision = 0;
-  file.schemaVersion = 2;
+  if (file.schemaVersion === 1) {
+    const scenario = parseScenario(file.scenario);
+    file.scenario = scenario;
+    file.agendaDecisions = [];
+    file.agendaGoals = [];
+    file.intentions = [];
+    file.plans = [];
+    file.worldFacts = scenario.worldFacts;
+    file.worldRevision = 0;
+  }
+  file.trace = {
+    entries: arrayValue(file.trace, 'snapshot.trace').map((entryValue, entryIndex) => {
+      const entry = clone(objectValue(entryValue, `snapshot.trace[${entryIndex}]`));
+      const causes = arrayValue(entry.causes, `snapshot.trace[${entryIndex}].causes`);
+      delete entry.causes;
+      entry.selection = null;
+      entry.terms = causes.map((cause, causeIndex) => ({
+        id: 'legacy-cause',
+        sources: [`snapshot-v${file.schemaVersion}.trace[${entryIndex}].causes[${causeIndex}]`],
+        value: stringValue(cause, `snapshot.trace[${entryIndex}].causes[${causeIndex}]`),
+      }));
+      return entry;
+    }),
+    schemaVersion: 1,
+  };
+  file.schemaVersion = 3;
   return file;
 }
 
@@ -453,7 +526,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 2) {
+  if (file.schemaVersion !== 3) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);

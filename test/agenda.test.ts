@@ -41,7 +41,7 @@ describe('agenda planning', () => {
     );
     assert.equal(completed.worldFacts.find(fact => fact.id === 'bread-sold')?.amount, 1);
     assert.deepEqual(
-      completed.trace.filter(entry => entry.kind === 'task').map(entry => entry.summary),
+      completed.trace.entries.filter(entry => entry.kind === 'task').map(entry => entry.summary),
       [
         'Mara Vale completed fetch flour from the mill',
         'Mara Vale completed rush the bread',
@@ -101,7 +101,7 @@ describe('agenda planning', () => {
     const replanned = setWorldFactAmount(initial, 'flour-on-hand', 0);
     assert.equal(replanned.intentions[0]?.taskId, 'fetch-flour');
     assert.ok(
-      replanned.trace.some(
+      replanned.trace.entries.some(
         entry =>
           entry.kind === 'intention' &&
           entry.summary === 'Canceled intention: Bake bread carefully',
@@ -122,7 +122,9 @@ describe('agenda planning', () => {
     assert.equal(completed.minute, 650);
     assert.equal(failed?.status, 'failed');
     assert.equal(failed?.resolvedMinute, 650);
-    assert.ok(completed.trace.some(entry => entry.kind === 'goal' && entry.id.endsWith(':failed')));
+    assert.ok(
+      completed.trace.entries.some(entry => entry.kind === 'goal' && entry.id.endsWith(':failed')),
+    );
   });
 
   it('preserves an in-progress plan exactly across snapshot resume', () => {

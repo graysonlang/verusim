@@ -46,7 +46,9 @@ describe('simulation runtime', () => {
     assert.equal(mara.currentLocationId, 'wayfarer-inn');
     assert.equal(mara.currentActivity, 'Opening the common room');
     assert.ok(Math.abs(mara.values.safety.charge - 0.108) < 1e-12);
-    assert.ok(first.trace.some(entry => entry.agentId === 'mara' && entry.kind === 'activity'));
+    assert.ok(
+      first.trace.entries.some(entry => entry.agentId === 'mara' && entry.kind === 'activity'),
+    );
   });
 
   it('derives one legible concern from the full value state', () => {
@@ -71,7 +73,7 @@ describe('simulation runtime', () => {
       changedResource.agents.find(agent => agent.id === 'sera')?.resources.regulationReserve,
       0.1,
     );
-    assert.equal(changedResource.trace.at(-1)?.kind, 'intervention');
+    assert.equal(changedResource.trace.entries.at(-1)?.kind, 'intervention');
   });
 
   it('keeps authored scenarios separate from resumable snapshots', () => {

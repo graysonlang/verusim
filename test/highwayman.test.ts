@@ -65,10 +65,10 @@ describe('highwayman factorial', () => {
     assert.equal(roadResult.agents.find(agent => agent.id === 'actor')?.cascade, 'none');
     assert.equal(squareResult.agents.find(agent => agent.id === 'actor')?.cascade, 'none');
     assert.equal(
-      squareResult.trace.some(entry => entry.kind === 'aftermath'),
+      squareResult.trace.entries.some(entry => entry.kind === 'aftermath'),
       false,
     );
-    assert.equal(squareResult.trace.filter(entry => entry.kind === 'appraisal').length, 2);
+    assert.equal(squareResult.trace.entries.filter(entry => entry.kind === 'appraisal').length, 2);
   });
 
   it('keeps a fed normal-floor actor from robbing on the empty road', () => {
@@ -94,11 +94,11 @@ describe('highwayman factorial', () => {
     assert.equal(selectedCandidate(lowFloorResult), 'rob');
     assert.equal(selectedCandidate(starvingResult), 'rob');
     assert.equal(
-      lowFloorResult.trace.some(entry => entry.kind === 'aftermath'),
+      lowFloorResult.trace.entries.some(entry => entry.kind === 'aftermath'),
       false,
     );
     assert.equal(
-      starvingResult.trace.some(entry => entry.kind === 'aftermath'),
+      starvingResult.trace.entries.some(entry => entry.kind === 'aftermath'),
       true,
     );
 
@@ -177,5 +177,20 @@ describe('highwayman factorial', () => {
     const first = advanceSimulation(createHighwaymanSimulation(roadScenario));
     const second = advanceSimulation(createHighwaymanSimulation(roadScenario));
     assert.deepEqual(first, second);
+    const appraisal = first.trace.entries.find(entry => entry.kind === 'appraisal');
+    const selection = first.trace.entries.find(entry => entry.kind === 'decision')?.selection;
+    assert.deepEqual(
+      appraisal?.terms.slice(0, 5).map(term => term.id),
+      [
+        'turn-felt',
+        'repercussion-cost',
+        'contract-violation-cost',
+        'narrative-expression',
+        'utility',
+      ],
+    );
+    assert.ok(appraisal?.terms.every(term => term.sources.length > 0));
+    assert.equal(selection?.rule, 'highest-utility-then-authored-order');
+    assert.equal(selection?.selectedId, first.decisions[0]?.selectedCandidateId);
   });
 });
