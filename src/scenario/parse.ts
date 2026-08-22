@@ -19,6 +19,7 @@ const AREA_KINDS = new Set<AreaKind>([
 ]);
 const VALUE_ID_SET = new Set<string>(VALUE_IDS);
 const DYAD_MODES = new Set(['courteous', 'contesting', 'guarded', 'ruptured', 'warm']);
+const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'want']);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export class ScenarioValidationError extends Error {
@@ -168,6 +169,48 @@ function validateValueState(value: unknown, path: string): void {
   if (state.variance !== undefined) numberValue(state.variance, `${path}.variance`, 0, 1);
 }
 
+function validateValueTurns(value: unknown, path: string): void {
+  const turns = objectValue(value, path);
+  for (const [valueId, turn] of Object.entries(turns)) {
+    if (!VALUE_ID_SET.has(valueId)) {
+      throw new ScenarioValidationError(`${path}.${valueId}`, 'expected a known value identifier');
+    }
+    numberValue(turn, `${path}.${valueId}`, -1, 1);
+  }
+}
+
+function validateResourceCosts(value: unknown, path: string): void {
+  const resources = objectValue(value, path);
+  for (const [resourceId, cost] of Object.entries(resources)) {
+    if (
+      !['executiveBudget', 'physicalStamina', 'regulationReserve', 'socialBattery'].includes(
+        resourceId,
+      )
+    ) {
+      throw new ScenarioValidationError(`${path}.${resourceId}`, 'unknown resource');
+    }
+    numberValue(cost, `${path}.${resourceId}`, 0, 1);
+  }
+}
+
+function validateFactConditions(value: unknown, path: string, requireOne: boolean): void {
+  const conditions = arrayValue(value, path);
+  if (requireOne && conditions.length === 0) {
+    throw new ScenarioValidationError(path, 'expected at least one condition');
+  }
+  const factIds = new Set<string>();
+  conditions.forEach((entry, index) => {
+    const conditionPath = `${path}[${index}]`;
+    const condition = objectValue(entry, conditionPath);
+    const factId = identifierValue(condition.factId, `${conditionPath}.factId`);
+    numberValue(condition.minimum, `${conditionPath}.minimum`, 0, 1_000_000);
+    if (factIds.has(factId)) {
+      throw new ScenarioValidationError(`${conditionPath}.factId`, 'duplicate fact condition');
+    }
+    factIds.add(factId);
+  });
+}
+
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
 }
@@ -215,29 +258,34 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 3) return file;
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+  if (file.schemaVersion === 4) return file;
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
-  if (file.schemaVersion === 1) {
-    file.behaviorOpportunities = [];
-    file.socialRelations = [];
+  if (file.schemaVersion === 1 || file.schemaVersion === 2) {
+    if (file.schemaVersion === 1) {
+      file.behaviorOpportunities = [];
+      file.socialRelations = [];
+    }
+    file.dyads = arrayValue(file.socialRelations, 'scenario.socialRelations').map(value => ({
+      ...objectValue(value, 'scenario.socialRelations'),
+      behaviorVariance: 0,
+      estimateConfidence: 0.1,
+      estimatedDisclosure: 0.5,
+      estimatedEmpathy: 0.5,
+      integratedHistory: 0,
+      mode: 'courteous',
+      predictionError: 0,
+      stance: 0,
+    }));
+    delete file.socialRelations;
+    file.disclosureItems = [];
+    file.disclosureOpportunities = [];
   }
-  file.dyads = arrayValue(file.socialRelations, 'scenario.socialRelations').map(value => ({
-    ...objectValue(value, 'scenario.socialRelations'),
-    behaviorVariance: 0,
-    estimateConfidence: 0.1,
-    estimatedDisclosure: 0.5,
-    estimatedEmpathy: 0.5,
-    integratedHistory: 0,
-    mode: 'courteous',
-    predictionError: 0,
-    stance: 0,
-  }));
-  delete file.socialRelations;
-  file.disclosureItems = [];
-  file.disclosureOpportunities = [];
-  file.schemaVersion = 3;
+  file.agendaGoals = [];
+  file.taskOperators = [];
+  file.worldFacts = [];
+  file.schemaVersion = 4;
   return file;
 }
 
@@ -344,7 +392,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 3);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 4);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -364,6 +412,123 @@ export function parseScenario(value: unknown): ScenarioFile {
       numberValue(turn, `scenario.ambientTurnsPerHour.${valueId}`, -1, 1);
     }
   }
+
+  const worldFacts = arrayValue(file.worldFacts, 'scenario.worldFacts').map((entry, index) => {
+    const path = `scenario.worldFacts[${index}]`;
+    const fact = objectValue(entry, path);
+    identifierValue(fact.id, `${path}.id`);
+    numberValue(fact.amount, `${path}.amount`, 0, 1_000_000);
+    return fact;
+  });
+  uniqueIds(worldFacts, 'scenario.worldFacts');
+
+  const agendaGoals = arrayValue(file.agendaGoals, 'scenario.agendaGoals').map((entry, index) => {
+    const path = `scenario.agendaGoals[${index}]`;
+    const goal = objectValue(entry, path);
+    identifierValue(goal.id, `${path}.id`);
+    identifierValue(goal.actorId, `${path}.actorId`);
+    stringValue(goal.label, `${path}.label`);
+    if (typeof goal.source !== 'string' || !GOAL_SOURCES.has(goal.source)) {
+      throw new ScenarioValidationError(`${path}.source`, 'expected a known goal source');
+    }
+    numberValue(goal.commitment, `${path}.commitment`, 0, 1);
+    const activationMinute = integerValue(
+      goal.activationMinute,
+      `${path}.activationMinute`,
+      0,
+      Number.MAX_SAFE_INTEGER,
+    );
+    if (goal.deadlineMinute !== null) {
+      const deadlineMinute = integerValue(
+        goal.deadlineMinute,
+        `${path}.deadlineMinute`,
+        0,
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (deadlineMinute <= activationMinute) {
+        throw new ScenarioValidationError(
+          `${path}.deadlineMinute`,
+          'expected a deadline after activation',
+        );
+      }
+    }
+    integerValue(goal.urgencyHorizonMinutes, `${path}.urgencyHorizonMinutes`, 1, 100_000);
+    validateFactConditions(goal.desired, `${path}.desired`, true);
+    validateValueTurns(goal.successTurns, `${path}.successTurns`);
+    validateValueTurns(goal.failureTurns, `${path}.failureTurns`);
+    return goal;
+  });
+  uniqueIds(agendaGoals, 'scenario.agendaGoals');
+
+  const taskOperators = arrayValue(file.taskOperators, 'scenario.taskOperators').map(
+    (entry, index) => {
+      const path = `scenario.taskOperators[${index}]`;
+      const task = objectValue(entry, path);
+      identifierValue(task.id, `${path}.id`);
+      stringValue(task.label, `${path}.label`);
+      identifierValue(task.locationId, `${path}.locationId`);
+      integerValue(task.durationMinutes, `${path}.durationMinutes`, 1, 100_000);
+      numberValue(task.contractViolation, `${path}.contractViolation`, 0, 1);
+      if (task.availableFromMinute !== null) {
+        integerValue(
+          task.availableFromMinute,
+          `${path}.availableFromMinute`,
+          0,
+          Number.MAX_SAFE_INTEGER,
+        );
+      }
+      if (task.availableUntilMinute !== null) {
+        const availableUntilMinute = integerValue(
+          task.availableUntilMinute,
+          `${path}.availableUntilMinute`,
+          0,
+          Number.MAX_SAFE_INTEGER,
+        );
+        if (
+          task.availableFromMinute !== null &&
+          availableUntilMinute <= (task.availableFromMinute as number)
+        ) {
+          throw new ScenarioValidationError(
+            `${path}.availableUntilMinute`,
+            'expected the window to close after it opens',
+          );
+        }
+      }
+      const actorIds = arrayValue(task.actorIds, `${path}.actorIds`);
+      if (actorIds.length === 0) {
+        throw new ScenarioValidationError(`${path}.actorIds`, 'expected at least one actor');
+      }
+      actorIds.forEach((actorId, actorIndex) => {
+        identifierValue(actorId, `${path}.actorIds[${actorIndex}]`);
+      });
+      if (new Set(actorIds).size !== actorIds.length) {
+        throw new ScenarioValidationError(`${path}.actorIds`, 'duplicate actor identifier');
+      }
+      validateFactConditions(task.preconditions, `${path}.preconditions`, false);
+      const effects = arrayValue(task.effects, `${path}.effects`);
+      if (effects.length === 0) {
+        throw new ScenarioValidationError(`${path}.effects`, 'expected at least one effect');
+      }
+      const effectFactIds = new Set<string>();
+      effects.forEach((effectEntry, effectIndex) => {
+        const effectPath = `${path}.effects[${effectIndex}]`;
+        const effect = objectValue(effectEntry, effectPath);
+        const factId = identifierValue(effect.factId, `${effectPath}.factId`);
+        const delta = numberValue(effect.delta, `${effectPath}.delta`, -1_000_000, 1_000_000);
+        if (delta === 0) {
+          throw new ScenarioValidationError(`${effectPath}.delta`, 'expected a non-zero effect');
+        }
+        if (effectFactIds.has(factId)) {
+          throw new ScenarioValidationError(`${effectPath}.factId`, 'duplicate fact effect');
+        }
+        effectFactIds.add(factId);
+      });
+      validateResourceCosts(task.resourceCosts, `${path}.resourceCosts`);
+      validateValueTurns(task.valueTurns, `${path}.valueTurns`);
+      return task;
+    },
+  );
+  uniqueIds(taskOperators, 'scenario.taskOperators');
 
   const characters = arrayValue(file.characters, 'scenario.characters').map((item, index) => {
     const path = `scenario.characters[${index}]`;

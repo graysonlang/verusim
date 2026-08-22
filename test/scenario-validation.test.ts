@@ -3,20 +3,29 @@ import { describe, it } from 'node:test';
 import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import scenario from '../scenarios/market-morning.json';
-import { createSimulation, parseCharacterLibrary, parseScenario } from '../src/index.js';
+import {
+  createSimulation,
+  parseCharacterLibrary,
+  parseScenario,
+  parseSnapshot,
+  serializeSnapshot,
+} from '../src/index.js';
 
 describe('scenario validation', () => {
-  it('migrates Phase 0 scenarios to the Phase 2A content shape', () => {
+  it('migrates Phase 0 scenarios to the agenda content shape', () => {
     const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
     legacy.schemaVersion = 1;
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 3);
+    assert.equal(migrated.schemaVersion, 4);
+    assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
     assert.deepEqual(migrated.disclosureOpportunities, []);
     assert.deepEqual(migrated.dyads, []);
+    assert.deepEqual(migrated.taskOperators, []);
+    assert.deepEqual(migrated.worldFacts, []);
   });
 
   it('migrates Phase 1 character and dyad content explicitly', () => {
@@ -41,9 +50,40 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 3);
+    assert.equal(migratedScenario.schemaVersion, 4);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
+  });
+
+  it('migrates relational scenarios and snapshots to the agenda boundary', () => {
+    const relationalScenario = structuredClone(scenario) as unknown as Record<string, unknown>;
+    relationalScenario.schemaVersion = 3;
+    delete relationalScenario.agendaGoals;
+    delete relationalScenario.taskOperators;
+    delete relationalScenario.worldFacts;
+    const migratedScenario = parseScenario(relationalScenario);
+    assert.equal(migratedScenario.schemaVersion, 4);
+    assert.deepEqual(migratedScenario.agendaGoals, []);
+
+    const snapshot = serializeSnapshot(
+      createSimulation({
+        characterLibrary: characters,
+        environmentLibrary: environments,
+        scenario,
+      }),
+    ) as unknown as Record<string, unknown>;
+    snapshot.schemaVersion = 1;
+    snapshot.scenario = relationalScenario;
+    delete snapshot.agendaDecisions;
+    delete snapshot.agendaGoals;
+    delete snapshot.intentions;
+    delete snapshot.plans;
+    delete snapshot.worldFacts;
+    delete snapshot.worldRevision;
+    const migratedSnapshot = parseSnapshot(snapshot);
+    assert.equal(migratedSnapshot.schemaVersion, 2);
+    assert.deepEqual(migratedSnapshot.agendaGoals, []);
+    assert.deepEqual(migratedSnapshot.worldFacts, []);
   });
 
   it('reports malformed schedules at their authored path', () => {

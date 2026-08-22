@@ -2,19 +2,33 @@ import { VALUE_IDS, type SimulationSnapshotFile } from '../model/types.js';
 import { parseScenario, ScenarioValidationError } from './parse.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
-const MEMORY_TYPES = new Set(['activity', 'aftermath', 'disclosure', 'formative', 'intervention']);
+const MEMORY_TYPES = new Set([
+  'activity',
+  'aftermath',
+  'disclosure',
+  'formative',
+  'goal',
+  'intervention',
+  'task',
+]);
 const TRACE_KINDS = new Set([
   'activity',
   'aftermath',
+  'agenda',
   'appraisal',
   'decision',
   'disclosure-appraisal',
   'disclosure-decision',
+  'goal',
   'intervention',
+  'intention',
   'relationship',
   'scenario',
+  'task',
   'value-turn',
 ]);
+const GOAL_STATUSES = new Set(['active', 'blocked', 'completed', 'failed', 'pending']);
+const INTENTION_PHASES = new Set(['travel', 'waiting', 'work']);
 
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
@@ -275,12 +289,171 @@ function validateIdentifierList(value: unknown, path: string): void {
   }
 }
 
-export function parseSnapshot(value: unknown): SimulationSnapshotFile {
+function validateAgendaState(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((goalValue, index) => {
+    const goalPath = `${path}[${index}]`;
+    const goal = objectValue(goalValue, goalPath);
+    if (typeof goal.status !== 'string' || !GOAL_STATUSES.has(goal.status)) {
+      throw new ScenarioValidationError(`${goalPath}.status`, 'expected a known goal status');
+    }
+    if (goal.lastPlannedWorldRevision !== null) {
+      integerValue(goal.lastPlannedWorldRevision, `${goalPath}.lastPlannedWorldRevision`);
+    }
+    if (goal.resolvedMinute !== null) {
+      integerValue(goal.resolvedMinute, `${goalPath}.resolvedMinute`);
+    }
+  });
+}
+
+function validatePlans(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((planValue, index) => {
+    const planPath = `${path}[${index}]`;
+    const plan = objectValue(planValue, planPath);
+    stringValue(plan.id, `${planPath}.id`);
+    stringValue(plan.actorId, `${planPath}.actorId`);
+    stringValue(plan.goalId, `${planPath}.goalId`);
+    integerValue(plan.createdMinute, `${planPath}.createdMinute`);
+    integerValue(plan.estimatedCompletionMinute, `${planPath}.estimatedCompletionMinute`);
+    numberValue(plan.score, `${planPath}.score`);
+    const taskIds = arrayValue(plan.taskIds, `${planPath}.taskIds`);
+    if (taskIds.length === 0) {
+      throw new ScenarioValidationError(`${planPath}.taskIds`, 'expected at least one task');
+    }
+    taskIds.forEach((taskId, taskIndex) => {
+      stringValue(taskId, `${planPath}.taskIds[${taskIndex}]`);
+    });
+  });
+}
+
+function validateIntentions(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((intentionValue, index) => {
+    const intentionPath = `${path}[${index}]`;
+    const intention = objectValue(intentionValue, intentionPath);
+    stringValue(intention.actorId, `${intentionPath}.actorId`);
+    stringValue(intention.goalId, `${intentionPath}.goalId`);
+    stringValue(intention.planId, `${intentionPath}.planId`);
+    stringValue(intention.taskId, `${intentionPath}.taskId`);
+    numberValue(intention.remainingMinutes, `${intentionPath}.remainingMinutes`, 0);
+    if (intention.startedMinute !== null) {
+      integerValue(intention.startedMinute, `${intentionPath}.startedMinute`);
+    }
+    if (typeof intention.phase !== 'string' || !INTENTION_PHASES.has(intention.phase)) {
+      throw new ScenarioValidationError(
+        `${intentionPath}.phase`,
+        'expected a known intention phase',
+      );
+    }
+  });
+}
+
+function validatePlanAppraisal(value: unknown, path: string): void {
+  const appraisal = objectValue(value, path);
+  for (const key of [
+    'contractViolationCost',
+    'narrativeExpression',
+    'repercussionCost',
+    'turnFelt',
+    'utility',
+  ]) {
+    numberValue(appraisal[key], `${path}.${key}`);
+  }
+  arrayValue(appraisal.contributions, `${path}.contributions`).forEach(
+    (contributionValue, index) => {
+      const contributionPath = `${path}.contributions[${index}]`;
+      const contribution = objectValue(contributionValue, contributionPath);
+      stringValue(contribution.subjectId, `${contributionPath}.subjectId`);
+      stringValue(contribution.value, `${contributionPath}.value`);
+      for (const key of ['amount', 'empathy', 'turn', 'weight']) {
+        numberValue(contribution[key], `${contributionPath}.${key}`);
+      }
+    },
+  );
+}
+
+function validateAgendaHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((decisionValue, index) => {
+    const decisionPath = `${path}[${index}]`;
+    const decision = objectValue(decisionValue, decisionPath);
+    stringValue(decision.id, `${decisionPath}.id`);
+    stringValue(decision.actorId, `${decisionPath}.actorId`);
+    integerValue(decision.minute, `${decisionPath}.minute`);
+    integerValue(decision.tick, `${decisionPath}.tick`);
+    integerValue(decision.worldRevision, `${decisionPath}.worldRevision`);
+    if (decision.selectedPlanId !== null) {
+      stringValue(decision.selectedPlanId, `${decisionPath}.selectedPlanId`);
+    }
+    const candidateIds: string[] = [];
+    arrayValue(decision.candidates, `${decisionPath}.candidates`).forEach(
+      (candidateValue, candidateIndex) => {
+        const candidatePath = `${decisionPath}.candidates[${candidateIndex}]`;
+        const candidate = objectValue(candidateValue, candidatePath);
+        candidateIds.push(stringValue(candidate.id, `${candidatePath}.id`));
+        stringValue(candidate.goalId, `${candidatePath}.goalId`);
+        integerValue(
+          candidate.estimatedCompletionMinute,
+          `${candidatePath}.estimatedCompletionMinute`,
+        );
+        integerValue(
+          candidate.estimatedDurationMinutes,
+          `${candidatePath}.estimatedDurationMinutes`,
+        );
+        for (const key of ['goalUtility', 'resourceCost', 'score', 'taskUtility', 'urgency']) {
+          numberValue(candidate[key], `${candidatePath}.${key}`);
+        }
+        const resourceCosts = objectValue(
+          candidate.resourceCosts,
+          `${candidatePath}.resourceCosts`,
+        );
+        for (const resourceId of [
+          'executiveBudget',
+          'physicalStamina',
+          'regulationReserve',
+          'socialBattery',
+        ]) {
+          numberValue(resourceCosts[resourceId], `${candidatePath}.resourceCosts.${resourceId}`, 0);
+        }
+        arrayValue(candidate.taskIds, `${candidatePath}.taskIds`).forEach((taskId, taskIndex) => {
+          stringValue(taskId, `${candidatePath}.taskIds[${taskIndex}]`);
+        });
+        validatePlanAppraisal(candidate.appraisal, `${candidatePath}.appraisal`);
+      },
+    );
+    if (
+      decision.selectedPlanId !== null &&
+      !candidateIds.includes(decision.selectedPlanId as string)
+    ) {
+      throw new ScenarioValidationError(
+        `${decisionPath}.selectedPlanId`,
+        'selected plan must belong to the decision candidates',
+      );
+    }
+  });
+}
+
+function migrateSnapshot(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'snapshot'));
+  if (file.schemaVersion === 2) return file;
+  if (file.schemaVersion !== 1) {
+    throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
+  }
+  const scenario = parseScenario(file.scenario);
+  file.scenario = scenario;
+  file.agendaDecisions = [];
+  file.agendaGoals = [];
+  file.intentions = [];
+  file.plans = [];
+  file.worldFacts = scenario.worldFacts;
+  file.worldRevision = 0;
+  file.schemaVersion = 2;
+  return file;
+}
+
+export function parseSnapshot(value: unknown): SimulationSnapshotFile {
+  const file = migrateSnapshot(value);
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 1) {
+  if (file.schemaVersion !== 2) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -307,9 +480,16 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
 
   const runtimeScenario = parseScenario({
     ...scenario,
+    agendaGoals: file.agendaGoals,
     disclosureItems: file.disclosureItems,
     dyads: file.dyads,
+    worldFacts: file.worldFacts,
   });
+  validateAgendaState(file.agendaGoals, 'snapshot.agendaGoals');
+  validateAgendaHistory(file.agendaDecisions, 'snapshot.agendaDecisions');
+  validatePlans(file.plans, 'snapshot.plans');
+  validateIntentions(file.intentions, 'snapshot.intentions');
+  integerValue(file.worldRevision, 'snapshot.worldRevision');
   validateDecisionHistory(file.decisions, 'snapshot.decisions');
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
   validateTrace(file.trace, 'snapshot.trace');
@@ -321,8 +501,10 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
 
   return {
     ...(file as unknown as SimulationSnapshotFile),
+    agendaGoals: runtimeScenario.agendaGoals as SimulationSnapshotFile['agendaGoals'],
     disclosureItems: runtimeScenario.disclosureItems,
     dyads: runtimeScenario.dyads,
     scenario,
+    worldFacts: runtimeScenario.worldFacts,
   };
 }

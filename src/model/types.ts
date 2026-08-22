@@ -193,6 +193,52 @@ export interface DisclosureOpportunity {
   ownerId: string;
 }
 
+export interface WorldFact {
+  amount: number;
+  id: string;
+}
+
+export interface FactCondition {
+  factId: string;
+  minimum: number;
+}
+
+export interface FactEffect {
+  delta: number;
+  factId: string;
+}
+
+export type GoalSource = 'aspiration' | 'need' | 'obligation' | 'scenario' | 'want';
+
+export interface AgendaGoalSeed {
+  activationMinute: number;
+  actorId: string;
+  commitment: number;
+  deadlineMinute: number | null;
+  desired: FactCondition[];
+  failureTurns: Partial<ValueMap<number>>;
+  id: string;
+  label: string;
+  source: GoalSource;
+  successTurns: Partial<ValueMap<number>>;
+  urgencyHorizonMinutes: number;
+}
+
+export interface TaskOperator {
+  actorIds: string[];
+  availableFromMinute: number | null;
+  availableUntilMinute: number | null;
+  contractViolation: number;
+  durationMinutes: number;
+  effects: FactEffect[];
+  id: string;
+  label: string;
+  locationId: string;
+  preconditions: FactCondition[];
+  resourceCosts: Partial<ResourceState>;
+  valueTurns: Partial<ValueMap<number>>;
+}
+
 export interface ActionImpact {
   subjectId: string;
   turns: Partial<ValueMap<number>>;
@@ -225,6 +271,7 @@ export interface BehaviorOpportunity {
 }
 
 export interface ScenarioFile {
+  agendaGoals: AgendaGoalSeed[];
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
   behaviorOpportunities: BehaviorOpportunity[];
   characters: CharacterPlacement[];
@@ -233,18 +280,20 @@ export interface ScenarioFile {
   dyads: DyadSeed[];
   environmentId: string;
   id: string;
-  schemaVersion: 3;
+  schemaVersion: 4;
   startMinute: number;
   summary: string;
+  taskOperators: TaskOperator[];
   tickMinutes: number;
   title: string;
+  worldFacts: WorldFact[];
 }
 
 export interface RuntimeMemory {
   id: string;
   minute: number;
   summary: string;
-  type: 'activity' | 'aftermath' | 'disclosure' | 'formative' | 'intervention';
+  type: 'activity' | 'aftermath' | 'disclosure' | 'formative' | 'goal' | 'intervention' | 'task';
 }
 
 export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 'flop';
@@ -272,12 +321,16 @@ export interface TraceEntry {
     | 'activity'
     | 'aftermath'
     | 'appraisal'
+    | 'agenda'
     | 'decision'
     | 'disclosure-appraisal'
     | 'disclosure-decision'
     | 'intervention'
+    | 'intention'
+    | 'goal'
     | 'relationship'
     | 'scenario'
+    | 'task'
     | 'value-turn';
   minute: number;
   summary: string;
@@ -285,18 +338,24 @@ export interface TraceEntry {
 }
 
 export interface SimulationState {
+  agendaDecisions: AgendaDecisionRecord[];
+  agendaGoals: AgendaGoalState[];
   agents: SimulationAgent[];
   decisions: DecisionRecord[];
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
   dyads: DyadState[];
   environment: EnvironmentDefinition;
+  intentions: TaskIntention[];
   minute: number;
+  plans: AgendaPlan[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
   tick: number;
   trace: TraceEntry[];
+  worldFacts: WorldFact[];
+  worldRevision: number;
 }
 
 export interface ScenarioContent {
@@ -404,6 +463,61 @@ export interface DisclosureDecisionRecord {
   worstCost: number;
 }
 
+export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | 'pending';
+
+export interface AgendaGoalState extends AgendaGoalSeed {
+  lastPlannedWorldRevision: number | null;
+  resolvedMinute: number | null;
+  status: AgendaGoalStatus;
+}
+
+export interface PlanCandidateEvaluation {
+  appraisal: ActionAppraisal;
+  estimatedCompletionMinute: number;
+  estimatedDurationMinutes: number;
+  goalId: string;
+  goalUtility: number;
+  id: string;
+  resourceCost: number;
+  resourceCosts: ResourceState;
+  score: number;
+  taskIds: string[];
+  taskUtility: number;
+  urgency: number;
+}
+
+export interface AgendaDecisionRecord {
+  actorId: string;
+  candidates: PlanCandidateEvaluation[];
+  id: string;
+  minute: number;
+  selectedPlanId: string | null;
+  tick: number;
+  worldRevision: number;
+}
+
+export interface AgendaPlan {
+  actorId: string;
+  createdMinute: number;
+  estimatedCompletionMinute: number;
+  goalId: string;
+  id: string;
+  score: number;
+  taskIds: string[];
+}
+
+export type TaskIntentionPhase = 'travel' | 'waiting' | 'work';
+
+export interface TaskIntention {
+  actorId: string;
+  goalId: string;
+  phase: TaskIntentionPhase;
+  planId: string;
+  remainingMinutes: number;
+  startedMinute: number | null;
+  taskId: string;
+}
+
 export interface SimulationAgentSnapshot {
   cascade: CascadePosition;
   currentActivity: string;
@@ -420,18 +534,24 @@ export interface SimulationAgentSnapshot {
 }
 
 export interface SimulationSnapshotFile {
+  agendaDecisions: AgendaDecisionRecord[];
+  agendaGoals: AgendaGoalState[];
   agents: SimulationAgentSnapshot[];
   decisions: DecisionRecord[];
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
   dyads: DyadState[];
   environmentId: string;
+  intentions: TaskIntention[];
   minute: number;
+  plans: AgendaPlan[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 1;
+  schemaVersion: 2;
   tick: number;
   trace: TraceEntry[];
   type: 'verusim-snapshot';
+  worldFacts: WorldFact[];
+  worldRevision: number;
 }

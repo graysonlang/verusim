@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "id": "disclosure-audience",
   "title": "Disclosure Under Mixed Audiences",
   "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
@@ -75,6 +75,9 @@
       "networkConductivity": 1
     }
   ],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
   "behaviorOpportunities": [],
   "characters": [
     {

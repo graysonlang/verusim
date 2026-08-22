@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "id": "highwayman-square",
   "title": "The Highwayman: Town Square",
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
@@ -105,6 +105,9 @@
   ],
   "disclosureItems": [],
   "disclosureOpportunities": [],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
   "behaviorOpportunities": [
     {
       "id": "public-encounter",

@@ -1,5 +1,6 @@
 import {
   VALUE_IDS,
+  type AgendaGoalSeed,
   type CharacterDefinition,
   type CharacterPlacement,
   type EnvironmentDefinition,
@@ -23,6 +24,7 @@ import {
   ScenarioValidationError,
 } from '../scenario/parse.js';
 import { parseSnapshot } from '../scenario/snapshot.js';
+import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 
@@ -219,6 +221,54 @@ function validateReferences(content: ScenarioContent): void {
       }
     });
   });
+  const factIds = new Set(content.scenario.worldFacts.map(fact => fact.id));
+  content.scenario.agendaGoals.forEach((goal, index) => {
+    const path = `scenario.agendaGoals[${index}]`;
+    if (!instanceIds.has(goal.actorId)) {
+      throw new ScenarioValidationError(`${path}.actorId`, `unknown agent "${goal.actorId}"`);
+    }
+    goal.desired.forEach((condition, conditionIndex) => {
+      if (!factIds.has(condition.factId)) {
+        throw new ScenarioValidationError(
+          `${path}.desired[${conditionIndex}].factId`,
+          `unknown world fact "${condition.factId}"`,
+        );
+      }
+    });
+  });
+  content.scenario.taskOperators.forEach((task, index) => {
+    const path = `scenario.taskOperators[${index}]`;
+    if (!locationIds.has(task.locationId)) {
+      throw new ScenarioValidationError(
+        `${path}.locationId`,
+        `unknown location "${task.locationId}"`,
+      );
+    }
+    task.actorIds.forEach((actorId, actorIndex) => {
+      if (!instanceIds.has(actorId)) {
+        throw new ScenarioValidationError(
+          `${path}.actorIds[${actorIndex}]`,
+          `unknown agent "${actorId}"`,
+        );
+      }
+    });
+    task.preconditions.forEach((condition, conditionIndex) => {
+      if (!factIds.has(condition.factId)) {
+        throw new ScenarioValidationError(
+          `${path}.preconditions[${conditionIndex}].factId`,
+          `unknown world fact "${condition.factId}"`,
+        );
+      }
+    });
+    task.effects.forEach((effect, effectIndex) => {
+      if (!factIds.has(effect.factId)) {
+        throw new ScenarioValidationError(
+          `${path}.effects[${effectIndex}].factId`,
+          `unknown world fact "${effect.factId}"`,
+        );
+      }
+    });
+  });
   content.scenario.behaviorOpportunities.forEach((opportunity, index) => {
     const path = `scenario.behaviorOpportunities[${index}]`;
     if (!instanceIds.has(opportunity.actorId)) {
@@ -254,6 +304,22 @@ function validateReferences(content: ScenarioContent): void {
   });
 }
 
+function goalSeedSignature(goal: AgendaGoalSeed): string {
+  return JSON.stringify({
+    activationMinute: goal.activationMinute,
+    actorId: goal.actorId,
+    commitment: goal.commitment,
+    deadlineMinute: goal.deadlineMinute,
+    desired: goal.desired,
+    failureTurns: goal.failureTurns,
+    id: goal.id,
+    label: goal.label,
+    source: goal.source,
+    successTurns: goal.successTurns,
+    urgencyHorizonMinutes: goal.urgencyHorizonMinutes,
+  });
+}
+
 export function createSimulation(input: {
   characterLibrary: unknown;
   environmentLibrary: unknown;
@@ -278,7 +344,17 @@ export function createSimulation(input: {
     return initializeAgent(profile, placement, environment, content.scenario.startMinute);
   });
 
-  return {
+  const initial: SimulationState = {
+    agendaDecisions: [],
+    agendaGoals: content.scenario.agendaGoals.map(goal => ({
+      ...goal,
+      desired: goal.desired.map(condition => ({ ...condition })),
+      failureTurns: { ...goal.failureTurns },
+      lastPlannedWorldRevision: null,
+      resolvedMinute: null,
+      status: 'pending',
+      successTurns: { ...goal.successTurns },
+    })),
     agents,
     decisions: [],
     disclosureDecisions: [],
@@ -291,7 +367,9 @@ export function createSimulation(input: {
       features: { ...dyad.features },
     })),
     environment,
+    intentions: [],
     minute: content.scenario.startMinute,
+    plans: [],
     resolvedDisclosureOpportunityIds: [],
     resolvedOpportunityIds: [],
     scenario: content.scenario,
@@ -310,7 +388,10 @@ export function createSimulation(input: {
         tick: 0,
       },
     ],
+    worldFacts: content.scenario.worldFacts.map(fact => ({ ...fact })),
+    worldRevision: 0,
   };
+  return prepareAgenda(initial);
 }
 
 export function createSimulationFromSnapshot(input: {
@@ -400,19 +481,125 @@ export function createSimulationFromSnapshot(input: {
       );
     }
   });
+  const scenarioGoals = new Map(snapshot.scenario.agendaGoals.map(goal => [goal.id, goal]));
+  if (snapshot.agendaGoals.length !== snapshot.scenario.agendaGoals.length) {
+    throw new ScenarioValidationError(
+      'snapshot.agendaGoals',
+      'must contain exactly the scenario goals',
+    );
+  }
+  snapshot.agendaGoals.forEach((goal, index) => {
+    const scenarioGoal = scenarioGoals.get(goal.id);
+    if (scenarioGoal === undefined || goalSeedSignature(goal) !== goalSeedSignature(scenarioGoal)) {
+      throw new ScenarioValidationError(
+        `snapshot.agendaGoals[${index}]`,
+        'goal seed must match the authored scenario',
+      );
+    }
+    const resolved = goal.status === 'completed' || goal.status === 'failed';
+    if (resolved !== (goal.resolvedMinute !== null)) {
+      throw new ScenarioValidationError(
+        `snapshot.agendaGoals[${index}].resolvedMinute`,
+        'must be present exactly when the goal is resolved',
+      );
+    }
+  });
+  const scenarioFactIds = new Set(snapshot.scenario.worldFacts.map(fact => fact.id));
+  if (
+    snapshot.worldFacts.length !== snapshot.scenario.worldFacts.length ||
+    snapshot.worldFacts.some(fact => !scenarioFactIds.has(fact.id))
+  ) {
+    throw new ScenarioValidationError(
+      'snapshot.worldFacts',
+      'must contain exactly the scenario world facts',
+    );
+  }
+  const tasks = new Map(snapshot.scenario.taskOperators.map(task => [task.id, task]));
+  const plans = new Map(snapshot.plans.map(plan => [plan.id, plan]));
+  if (plans.size !== snapshot.plans.length) {
+    throw new ScenarioValidationError('snapshot.plans', 'duplicate plan identifier');
+  }
+  const planActors = new Set<string>();
+  snapshot.plans.forEach((plan, index) => {
+    const goal = snapshot.agendaGoals.find(candidate => candidate.id === plan.goalId);
+    if (goal === undefined || goal.actorId !== plan.actorId || !agentIds.has(plan.actorId)) {
+      throw new ScenarioValidationError(
+        `snapshot.plans[${index}]`,
+        'plan must belong to a snapshot agent and goal',
+      );
+    }
+    if (planActors.has(plan.actorId)) {
+      throw new ScenarioValidationError(
+        `snapshot.plans[${index}].actorId`,
+        'an agent may have only one active plan',
+      );
+    }
+    planActors.add(plan.actorId);
+    plan.taskIds.forEach((taskId, taskIndex) => {
+      const task = tasks.get(taskId);
+      if (task === undefined || !task.actorIds.includes(plan.actorId)) {
+        throw new ScenarioValidationError(
+          `snapshot.plans[${index}].taskIds[${taskIndex}]`,
+          'task must be available to the plan actor',
+        );
+      }
+    });
+  });
+  const intentionActors = new Set<string>();
+  snapshot.intentions.forEach((intention, index) => {
+    const plan = plans.get(intention.planId);
+    if (
+      plan === undefined ||
+      plan.actorId !== intention.actorId ||
+      plan.goalId !== intention.goalId ||
+      plan.taskIds[0] !== intention.taskId
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.intentions[${index}]`,
+        'intention must match the first task of its active plan',
+      );
+    }
+    if (intentionActors.has(intention.actorId)) {
+      throw new ScenarioValidationError(
+        `snapshot.intentions[${index}].actorId`,
+        'an agent may have only one active intention',
+      );
+    }
+    intentionActors.add(intention.actorId);
+  });
+  if (snapshot.plans.length !== snapshot.intentions.length) {
+    throw new ScenarioValidationError(
+      'snapshot.intentions',
+      'each active plan must have exactly one intention',
+    );
+  }
+  snapshot.agendaDecisions.forEach((decision, index) => {
+    if (!agentIds.has(decision.actorId)) {
+      throw new ScenarioValidationError(
+        `snapshot.agendaDecisions[${index}].actorId`,
+        `unknown agent "${decision.actorId}"`,
+      );
+    }
+  });
 
   return {
     ...base,
+    agendaDecisions: snapshot.agendaDecisions,
+    agendaGoals: snapshot.agendaGoals,
     agents,
     decisions: snapshot.decisions,
     disclosureDecisions: snapshot.disclosureDecisions,
     disclosureItems: snapshot.disclosureItems,
     dyads: snapshot.dyads,
+    intentions: snapshot.intentions,
     minute: snapshot.minute,
+    plans: snapshot.plans,
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
     tick: snapshot.tick,
     trace: snapshot.trace,
+    worldFacts: snapshot.worldFacts,
+    worldRevision: snapshot.worldRevision,
   };
 }
 
@@ -448,8 +635,13 @@ function advanceAgent(
   nextMinute: number,
   nextTick: number,
 ): AgentAdvanceResult {
-  const block = activeScheduleBlock(agent.schedule, nextMinute);
-  const location = findLocation(state.environment, block.locationId);
+  const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
+  const task = intendedTask(state, agent.id);
+  const block = task === null ? activeScheduleBlock(agent.schedule, nextMinute) : null;
+  const locationId = task?.locationId ?? block?.locationId;
+  if (locationId === undefined)
+    throw new Error('An agent always has a task or schedule destination');
+  const location = findLocation(state.environment, locationId);
   const destination = locationCenter(location);
   const remaining = distance(agent.position, destination);
   const travel = agent.walkingMetersPerMinute * state.scenario.tickMinutes;
@@ -461,8 +653,14 @@ function advanceAgent(
           y: agent.position.y + ((destination.y - agent.position.y) / remaining) * travel,
         };
   const arrived = distance(position, destination) < 0.01;
-  const currentActivity = arrived ? block.activity : `Walking to ${location.name}`;
-  const currentLocationId = arrived ? block.locationId : null;
+  const currentActivity = arrived
+    ? task === null
+      ? (block?.activity ?? agent.currentActivity)
+      : intention?.phase === 'waiting'
+        ? `Waiting to ${task.label.toLowerCase()}`
+        : task.label
+    : `Walking to ${location.name}${task === null ? '' : ` to ${task.label.toLowerCase()}`}`;
+  const currentLocationId = arrived ? locationId : null;
   const values = {} as ValueMap<ValueState>;
   for (const valueId of VALUE_IDS) {
     values[valueId] = advanceValueState(
@@ -483,7 +681,10 @@ function advanceAgent(
     );
     trace.push({
       agentId: agent.id,
-      causes: [`schedule:${block.startMinute}`, `location:${block.locationId}`],
+      causes:
+        task === null
+          ? [`schedule:${block?.startMinute ?? 0}`, `location:${locationId}`]
+          : [`intention:${task.id}`, `location:${locationId}`],
       id: `${nextTick}:${agent.id}:activity`,
       kind: 'activity',
       minute: nextMinute,
@@ -526,32 +727,34 @@ function advanceAgent(
 }
 
 function advanceOneTick(state: SimulationState): SimulationState {
-  const nextTick = state.tick + 1;
-  const nextMinute = state.minute + state.scenario.tickMinutes;
-  const results = state.agents.map(agent => advanceAgent(state, agent, nextMinute, nextTick));
-  let trace = state.trace;
+  const prepared = prepareAgenda(state);
+  const nextTick = prepared.tick + 1;
+  const nextMinute = prepared.minute + prepared.scenario.tickMinutes;
+  const results = prepared.agents.map(agent => advanceAgent(prepared, agent, nextMinute, nextTick));
+  let trace = prepared.trace;
   for (const result of results) {
     for (const entry of result.trace) trace = appendBounded(trace, entry, MAX_TRACE_ENTRIES);
   }
   let next: SimulationState = {
-    ...state,
+    ...prepared,
     agents: results.map(result => result.agent),
     minute: nextMinute,
     tick: nextTick,
     trace,
   };
-  const dueOpportunities = state.scenario.behaviorOpportunities.filter(
+  next = advanceIntentions(next);
+  const dueOpportunities = prepared.scenario.behaviorOpportunities.filter(
     opportunity =>
-      opportunity.atMinute > state.minute &&
+      opportunity.atMinute > prepared.minute &&
       opportunity.atMinute <= nextMinute &&
-      !state.resolvedOpportunityIds.includes(opportunity.id),
+      !prepared.resolvedOpportunityIds.includes(opportunity.id),
   );
   for (const opportunity of dueOpportunities) next = resolveOpportunity(next, opportunity);
-  const dueDisclosureOpportunities = state.scenario.disclosureOpportunities.filter(
+  const dueDisclosureOpportunities = prepared.scenario.disclosureOpportunities.filter(
     opportunity =>
-      opportunity.atMinute > state.minute &&
+      opportunity.atMinute > prepared.minute &&
       opportunity.atMinute <= nextMinute &&
-      !state.resolvedDisclosureOpportunityIds.includes(opportunity.id),
+      !prepared.resolvedDisclosureOpportunityIds.includes(opportunity.id),
   );
   for (const opportunity of dueDisclosureOpportunities) {
     next = resolveDisclosureOpportunity(next, opportunity);

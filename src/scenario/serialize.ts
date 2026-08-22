@@ -10,6 +10,8 @@ export function serializeScenario(state: SimulationState): ScenarioFile {
 
 export function serializeSnapshot(state: SimulationState): SimulationSnapshotFile {
   return clone({
+    agendaDecisions: state.agendaDecisions,
+    agendaGoals: state.agendaGoals,
     agents: state.agents.map(agent => ({
       cascade: agent.cascade,
       currentActivity: agent.currentActivity,
@@ -29,13 +31,17 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     disclosureItems: state.disclosureItems,
     dyads: state.dyads,
     environmentId: state.environment.id,
+    intentions: state.intentions,
     minute: state.minute,
+    plans: state.plans,
     resolvedDisclosureOpportunityIds: state.resolvedDisclosureOpportunityIds,
     resolvedOpportunityIds: state.resolvedOpportunityIds,
     scenario: state.scenario,
-    schemaVersion: 1,
+    schemaVersion: 2,
     tick: state.tick,
     trace: state.trace,
     type: 'verusim-snapshot',
+    worldFacts: state.worldFacts,
+    worldRevision: state.worldRevision,
   });
 }

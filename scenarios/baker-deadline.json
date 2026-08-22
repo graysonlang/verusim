@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 4,
+  "id": "baker-deadline",
+  "title": "Bread Before Market Close",
+  "summary": "Mara must prepare market bread without flour while the common room also needs work.",
+  "environmentId": "alders-edge",
+  "startMinute": 600,
+  "tickMinutes": 5,
+  "dyads": [],
+  "disclosureItems": [],
+  "disclosureOpportunities": [],
+  "worldFacts": [
+    { "id": "flour-on-hand", "amount": 0 },
+    { "id": "bread-on-hand", "amount": 0 },
+    { "id": "bread-sold", "amount": 0 },
+    { "id": "common-room-ready", "amount": 0 }
+  ],
+  "agendaGoals": [
+    {
+      "id": "sell-market-bread",
+      "actorId": "mara",
+      "label": "Sell the market bread",
+      "source": "obligation",
+      "activationMinute": 600,
+      "deadlineMinute": 690,
+      "urgencyHorizonMinutes": 60,
+      "commitment": 0.92,
+      "desired": [{ "factId": "bread-sold", "minimum": 1 }],
+      "successTurns": { "competence": 0.18, "respect": 0.1 },
+      "failureTurns": { "competence": -0.22, "respect": -0.12 }
+    },
+    {
+      "id": "prepare-common-room",
+      "actorId": "mara",
+      "label": "Prepare the common room",
+      "source": "obligation",
+      "activationMinute": 600,
+      "deadlineMinute": null,
+      "urgencyHorizonMinutes": 120,
+      "commitment": 0.84,
+      "desired": [{ "factId": "common-room-ready", "minimum": 1 }],
+      "successTurns": { "competence": 0.55 },
+      "failureTurns": {}
+    }
+  ],
+  "taskOperators": [
+    {
+      "id": "fetch-flour",
+      "label": "Fetch flour from the mill",
+      "actorIds": ["mara"],
+      "locationId": "alder-mill",
+      "durationMinutes": 5,
+      "availableFromMinute": null,
+      "availableUntilMinute": null,
+      "preconditions": [],
+      "effects": [{ "factId": "flour-on-hand", "delta": 1 }],
+      "resourceCosts": { "executiveBudget": 0.02, "physicalStamina": 0.03 },
+      "valueTurns": {},
+      "contractViolation": 0
+    },
+    {
+      "id": "bake-bread-standard",
+      "label": "Bake bread carefully",
+      "actorIds": ["mara"],
+      "locationId": "wayfarer-inn",
+      "durationMinutes": 30,
+      "availableFromMinute": null,
+      "availableUntilMinute": null,
+      "preconditions": [{ "factId": "flour-on-hand", "minimum": 1 }],
+      "effects": [
+        { "factId": "flour-on-hand", "delta": -1 },
+        { "factId": "bread-on-hand", "delta": 1 }
+      ],
+      "resourceCosts": { "executiveBudget": 0.03, "physicalStamina": 0.05 },
+      "valueTurns": { "competence": 0.04 },
+      "contractViolation": 0
+    },
+    {
+      "id": "bake-bread-rush",
+      "label": "Rush the bread",
+      "actorIds": ["mara"],
+      "locationId": "wayfarer-inn",
+      "durationMinutes": 15,
+      "availableFromMinute": null,
+      "availableUntilMinute": null,
+      "preconditions": [{ "factId": "flour-on-hand", "minimum": 1 }],
+      "effects": [
+        { "factId": "flour-on-hand", "delta": -1 },
+        { "factId": "bread-on-hand", "delta": 1 }
+      ],
+      "resourceCosts": {
+        "executiveBudget": 0.16,
+        "physicalStamina": 0.22,
+        "regulationReserve": 0.08
+      },
+      "valueTurns": { "competence": -0.08, "safety": -0.03 },
+      "contractViolation": 0
+    },
+    {
+      "id": "sell-market-bread",
+      "label": "Sell bread at the market",
+      "actorIds": ["mara"],
+      "locationId": "market-square",
+      "durationMinutes": 5,
+      "availableFromMinute": null,
+      "availableUntilMinute": 690,
+      "preconditions": [{ "factId": "bread-on-hand", "minimum": 1 }],
+      "effects": [
+        { "factId": "bread-on-hand", "delta": -1 },
+        { "factId": "bread-sold", "delta": 1 }
+      ],
+      "resourceCosts": {},
+      "valueTurns": {},
+      "contractViolation": 0
+    },
+    {
+      "id": "prepare-common-room",
+      "label": "Prepare the common room",
+      "actorIds": ["mara"],
+      "locationId": "wayfarer-inn",
+      "durationMinutes": 20,
+      "availableFromMinute": null,
+      "availableUntilMinute": null,
+      "preconditions": [],
+      "effects": [{ "factId": "common-room-ready", "delta": 1 }],
+      "resourceCosts": { "executiveBudget": 0.02 },
+      "valueTurns": { "competence": 0.02 },
+      "contractViolation": 0
+    }
+  ],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "mara",
+      "characterId": "mara-vale",
+      "position": { "x": 463, "y": 372.5 },
+      "walkingMetersPerMinute": 18,
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "wayfarer-inn",
+          "activity": "Preparing the inn"
+        }
+      ]
+    }
+  ]
+}

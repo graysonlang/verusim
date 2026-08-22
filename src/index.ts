@@ -7,6 +7,12 @@ export type * from './model/types.js';
 export { parseCharacterLibrary, parseEnvironmentLibrary, parseScenario } from './scenario/parse.js';
 export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
 export { parseSnapshot } from './scenario/snapshot.js';
+export {
+  advanceIntentions,
+  intendedTask,
+  prepareAgenda,
+  setWorldFactAmount,
+} from './simulation/agenda.js';
 export { appraiseAction } from './simulation/appraisal.js';
 export { evaluateOpportunity, resolveOpportunity } from './simulation/decision.js';
 export {
