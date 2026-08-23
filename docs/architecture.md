@@ -89,7 +89,7 @@ Every area also resolves lateral enclosure, overhead cover, sight occlusion, and
 Enclosure and overhead cover are independent: a room may be enclosed with a complete roof, while an awning remains exterior with partial or complete overhead shelter and no implied lateral sensory barrier.
 The same area geometry supplies spatial context to rendering and perception; later portal-aware path feasibility must extend this geometry rather than introducing a second interior map.
 
-The workbench defaults to a roof-on Exterior projection followed by cutaway layers ordered from highest to lowest elevation.
+The workbench defaults to a roof-on Exterior projection followed by cutaway layers ordered from highest to lowest elevation in an upper-right canvas control stack.
 Exterior renders structure roofs and dims enclosed characters with relative-level markers.
 A cutaway renders active interiors as floors and walls while retaining muted ground, inactive structures, and dimmed off-layer interior characters as plan context.
 Ground and inactive structure geometry render opaquely below one environment-sized scrim; the active layer renders afterward so contextual footprints cannot accumulate transparency where they overlap.

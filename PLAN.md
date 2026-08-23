@@ -34,49 +34,6 @@ The same contract must be reusable without copying its norms, the same physical 
 - no contract priority, winning-culture selection, or implicit scope precedence
 - no package manager, remote dependency resolver, archive format, authoring UI, or pack writer
 
-## Phase 5B — layered environment topology
-
-Status: reopened for layer-selector placement.
-
-Extend immutable environment layouts with named elevation layers, layer-bearing positions, areas, and locations, and explicit bidirectional stairs, ramps, and ladders.
-Schedule locomotion and agenda travel use one deterministic connector-aware route, while equal plan coordinates on different floors remain physically and perceptually separate.
-The workbench projects a selected layer without changing simulation state and follows a focused character between floors.
-
-The acceptance target is Alder's Edge Town, a compact "world in miniature" realization of the existing Alder's Edge place.
-Its stable `environmentId` is shared with the smaller market layout while its distinct `layoutId` selects a settlement containing fields and pasture, orchard, river and millstream, market and roads, civic and religious buildings, trades, an inn, manor, almshouse, watch, bridge, docks, mill, granary, upper-floor residences, cellars, a crypt, storage, and a watch cell.
-Story scale remains deliberately compact rather than claiming agricultural-yield or census accuracy.
-
-The reopened slice gives the workbench a roof-on Exterior projection followed by a top-down vertical stack of authored layers.
-Layer projections peel roofs away, render active interiors as floors and walls, retain muted exterior ground and inactive interior context, and preserve dimmed character markers across the projection instead of hiding every character outside the selected layer.
-Exterior markers keep outdoor characters prominent while dimming enclosed characters and carrying their relative level on the location marker.
-Cutaway context renders beneath one uniform semi-transparent scrim, with the active layer rendered above it, so overlapping contextual footprints do not accumulate opacity.
-The layer selector occupies the upper-right corner of the canvas so the upper-left map area remains unobstructed.
-
-Lateral enclosure and numeric overhead cover are objective environment geometry rather than renderer guesses.
-Rooms can therefore be enclosed with full overhead cover, while an awning or canopy remains exterior with independent partial or full overhead cover.
-Rendering and spatial perception consume the same authored area geometry; projection selection remains observer state and never changes authoritative proximity, visibility, hearing, access, or simulation state.
-
-Exit probes:
-
-- an upstairs resident reaches the trade below only through the building's authored stairs
-- two characters at equal plan coordinates on different floors produce no proximity discomfort and cannot see or hear through the intervening structure
-- layer-bearing travel, destination, and position state resume exactly from a snapshot
-- a layout with an unconnected authored floor fails at an actionable content path
-- Exterior is the default projection and renders roofs over enclosed structures with outdoor ground visible
-- layer controls occupy the canvas's upper-right corner, listing Exterior first and authored floors beneath it from highest to lowest elevation
-- a selected floor peels away its roofs, shows its interior floors and walls, and retains muted exterior ground and inactive structures as spatial context
-- overlapping inactive footprints receive one uniform scrim rather than cumulative per-object transparency, while the active floor remains above it
-- outdoor and active-interior character markers remain prominent, while characters enclosed on inactive floors remain visible but dimmed with relative-level markers
-- an authored awning remains exterior while reporting partial overhead cover, and changing projection does not alter proximity, sight, hearing, navigation, or simulation state
-- the expanded layout preserves the place identity of the original town while remaining a separately addressable physical realization
-
-Environment-layout resource and aggregate environment-library schema version 3 add objective enclosure and independent cover channels after version 2 added layers and connectors; versions 1 and 2 retain explicit migrations and version 1 content moves onto a single `surface` layer.
-Scenario schema version 13 adds layer-bearing character placements and preserves migrations from versions 1 through 12.
-Snapshot schema version 10 persists layer-bearing positions and destinations and preserves migrations from versions 1 through 9.
-Regression coverage exercises connector routing, cross-floor spatial separation, malformed enclosure and cover, projection order and character prominence, schema migration, and exact snapshot replay.
-Isolated browser verification confirmed the default roof-on Exterior view, the descending vertical control stack, active upper-floor and cellar walls and floors, muted town context, and dimmed off-level character markers with relative-level badges.
-Follow-up isolated browser verification confirmed a uniform context scrim in both upper-floor and cellar cutaways, without overlap-dependent darkening, while selected rooms and walls remained prominent above it.
-
 ## Phase 5 — authoring and population generation
 
 Split reusable characters and environments into independently validated resource documents whose semantic addresses do not depend on their file paths.

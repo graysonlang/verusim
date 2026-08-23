@@ -697,7 +697,7 @@ Lateral enclosure and overhead cover are independent objective properties of aut
 An interior room is laterally enclosed and normally has full overhead cover, while an awning, arcade, canopy, or tree may leave a position exterior despite supplying partial or full overhead cover.
 Sight and hearing consume their own authored lateral occlusion channels; overhead shelter does not become concealment from an observer on the same plan layer merely because it blocks a top-down view or exposure to weather.
 
-The workbench defaults to a roof-on Exterior projection and offers authored layers beneath it in descending elevation order.
+The workbench defaults to a roof-on Exterior projection in the canvas's upper-right corner and offers authored layers beneath it in descending elevation order.
 Selecting a layer is a cutaway: roofs peel away from active interiors, while muted ground, inactive structures, and dimmed off-layer character markers preserve relative plan position.
 The ground and inactive structures render beneath one uniform semi-transparent scrim so overlapping contextual footprints do not compound their dimming, while the active layer renders above that scrim.
 Exterior keeps outdoor characters prominent and dims enclosed characters with a relative-level marker.

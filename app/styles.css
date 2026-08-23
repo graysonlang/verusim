@@ -1350,7 +1350,7 @@ input[type="search"]::placeholder {
   position: absolute;
   z-index: 5;
   top: 12px;
-  left: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
