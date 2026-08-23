@@ -308,6 +308,78 @@ Schema version 1 stores typed entries whose terms preserve their scalar values a
 Candidate appraisal entries keep `turn_felt`, `repercussion_cost`, `contract_violation_cost`, and `narrative_expression` separate; selection entries name the winner and the deterministic rule, including authored-order tie breaking.
 Somatic preemption will emit a first-class `gate` entry before ordinary appraisal, allowing the harness to assert both that the gate fired and that no social term was evaluated.
 
+## Content identity and preparation
+
+Phase 5 separates the organization of authored resources from their logical identity.
+Character and environment definitions should live in independently validated documents, preferably one resource per file, while directories group related settings, casts, fixtures, or packages for authors.
+The directory path and file name are discovery metadata rather than an address, so reorganizing the source tree does not invalidate a scenario.
+
+A resource address is a structured semantic key.
+Its package identifier supplies a namespace, its resource kind distinguishes characters from environments and other future content, and its stable identifier names the resource within that package.
+Package versions and content digests belong in a generated lock or pack manifest rather than in authored scenario references.
+Resolution never selects an implicit `latest` resource, and duplicate semantic keys fail with both authored source paths instead of using registration order or last-one-wins behavior.
+
+Character identity has three distinct levels:
+
+1. `characterId` identifies the same person across scenarios, ages, and continuities.
+2. `profileId` identifies one immutable realization of that person at an authored age, era, or continuity.
+3. `instanceId` identifies one placement of that profile in a scenario and remains the runtime agent identity.
+
+A character profile is not a file-format version or a mutable runtime save.
+Where possible, an earlier or later profile is a deterministic checkpoint produced from the same constitutional base and the appropriate prefix of the character's formative history.
+A divergent continuity remains explicit in profile identity and history.
+Profiles must be independently valid; arbitrary JSON patch chains are not a substitute for formative-event derivation or the sparse per-instance override boundary.
+
+Environment identity follows the same separation.
+`environmentId` identifies a place, while an explicit `layoutId` distinguishes materially different physical realizations such as a settlement before and after reconstruction.
+Weather, season, temperature, occupancy, and other situational conditions remain scenario state rather than layout variants.
+
+### Preparation boundary
+
+Content acquisition, migration, validation, and reference resolution finish before deterministic simulation begins.
+The public boundary is a prepared scenario containing the parsed scenario, resolved character placements, resolved environment, and a lock of the semantic resource identities used to construct it.
+The simulation subsystem receives that prepared value and performs no file access, resource registration, enumeration, asynchronous lookup, or directory traversal while creating, stepping, or resuming state.
+
+The acquisition adapter has one required operation:
+
+```ts
+interface ContentSource {
+  read(address: ResourceAddress): Promise<unknown>;
+}
+```
+
+Repository traversal, an immutable generated catalog, imported objects, HTTP, a database, a game archive, and a mod manager are all possible `ContentSource` implementations.
+The interface provides exact-address reads rather than enumeration, selection, or mutable `register` operations.
+Caches belong to one preparation operation or adapter instance and cannot become hidden global engine state.
+
+The source-backed path is concise:
+
+```ts
+const prepared = await prepareScenarioFromSource({ scenario, source });
+const state = createSimulation(prepared);
+```
+
+A consumer that already owns resource objects bypasses acquisition entirely:
+
+```ts
+const prepared = prepareScenario({ scenario, characters, environment });
+const state = createSimulation(prepared);
+```
+
+Both paths converge on the same migration, validation, duplicate detection, and reference-resolution implementation.
+The existing raw-library simulation entry point may remain as a compatibility wrapper during migration, but it must delegate to preparation rather than making the simulation subsystem a loader.
+Snapshot resume receives the same prepared content and verifies its resource lock before restoring situational state.
+
+### Discovery and packing
+
+The repository adapter discovers source documents by traversing configured content roots in a stable sorted order and generates an immutable catalog.
+Traversal is an authoring and build concern only; deployed consumers are never required to expose a filesystem or reproduce the repository tree.
+
+A future packer starts from selected scenario addresses and walks their explicit resource dependency graph.
+It emits the transitive closure, deduplicates shared resources by semantic key and locked digest, and excludes unrelated characters, profiles, environments, and assets.
+Population generators and other dynamic selectors must declare their candidate pools as dependencies so packing never relies on an unbounded runtime registry.
+The workbench may bundle a catalog containing every authored resource, while a downstream game can supply a minimal prepacked closure through the same preparation boundary.
+
 ## Storage contracts
 
 Files use strict, versioned JSON and stable string identifiers.

@@ -187,10 +187,19 @@ The acceptance target is Stories in the Square.
 
 ## Phase 5 — authoring and population generation
 
+Split reusable characters and environments into independently validated resource documents whose semantic addresses do not depend on their file paths.
+Add stable package, character-profile, and environment-layout references plus a generated immutable catalog for repository discovery.
+Establish the acquisition-neutral prepared-scenario boundary so source-backed and direct in-memory content pass through the same migrations, validation, and reference resolution before entering the engine.
+
 Run structured formative events through runtime update rules, add a sparse per-instance override for history-derived content before enabling §14.4 writes, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, pre-contact dyad and mind-model seeds, environment generation, format migrations, and scenario validation tools.
+Make character profiles at different ages or continuities explicit realizations of one stable character identity, deriving chronological checkpoints from the shared constitutional base and formative history where possible.
 
 Exit probes:
 
+- moving a resource document within an authoring tree does not change its address or invalidate a scenario
+- two scenarios select different profiles of one stable character identity without copying the character into either scenario
+- generated-catalog and direct in-memory preparation produce equivalent resolved content, and simulation performs no resource reads after preparation
+- a dependency-closure report includes every referenced resource once and excludes unrelated resources
 - generated agents can explain unusual dispositions by pointing to stored formative events
 - a small cohort maintains minimum separation in parameter space
 - regenerating with the same seed produces byte-equivalent authored content

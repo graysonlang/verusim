@@ -933,6 +933,20 @@ Age and sex are also descriptive at this boundary. They must not silently produc
 - **Stagger the recent-event timeline.** If every agent's recent trauma dates to just before the player arrives, the village reads as staged. Scatter across preceding years — some resolved, some mid-recovery, some fresh.
 - **Differentiators are mechanical inputs, not flavor.** Age → observation count → estimate confidence. Occupation → marker + satisfier flavor + available outlets. Household → dyads with fixed high kinship and daily cadence.
 
+### 15.5 Identity across age and continuity
+
+A named person has a stable character identity independent of any one scenario.
+An immutable character profile identifies that person's realized state at a particular age, era, or continuity, while a scenario instance identifies one placement of that profile.
+These are separate from the character-library schema version and from package revisions: a flashback is not an old file format, and an edited resource is not automatically a new stage of the character's life.
+
+Earlier and later profiles should normally be deterministic checkpoints over one constitutional base and a chronological formative-event history.
+The younger profile applies only events available by that age; the later profile carries the resulting history-derived content without rewriting the shared person identity.
+If a plot has divergent continuity, that divergence is explicit in the selected profile and its event history rather than hidden in a filename suffix or a scenario-local copy.
+
+Profiles are reusable authored inputs, not runtime save state.
+Situational resources, dyads, memories, value charge, and other current position still belong to the scenario instance or snapshot.
+Do not model age variants as arbitrary overlay chains: explicit independently validated profiles are the safe authoring fallback until formative generation can materialize the checkpoint through the ordinary update rules.
+
 ---
 
 ## 16. Coverage targets
