@@ -80,13 +80,31 @@ The initial planning bounds and urgency scale are explicit safety and calibratio
 
 Status: in progress.
 
+#### Phase 2C.1 — capability, spatial, resource, and atmosphere foundations
+
+Status: complete.
+
 Begin with generation-fixed acuity, evidence calibration, and expressive control; resource-derived current effectiveness; and one deterministic seven-band capability resolver with term provenance.
 Add a deterministic spatial-appraisal foundation that keeps physical proximity separate from relational distance, resolves directed personal-space discomfort, evaluates sight and hearing independently through semantic cover, and requires hearing without detection for covert eavesdropping.
 Add the first resource feedback loop by letting depleted social battery impair derived mood and by restoring the shared resource ledger through explicitly authored break, rest, and sleep modes on schedules and tasks.
 Add authored season, temperature, and weather context plus a deterministic season-aware day-period projection for adapters, without assigning behavioral effects before discomfort, perception, or task feasibility can consume them.
-Then implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
+
+#### Phase 2C.2 — observation and prediction
+
+Status: complete.
+
+Implement event-driven observation, one-level directed mind models, predicted responses, accumulated prediction error, suspicion, confidence, and evidence-gated correction.
+Scenario-authored observation events are deterministic probes and adapter inputs rather than character-specific triggers; the same resolver must later accept events emitted by ordinary interactions.
+Only declared or spatially eligible observers process an event, avoiding an all-pairs mind-model pass on every tick.
 Capability checks determine what is perceived or learned and never act as a persuasion override.
-The acceptance targets are Endicott/Margueritte and Pottsfield.
+The acceptance target is Endicott/Margueritte.
+
+#### Phase 2C.3 — local norms
+
+Status: planned.
+
+Implement local norm appraisal as an observer-relative interpretation of objective events, with norm membership and norm legibility kept separate from hostility and social distance.
+The acceptance target is Pottsfield.
 
 Exit probes:
 

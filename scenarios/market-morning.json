@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "id": "market-morning",
   "title": "Market Morning",
   "summary": "A cold morning after rumors of a failed eastern crop have reached Alder's Edge.",
@@ -18,6 +18,7 @@
   "dyads": [],
   "disclosureItems": [],
   "disclosureOpportunities": [],
+  "observationEvents": [],
   "worldFacts": [],
   "agendaGoals": [],
   "taskOperators": [],

@@ -43,6 +43,15 @@ describe('canvas zoom shortcuts', () => {
 });
 
 describe('workbench shortcuts', () => {
+  it('opens settings with the primary comma shortcut', () => {
+    assert.equal(workbenchActionForShortcut(shortcut('Comma', { metaKey: true })), 'settings');
+    assert.equal(workbenchActionForShortcut(shortcut('Comma', { ctrlKey: true })), 'settings');
+    assert.equal(
+      workbenchActionForShortcut(shortcut('Comma', { metaKey: true, shiftKey: true })),
+      null,
+    );
+  });
+
   it('maps shifted letter keys to snapshot actions', () => {
     assert.equal(workbenchActionForShortcut(shortcut('KeyS', { shiftKey: true })), 'save-snapshot');
     assert.equal(

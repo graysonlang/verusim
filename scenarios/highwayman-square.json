@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "id": "highwayman-square",
   "title": "The Highwayman: Town Square",
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
@@ -29,6 +29,7 @@
       "estimatedDisclosure": 0.5,
       "estimateConfidence": 0.1,
       "predictionError": 0,
+      "suspicion": 0,
       "mode": "courteous"
     },
     {
@@ -48,6 +49,7 @@
       "estimatedDisclosure": 0.5,
       "estimateConfidence": 0.1,
       "predictionError": 0,
+      "suspicion": 0,
       "mode": "courteous"
     },
     {
@@ -67,6 +69,7 @@
       "estimatedDisclosure": 0.5,
       "estimateConfidence": 0.1,
       "predictionError": 0,
+      "suspicion": 0,
       "mode": "courteous"
     },
     {
@@ -86,6 +89,7 @@
       "estimatedDisclosure": 0.5,
       "estimateConfidence": 0.1,
       "predictionError": 0,
+      "suspicion": 0,
       "mode": "courteous"
     },
     {
@@ -105,11 +109,13 @@
       "estimatedDisclosure": 0.5,
       "estimateConfidence": 0.1,
       "predictionError": 0,
+      "suspicion": 0,
       "mode": "courteous"
     }
   ],
   "disclosureItems": [],
   "disclosureOpportunities": [],
+  "observationEvents": [],
   "worldFacts": [],
   "agendaGoals": [],
   "taskOperators": [],

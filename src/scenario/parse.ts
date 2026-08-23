@@ -1,6 +1,8 @@
 import {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
+  MIND_MODEL_DIMENSIONS,
+  OBSERVATION_CHANNELS,
   SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
@@ -31,6 +33,8 @@ const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'w
 const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
 const TIME_RATE_ID_SET = new Set<string>(TIME_RATE_IDS);
 const HEIGHT_CLASS_SET = new Set<string>(HEIGHT_CLASSES);
+const MIND_MODEL_DIMENSION_SET = new Set<string>(MIND_MODEL_DIMENSIONS);
+const OBSERVATION_CHANNEL_SET = new Set<string>(OBSERVATION_CHANNELS);
 const SEASON_ID_SET = new Set<string>(SEASON_IDS);
 const SEX_ID_SET = new Set<string>(SEX_IDS);
 const WEATHER_ID_SET = new Set<string>(WEATHER_IDS);
@@ -331,13 +335,14 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 6) return file;
+  if (file.schemaVersion === 7) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
     file.schemaVersion !== 4 &&
-    file.schemaVersion !== 5
+    file.schemaVersion !== 5 &&
+    file.schemaVersion !== 6
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -362,12 +367,12 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.disclosureItems = [];
     file.disclosureOpportunities = [];
   }
-  if (sourceVersion !== 4 && sourceVersion !== 5) {
+  if (sourceVersion !== 4 && sourceVersion !== 5 && sourceVersion !== 6) {
     file.agendaGoals = [];
     file.taskOperators = [];
     file.worldFacts = [];
   }
-  if (sourceVersion !== 5) {
+  if (sourceVersion !== 5 && sourceVersion !== 6) {
     for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
       const task = objectValue(taskValue, 'scenario.taskOperators');
       task.recoveryMode = 'none';
@@ -380,12 +385,19 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       }
     }
   }
-  file.environmentConditions = {
-    season: 'spring',
-    temperatureCelsius: 15,
-    weather: 'clear',
-  };
-  file.schemaVersion = 6;
+  if (sourceVersion !== 6) {
+    file.environmentConditions = {
+      season: 'spring',
+      temperatureCelsius: 15,
+      weather: 'clear',
+    };
+  }
+  for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
+    const dyad = objectValue(dyadValue, 'scenario.dyads');
+    dyad.suspicion = 0;
+  }
+  file.observationEvents = [];
+  file.schemaVersion = 7;
   return file;
 }
 
@@ -500,7 +512,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 6);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 7);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -771,6 +783,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     numberValue(dyad.estimatedDisclosure, `${path}.estimatedDisclosure`, 0, 1);
     numberValue(dyad.estimateConfidence, `${path}.estimateConfidence`, 0, 1);
     numberValue(dyad.predictionError, `${path}.predictionError`, 0, 1);
+    numberValue(dyad.suspicion, `${path}.suspicion`, 0, 1);
     if (typeof dyad.mode !== 'string' || !DYAD_MODES.has(dyad.mode)) {
       throw new ScenarioValidationError(`${path}.mode`, 'expected a known dyad mode');
     }
@@ -819,6 +832,39 @@ export function parseScenario(value: unknown): ScenarioFile {
     return opportunity;
   });
   uniqueIds(disclosureOpportunities, 'scenario.disclosureOpportunities');
+
+  const observationEvents = arrayValue(file.observationEvents, 'scenario.observationEvents').map(
+    (entry, index) => {
+      const path = `scenario.observationEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      identifierValue(event.subjectId, `${path}.subjectId`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      if (typeof event.channel !== 'string' || !OBSERVATION_CHANNEL_SET.has(event.channel)) {
+        throw new ScenarioValidationError(`${path}.channel`, 'expected hearing or sight');
+      }
+      if (typeof event.dimension !== 'string' || !MIND_MODEL_DIMENSION_SET.has(event.dimension)) {
+        throw new ScenarioValidationError(`${path}.dimension`, 'expected disclosure or empathy');
+      }
+      numberValue(event.audibleRadiusMeters, `${path}.audibleRadiusMeters`, 0, 10_000);
+      numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
+      numberValue(event.interpretationDifficulty, `${path}.interpretationDifficulty`, 0, 1);
+      numberValue(event.diagnosticity, `${path}.diagnosticity`, 0, 1);
+      numberValue(event.observedValue, `${path}.observedValue`, 0, 1);
+      const observerIds = arrayValue(event.observerIds, `${path}.observerIds`);
+      if (observerIds.length === 0) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'expected at least one observer');
+      }
+      observerIds.forEach((observerId, observerIndex) => {
+        identifierValue(observerId, `${path}.observerIds[${observerIndex}]`);
+      });
+      if (new Set(observerIds).size !== observerIds.length) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'duplicate agent identifier');
+      }
+      return event;
+    },
+  );
+  uniqueIds(observationEvents, 'scenario.observationEvents');
 
   const opportunities = arrayValue(
     file.behaviorOpportunities,

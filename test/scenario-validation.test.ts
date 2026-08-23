@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import characters from '../library/characters.json';
 import environments from '../library/environments.json';
+import mindModelCharacters from '../library/mind-model-characters.json';
 import scenario from '../scenarios/market-morning.json';
+import mindModelScenario from '../scenarios/endicott-margueritte.json';
 import {
   createSimulation,
   parseCharacterLibrary,
@@ -32,12 +34,13 @@ describe('scenario validation', () => {
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.schemaVersion, 7);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
     assert.deepEqual(migrated.disclosureOpportunities, []);
     assert.deepEqual(migrated.dyads, []);
+    assert.deepEqual(migrated.observationEvents, []);
     assert.deepEqual(migrated.taskOperators, []);
     assert.deepEqual(migrated.worldFacts, []);
     assert.deepEqual(migrated.environmentConditions, {
@@ -93,9 +96,11 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 6);
+    assert.equal(migratedScenario.schemaVersion, 7);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
+    assert.equal(migratedScenario.dyads[0]?.suspicion, 0);
+    assert.deepEqual(migratedScenario.observationEvents, []);
   });
 
   it('migrates relational scenarios and snapshots to the agenda boundary', () => {
@@ -105,7 +110,7 @@ describe('scenario validation', () => {
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 6);
+    assert.equal(migratedScenario.schemaVersion, 7);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -125,11 +130,13 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 3);
+    assert.equal(migratedSnapshot.schemaVersion, 4);
     assert.equal(migratedSnapshot.trace.schemaVersion, 1);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
     assert.deepEqual(migratedSnapshot.worldFacts, []);
+    assert.deepEqual(migratedSnapshot.observations, []);
+    assert.deepEqual(migratedSnapshot.resolvedObservationEventIds, []);
 
     const agendaSnapshot = serializeSnapshot(
       createSimulation({
@@ -141,7 +148,7 @@ describe('scenario validation', () => {
     replaceWithLegacyTrace(agendaSnapshot);
     agendaSnapshot.schemaVersion = 2;
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
-    assert.equal(migratedAgendaSnapshot.schemaVersion, 3);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 4);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
   });
 
@@ -155,7 +162,7 @@ describe('scenario validation', () => {
     }
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.schemaVersion, 7);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
 
@@ -181,13 +188,26 @@ describe('scenario validation', () => {
     assert.equal(schedule[0]?.recoveryMode, 'sleep');
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.schemaVersion, 7);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.deepEqual(migrated.environmentConditions, {
       season: 'spring',
       temperatureCelsius: 15,
       weather: 'clear',
     });
+  });
+
+  it('adds observation state without rewriting version 6 atmosphere data', () => {
+    const prior = structuredClone(mindModelScenario) as unknown as Record<string, unknown>;
+    prior.schemaVersion = 6;
+    delete prior.observationEvents;
+    for (const dyad of prior.dyads as Array<Record<string, unknown>>) delete dyad.suspicion;
+
+    const migrated = parseScenario(prior);
+    assert.equal(migrated.schemaVersion, 7);
+    assert.deepEqual(migrated.observationEvents, []);
+    assert.equal(migrated.dyads[0]?.suspicion, 0);
+    assert.deepEqual(migrated.environmentConditions, mindModelScenario.environmentConditions);
   });
 
   it('accepts only known optional initial time rates', () => {
@@ -215,6 +235,29 @@ describe('scenario validation', () => {
     assert.throws(
       () => parseScenario(malformed),
       /scenario\.environmentConditions\.temperatureCelsius/,
+    );
+  });
+
+  it('validates authored social observations', () => {
+    const malformed = structuredClone(mindModelScenario);
+    const first = malformed.observationEvents[0];
+    assert.ok(first);
+    first.diagnosticity = 2;
+    assert.throws(
+      () => parseScenario(malformed),
+      /scenario\.observationEvents\[0\]\.diagnosticity/,
+    );
+
+    first.diagnosticity = 0.25;
+    first.observerIds = ['missing-observer'];
+    assert.throws(
+      () =>
+        createSimulation({
+          characterLibrary: mindModelCharacters,
+          environmentLibrary: environments,
+          scenario: malformed,
+        }),
+      /unknown agent "missing-observer"/,
     );
   });
 

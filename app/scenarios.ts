@@ -1,5 +1,6 @@
 import bakerDeadline from '../scenarios/baker-deadline.json';
 import disclosureAudience from '../scenarios/disclosure-audience.json';
+import endicottMargueritte from '../scenarios/endicott-margueritte.json';
 import highwaymanRoad from '../scenarios/highwayman-road.json';
 import highwaymanSquare from '../scenarios/highwayman-square.json';
 import marketMorning from '../scenarios/market-morning.json';
@@ -26,6 +27,7 @@ export const BUILT_IN_SCENARIOS: readonly BuiltInScenario[] = [
   marketMorning,
   bakerDeadline,
   disclosureAudience,
+  endicottMargueritte,
   highwaymanRoad,
   highwaymanSquare,
 ].map(builtInScenario);

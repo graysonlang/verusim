@@ -4,7 +4,11 @@ export type ZoomActionId =
   | 'zoom-in'
   | 'zoom-out'
   | 'zoom-selection';
-export type WorkbenchShortcutActionId = ZoomActionId | 'reset-scenario' | 'save-snapshot';
+export type WorkbenchShortcutActionId =
+  | ZoomActionId
+  | 'reset-scenario'
+  | 'save-snapshot'
+  | 'settings';
 
 export interface ShortcutInput {
   altKey: boolean;
@@ -29,6 +33,14 @@ export function zoomActionForShortcut(input: ShortcutInput): ZoomActionId | null
 }
 
 export function workbenchActionForShortcut(input: ShortcutInput): WorkbenchShortcutActionId | null {
+  if (
+    input.code === 'Comma' &&
+    !input.altKey &&
+    !input.shiftKey &&
+    ((input.metaKey && !input.ctrlKey) || (input.ctrlKey && !input.metaKey))
+  ) {
+    return 'settings';
+  }
   const zoomAction = zoomActionForShortcut(input);
   if (zoomAction !== null) return zoomAction;
 

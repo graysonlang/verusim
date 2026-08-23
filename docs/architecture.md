@@ -66,7 +66,8 @@ The built-in scenarios use one-minute ticks so movement, deadlines, recovery, an
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
 Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
-Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, and meter displays.
+Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, and Fahrenheit.
+Distance and temperature units are independent presentation choices; a stored preference from before that split preserves its former meter/Celsius or feet/Fahrenheit pairing until the user changes either field.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
 
@@ -201,6 +202,23 @@ The Phase 2C foundation is deliberately read-only.
 The workbench and tests consume it now; disclosure opportunities should derive perceived and actual audiences from it only after interaction positioning stops collapsing every co-located agent onto one location center.
 That sequencing prevents an improved perception model from laundering a movement placeholder into behavioral truth.
 
+## Observation and prediction
+
+Observation is event-driven rather than an all-pairs process on every tick.
+An observation event identifies an objective social signal, its subject, the directed observers allowed to receive it, its sensory channel, its perceptual prominence or range, its interpretation difficulty, and its diagnosticity.
+Scenario-authored events are deterministic regression inputs; ordinary interaction resolvers may emit the same event shape later without changing the mind-model updater.
+
+Each observer first passes through the shared spatial-perception evaluator, then uses effective evidence calibration to interpret a perceived event.
+The observer predicts the signal from the existing directed dyad estimate and compares prediction with observation.
+Low or ambiguous contradiction accumulates prediction error and suspicion without silently rewriting the estimate.
+Evidence that crosses the confidence-sensitive correction gate moves only the implicated estimate toward the observation, reduces accumulated error and suspicion, and records the complete before-and-after state in the causal trace.
+Confirming evidence increases confidence without creating contradiction.
+
+Mind models remain one level deep.
+The dyad stores the observer's estimates of the subject, not a recursive representation of what the subject thinks about the observer.
+If an observed pair has no authored dyad, the observer projects a neutral directed record from its own empathy and disclosure shape; only encountered pairs are materialized.
+Observation records and resolved event identifiers are bounded, snapshot-persisted runtime state so replay does not repeat an event or lose the reason a correction occurred.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.
@@ -242,10 +260,10 @@ Social battery below `0.50` contributes up to `0.38` negative valence and physic
 
 Character-library schema version 5 adds descriptive physical profiles and coarse build effects to the version 4 epistemic capability format.
 Explicit migrations preserve versions 1 through 4, using neutral capability defaults where versions 1 through 3 expressed no distinction and an unspecified, average physical profile where older libraries expressed no physical data.
-Scenario schema version 6 adds authored season, temperature, and weather conditions to the version 5 recovery format.
-Explicit migrations preserve version 1 through 5 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, and supplying neutral spring conditions where versions before 6 expressed no atmosphere.
-Snapshot schema version 3 persists agenda state and causal-trace schema version 1 separately from scenario versioning, and validates plan, intention, goal, fact, dyad, trace, and agent references before runtime restoration.
-Explicit snapshot migrations preserve versions 1 and 2, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Scenario schema version 7 adds event-driven social observations and explicit dyad suspicion to the version 6 atmosphere format.
+Explicit migrations preserve version 1 through 6 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, and supplying empty observation inputs plus neutral suspicion where version 7 data was absent.
+Snapshot schema version 4 persists mind-model observations and resolved observation-event identifiers in addition to agenda state and causal-trace schema version 1, and validates plan, intention, goal, fact, dyad, observation, trace, and agent references before runtime restoration.
+Explicit snapshot migrations preserve versions 1 through 3, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

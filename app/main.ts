@@ -3,6 +3,7 @@ import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import highwaymanCharacters from '../library/highwayman-characters.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
+import mindModelCharacters from '../library/mind-model-characters.json';
 import {
   CAPABILITY_IDS,
   DAY_PERIOD_LABELS,
@@ -53,6 +54,7 @@ import {
 import {
   isClockFormat,
   isDistanceUnit,
+  isTemperatureUnit,
   isTimeRateId,
   initialTimeRateForScenario,
   loadPreferences,
@@ -60,6 +62,7 @@ import {
   type ApplicationPreferences,
   type ClockFormat,
   type DistanceUnit,
+  type TemperatureUnit,
 } from './preferences.js';
 import {
   BUILT_IN_SCENARIOS,
@@ -76,7 +79,11 @@ import {
 import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.js';
 
 const characterLibrary = {
-  characters: [...characters.characters, ...highwaymanCharacters.characters],
+  characters: [
+    ...characters.characters,
+    ...highwaymanCharacters.characters,
+    ...mindModelCharacters.characters,
+  ],
   schemaVersion: 5,
 };
 const environmentLibrary = {
@@ -810,7 +817,7 @@ function renderInspector(
     );
     mode.textContent = dyad.mode;
     copy.textContent = subject?.profile.name ?? dyad.subjectId;
-    estimates.textContent = `stance ${dyad.stance.toFixed(2)} / E estimate ${dyad.estimatedEmpathy.toFixed(2)} / D estimate ${dyad.estimatedDisclosure.toFixed(2)} / confidence ${dyad.estimateConfidence.toFixed(2)} / exposed items ${exposedItems.length}`;
+    estimates.textContent = `stance ${dyad.stance.toFixed(2)} / E estimate ${dyad.estimatedEmpathy.toFixed(2)} / D estimate ${dyad.estimatedDisclosure.toFixed(2)} / confidence ${dyad.estimateConfidence.toFixed(2)} / error ${dyad.predictionError.toFixed(2)} / suspicion ${dyad.suspicion.toFixed(2)} / exposed items ${exposedItems.length}`;
     item.append(mode, copy, estimates);
     relationshipList.append(item);
   }
@@ -820,6 +827,42 @@ function renderInspector(
     relationships.body.append(empty);
   } else {
     relationships.body.append(relationshipList);
+  }
+
+  const agentObservations = state.observations.filter(
+    observation => observation.observerId === agent.id,
+  );
+  const observationSection = makeSection(
+    'Observed predictions',
+    `${agentObservations.length} retained`,
+  );
+  if (agentObservations.length === 0) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = "No social observation has tested this character's mind models.";
+    observationSection.body.append(empty);
+  } else {
+    const observationList = element('ol', 'event-list trace-list');
+    for (const observation of agentObservations.slice(-8).reverse()) {
+      const item = element('li');
+      const outcome = element('span', 'event-time');
+      const copy = element('span');
+      const terms = element('small');
+      const subject = state.agents.find(candidate => candidate.id === observation.subjectId);
+      const predicted =
+        observation.predictedValue === null
+          ? 'not perceived'
+          : observation.predictedValue.toFixed(3);
+      const estimate =
+        observation.newEstimate === null ? 'unchanged' : observation.newEstimate.toFixed(3);
+      const gate =
+        observation.gateThreshold === null ? 'n/a' : observation.gateThreshold.toFixed(3);
+      outcome.textContent = observation.outcome;
+      copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${observation.dimension}`;
+      terms.textContent = `predicted ${predicted} / observed ${observation.observedValue.toFixed(3)} / estimate ${estimate} / evidence ${observation.effectiveEvidence.toFixed(3)} / gate ${gate} / calibration ${observation.calibrationBand ?? 'n/a'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+      item.append(outcome, copy, terms);
+      observationList.append(item);
+    }
+    observationSection.body.append(observationList);
   }
 
   const disclosureSection = makeSection('Latest disclosure decision');
@@ -897,6 +940,7 @@ function renderInspector(
     identity.section,
     decisionSection.section,
     relationships.section,
+    observationSection.section,
     disclosureSection.section,
     memories.section,
     trace.section,
@@ -1120,6 +1164,7 @@ function createWorkbench(): HTMLElement {
   const defaultTimeRateSelect = element('select');
   const clockFormatInputs: HTMLInputElement[] = [];
   const distanceUnitInputs: HTMLInputElement[] = [];
+  const temperatureUnitInputs: HTMLInputElement[] = [];
   const primaryShortcut = (key: string): string =>
     `${/Mac|iPhone|iPad|iPod/i.test(navigator.platform) ? 'Command' : 'Ctrl'}+${key}`;
 
@@ -1439,7 +1484,26 @@ function createWorkbench(): HTMLElement {
     unitSettings.append(row);
   }
   unitSettings.prepend(unitLegend);
-  settingsBody.append(simulationSettings, clockSettings, unitSettings);
+  const temperatureSettings = element('fieldset', 'settings-group');
+  const temperatureLegend = element('legend');
+  temperatureLegend.textContent = 'Temperature units';
+  for (const [value, label] of [
+    ['fahrenheit', 'Fahrenheit'],
+    ['celsius', 'Celsius'],
+  ] as const) {
+    const row = element('label', 'settings-row');
+    const input = element('input');
+    const copy = element('span');
+    input.type = 'radio';
+    input.name = 'settings-temperature-unit';
+    input.value = value;
+    copy.textContent = label;
+    row.append(input, copy);
+    temperatureUnitInputs.push(input);
+    temperatureSettings.append(row);
+  }
+  temperatureSettings.prepend(temperatureLegend);
+  settingsBody.append(simulationSettings, clockSettings, unitSettings, temperatureSettings);
   settingsPanel.setAttribute('aria-labelledby', settingsTitle.id);
   settingsPanel.setAttribute('aria-modal', 'true');
   settingsPanel.setAttribute('role', 'dialog');
@@ -1557,7 +1621,15 @@ function createWorkbench(): HTMLElement {
     },
     {
       id: 'settings',
-      keywords: ['preferences', 'clock', 'units', 'time scale'],
+      keywords: [
+        'preferences',
+        'clock',
+        'units',
+        'temperature',
+        'fahrenheit',
+        'celsius',
+        'time scale',
+      ],
       label: 'Settings...',
       run: () => openSettings(),
       shortcut: primaryShortcut(','),
@@ -1802,6 +1874,9 @@ function createWorkbench(): HTMLElement {
     defaultTimeRateSelect.value = current.defaultTimeRate;
     for (const input of clockFormatInputs) input.checked = input.value === current.clockFormat;
     for (const input of distanceUnitInputs) input.checked = input.value === current.distanceUnit;
+    for (const input of temperatureUnitInputs) {
+      input.checked = input.value === current.temperatureUnit;
+    }
   }
 
   function closeSettings(restoreFocus = false): void {
@@ -1977,7 +2052,7 @@ function createWorkbench(): HTMLElement {
     const weatherName = classLabel(conditions.weather);
     const temperature = formatTemperature(
       conditions.temperatureCelsius,
-      currentPreferences.distanceUnit,
+      currentPreferences.temperatureUnit,
     );
     const builtInId = loadedBuiltInScenarioId();
     const origin = builtInId === null ? 'Loaded file or snapshot' : 'Included with workbench';
@@ -2426,6 +2501,9 @@ function createWorkbench(): HTMLElement {
     } else if (control.name === 'settings-distance-unit' && isDistanceUnit(control.value)) {
       const distanceUnit = control.value;
       setPreferences(current => ({ ...current, distanceUnit }));
+    } else if (control.name === 'settings-temperature-unit' && isTemperatureUnit(control.value)) {
+      const temperatureUnit: TemperatureUnit = control.value;
+      setPreferences(current => ({ ...current, temperatureUnit }));
     }
   });
 
@@ -2510,7 +2588,7 @@ function createWorkbench(): HTMLElement {
       }
       return;
     }
-    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key === ',') {
+    if (workbenchActionForShortcut(event) === 'settings') {
       event.preventDefault();
       openSettings();
       return;

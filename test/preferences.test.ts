@@ -16,7 +16,7 @@ import {
 } from '../app/units.js';
 
 describe('application preferences', () => {
-  it('defaults to one simulated minute per second, 12-hour time, and meters', () => {
+  it('defaults to one simulated minute per second, 12-hour time, and US units', () => {
     assert.deepEqual(parsePreferences(null), DEFAULT_APPLICATION_PREFERENCES);
     assert.deepEqual(parsePreferences({}), DEFAULT_APPLICATION_PREFERENCES);
   });
@@ -27,11 +27,13 @@ describe('application preferences', () => {
         clockFormat: '24-hour',
         defaultTimeRate: '10x',
         distanceUnit: 'feet',
+        temperatureUnit: 'celsius',
       }),
       {
         clockFormat: '24-hour',
         defaultTimeRate: '10x',
         distanceUnit: 'feet',
+        temperatureUnit: 'celsius',
       },
     );
     assert.deepEqual(
@@ -39,9 +41,19 @@ describe('application preferences', () => {
         clockFormat: 'dial',
         defaultTimeRate: 'warp-speed',
         distanceUnit: 'yards',
+        temperatureUnit: 'kelvin',
       }),
       DEFAULT_APPLICATION_PREFERENCES,
     );
+  });
+
+  it('migrates the former distance-coupled temperature behavior', () => {
+    assert.deepEqual(parsePreferences({ distanceUnit: 'meters' }), {
+      ...DEFAULT_APPLICATION_PREFERENCES,
+      distanceUnit: 'meters',
+      temperatureUnit: 'celsius',
+    });
+    assert.equal(parsePreferences({ distanceUnit: 'feet' }).temperatureUnit, 'fahrenheit');
   });
 
   it('lets a scenario override only the active initial time rate', () => {
@@ -50,6 +62,7 @@ describe('application preferences', () => {
       clockFormat: '24-hour' as const,
       defaultTimeRate: '5x' as const,
       distanceUnit: 'feet' as const,
+      temperatureUnit: 'celsius' as const,
     };
     assert.equal(initialTimeRateForScenario({}, preferences), '5x');
     assert.equal(
@@ -58,6 +71,7 @@ describe('application preferences', () => {
     );
     assert.equal(preferences.clockFormat, '24-hour');
     assert.equal(preferences.distanceUnit, 'feet');
+    assert.equal(preferences.temperatureUnit, 'celsius');
   });
 
   it('survives unreadable storage and persists a device-local JSON record', () => {
@@ -81,12 +95,13 @@ describe('application preferences', () => {
         clockFormat: '24-hour',
         defaultTimeRate: '5x',
         distanceUnit: 'feet',
+        temperatureUnit: 'celsius',
       },
     );
     assert.equal(savedKey, PREFERENCES_KEY);
     assert.equal(
       savedValue,
-      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet"}',
+      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","temperatureUnit":"celsius"}',
     );
   });
 });
@@ -98,7 +113,7 @@ describe('display units', () => {
     assert.equal(formatMovementRate(72, 'meters'), '72 m/min');
     assert.equal(formatMovementRate(72, 'feet'), '236.2 ft/min');
     assert.equal(formatMovementSpeed(72, 'feet'), '3.94 ft/s');
-    assert.equal(formatTemperature(20, 'meters'), '20 C');
-    assert.equal(formatTemperature(20, 'feet'), '68 F');
+    assert.equal(formatTemperature(20, 'celsius'), '20 C');
+    assert.equal(formatTemperature(20, 'fahrenheit'), '68 F');
   });
 });

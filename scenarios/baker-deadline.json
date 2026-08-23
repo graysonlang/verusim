@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "id": "baker-deadline",
   "title": "Bread Before Market Close",
   "summary": "Mara must prepare market bread without flour while the common room also needs work.",
@@ -14,6 +14,7 @@
   "dyads": [],
   "disclosureItems": [],
   "disclosureOpportunities": [],
+  "observationEvents": [],
   "worldFacts": [
     { "id": "flour-on-hand", "amount": 0 },
     { "id": "bread-on-hand", "amount": 0 },

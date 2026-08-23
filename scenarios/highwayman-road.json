@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "id": "highwayman-road",
   "title": "The Highwayman: Empty Road",
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
@@ -29,11 +29,13 @@
       "estimatedDisclosure": 0.5,
       "estimateConfidence": 0.1,
       "predictionError": 0,
+      "suspicion": 0,
       "mode": "courteous"
     }
   ],
   "disclosureItems": [],
   "disclosureOpportunities": [],
+  "observationEvents": [],
   "worldFacts": [],
   "agendaGoals": [],
   "taskOperators": [],

@@ -29,6 +29,7 @@ import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { applyBuildToWalkingPace } from './physical.js';
+import { resolveObservationEvent } from './prediction.js';
 import { appendTrace, createTrace, traceTerm } from './trace.js';
 
 const DAY_MINUTES = 1440;
@@ -259,6 +260,26 @@ function validateReferences(content: ScenarioContent): void {
       }
     });
   });
+  content.scenario.observationEvents.forEach((event, index) => {
+    const path = `scenario.observationEvents[${index}]`;
+    if (!instanceIds.has(event.subjectId)) {
+      throw new ScenarioValidationError(`${path}.subjectId`, `unknown agent "${event.subjectId}"`);
+    }
+    event.observerIds.forEach((observerId, observerIndex) => {
+      if (!instanceIds.has(observerId)) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          `unknown agent "${observerId}"`,
+        );
+      }
+      if (observerId === event.subjectId) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          'an agent cannot observe its own social signal',
+        );
+      }
+    });
+  });
   const factIds = new Set(content.scenario.worldFacts.map(fact => fact.id));
   content.scenario.agendaGoals.forEach((goal, index) => {
     const path = `scenario.agendaGoals[${index}]`;
@@ -407,8 +428,10 @@ export function createSimulation(input: {
     environment,
     intentions: [],
     minute: content.scenario.startMinute,
+    observations: [],
     plans: [],
     resolvedDisclosureOpportunityIds: [],
+    resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
     scenario: content.scenario,
     tick: 0,
@@ -515,6 +538,27 @@ export function createSimulationFromSnapshot(input: {
       throw new ScenarioValidationError(
         `snapshot.dyads[${index}]`,
         'dyad must reference snapshot agents',
+      );
+    }
+  });
+  const observationEventIds = new Set(snapshot.scenario.observationEvents.map(event => event.id));
+  snapshot.observations.forEach((observation, index) => {
+    if (
+      !agentIds.has(observation.observerId) ||
+      !agentIds.has(observation.subjectId) ||
+      !observationEventIds.has(observation.eventId)
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.observations[${index}]`,
+        'observation must reference snapshot agents and an authored event',
+      );
+    }
+  });
+  snapshot.resolvedObservationEventIds.forEach((eventId, index) => {
+    if (!observationEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedObservationEventIds[${index}]`,
+        `unknown observation event "${eventId}"`,
       );
     }
   });
@@ -638,8 +682,10 @@ export function createSimulationFromSnapshot(input: {
     dyads: snapshot.dyads,
     intentions: snapshot.intentions,
     minute: snapshot.minute,
+    observations: snapshot.observations,
     plans: snapshot.plans,
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
+    resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
     tick: snapshot.tick,
     trace: snapshot.trace,
@@ -888,6 +934,13 @@ function advanceOneTick(state: SimulationState): SimulationState {
   for (const opportunity of dueDisclosureOpportunities) {
     next = resolveDisclosureOpportunity(next, opportunity);
   }
+  const dueObservationEvents = prepared.scenario.observationEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedObservationEventIds.includes(event.id),
+  );
+  for (const event of dueObservationEvents) next = resolveObservationEvent(next, event);
   return next;
 }
 

@@ -23,6 +23,8 @@ const TRACE_KINDS = new Set([
   'goal',
   'intervention',
   'intention',
+  'observation',
+  'prediction',
   'relationship',
   'resource',
   'scenario',
@@ -38,6 +40,18 @@ const TRACE_SELECTION_RULES = new Set([
 ]);
 const GOAL_STATUSES = new Set(['active', 'blocked', 'completed', 'failed', 'pending']);
 const INTENTION_PHASES = new Set(['travel', 'waiting', 'work']);
+const CAPABILITY_BANDS = new Set([
+  'strong-yes',
+  'weak-yes',
+  'so-so',
+  'weak-no',
+  'strong-no',
+  'strike',
+  'pass',
+]);
+const OBSERVATION_CHANNELS = new Set(['hearing', 'sight']);
+const OBSERVATION_DIMENSIONS = new Set(['disclosure', 'empathy']);
+const OBSERVATION_OUTCOMES = new Set(['confirmed', 'corrected', 'missed', 'suspected']);
 
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
@@ -352,6 +366,67 @@ function validateDisclosureHistory(value: unknown, path: string): void {
   });
 }
 
+function nullableNumber(value: unknown, path: string, minimum = 0, maximum = 1): void {
+  if (value !== null) numberValue(value, path, minimum, maximum);
+}
+
+function validateObservationHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    stringValue(entry.id, `${entryPath}.id`);
+    stringValue(entry.eventId, `${entryPath}.eventId`);
+    stringValue(entry.observerId, `${entryPath}.observerId`);
+    stringValue(entry.subjectId, `${entryPath}.subjectId`);
+    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.tick, `${entryPath}.tick`);
+    if (typeof entry.channel !== 'string' || !OBSERVATION_CHANNELS.has(entry.channel)) {
+      throw new ScenarioValidationError(`${entryPath}.channel`, 'expected hearing or sight');
+    }
+    if (typeof entry.dimension !== 'string' || !OBSERVATION_DIMENSIONS.has(entry.dimension)) {
+      throw new ScenarioValidationError(`${entryPath}.dimension`, 'expected disclosure or empathy');
+    }
+    if (typeof entry.outcome !== 'string' || !OBSERVATION_OUTCOMES.has(entry.outcome)) {
+      throw new ScenarioValidationError(
+        `${entryPath}.outcome`,
+        'expected a known observation outcome',
+      );
+    }
+    numberValue(entry.diagnosticity, `${entryPath}.diagnosticity`, 0, 1);
+    numberValue(entry.effectiveEvidence, `${entryPath}.effectiveEvidence`, 0, 1);
+    numberValue(entry.evidenceStrength, `${entryPath}.evidenceStrength`, 0, 1);
+    numberValue(entry.observedValue, `${entryPath}.observedValue`, 0, 1);
+    numberValue(entry.perceptionStrength, `${entryPath}.perceptionStrength`, 0, 1);
+    for (const key of [
+      'gateThreshold',
+      'newConfidence',
+      'newEstimate',
+      'newPredictionError',
+      'newSuspicion',
+      'predictedValue',
+      'previousConfidence',
+      'previousEstimate',
+      'previousPredictionError',
+      'previousSuspicion',
+      'rawError',
+    ]) {
+      nullableNumber(entry[key], `${entryPath}.${key}`);
+    }
+    if (entry.calibrationMargin !== null) {
+      numberValue(entry.calibrationMargin, `${entryPath}.calibrationMargin`, -1, 1);
+    }
+    if (
+      entry.calibrationBand !== null &&
+      (typeof entry.calibrationBand !== 'string' || !CAPABILITY_BANDS.has(entry.calibrationBand))
+    ) {
+      throw new ScenarioValidationError(
+        `${entryPath}.calibrationBand`,
+        'expected a known capability band or null',
+      );
+    }
+  });
+}
+
 function validateIdentifierList(value: unknown, path: string): void {
   const values = arrayValue(value, path);
   values.forEach((entry, index) => {
@@ -505,7 +580,12 @@ function validateAgendaHistory(value: unknown, path: string): void {
 
 function migrateSnapshot(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'snapshot'));
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
+  if (
+    file.schemaVersion !== 1 &&
+    file.schemaVersion !== 2 &&
+    file.schemaVersion !== 3 &&
+    file.schemaVersion !== 4
+  ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   if (file.schemaVersion === 1) {
@@ -518,7 +598,7 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.worldFacts = scenario.worldFacts;
     file.worldRevision = 0;
   }
-  if (file.schemaVersion !== 3) {
+  if (file.schemaVersion === 1 || file.schemaVersion === 2) {
     file.trace = {
       entries: arrayValue(file.trace, 'snapshot.trace').map((entryValue, entryIndex) => {
         const entry = clone(objectValue(entryValue, `snapshot.trace[${entryIndex}]`));
@@ -544,7 +624,15 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       }
     }
   }
-  file.schemaVersion = 3;
+  if (file.schemaVersion !== 4) {
+    for (const dyadValue of arrayValue(file.dyads, 'snapshot.dyads')) {
+      const dyad = objectValue(dyadValue, 'snapshot.dyads');
+      dyad.suspicion = 0;
+    }
+    file.observations = [];
+    file.resolvedObservationEventIds = [];
+  }
+  file.schemaVersion = 4;
   return file;
 }
 
@@ -553,7 +641,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 3) {
+  if (file.schemaVersion !== 4) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -592,12 +680,14 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   integerValue(file.worldRevision, 'snapshot.worldRevision');
   validateDecisionHistory(file.decisions, 'snapshot.decisions');
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
+  validateObservationHistory(file.observations, 'snapshot.observations');
   validateTrace(file.trace, 'snapshot.trace');
   validateIdentifierList(file.resolvedOpportunityIds, 'snapshot.resolvedOpportunityIds');
   validateIdentifierList(
     file.resolvedDisclosureOpportunityIds,
     'snapshot.resolvedDisclosureOpportunityIds',
   );
+  validateIdentifierList(file.resolvedObservationEventIds, 'snapshot.resolvedObservationEventIds');
 
   return {
     ...(file as unknown as SimulationSnapshotFile),

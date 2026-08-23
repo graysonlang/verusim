@@ -297,6 +297,7 @@ export interface DyadSeed {
   predictionError: number;
   stance: number;
   subjectId: string;
+  suspicion: number;
 }
 
 export type DyadState = DyadSeed;
@@ -317,6 +318,28 @@ export interface DisclosureOpportunity {
   itemId: string;
   networkConductivity: number;
   ownerId: string;
+}
+
+export const MIND_MODEL_DIMENSIONS = ['empathy', 'disclosure'] as const;
+
+export type MindModelDimension = (typeof MIND_MODEL_DIMENSIONS)[number];
+
+export const OBSERVATION_CHANNELS = ['hearing', 'sight'] as const;
+
+export type ObservationChannel = (typeof OBSERVATION_CHANNELS)[number];
+
+export interface ObservationEvent {
+  atMinute: number;
+  audibleRadiusMeters: number;
+  channel: ObservationChannel;
+  diagnosticity: number;
+  dimension: MindModelDimension;
+  id: string;
+  interpretationDifficulty: number;
+  observedValue: number;
+  observerIds: string[];
+  subjectId: string;
+  visualProminence: number;
 }
 
 export interface WorldFact {
@@ -439,7 +462,8 @@ export interface ScenarioFile {
   environmentConditions: EnvironmentConditions;
   id: string;
   initialTimeRate?: TimeRateId;
-  schemaVersion: 6;
+  observationEvents: ObservationEvent[];
+  schemaVersion: 7;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -484,6 +508,8 @@ export type TraceKind =
   | 'goal'
   | 'intervention'
   | 'intention'
+  | 'observation'
+  | 'prediction'
   | 'relationship'
   | 'resource'
   | 'scenario'
@@ -536,8 +562,10 @@ export interface SimulationState {
   environment: EnvironmentDefinition;
   intentions: TaskIntention[];
   minute: number;
+  observations: MindModelObservationRecord[];
   plans: AgendaPlan[];
   resolvedDisclosureOpportunityIds: string[];
+  resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
   tick: number;
@@ -651,6 +679,38 @@ export interface DisclosureDecisionRecord {
   worstCost: number;
 }
 
+export type ObservationOutcome = 'confirmed' | 'corrected' | 'missed' | 'suspected';
+
+export interface MindModelObservationRecord {
+  calibrationBand: CapabilityResolutionBand | null;
+  calibrationMargin: number | null;
+  channel: ObservationChannel;
+  diagnosticity: number;
+  dimension: MindModelDimension;
+  effectiveEvidence: number;
+  evidenceStrength: number;
+  eventId: string;
+  gateThreshold: number | null;
+  id: string;
+  minute: number;
+  newConfidence: number | null;
+  newEstimate: number | null;
+  newPredictionError: number | null;
+  newSuspicion: number | null;
+  observedValue: number;
+  observerId: string;
+  outcome: ObservationOutcome;
+  perceptionStrength: number;
+  predictedValue: number | null;
+  previousConfidence: number | null;
+  previousEstimate: number | null;
+  previousPredictionError: number | null;
+  previousSuspicion: number | null;
+  rawError: number | null;
+  subjectId: string;
+  tick: number;
+}
+
 export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | 'pending';
 
 export interface AgendaGoalState extends AgendaGoalSeed {
@@ -732,11 +792,13 @@ export interface SimulationSnapshotFile {
   environmentId: string;
   intentions: TaskIntention[];
   minute: number;
+  observations: MindModelObservationRecord[];
   plans: AgendaPlan[];
   resolvedDisclosureOpportunityIds: string[];
+  resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 3;
+  schemaVersion: 4;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

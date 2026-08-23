@@ -5,10 +5,15 @@ import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import highwaymanCharacters from '../library/highwayman-characters.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
+import mindModelCharacters from '../library/mind-model-characters.json';
 import { createSimulation } from '../src/index.js';
 
 const characterLibrary = {
-  characters: [...characters.characters, ...highwaymanCharacters.characters],
+  characters: [
+    ...characters.characters,
+    ...highwaymanCharacters.characters,
+    ...mindModelCharacters.characters,
+  ],
   schemaVersion: 5,
 };
 const environmentLibrary = {
@@ -24,12 +29,13 @@ describe('built-in scenario catalog', () => {
         'market-morning',
         'baker-deadline',
         'disclosure-audience',
+        'endicott-margueritte',
         'highwayman-road',
         'highwayman-square',
       ],
     );
     assert.equal(DEFAULT_BUILT_IN_SCENARIO.id, 'market-morning');
-    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 5);
+    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 6);
   });
 
   it('loads every included asset through the regular simulation path', () => {

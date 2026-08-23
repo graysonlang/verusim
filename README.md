@@ -13,7 +13,7 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation establishes the project substrate, the Phase 1 behavioral vertical slice, the Phase 2A relational foundation, and the agenda-planning foundation rather than claiming the full design is complete.
+The current implementation establishes the project substrate, the Phase 1 behavioral vertical slice, and the completed Phase 2A, Phase 2B, and Phase 2C observation foundations rather than claiming the full design is complete.
 It includes:
 
 - versioned JSON character, environment, and scenario formats
@@ -24,8 +24,9 @@ It includes:
 - highwayman road and town-square fixtures covering the first ordinal behavioral factorial
 - directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
 - authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
+- event-driven social observations, spatial perception gates, one-level directed mind models, accumulated prediction error and suspicion, evidence-gated correction, and the Endicott/Margueritte acceptance fixture
 - immutable authored scenarios separated from versioned live snapshots with exact dyad, exposure, decision, and trace resume
-- a Solid-reactive, vanilla-DOM browser workbench with a bundled scenario catalog, scenario summaries, a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and unit settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, and trace inspection
+- a Solid-reactive, vanilla-DOM browser workbench with a bundled scenario catalog, scenario summaries, a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and independent distance and temperature settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, prediction inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
 
 Schedules provide environmental obligations and visible activity, while behavioral opportunities advertise concrete acts that Verus may select.

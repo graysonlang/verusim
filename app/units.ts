@@ -1,4 +1,4 @@
-import type { DistanceUnit } from './preferences.js';
+import type { DistanceUnit, TemperatureUnit } from './preferences.js';
 
 export const FEET_PER_METER = 3.280839895;
 
@@ -25,7 +25,7 @@ export function formatMovementSpeed(metersPerMinute: number, unit: DistanceUnit)
   return `${value} ${unit === 'feet' ? 'ft' : 'm'}/s`;
 }
 
-export function formatTemperature(celsius: number, unit: DistanceUnit): string {
-  const value = unit === 'feet' ? (celsius * 9) / 5 + 32 : celsius;
-  return `${Math.round(value)} ${unit === 'feet' ? 'F' : 'C'}`;
+export function formatTemperature(celsius: number, unit: TemperatureUnit): string {
+  const value = unit === 'fahrenheit' ? (celsius * 9) / 5 + 32 : celsius;
+  return `${Math.round(value)} ${unit === 'fahrenheit' ? 'F' : 'C'}`;
 }
