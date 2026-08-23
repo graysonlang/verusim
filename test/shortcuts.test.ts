@@ -46,15 +46,23 @@ describe('canvas zoom shortcuts', () => {
 describe('workbench shortcuts', () => {
   it('decays Escape from selection through exterior to fit', () => {
     assert.equal(
-      workbenchEscapeAction({ hasSelection: true, isExterior: false }),
+      workbenchEscapeAction({ hasOpenNarrowPanel: true, hasSelection: true, isExterior: false }),
+      'close-narrow-panel',
+    );
+    assert.equal(
+      workbenchEscapeAction({ hasOpenNarrowPanel: false, hasSelection: true, isExterior: false }),
       'clear-selection',
     );
     assert.equal(
-      workbenchEscapeAction({ hasSelection: false, isExterior: false }),
+      workbenchEscapeAction({
+        hasOpenNarrowPanel: false,
+        hasSelection: false,
+        isExterior: false,
+      }),
       'projection-exterior',
     );
     assert.equal(
-      workbenchEscapeAction({ hasSelection: false, isExterior: true }),
+      workbenchEscapeAction({ hasOpenNarrowPanel: false, hasSelection: false, isExterior: true }),
       'fit-environment',
     );
   });

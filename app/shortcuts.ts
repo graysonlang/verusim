@@ -24,12 +24,18 @@ export interface ShortcutInput {
   shiftKey: boolean;
 }
 
-export type WorkbenchEscapeActionId = 'clear-selection' | 'fit-environment' | 'projection-exterior';
+export type WorkbenchEscapeActionId =
+  | 'clear-selection'
+  | 'close-narrow-panel'
+  | 'fit-environment'
+  | 'projection-exterior';
 
 export function workbenchEscapeAction(input: {
+  hasOpenNarrowPanel: boolean;
   hasSelection: boolean;
   isExterior: boolean;
 }): WorkbenchEscapeActionId {
+  if (input.hasOpenNarrowPanel) return 'close-narrow-panel';
   if (input.hasSelection) return 'clear-selection';
   return input.isExterior ? 'fit-environment' : 'projection-exterior';
 }

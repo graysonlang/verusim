@@ -3053,6 +3053,7 @@ function createWorkbench(): HTMLElement {
       }
       event.preventDefault();
       const escapeAction = workbenchEscapeAction({
+        hasOpenNarrowPanel: false,
         hasSelection: selectedAgentId() !== null,
         isExterior: worldView.activeProjection().kind === 'exterior',
       });
