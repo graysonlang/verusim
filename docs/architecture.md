@@ -73,6 +73,12 @@ The roster and inspector retain independent device-local visibility and expanded
 Their adjacent separators remain available while closed, clamp dragging from a 180-pixel minimum through 25 percent of the viewport, and snap widths below an 80-pixel detent closed so the same gesture can close or reopen a panel.
 Double-clicking a custom-width separator restores its default, double-clicking at the default closes it, and double-clicking while closed opens it at the default.
 A roster visibility control sits directly after the main-menu control, while the inspector visibility control is the rightmost header action after canvas zoom.
+The shell derives a `wide`, `compact`, or `handset` presentation from its own inline size rather than user-agent or device detection.
+Wide presentation begins at 1080 CSS pixels and retains the persisted resizable sidebars; compact presentation begins at 700 CSS pixels and projects one roster or inspector edge drawer over a full-width Canvas; handset presentation uses the same mutually exclusive auxiliary-panel state as a bottom sheet.
+Narrow panel identity and sheet extent are ephemeral presentation state.
+They never rewrite the stored wide sidebar visibility or width, and crossing a responsive boundary does not alter selection, camera, active environment projection, simulation state, or snapshot content.
+On handset widths, scenario identity and the essential transport remain visible in a two-row safe-area-aware header, the layer stack contracts to the active projection until explicitly opened, and roster selection reduces the sheet to a Canvas-revealing peek.
+Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
 
