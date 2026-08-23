@@ -1284,8 +1284,15 @@ function createWorkbench(): HTMLElement {
   scenarioMenu.id = 'scenario-menu';
   scenarioMenu.dataset.testid = 'scenario-menu';
   scenarioMenu.hidden = true;
-  scenarioMenu.setAttribute('aria-label', 'Included scenarios');
+  scenarioMenu.setAttribute('aria-label', 'Scenarios and snapshots');
   scenarioMenu.setAttribute('role', 'menu');
+  const scenarioMenuSeparator = element('div', 'menu-separator scenario-menu-separator');
+  scenarioMenuSeparator.setAttribute('role', 'separator');
+  scenarioOpenFileButton.dataset.openFile = 'true';
+  scenarioOpenFileButton.dataset.testid = 'scenario-open-file';
+  scenarioOpenFileButton.setAttribute('role', 'menuitem');
+  scenarioOpenFileButton.textContent = 'Open scenario or snapshot...';
+  scenarioMenu.append(scenarioOpenFileButton, scenarioMenuSeparator);
   for (const entry of BUILT_IN_SCENARIOS) {
     const control = button('', 'scenario-menu-item');
     const copy = element('span', 'scenario-menu-copy');
@@ -1304,13 +1311,6 @@ function createWorkbench(): HTMLElement {
     scenarioMenuStateLabels.set(entry.id, stateLabel);
     scenarioMenu.append(control);
   }
-  const scenarioMenuSeparator = element('div', 'menu-separator scenario-menu-separator');
-  scenarioMenuSeparator.setAttribute('role', 'separator');
-  scenarioOpenFileButton.dataset.openFile = 'true';
-  scenarioOpenFileButton.dataset.testid = 'scenario-open-file';
-  scenarioOpenFileButton.setAttribute('role', 'menuitem');
-  scenarioOpenFileButton.textContent = 'Open scenario or snapshot...';
-  scenarioMenu.append(scenarioMenuSeparator, scenarioOpenFileButton);
 
   scenarioInfoTooltip.id = 'scenario-info-tooltip';
   scenarioInfoTooltip.hidden = true;
