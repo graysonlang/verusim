@@ -34,6 +34,18 @@ The same contract must be reusable without copying its norms, the same physical 
 - no contract priority, winning-culture selection, or implicit scope precedence
 - no package manager, remote dependency resolver, archive format, authoring UI, or pack writer
 
+## Phase 0 — simulation substrate
+
+Status: reopened for movement-pace presentation units.
+
+Establish versioned content files, reusable libraries, pure deterministic stepping, causal traces, state intervention, import/export, a pannable world view, roster navigation, inspection, and time transport.
+Implement the top-level action appraisal equation without guessing the deeper inputs.
+
+Exit probes:
+
+- load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace
+- moving-character pace is presented as distance per second in the selected-character workbench while authored and authoritative locomotion remain meters per simulation minute
+
 ## Phase 5 — authoring and population generation
 
 Split reusable characters and environments into independently validated resource documents whose semantic addresses do not depend on their file paths.
