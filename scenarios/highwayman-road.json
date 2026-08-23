@@ -5,7 +5,7 @@
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
   "environmentId": "old-king-road",
   "startMinute": 600,
-  "tickMinutes": 5,
+  "tickMinutes": 1,
   "dyads": [
     {
       "observerId": "actor",

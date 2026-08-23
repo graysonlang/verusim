@@ -5,7 +5,7 @@
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
   "environmentId": "old-king-road",
   "startMinute": 600,
-  "tickMinutes": 5,
+  "tickMinutes": 1,
   "dyads": [
     {
       "observerId": "actor",

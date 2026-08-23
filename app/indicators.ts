@@ -93,13 +93,12 @@ function moodTone(mood: string): IndicatorTone {
   return 'neutral';
 }
 
-function recencyWindow(state: SimulationState, settings: IndicatorSettings): number {
-  const ticks = settings.verbosity === 'detailed' ? 6 : 2;
-  return Math.max(10, state.scenario.tickMinutes * ticks);
+function recencyWindow(settings: IndicatorSettings): number {
+  return settings.verbosity === 'detailed' ? 30 : 10;
 }
 
 function isRecent(state: SimulationState, minute: number, settings: IndicatorSettings): boolean {
-  return state.minute - minute <= recencyWindow(state, settings);
+  return state.minute - minute <= recencyWindow(settings);
 }
 
 function currentAction(state: SimulationState, agent: SimulationAgent): string {

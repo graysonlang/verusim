@@ -63,7 +63,7 @@ describe('disclosure and exposure', () => {
   });
 
   it('writes successful disclosure to the exposure ledger and causal trace', () => {
-    const result = advanceSimulation(createDisclosureSimulation());
+    const result = advanceSimulation(createDisclosureSimulation(), 5);
     const item = result.disclosureItems.find(candidate => candidate.id === 'family-debt');
     assert.ok(item);
     assert.deepEqual(item.knownByIds, ['friend']);
@@ -74,7 +74,7 @@ describe('disclosure and exposure', () => {
   });
 
   it('replays private disclosure followed by mixed-audience concealment', () => {
-    const result = advanceSimulation(createDisclosureSimulation(), 2);
+    const result = advanceSimulation(createDisclosureSimulation(), 10);
     assert.deepEqual(
       result.disclosureDecisions.map(decision => decision.outcome),
       ['disclose', 'conceal'],
@@ -95,7 +95,7 @@ describe('disclosure and exposure', () => {
   });
 
   it('preserves dyads and exposure exactly across snapshot resume', () => {
-    const advanced = advanceSimulation(createDisclosureSimulation());
+    const advanced = advanceSimulation(createDisclosureSimulation(), 5);
     const resumed = createSimulationFromSnapshot({
       characterLibrary: characters,
       environmentLibrary: environments,
@@ -105,8 +105,8 @@ describe('disclosure and exposure', () => {
   });
 
   it('replays the same disclosure decision and trace exactly', () => {
-    const first = advanceSimulation(createDisclosureSimulation());
-    const second = advanceSimulation(createDisclosureSimulation());
+    const first = advanceSimulation(createDisclosureSimulation(), 5);
+    const second = advanceSimulation(createDisclosureSimulation(), 5);
     assert.deepEqual(first, second);
   });
 });

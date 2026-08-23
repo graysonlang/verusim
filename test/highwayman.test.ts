@@ -56,8 +56,8 @@ describe('highwayman factorial', () => {
     const square = createHighwaymanSimulation(squareScenario);
     const roadEmpathy = evaluateEmpathy(road, 'actor', 'merchant').empathy;
     const squareEmpathy = evaluateEmpathy(square, 'actor', 'merchant').empathy;
-    const roadResult = advanceSimulation(road);
-    const squareResult = advanceSimulation(square);
+    const roadResult = advanceSimulation(road, 5);
+    const squareResult = advanceSimulation(square, 5);
 
     assert.equal(roadEmpathy, squareEmpathy);
     assert.equal(selectedCandidate(roadResult), 'rob');
@@ -76,7 +76,7 @@ describe('highwayman factorial', () => {
     const actor = normal.characters.find(placement => placement.instanceId === 'actor');
     assert.ok(actor);
     actor.characterId = 'orin-hale';
-    const result = advanceSimulation(createHighwaymanSimulation(normal));
+    const result = advanceSimulation(createHighwaymanSimulation(normal), 5);
     assert.equal(selectedCandidate(result), 'greet');
   });
 
@@ -89,8 +89,8 @@ describe('highwayman factorial', () => {
       safety: { charge: -1, deficitIntegral: 1, variance: 0.1 },
     };
 
-    const lowFloorResult = advanceSimulation(createHighwaymanSimulation(roadScenario));
-    const starvingResult = advanceSimulation(createHighwaymanSimulation(starving));
+    const lowFloorResult = advanceSimulation(createHighwaymanSimulation(roadScenario), 5);
+    const starvingResult = advanceSimulation(createHighwaymanSimulation(starving), 5);
     assert.equal(selectedCandidate(lowFloorResult), 'rob');
     assert.equal(selectedCandidate(starvingResult), 'rob');
     assert.equal(
@@ -174,8 +174,8 @@ describe('highwayman factorial', () => {
   });
 
   it('replays the same behavioral decision and trace exactly', () => {
-    const first = advanceSimulation(createHighwaymanSimulation(roadScenario));
-    const second = advanceSimulation(createHighwaymanSimulation(roadScenario));
+    const first = advanceSimulation(createHighwaymanSimulation(roadScenario), 5);
+    const second = advanceSimulation(createHighwaymanSimulation(roadScenario), 5);
     assert.deepEqual(first, second);
     const appraisal = first.trace.entries.find(entry => entry.kind === 'appraisal');
     const selection = first.trace.entries.find(entry => entry.kind === 'decision')?.selection;

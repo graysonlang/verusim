@@ -67,7 +67,7 @@ describe('workbench indicators', () => {
   });
 
   it('shows actual disclosure as transient speech with a longer detailed history', () => {
-    const disclosed = advanceSimulation(createState(disclosureScenario));
+    const disclosed = advanceSimulation(createState(disclosureScenario), 5);
     const owner = disclosed.agents.find(agent => agent.id === 'owner');
     assert.ok(owner);
     const standard = defaultIndicatorSettings();
@@ -76,7 +76,7 @@ describe('workbench indicators', () => {
     );
     assert.equal(speech?.label, 'Shared the family debt');
 
-    const later = advanceSimulation(disclosed, 6);
+    const later = advanceSimulation(disclosed, 30);
     const laterOwner = later.agents.find(agent => agent.id === 'owner');
     assert.ok(laterOwner);
     assert.equal(

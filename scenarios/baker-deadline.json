@@ -5,7 +5,7 @@
   "summary": "Mara must prepare market bread without flour while the common room also needs work.",
   "environmentId": "alders-edge",
   "startMinute": 600,
-  "tickMinutes": 5,
+  "tickMinutes": 1,
   "dyads": [],
   "disclosureItems": [],
   "disclosureOpportunities": [],

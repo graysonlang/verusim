@@ -73,8 +73,8 @@ describe('simulation runtime', () => {
   });
 
   it('advances deterministically through the same path used by the workbench', () => {
-    const first = advanceSimulation(starterSimulation(), 12);
-    const second = advanceSimulation(starterSimulation(), 12);
+    const first = advanceSimulation(starterSimulation(), 60);
+    const second = advanceSimulation(starterSimulation(), 60);
     assert.deepEqual(first, second);
     assert.equal(first.minute, 530);
 
@@ -120,7 +120,7 @@ describe('simulation runtime', () => {
   it('recharges resources from explicit sleep, rest, and break schedules', () => {
     const recovered = new Map<RecoveryMode, SimulationAgent>();
     for (const mode of ['break', 'rest', 'sleep'] as const) {
-      const advanced = advanceSimulation(recoverySimulation(mode), 12);
+      const advanced = advanceSimulation(recoverySimulation(mode), 60);
       const mara = advanced.agents.find(agent => agent.id === 'mara');
       assert.ok(mara);
       recovered.set(mode, mara);
@@ -132,7 +132,7 @@ describe('simulation runtime', () => {
       assert.equal(resourceTrace.terms.find(term => term.id === 'recovery-mode')?.value, mode);
     }
 
-    const idle = advanceSimulation(recoverySimulation('none'), 12);
+    const idle = advanceSimulation(recoverySimulation('none'), 60);
     const idleMara = idle.agents.find(agent => agent.id === 'mara');
     assert.ok(idleMara);
     assert.deepEqual(idleMara.resources, {
@@ -168,7 +168,7 @@ describe('simulation runtime', () => {
   });
 
   it('keeps authored scenarios separate from resumable snapshots', () => {
-    const advanced = advanceSimulation(starterSimulation(), 4);
+    const advanced = advanceSimulation(starterSimulation(), 20);
     const authored = serializeScenario(advanced);
     const snapshot = serializeSnapshot(advanced);
     assert.equal(authored.startMinute, scenario.startMinute);

@@ -35,7 +35,7 @@ describe('agenda planning', () => {
       ['fetch-flour', 'bake-bread-rush', 'sell-market-bread'],
     );
 
-    const completed = advanceSimulation(initial, 16);
+    const completed = advanceSimulation(initial, 80);
     assert.equal(
       completed.agendaGoals.find(goal => goal.id === 'sell-market-bread')?.status,
       'completed',
@@ -87,7 +87,7 @@ describe('agenda planning', () => {
       selected?.candidates.find(candidate => candidate.id === selected.selectedPlanId)?.taskIds,
       ['prepare-common-room', 'prepare-common-room'],
     );
-    const completed = advanceSimulation(initial, 8);
+    const completed = advanceSimulation(initial, 40);
     assert.equal(completed.agendaGoals[0]?.status, 'completed');
     assert.equal(completed.worldFacts.find(fact => fact.id === 'common-room-ready')?.amount, 2);
   });
@@ -111,7 +111,7 @@ describe('agenda planning', () => {
       socialBattery: 0.1,
     };
 
-    const completed = advanceSimulation(createBakerSimulation(recovering), 5);
+    const completed = advanceSimulation(createBakerSimulation(recovering), 25);
     const completedMara = completed.agents.find(agent => agent.id === 'mara');
     assert.ok(completedMara);
     assert.equal(completed.agendaGoals[0]?.status, 'completed');
@@ -144,7 +144,7 @@ describe('agenda planning', () => {
     assert.ok(marketTask);
     marketGoal.deadlineMinute = 650;
     marketTask.availableUntilMinute = 650;
-    const completed = advanceSimulation(createBakerSimulation(impossible), 10);
+    const completed = advanceSimulation(createBakerSimulation(impossible), 50);
     const failed = completed.agendaGoals.find(goal => goal.id === 'sell-market-bread');
     assert.equal(completed.minute, 650);
     assert.equal(failed?.status, 'failed');
@@ -155,18 +155,18 @@ describe('agenda planning', () => {
   });
 
   it('preserves an in-progress plan exactly across snapshot resume', () => {
-    const advanced = advanceSimulation(createBakerSimulation(), 7);
+    const advanced = advanceSimulation(createBakerSimulation(), 35);
     const resumed = createSimulationFromSnapshot({
       characterLibrary: characters,
       environmentLibrary: environments,
       snapshot: serializeSnapshot(advanced),
     });
     assert.deepEqual(resumed, advanced);
-    assert.deepEqual(advanceSimulation(resumed, 9), advanceSimulation(advanced, 9));
+    assert.deepEqual(advanceSimulation(resumed, 45), advanceSimulation(advanced, 45));
   });
 
   it('rejects snapshot intentions that do not belong to their plan', () => {
-    const advanced = advanceSimulation(createBakerSimulation(), 7);
+    const advanced = advanceSimulation(createBakerSimulation(), 35);
     const snapshot = serializeSnapshot(advanced);
     const intention = snapshot.intentions[0];
     assert.ok(intention);
@@ -184,8 +184,8 @@ describe('agenda planning', () => {
 
   it('replays the same agenda, intentions, and world effects exactly', () => {
     assert.deepEqual(
-      advanceSimulation(createBakerSimulation(), 16),
-      advanceSimulation(createBakerSimulation(), 16),
+      advanceSimulation(createBakerSimulation(), 80),
+      advanceSimulation(createBakerSimulation(), 80),
     );
   });
 });
