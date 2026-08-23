@@ -1,8 +1,19 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { PLAYBACK_RATES, accumulatePlayback, playbackRateForId } from '../app/playback.js';
+import {
+  PLAYBACK_RATES,
+  accumulatePlayback,
+  formatWorkbenchTime,
+  playbackRateForId,
+} from '../app/playback.js';
 
 describe('workbench playback', () => {
+  it('formats the visible clock as 12-hour time', () => {
+    assert.equal(formatWorkbenchTime(0), 'Day 1, 12:00 am');
+    assert.equal(formatWorkbenchTime(960), 'Day 1, 4:00 pm');
+    assert.equal(formatWorkbenchTime(1445), 'Day 2, 12:05 am');
+  });
+
   it('maps real-time and minute-per-second rates to simulated time', () => {
     assert.equal(playbackRateForId('real-time').simulatedMinutesPerSecond, 1 / 60);
     assert.equal(playbackRateForId('15x').simulatedMinutesPerSecond, 15 / 60);

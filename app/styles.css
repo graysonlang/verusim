@@ -105,10 +105,8 @@ select:focus-visible {
   z-index: 4;
   display: grid;
   grid-area: header;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: 250px minmax(380px, 1fr) 350px;
   align-items: center;
-  gap: 10px;
-  padding: 0 10px;
   border-bottom: 1px solid var(--line);
   background: rgb(18 27 21 / 96%);
   box-shadow: 0 4px 16px var(--shadow);
@@ -128,6 +126,7 @@ select:focus-visible {
 .file-actions {
   justify-content: flex-start;
   gap: 6px;
+  padding-left: 10px;
 }
 
 .menu-button {
@@ -191,8 +190,9 @@ select:focus-visible {
 
 .header-signals {
   min-width: 0;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 6px;
+  padding-right: 10px;
 }
 
 .header-signals > strong {
@@ -209,7 +209,7 @@ select:focus-visible {
 }
 
 .transport {
-  justify-content: flex-end;
+  justify-content: center;
   gap: 4px;
 }
 
@@ -332,7 +332,7 @@ select {
 }
 
 .simulation-time {
-  min-width: 112px;
+  min-width: 128px;
   color: #e5dec9;
   font-family: var(--mono);
   font-size: 11px;
@@ -1284,7 +1284,7 @@ input[type="search"]::placeholder {
   }
 
   .app-header {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: 210px minmax(330px, 1fr) 310px;
   }
 
   .header-signals > strong {

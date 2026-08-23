@@ -1,8 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { zoomActionForShortcut, type ZoomShortcutInput } from '../app/shortcuts.js';
+import {
+  workbenchActionForShortcut,
+  zoomActionForShortcut,
+  type ShortcutInput,
+} from '../app/shortcuts.js';
 
-function shortcut(code: string, overrides: Partial<ZoomShortcutInput> = {}): ZoomShortcutInput {
+function shortcut(code: string, overrides: Partial<ShortcutInput> = {}): ShortcutInput {
   return {
     altKey: false,
     code,
@@ -32,6 +36,24 @@ describe('canvas zoom shortcuts', () => {
     assert.equal(zoomActionForShortcut(shortcut('Equal', { altKey: true })), null);
     assert.equal(
       zoomActionForShortcut(shortcut('Digit1', { metaKey: true, shiftKey: true })),
+      null,
+    );
+  });
+});
+
+describe('workbench shortcuts', () => {
+  it('maps shifted letter keys to snapshot actions', () => {
+    assert.equal(workbenchActionForShortcut(shortcut('KeyS', { shiftKey: true })), 'save-snapshot');
+    assert.equal(
+      workbenchActionForShortcut(shortcut('KeyR', { shiftKey: true })),
+      'reset-scenario',
+    );
+  });
+
+  it('does not claim unshifted or command-modified letter keys', () => {
+    assert.equal(workbenchActionForShortcut(shortcut('KeyS')), null);
+    assert.equal(
+      workbenchActionForShortcut(shortcut('KeyR', { metaKey: true, shiftKey: true })),
       null,
     );
   });

@@ -43,10 +43,11 @@ import {
   DEFAULT_PLAYBACK_RATE_ID,
   PLAYBACK_RATES,
   accumulatePlayback,
+  formatWorkbenchTime,
   playbackRateForId,
   type PlaybackRateId,
 } from './playback.js';
-import { zoomActionForShortcut } from './shortcuts.js';
+import { workbenchActionForShortcut } from './shortcuts.js';
 import { createWorldView, type WorldHover } from './world-view.js';
 
 const characterLibrary = {
@@ -827,9 +828,9 @@ function createWorkbench(): HTMLElement {
   const quickActionsButton = menuAction('Quick actions...', undefined, primaryShortcut('/'));
   appMenu.append(
     menuAction('Open file...', 'open-file', 'Shift+O'),
-    menuAction('Save snapshot', 'save-snapshot'),
+    menuAction('Save snapshot', 'save-snapshot', 'Shift+S'),
     menuSeparatorOne,
-    menuAction('Reset loaded scenario', 'reset-scenario'),
+    menuAction('Reset loaded scenario', 'reset-scenario', 'Shift+R'),
     menuAction('Step simulation', 'step', 'ArrowRight'),
     menuAction('Play / pause', 'play-pause', 'Space'),
     menuSeparatorTwo,
@@ -876,7 +877,7 @@ function createWorkbench(): HTMLElement {
     control.append(label, multiplier);
     timeRateMenu.append(control);
   }
-  transport.append(resetScenario, timeRateButton, play, step, time);
+  transport.append(resetScenario, play, step, timeRateButton, time);
 
   scenarioName.textContent = initial.scenario.title;
   rosterTitle.textContent = 'Characters';
@@ -922,7 +923,7 @@ function createWorkbench(): HTMLElement {
   }
   signalControls.setAttribute('aria-label', 'Field signals');
   signalControls.append(signalLabel, indicatorSelect, indicatorToggles);
-  header.append(fileActions, signalControls, transport);
+  header.append(fileActions, transport, signalControls);
   stage.append(canvas, stageTools, characterHoverCard, stageLegend);
 
   inspector.append(inspectorContent);
@@ -996,12 +997,14 @@ function createWorkbench(): HTMLElement {
       keywords: ['file', 'download', 'export'],
       label: 'Save snapshot',
       run: () => downloadSnapshot(state()),
+      shortcut: 'Shift+S',
     },
     {
       id: 'reset-scenario',
       keywords: ['restore', 'restart', 'loaded state'],
       label: 'Reset loaded scenario',
       run: resetLoadedScenario,
+      shortcut: 'Shift+R',
     },
     {
       id: 'step',
@@ -1241,7 +1244,7 @@ function createWorkbench(): HTMLElement {
   createEffect(() => {
     const current = state();
     scenarioName.textContent = current.scenario.title;
-    time.textContent = formatSimulationTime(current.minute);
+    time.textContent = formatWorkbenchTime(current.minute);
     simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} characters / ${current.trace.entries.length} trace entries`;
   });
 
@@ -1526,10 +1529,10 @@ function createWorkbench(): HTMLElement {
     ) {
       return;
     }
-    const zoomAction = zoomActionForShortcut(event);
-    if (zoomAction !== null) {
+    const shortcutAction = workbenchActionForShortcut(event);
+    if (shortcutAction !== null) {
       event.preventDefault();
-      executeActionById(zoomAction);
+      executeActionById(shortcutAction);
       return;
     }
     if (

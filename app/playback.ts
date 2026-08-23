@@ -27,6 +27,16 @@ export interface PlaybackAdvance {
   ticks: number;
 }
 
+export function formatWorkbenchTime(minute: number): string {
+  const day = Math.floor(minute / 1440) + 1;
+  const minuteOfDay = ((minute % 1440) + 1440) % 1440;
+  const hour = Math.floor(minuteOfDay / 60);
+  const minutePart = minuteOfDay % 60;
+  const period = hour < 12 ? 'am' : 'pm';
+  const clockHour = hour % 12 || 12;
+  return `Day ${day}, ${clockHour}:${String(minutePart).padStart(2, '0')} ${period}`;
+}
+
 export function playbackRateForId(id: PlaybackRateId): (typeof PLAYBACK_RATES)[number] {
   const rate = PLAYBACK_RATES.find(candidate => candidate.id === id);
   if (rate === undefined) throw new RangeError(`Unknown playback rate "${id}"`);
