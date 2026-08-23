@@ -7,25 +7,17 @@ import type {
   SensoryAssessment,
   SimulationAgent,
   SimulationState,
-  SocialFeatureMap,
   TraceEntry,
 } from '../model/types.js';
 import { resolveAgentCapabilityCheck } from './capability.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { resolveNormObservationEvent } from './norms.js';
+import { projectedDyad, repriceExposureFor } from './relationship.js';
 
 const CONFIRMATION_ERROR = 0.08;
 const MAX_OBSERVATIONS = 120;
 const MAX_TRACE_ENTRIES = 240;
-
-const DISTANT_FEATURES: SocialFeatureMap = {
-  category: 0,
-  familiarity: 0,
-  kinship: 0,
-  reciprocity: 0,
-  similarity: 0,
-};
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -40,29 +32,6 @@ function agentFor(state: SimulationState, agentId: string): SimulationAgent {
   const agent = state.agents.find(candidate => candidate.id === agentId);
   if (agent === undefined) throw new RangeError(`Unknown observation agent "${agentId}"`);
   return agent;
-}
-
-function projectedDyad(observer: SimulationAgent, subjectId: string): DyadState {
-  const empathy = observer.profile.empathy;
-  const disclosure = observer.profile.disclosure;
-  return {
-    behaviorVariance: 0,
-    estimateConfidence: 0.1,
-    estimatedDisclosure: clamp(
-      (disclosure.intimateSafety + disclosure.strangerSafety - disclosure.troughDepth) / 2,
-      0,
-      1,
-    ),
-    estimatedEmpathy: clamp((empathy.floor + empathy.ceiling) / 2, 0, 1),
-    features: { ...DISTANT_FEATURES },
-    integratedHistory: 0,
-    mode: 'courteous',
-    observerId: observer.id,
-    predictionError: 0,
-    stance: 0,
-    subjectId,
-    suspicion: 0,
-  };
 }
 
 function predictedValue(dyad: DyadState, dimension: MindModelDimension): number {
@@ -369,7 +338,7 @@ function resolveForObserver(
     predictionTrace(state, event, record, calibration.terms),
     MAX_TRACE_ENTRIES,
   );
-  return {
+  const next: SimulationState = {
     ...state,
     dyads:
       existingDyad === undefined
@@ -382,6 +351,12 @@ function resolveForObserver(
     observations: appendBounded(state.observations, record, MAX_OBSERVATIONS),
     trace,
   };
+  return repriceExposureFor(
+    next,
+    observerId,
+    event.subjectId,
+    `observations.${record.id}.newEstimate`,
+  );
 }
 
 function resolveMindModelObservationEvent(

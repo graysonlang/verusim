@@ -181,6 +181,18 @@ Each audience is evaluated separately and the maximum subjective cost wins; safe
 Successful disclosure adds the audience to the item's exposure ledger.
 Both disclosure and concealment preserve their appraisal terms, worst observer, utility, and outcome in bounded decision and causal-trace history.
 
+Phase 2D adds a generic directed relationship-event transition plus an atomic relationship-request evaluator.
+A request compares authored magnitude with a cooperation position derived from the responder's current directed stance, suspicion, and exposure debt; the response is derived rather than authored.
+Positive relationship turns accrue stance slowly, negative turns collapse it faster, and mode projection uses distinct entry and exit thresholds so small counter-turns do not cause flicker.
+
+Exposure debt is the observer's current repricing of disclosure items already known by the subject.
+When prediction changes estimated empathy, or disclosure adds an audience to the exposure ledger, the full relevant stock is recomputed from those authoritative items and recorded as a separate relationship trace.
+It does not overwrite empathy, disclosure safety, stance, or suspicion.
+
+Relationship events add bounded episodic memories with a subject and signed emotional turn.
+During authored sleep recovery, the runtime applies peak-end retention to recent relationship episodes and eventually removes old episodes while retaining the semantic directed dyad state.
+Consolidation is part of the deterministic tick transition and therefore replays exactly from a snapshot.
+
 ## Spatial appraisal
 
 Physical proximity is distinct from the relational distance used by empathy and disclosure envelopes.
@@ -275,10 +287,10 @@ Social battery below `0.50` contributes up to `0.38` negative valence and physic
 
 Character-library schema version 5 adds descriptive physical profiles and coarse build effects to the version 4 epistemic capability format.
 Explicit migrations preserve versions 1 through 4, using neutral capability defaults where versions 1 through 3 expressed no distinction and an unspecified, average physical profile where older libraries expressed no physical data.
-Scenario schema version 8 adds local norm definitions, per-instance norm perspectives, and discriminated norm observation events to the version 7 observation format.
-Explicit migrations preserve version 1 through 7 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, and marking version 7 observation events as mind-model events while supplying empty norm content.
-Snapshot schema version 5 persists discriminated mind-model and norm observations plus resolved observation-event identifiers in addition to agenda state and causal-trace schema version 1, and validates plan, intention, goal, fact, dyad, observation, trace, and agent references before runtime restoration.
-Explicit snapshot migrations preserve versions 1 through 4, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Scenario schema version 9 adds directed relationship events and request opportunities plus explicit exposure debt on dyads to the version 8 local-norm format.
+Explicit migrations preserve version 1 through 8 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, and supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent.
+Snapshot schema version 6 persists relationship decisions, resolved relationship inputs, exposure debt, and relationship-memory provenance in addition to the version 5 observation and agenda state and causal-trace schema version 1.
+Explicit snapshot migrations preserve versions 1 through 5, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

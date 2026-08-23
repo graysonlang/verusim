@@ -832,6 +832,14 @@ Variance in a *relationship* does different work than variance in a *need*: high
 
 **Rate constants must be asymmetric.** Stance accrues slowly on positive deltas and collapses on betrayal — one large negative turn should undo fifty small positive ones. This is most of why trust feels the way it does.
 
+The initial Phase 2D request boundary compares an authored request magnitude with a cooperation position derived from the responder's current stance, suspicion, and exposure debt.
+Acceptance or refusal then becomes an ordinary signed relationship turn; the author supplies the request, never the response.
+The coefficients are calibration defaults, but three properties are contractual: the current dyad position participates, equal negative turns move stance farther than positive turns, and authored order is the deterministic tie break.
+
+Dyad modes are projections over this directed state with separate entry and exit thresholds.
+Warm, contesting, guarded, and ruptured modes therefore persist through small counter-turns instead of flickering at one boundary.
+Estimated empathy remains independent: a negative stance may coexist with high estimated regard, preserving abrasiveness without rewriting concern.
+
 ### 14.3 Memory annealing
 
 Run consolidation on a **sleep tick** — gives a natural cadence, means an agent can be reasoned with in the evening and immovable in the morning, and is a cheap place to hang the plasticity spike.
@@ -839,6 +847,10 @@ Run consolidation on a **sleep tick** — gives a natural cadence, means an agen
 - **Peak-end retention** — compress a sequence to its most extreme and most recent moments, discard the middle.
 - **Episodic → semantic collapse** — specific memories degrade into a disposition. "The thing he said at the harvest" becomes "I don't trust him," and eventually the episode is gone while the disposition remains at full strength. Bounds per-dyad storage.
 - **Sign-asymmetric decay** — high-arousal negative events resist consolidation-away far more than positive ones. The annealed record drifts pessimistic unless positives are frequent — why maintenance takes ongoing input and neglect alone can end a relationship.
+
+The initial Phase 2D consolidation pass runs only while an agent is actually in an authored sleep recovery period.
+Recent directed relationship episodes retain their peak and end records; episodes older than the initial twelve-hour semantic-collapse window leave the bounded episodic ledger while stance, integrated history, exposure debt, and mode remain authoritative.
+That window is a calibration default rather than a settled memory constant.
 
 ### 14.4 Plasticity
 

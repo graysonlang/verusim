@@ -9,6 +9,7 @@ const MEMORY_TYPES = new Set([
   'formative',
   'goal',
   'intervention',
+  'relationship',
   'task',
 ]);
 const TRACE_KINDS = new Set([
@@ -175,6 +176,30 @@ function validateAgent(value: unknown, path: string): void {
     stringValue(memory.summary, `${memoryPath}.summary`);
     if (typeof memory.type !== 'string' || !MEMORY_TYPES.has(memory.type)) {
       throw new ScenarioValidationError(`${memoryPath}.type`, 'expected a known memory type');
+    }
+    if (memory.subjectId !== undefined) stringValue(memory.subjectId, `${memoryPath}.subjectId`);
+    if (memory.emotionalTurn !== undefined) {
+      numberValue(memory.emotionalTurn, `${memoryPath}.emotionalTurn`, -1, 1);
+    }
+  });
+}
+
+function validateRelationshipHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    stringValue(entry.id, `${entryPath}.id`);
+    stringValue(entry.requesterId, `${entryPath}.requesterId`);
+    stringValue(entry.responderId, `${entryPath}.responderId`);
+    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.tick, `${entryPath}.tick`);
+    numberValue(entry.magnitude, `${entryPath}.magnitude`, 0, 1);
+    numberValue(entry.cooperationPosition, `${entryPath}.cooperationPosition`, 0, 1);
+    numberValue(entry.previousStance, `${entryPath}.previousStance`, -1, 1);
+    numberValue(entry.newStance, `${entryPath}.newStance`, -1, 1);
+    numberValue(entry.stanceTurn, `${entryPath}.stanceTurn`, -1, 1);
+    if (entry.outcome !== 'accepted' && entry.outcome !== 'refused') {
+      throw new ScenarioValidationError(`${entryPath}.outcome`, 'expected accepted or refused');
     }
   });
 }
@@ -626,7 +651,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
     file.schemaVersion !== 4 &&
-    file.schemaVersion !== 5
+    file.schemaVersion !== 5 &&
+    file.schemaVersion !== 6
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -681,7 +707,16 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       observation.eventType = 'mind-model';
     }
   }
-  file.schemaVersion = 5;
+  if (sourceVersion < 6) {
+    for (const dyadValue of arrayValue(file.dyads, 'snapshot.dyads')) {
+      const dyad = objectValue(dyadValue, 'snapshot.dyads');
+      dyad.exposureDebt = 0;
+    }
+    file.relationshipDecisions = [];
+    file.resolvedRelationshipEventIds = [];
+    file.resolvedRelationshipRequestIds = [];
+  }
+  file.schemaVersion = 6;
   return file;
 }
 
@@ -690,7 +725,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 5) {
+  if (file.schemaVersion !== 6) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -730,6 +765,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   validateDecisionHistory(file.decisions, 'snapshot.decisions');
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
   validateObservationHistory(file.observations, 'snapshot.observations');
+  validateRelationshipHistory(file.relationshipDecisions, 'snapshot.relationshipDecisions');
   validateTrace(file.trace, 'snapshot.trace');
   validateIdentifierList(file.resolvedOpportunityIds, 'snapshot.resolvedOpportunityIds');
   validateIdentifierList(
@@ -737,6 +773,14 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
     'snapshot.resolvedDisclosureOpportunityIds',
   );
   validateIdentifierList(file.resolvedObservationEventIds, 'snapshot.resolvedObservationEventIds');
+  validateIdentifierList(
+    file.resolvedRelationshipEventIds,
+    'snapshot.resolvedRelationshipEventIds',
+  );
+  validateIdentifierList(
+    file.resolvedRelationshipRequestIds,
+    'snapshot.resolvedRelationshipRequestIds',
+  );
 
   return {
     ...(file as unknown as SimulationSnapshotFile),

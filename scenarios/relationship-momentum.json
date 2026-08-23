@@ -1,0 +1,210 @@
+{
+  "schemaVersion": 9,
+  "id": "relationship-momentum",
+  "title": "The Requests at Bellweather",
+  "summary": "Graduated requests move one dyad while a separate fall in estimated regard reprices an old disclosure before sleep consolidates the episodes.",
+  "environmentId": "alders-edge",
+  "startMinute": 600,
+  "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "autumn",
+    "temperatureCelsius": 14,
+    "weather": "cloudy"
+  },
+  "localNorms": [],
+  "dyads": [
+    {
+      "observerId": "responder",
+      "subjectId": "requester",
+      "features": {
+        "kinship": 0.1,
+        "familiarity": 0.5,
+        "similarity": 0.4,
+        "reciprocity": 0.3,
+        "category": 0.4
+      },
+      "stance": 0,
+      "integratedHistory": 0,
+      "behaviorVariance": 0.12,
+      "estimatedEmpathy": 0.7,
+      "estimatedDisclosure": 0.5,
+      "estimateConfidence": 0.5,
+      "predictionError": 0,
+      "suspicion": 0,
+      "exposureDebt": 0,
+      "mode": "courteous"
+    },
+    {
+      "observerId": "responder",
+      "subjectId": "abrasive",
+      "features": {
+        "kinship": 0.2,
+        "familiarity": 0.8,
+        "similarity": 0.4,
+        "reciprocity": 0.6,
+        "category": 0.4
+      },
+      "stance": -0.45,
+      "integratedHistory": 0.3,
+      "behaviorVariance": 0.2,
+      "estimatedEmpathy": 0.9,
+      "estimatedDisclosure": 0.5,
+      "estimateConfidence": 0.8,
+      "predictionError": 0.1,
+      "suspicion": 0.05,
+      "exposureDebt": 0,
+      "mode": "contesting"
+    },
+    {
+      "observerId": "requester",
+      "subjectId": "abrasive",
+      "features": {
+        "kinship": 0,
+        "familiarity": 0.7,
+        "similarity": 0.3,
+        "reciprocity": 0.5,
+        "category": 0.5
+      },
+      "stance": 0.1,
+      "integratedHistory": 0.2,
+      "behaviorVariance": 0.1,
+      "estimatedEmpathy": 0.9,
+      "estimatedDisclosure": 0.5,
+      "estimateConfidence": 0.1,
+      "predictionError": 0,
+      "suspicion": 0,
+      "exposureDebt": 0.09,
+      "mode": "courteous"
+    }
+  ],
+  "disclosureItems": [
+    {
+      "id": "old-debt",
+      "ownerId": "requester",
+      "summary": "the old debt",
+      "shameCharge": 0.9,
+      "knownByIds": ["abrasive"]
+    }
+  ],
+  "disclosureOpportunities": [],
+  "observationEvents": [
+    {
+      "eventType": "mind-model",
+      "id": "regard-falls",
+      "subjectId": "abrasive",
+      "observerIds": ["requester"],
+      "atMinute": 604,
+      "channel": "sight",
+      "audibleRadiusMeters": 0,
+      "visualProminence": 1,
+      "interpretationDifficulty": 0,
+      "dimension": "empathy",
+      "observedValue": 0.05,
+      "diagnosticity": 1
+    }
+  ],
+  "relationshipEvents": [
+    {
+      "id": "brief-civility",
+      "observerId": "responder",
+      "subjectId": "abrasive",
+      "atMinute": 605,
+      "stanceTurn": 0.3,
+      "summary": "Abrasive offered a brief courtesy."
+    },
+    {
+      "id": "public-rebuke",
+      "observerId": "responder",
+      "subjectId": "abrasive",
+      "atMinute": 606,
+      "stanceTurn": -0.3,
+      "summary": "Abrasive answered with a public rebuke."
+    }
+  ],
+  "relationshipRequests": [
+    {
+      "id": "small-errand",
+      "requesterId": "requester",
+      "responderId": "responder",
+      "atMinute": 601,
+      "label": "small errand",
+      "magnitude": 0.4
+    },
+    {
+      "id": "second-errand",
+      "requesterId": "requester",
+      "responderId": "responder",
+      "atMinute": 602,
+      "label": "second errand",
+      "magnitude": 0.45
+    },
+    {
+      "id": "larger-favor",
+      "requesterId": "requester",
+      "responderId": "responder",
+      "atMinute": 603,
+      "label": "larger favor",
+      "magnitude": 0.5
+    }
+  ],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "requester",
+      "characterId": "sera-dane",
+      "normPerspectives": [],
+      "position": { "x": 108, "y": 76 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Making careful requests",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 660,
+          "locationId": "market-square",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        }
+      ]
+    },
+    {
+      "instanceId": "responder",
+      "characterId": "nessa-arden",
+      "normPerspectives": [],
+      "position": { "x": 110, "y": 76 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Considering each request",
+          "recoveryMode": "none"
+        },
+        {
+          "startMinute": 660,
+          "locationId": "market-square",
+          "activity": "Sleeping",
+          "recoveryMode": "sleep"
+        }
+      ]
+    },
+    {
+      "instanceId": "abrasive",
+      "characterId": "tomas-reed",
+      "normPerspectives": [],
+      "position": { "x": 112, "y": 76 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Working nearby",
+          "recoveryMode": "none"
+        }
+      ]
+    }
+  ]
+}

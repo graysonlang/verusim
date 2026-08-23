@@ -343,7 +343,7 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 8) return file;
+  if (file.schemaVersion === 9) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -351,7 +351,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 4 &&
     file.schemaVersion !== 5 &&
     file.schemaVersion !== 6 &&
-    file.schemaVersion !== 7
+    file.schemaVersion !== 7 &&
+    file.schemaVersion !== 8
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -408,16 +409,24 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     }
     file.observationEvents = [];
   }
-  file.localNorms = [];
-  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-    const placement = objectValue(placementValue, 'scenario.characters');
-    placement.normPerspectives = [];
+  if (sourceVersion < 8) {
+    file.localNorms = [];
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      placement.normPerspectives = [];
+    }
+    for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
+      const event = objectValue(eventValue, 'scenario.observationEvents');
+      event.eventType = 'mind-model';
+    }
   }
-  for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
-    const event = objectValue(eventValue, 'scenario.observationEvents');
-    event.eventType = 'mind-model';
+  file.relationshipEvents = [];
+  file.relationshipRequests = [];
+  for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
+    const dyad = objectValue(dyadValue, 'scenario.dyads');
+    dyad.exposureDebt = 0;
   }
-  file.schemaVersion = 8;
+  file.schemaVersion = 9;
   return file;
 }
 
@@ -532,7 +541,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 8);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 9);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -826,6 +835,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     numberValue(dyad.estimatedEmpathy, `${path}.estimatedEmpathy`, 0, 1);
     numberValue(dyad.estimatedDisclosure, `${path}.estimatedDisclosure`, 0, 1);
     numberValue(dyad.estimateConfidence, `${path}.estimateConfidence`, 0, 1);
+    numberValue(dyad.exposureDebt, `${path}.exposureDebt`, 0, 1);
     numberValue(dyad.predictionError, `${path}.predictionError`, 0, 1);
     numberValue(dyad.suspicion, `${path}.suspicion`, 0, 1);
     if (typeof dyad.mode !== 'string' || !DYAD_MODES.has(dyad.mode)) {
@@ -876,6 +886,40 @@ export function parseScenario(value: unknown): ScenarioFile {
     return opportunity;
   });
   uniqueIds(disclosureOpportunities, 'scenario.disclosureOpportunities');
+
+  const relationshipEvents = arrayValue(file.relationshipEvents, 'scenario.relationshipEvents').map(
+    (entry, index) => {
+      const path = `scenario.relationshipEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      identifierValue(event.observerId, `${path}.observerId`);
+      identifierValue(event.subjectId, `${path}.subjectId`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      stringValue(event.summary, `${path}.summary`);
+      const turn = numberValue(event.stanceTurn, `${path}.stanceTurn`, -1, 1);
+      if (turn === 0) {
+        throw new ScenarioValidationError(`${path}.stanceTurn`, 'expected a non-zero turn');
+      }
+      return event;
+    },
+  );
+  uniqueIds(relationshipEvents, 'scenario.relationshipEvents');
+
+  const relationshipRequests = arrayValue(
+    file.relationshipRequests,
+    'scenario.relationshipRequests',
+  ).map((entry, index) => {
+    const path = `scenario.relationshipRequests[${index}]`;
+    const request = objectValue(entry, path);
+    identifierValue(request.id, `${path}.id`);
+    identifierValue(request.requesterId, `${path}.requesterId`);
+    identifierValue(request.responderId, `${path}.responderId`);
+    integerValue(request.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    stringValue(request.label, `${path}.label`);
+    numberValue(request.magnitude, `${path}.magnitude`, 0, 1);
+    return request;
+  });
+  uniqueIds(relationshipRequests, 'scenario.relationshipRequests');
 
   const observationEvents = arrayValue(file.observationEvents, 'scenario.observationEvents').map(
     (entry, index) => {

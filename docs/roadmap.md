@@ -40,7 +40,7 @@ The implementation also preserves rejected alternatives, derives a remorse after
 
 ## Phase 2 — relational and agenda foundations
 
-Status: in progress.
+Status: complete.
 
 Phase 2 is split by dependency so relational inference and goal-directed execution do not silently depend on Phase 3's defense cascade.
 Fast interpersonal state lives on directed dyads while the agent retains one cascade and one resource ledger.
@@ -125,7 +125,12 @@ Exit probes:
 
 ### Phase 2D — momentum, exposure debt, and consolidation
 
+Status: complete.
+
 Implement stance momentum, asymmetric rupture, exposure-debt repricing, dyad modes with hysteresis, and sleep-tick memory consolidation.
+The completed slice uses a generic directed relationship-event transition and an atomic request evaluator whose response depends on the current dyad position.
+Prediction corrections and new disclosures reprice the authoritative exposure stock, while authored sleep applies peak-end retention and semantic collapse without deleting dyad state.
+The acceptance target is Bellweather.
 
 Exit probes:
 

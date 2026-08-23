@@ -5,6 +5,7 @@ import highwaymanRoad from '../scenarios/highwayman-road.json';
 import highwaymanSquare from '../scenarios/highwayman-square.json';
 import marketMorning from '../scenarios/market-morning.json';
 import pottsfield from '../scenarios/pottsfield.json';
+import relationshipMomentum from '../scenarios/relationship-momentum.json';
 import { parseScenario, type ScenarioFile } from '../src/index.js';
 
 export interface BuiltInScenario {
@@ -30,6 +31,7 @@ export const BUILT_IN_SCENARIOS: readonly BuiltInScenario[] = [
   disclosureAudience,
   endicottMargueritte,
   pottsfield,
+  relationshipMomentum,
   highwaymanRoad,
   highwaymanSquare,
 ].map(builtInScenario);

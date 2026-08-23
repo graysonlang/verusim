@@ -30,6 +30,12 @@ import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { applyBuildToWalkingPace } from './physical.js';
 import { resolveObservationEvent } from './prediction.js';
+import {
+  consolidateRelationshipMemories,
+  repriceExposureDebt,
+  resolveRelationshipEvent,
+  resolveRelationshipRequest,
+} from './relationship.js';
 import { appendTrace, createTrace, traceTerm } from './trace.js';
 
 const DAY_MINUTES = 1440;
@@ -303,6 +309,39 @@ function validateReferences(content: ScenarioContent): void {
       }
     });
   });
+  content.scenario.relationshipEvents.forEach((event, index) => {
+    const path = `scenario.relationshipEvents[${index}]`;
+    if (!instanceIds.has(event.observerId)) {
+      throw new ScenarioValidationError(
+        `${path}.observerId`,
+        `unknown agent "${event.observerId}"`,
+      );
+    }
+    if (!instanceIds.has(event.subjectId)) {
+      throw new ScenarioValidationError(`${path}.subjectId`, `unknown agent "${event.subjectId}"`);
+    }
+    if (event.observerId === event.subjectId) {
+      throw new ScenarioValidationError(`${path}.subjectId`, 'a dyad must contain two agents');
+    }
+  });
+  content.scenario.relationshipRequests.forEach((request, index) => {
+    const path = `scenario.relationshipRequests[${index}]`;
+    if (!instanceIds.has(request.requesterId)) {
+      throw new ScenarioValidationError(
+        `${path}.requesterId`,
+        `unknown agent "${request.requesterId}"`,
+      );
+    }
+    if (!instanceIds.has(request.responderId)) {
+      throw new ScenarioValidationError(
+        `${path}.responderId`,
+        `unknown agent "${request.responderId}"`,
+      );
+    }
+    if (request.requesterId === request.responderId) {
+      throw new ScenarioValidationError(`${path}.responderId`, 'a request requires two agents');
+    }
+  });
   const factIds = new Set(content.scenario.worldFacts.map(fact => fact.id));
   content.scenario.agendaGoals.forEach((goal, index) => {
     const path = `scenario.agendaGoals[${index}]`;
@@ -426,7 +465,7 @@ export function createSimulation(input: {
     return initializeAgent(profile, placement, environment, content.scenario.startMinute);
   });
 
-  const initial: SimulationState = {
+  let initial: SimulationState = {
     agendaDecisions: [],
     agendaGoals: content.scenario.agendaGoals.map(goal => ({
       ...goal,
@@ -453,9 +492,12 @@ export function createSimulation(input: {
     minute: content.scenario.startMinute,
     observations: [],
     plans: [],
+    relationshipDecisions: [],
     resolvedDisclosureOpportunityIds: [],
     resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
+    resolvedRelationshipEventIds: [],
+    resolvedRelationshipRequestIds: [],
     scenario: content.scenario,
     tick: 0,
     trace: createTrace([
@@ -481,6 +523,10 @@ export function createSimulation(input: {
     ]),
     worldFacts: content.scenario.worldFacts.map(fact => ({ ...fact })),
     worldRevision: 0,
+  };
+  initial = {
+    ...initial,
+    dyads: initial.dyads.map(dyad => repriceExposureDebt(initial, dyad)),
   };
   return prepareAgenda(initial);
 }
@@ -592,6 +638,34 @@ export function createSimulationFromSnapshot(input: {
       throw new ScenarioValidationError(
         `snapshot.resolvedObservationEventIds[${index}]`,
         `unknown observation event "${eventId}"`,
+      );
+    }
+  });
+  const relationshipEventIds = new Set(snapshot.scenario.relationshipEvents.map(event => event.id));
+  snapshot.resolvedRelationshipEventIds.forEach((eventId, index) => {
+    if (!relationshipEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedRelationshipEventIds[${index}]`,
+        `unknown relationship event "${eventId}"`,
+      );
+    }
+  });
+  const relationshipRequestIds = new Set(
+    snapshot.scenario.relationshipRequests.map(request => request.id),
+  );
+  snapshot.resolvedRelationshipRequestIds.forEach((requestId, index) => {
+    if (!relationshipRequestIds.has(requestId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedRelationshipRequestIds[${index}]`,
+        `unknown relationship request "${requestId}"`,
+      );
+    }
+  });
+  snapshot.relationshipDecisions.forEach((decision, index) => {
+    if (!agentIds.has(decision.requesterId) || !agentIds.has(decision.responderId)) {
+      throw new ScenarioValidationError(
+        `snapshot.relationshipDecisions[${index}]`,
+        'relationship decision must reference snapshot agents',
       );
     }
   });
@@ -717,9 +791,12 @@ export function createSimulationFromSnapshot(input: {
     minute: snapshot.minute,
     observations: snapshot.observations,
     plans: snapshot.plans,
+    relationshipDecisions: snapshot.relationshipDecisions,
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
     resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
+    resolvedRelationshipEventIds: snapshot.resolvedRelationshipEventIds,
+    resolvedRelationshipRequestIds: snapshot.resolvedRelationshipRequestIds,
     tick: snapshot.tick,
     trace: snapshot.trace,
     worldFacts: snapshot.worldFacts,
@@ -770,6 +847,7 @@ function advanceResources(
 
 interface AgentAdvanceResult {
   agent: SimulationAgent;
+  sleeping: boolean;
   trace: TraceEntry[];
 }
 
@@ -930,6 +1008,7 @@ function advanceAgent(
       resources: recovery.resources,
       values,
     },
+    sleeping: recoveryMode === 'sleep' && arrived,
     trace,
   };
 }
@@ -974,7 +1053,24 @@ function advanceOneTick(state: SimulationState): SimulationState {
       !prepared.resolvedObservationEventIds.includes(event.id),
   );
   for (const event of dueObservationEvents) next = resolveObservationEvent(next, event);
-  return next;
+  const dueRelationshipEvents = prepared.scenario.relationshipEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedRelationshipEventIds.includes(event.id),
+  );
+  for (const event of dueRelationshipEvents) next = resolveRelationshipEvent(next, event);
+  const dueRelationshipRequests = prepared.scenario.relationshipRequests.filter(
+    request =>
+      request.atMinute > prepared.minute &&
+      request.atMinute <= nextMinute &&
+      !prepared.resolvedRelationshipRequestIds.includes(request.id),
+  );
+  for (const request of dueRelationshipRequests) next = resolveRelationshipRequest(next, request);
+  return consolidateRelationshipMemories(
+    next,
+    results.filter(result => result.sleeping).map(result => result.agent.id),
+  );
 }
 
 export function advanceSimulation(state: SimulationState, ticks = 1): SimulationState {

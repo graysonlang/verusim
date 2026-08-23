@@ -58,6 +58,14 @@ export type { BuildEffects } from './simulation/physical.js';
 export { resolveObservationEvent } from './simulation/prediction.js';
 export { resolveNormObservationEvent } from './simulation/norms.js';
 export {
+  evaluateRelationshipRequest,
+  exposureDebtFor,
+  resolveDyadMode,
+  resolveRelationshipEvent,
+  resolveRelationshipRequest,
+  turnDyad,
+} from './simulation/relationship.js';
+export {
   DAY_PERIOD_IDS,
   DAY_PERIOD_LABELS,
   daylightScheduleForSeason,

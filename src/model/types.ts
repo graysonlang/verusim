@@ -297,6 +297,7 @@ export interface DyadSeed {
   estimateConfidence: number;
   estimatedDisclosure: number;
   estimatedEmpathy: number;
+  exposureDebt: number;
   features: SocialFeatureMap;
   integratedHistory: number;
   mode: DyadMode;
@@ -308,6 +309,24 @@ export interface DyadSeed {
 }
 
 export type DyadState = DyadSeed;
+
+export interface RelationshipEvent {
+  atMinute: number;
+  id: string;
+  observerId: string;
+  stanceTurn: number;
+  subjectId: string;
+  summary: string;
+}
+
+export interface RelationshipRequestOpportunity {
+  atMinute: number;
+  id: string;
+  label: string;
+  magnitude: number;
+  requesterId: string;
+  responderId: string;
+}
 
 export interface DisclosureItemSeed {
   id: string;
@@ -495,7 +514,9 @@ export interface ScenarioFile {
   initialTimeRate?: TimeRateId;
   localNorms: LocalNorm[];
   observationEvents: ObservationEvent[];
-  schemaVersion: 8;
+  relationshipEvents: RelationshipEvent[];
+  relationshipRequests: RelationshipRequestOpportunity[];
+  schemaVersion: 9;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -505,10 +526,20 @@ export interface ScenarioFile {
 }
 
 export interface RuntimeMemory {
+  emotionalTurn?: number;
   id: string;
   minute: number;
+  subjectId?: string;
   summary: string;
-  type: 'activity' | 'aftermath' | 'disclosure' | 'formative' | 'goal' | 'intervention' | 'task';
+  type:
+    | 'activity'
+    | 'aftermath'
+    | 'disclosure'
+    | 'formative'
+    | 'goal'
+    | 'intervention'
+    | 'relationship'
+    | 'task';
 }
 
 export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 'flop';
@@ -597,9 +628,12 @@ export interface SimulationState {
   minute: number;
   observations: ObservationRecord[];
   plans: AgendaPlan[];
+  relationshipDecisions: RelationshipDecisionRecord[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
+  resolvedRelationshipEventIds: string[];
+  resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
   tick: number;
   trace: CausalTrace;
@@ -710,6 +744,20 @@ export interface DisclosureDecisionRecord {
   utility: number;
   worstAudienceId: string | null;
   worstCost: number;
+}
+
+export interface RelationshipDecisionRecord {
+  cooperationPosition: number;
+  id: string;
+  magnitude: number;
+  minute: number;
+  newStance: number;
+  outcome: 'accepted' | 'refused';
+  previousStance: number;
+  requesterId: string;
+  responderId: string;
+  stanceTurn: number;
+  tick: number;
 }
 
 export type ObservationOutcome = 'confirmed' | 'corrected' | 'missed' | 'suspected';
@@ -854,11 +902,14 @@ export interface SimulationSnapshotFile {
   minute: number;
   observations: ObservationRecord[];
   plans: AgendaPlan[];
+  relationshipDecisions: RelationshipDecisionRecord[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
+  resolvedRelationshipEventIds: string[];
+  resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 5;
+  schemaVersion: 6;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

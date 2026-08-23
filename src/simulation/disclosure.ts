@@ -10,6 +10,7 @@ import {
   type TraceEntry,
 } from '../model/types.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { repriceExposureFor } from './relationship.js';
 
 const MAX_DISCLOSURE_DECISIONS = 80;
 const MAX_MEMORIES = 16;
@@ -221,7 +222,7 @@ export function resolveDisclosureOpportunity(
     MAX_TRACE_ENTRIES,
   );
 
-  return {
+  let next: SimulationState = {
     ...state,
     agents: state.agents.map(agent =>
       agent.id === owner.id
@@ -239,4 +240,15 @@ export function resolveDisclosureOpportunity(
     resolvedDisclosureOpportunityIds: [...state.resolvedDisclosureOpportunityIds, opportunity.id],
     trace,
   };
+  if (disclosed) {
+    for (const audienceId of opportunity.audienceIds) {
+      next = repriceExposureFor(
+        next,
+        opportunity.ownerId,
+        audienceId,
+        `disclosureItems.${opportunity.itemId}.knownByIds`,
+      );
+    }
+  }
+  return next;
 }

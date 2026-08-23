@@ -819,7 +819,7 @@ function renderInspector(
     );
     mode.textContent = dyad.mode;
     copy.textContent = subject?.profile.name ?? dyad.subjectId;
-    estimates.textContent = `stance ${dyad.stance.toFixed(2)} / E estimate ${dyad.estimatedEmpathy.toFixed(2)} / D estimate ${dyad.estimatedDisclosure.toFixed(2)} / confidence ${dyad.estimateConfidence.toFixed(2)} / error ${dyad.predictionError.toFixed(2)} / suspicion ${dyad.suspicion.toFixed(2)} / exposed items ${exposedItems.length}`;
+    estimates.textContent = `stance ${dyad.stance.toFixed(2)} / E estimate ${dyad.estimatedEmpathy.toFixed(2)} / D estimate ${dyad.estimatedDisclosure.toFixed(2)} / confidence ${dyad.estimateConfidence.toFixed(2)} / error ${dyad.predictionError.toFixed(2)} / suspicion ${dyad.suspicion.toFixed(2)} / exposure debt ${dyad.exposureDebt.toFixed(2)} from ${exposedItems.length} items`;
     item.append(mode, copy, estimates);
     relationshipList.append(item);
   }
@@ -829,6 +829,23 @@ function renderInspector(
     relationships.body.append(empty);
   } else {
     relationships.body.append(relationshipList);
+  }
+
+  const relationshipDecisionSection = makeSection('Latest relationship request');
+  const relationshipDecision = state.relationshipDecisions
+    .filter(item => item.responderId === agent.id)
+    .at(-1);
+  if (relationshipDecision === undefined) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No relationship request has resolved for this character.';
+    relationshipDecisionSection.body.append(empty);
+  } else {
+    const requester = state.agents.find(
+      candidate => candidate.id === relationshipDecision.requesterId,
+    );
+    const summary = element('p', 'disclosure-summary');
+    summary.textContent = `${relationshipDecision.outcome} ${requester?.profile.name ?? relationshipDecision.requesterId} / request ${relationshipDecision.magnitude.toFixed(2)} against position ${relationshipDecision.cooperationPosition.toFixed(2)} / stance ${relationshipDecision.previousStance.toFixed(2)} to ${relationshipDecision.newStance.toFixed(2)}`;
+    relationshipDecisionSection.body.append(summary);
   }
 
   const agentObservations = state.observations.filter(
@@ -961,6 +978,7 @@ function renderInspector(
     identity.section,
     decisionSection.section,
     relationships.section,
+    relationshipDecisionSection.section,
     observationSection.section,
     disclosureSection.section,
     memories.section,
