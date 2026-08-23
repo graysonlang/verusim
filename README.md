@@ -13,11 +13,13 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation has completed Phase 0 through Phase 4 and the Phase 5A resource-preparation slice; reusable norm and social-contract resources are next.
+The current implementation has completed Phase 0 through Phase 4, Phase 5A resource preparation, and Phase 5B layered environment topology; reusable norm and social-contract resources are next in Phase 5C.
 It includes:
 
 - independently versioned JSON character-profile and environment-layout resources plus versioned scenarios
 - structured semantic resource addresses, a generated immutable repository catalog, deterministic dependency closures, and an acquisition-neutral prepared-scenario boundary
+- layered environment layouts with explicit stairs, ramps, and ladders; connector-aware schedule and agenda travel; floor-separated spatial perception; and a layer-selectable workbench view
+- Alder's Edge Town, a compact reference settlement with agricultural edges, civic and religious spaces, trades, commerce, river infrastructure, upper-floor homes, cellars, storage, a crypt, and a watch cell
 - deterministic simulation stepping, schedule-based movement, ambient value turns, and bounded trace history
 - environment-authored behavioral opportunities with character-dependent action selection
 - nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives

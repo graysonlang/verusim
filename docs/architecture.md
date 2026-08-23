@@ -77,11 +77,15 @@ The workbench consumes that derived period and authored conditions for its clock
 The initial condition is static scenario truth.
 Dynamic weather must later become an explicit deterministic timeline or event with snapshot-persisted current state rather than renderer-side variation.
 
-World coordinates are meters in an unbounded two-dimensional plane.
-An environment provides a designed extent for framing and authored areas for observation; the camera is not clamped to that extent.
+World coordinates are meters on named two-dimensional layers.
+An environment provides a designed extent shared by those layers, authored areas for observation, and explicit connectors between layers; the camera is not clamped to that extent.
 This permits village-scale views now and chunked or generated environments later without changing the camera contract.
 At 100% workbench zoom, one meter spans ten CSS pixels, so one CSS pixel represents one decimeter before device-pixel scaling.
 Zoom percentages describe display magnification only; simulation positions, distances, and movement remain meter-based.
+
+Every position, area, and location carries a `layerId`.
+Same-layer movement remains planar, while cross-layer schedules and agenda tasks use a deterministic shortest route through bidirectional authored stairs, ramps, or ladders and include connector traversal costs in travel estimates.
+The workbench projects one selected layer at a time; changing that projection or following a character between floors does not mutate authoritative state.
 
 Current movement speed is a derived observation rather than additional mutable state.
 An agent at their destination is still; an agent in transit exposes their authored meters-per-minute pace and an observer-facing speed class from crawling through sprinting.
@@ -205,6 +209,10 @@ Effective acuity combines the character's generation-fixed acuity with current e
 Distance falloff then composes with signal strength and semantic environment occlusion.
 The initial area defaults treat buildings as strong visual and acoustic barriers and forests as strong visual cover with mild acoustic attenuation.
 These defaults remain centralized in the spatial evaluator until environment authoring needs per-area material overrides.
+
+Different environment layers are fully separated for proximity, sight, and hearing by default, even when their plan coordinates coincide.
+A connector makes movement possible but does not imply an open sensory channel between whole floors.
+An explicit future aperture or material-transmission mechanism may weaken that boundary without treating layer selection as perception.
 
 Eavesdropping is a two-observer composition: the listener must hear the speaker while the speaker fails to see the listener.
 An open-space listener within earshot is therefore exposed rather than covert.
@@ -333,6 +341,8 @@ Profiles must be independently valid; arbitrary JSON patch chains are not a subs
 Environment identity follows the same separation.
 `environmentId` identifies a place, while an explicit `layoutId` distinguishes materially different physical realizations such as a settlement before and after reconstruction.
 Weather, season, temperature, occupancy, and other situational conditions remain scenario state rather than layout variants.
+Named layers, their authored elevations, areas, locations, and connectors belong to the immutable layout.
+A richer multi-floor realization can therefore retain the place's `environmentId` while using a distinct `layoutId`; layer names are not a substitute for layout identity.
 
 ### Preparation boundary
 
@@ -385,7 +395,7 @@ The workbench may bundle a catalog containing every authored resource, while a d
 ## Storage contracts
 
 Files use strict, versioned JSON and stable string identifiers.
-Character-profile and environment-layout resource files use schema version 1 and carry a structured package, kind, and resource identifier address independent of their source path.
+Character-profile resource files use schema version 1, environment-layout resource files use schema version 2, and both carry a structured package, kind, and resource identifier address independent of their source path.
 Scenarios reference those semantic addresses rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
@@ -405,11 +415,12 @@ Social battery below `0.50` contributes up to `0.38` negative valence and physic
 
 The legacy character-library schema version 7 compatibility adapter replaces version 6 narrative string seeds with structured claim identifiers, kinds, commitment, and confidence.
 Its explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
-The legacy environment-library schema version 2 compatibility adapter adds outlet affordances to the original spatial environment format, with an empty affordance list supplied for version 1 content.
-Scenario schema version 12 replaces path-era character and environment identifiers with structured character-profile and environment-layout addresses after version 11 added agency mode, sparse narrative overrides, validators, claim-expression alignment, narrative events, reputation groups, and aspiration opportunities.
-Explicit migrations preserve version 1 through 11 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, and mapping legacy references into the default `verusim` package.
-Snapshot schema version 9 adds structured resource addresses and the exact prepared resource lock after version 8 added narrative state.
-Explicit snapshot migrations preserve versions 1 through 8, verify legacy character and environment identifiers while constructing the lock, and supply recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Environment-layout resource schema version 2 and the legacy environment-library schema version 2 add named layers, layer-bearing areas and locations, and explicit connectors.
+Version 1 environment content migrates onto one `surface` layer with no connectors while retaining the earlier outlet-affordance compatibility default.
+Scenario schema version 13 adds a layer identifier to every character position after version 12 replaced path-era character and environment identifiers with structured character-profile and environment-layout addresses.
+Explicit migrations preserve version 1 through 12 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, and placing pre-layer positions on `surface`.
+Snapshot schema version 10 persists layer-bearing positions and destinations after version 9 added structured resource addresses and the exact prepared resource lock.
+Explicit snapshot migrations preserve versions 1 through 9, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, and supply recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

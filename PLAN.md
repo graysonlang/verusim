@@ -18,11 +18,11 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5B: reusable norms and social contracts.
+The active slice is Phase 5C: reusable norms and social contracts.
 Promote atomic norm definitions and coherent social-contract bundles into independently validated resource documents using the Phase 5A catalog and preparation boundary.
 Let scenarios place contracts into explicit location, institution, group, or event scopes independently of the selected environment layout, with dependency closure walking contract-to-norm references exactly once.
 
-This slice closes the Phase 5 sharing and placement probes for norms and social contracts.
+This slice closes the Phase 5 sharing and placement probes for norms and social contracts after Phase 5B established layered environment topology and its expanded reference town.
 The same contract must be reusable without copying its norms, the same physical layout must accept different social-context placements, and multiple contracts must be able to coexist without selecting a winner.
 
 ### Current-focus non-goals

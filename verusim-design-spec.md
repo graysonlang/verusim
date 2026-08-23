@@ -679,6 +679,24 @@ The exposure ledger records who actually learned an item, including an undetecte
 The disclosure decision can price only audiences the owner believes are present.
 This permits a concealed eavesdropper to create exposure debt without granting the owner privileged knowledge that the eavesdropping occurred.
 
+#### 12.7.1 Layered place topology
+
+An environment layout may contain several named plan layers at authored elevations: a street, upper floors, cellars, crypts, or other compactly stacked spaces.
+Layers are physical topology within one layout, not level-of-detail tiers, separate scene instances, or alternate versions of the place.
+Every position, area, and location carries a layer identifier, so equal `x` and `y` coordinates on different layers do not imply co-presence.
+
+Movement between layers uses explicit bidirectional connectors with endpoints, a traversal kind, and a meter-equivalent traversal cost.
+Schedules and plans route through the same connector graph; they cannot move directly to a vertically aligned destination on another floor.
+This preserves one deterministic locomotion path for a cellar errand, a residence over a shop, and an ordinary street crossing.
+
+Different layers are opaque to sight and hearing by default.
+An explicit stair connection permits travel but does not silently make an entire floor acoustically or visually open.
+Future apertures, balconies, shafts, or material transmission can weaken that separation through authored geometry without changing layer identity.
+
+The workbench may project one layer at a time and switch layers when an inspector focuses a character.
+That selection is an observer concern and never changes simulation state.
+`environmentId` continues to identify the place, while `layoutId` distinguishes a materially expanded or otherwise different realization of that place.
+
 ### 12.8 Time of day and environmental conditions
 
 The scenario owns the current season, temperature, and weather condition. Time of day is derived from simulation minute and a season-specific daylight schedule into nine observer-facing periods: dawn, sunrise, morning, midday, afternoon, evening, sunset, dusk, and night. Adapters may use those facts for palette, lighting, prose, sound, or visibility, but they must consume the same derived period rather than maintain a separate presentation clock.
