@@ -1175,6 +1175,7 @@ function createWorkbench(): HTMLElement {
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
   const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
+  const [rosterHoverAgentId, setRosterHoverAgentId] = createSignal<string | null>(null);
   const [loadedBuiltInScenarioId, setLoadedBuiltInScenarioId] = createSignal<string | null>(
     DEFAULT_BUILT_IN_SCENARIO.id,
   );
@@ -1713,10 +1714,12 @@ function createWorkbench(): HTMLElement {
       if (agentId === null) setSelectedAgentId(null);
       else selectAgent(agentId, 'preserve');
     },
+    rosterHoverAgentId,
     selectedAgentId,
     state,
   });
   const commitLeftSidebarLayout = (layout: SidebarLayout): void => {
+    if (!layout.visible) setRosterHoverAgentId(null);
     setLeftSidebarLayout(layout);
     setPreferences(current => ({
       ...current,
@@ -1788,6 +1791,7 @@ function createWorkbench(): HTMLElement {
 
   function resetLoadedScenario(): void {
     setPlaying(false);
+    setRosterHoverAgentId(null);
     setState(loadedBaseline);
     setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
     setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
@@ -1801,6 +1805,7 @@ function createWorkbench(): HTMLElement {
   ): void {
     loadedBaseline = loaded;
     setPlaying(false);
+    setRosterHoverAgentId(null);
     setState(loaded);
     setPlaybackRateId(initialTimeRateForScenario(loaded.scenario, preferences()));
     setSelectedAgentId(loaded.agents[0]?.id ?? null);
@@ -2590,9 +2595,19 @@ function createWorkbench(): HTMLElement {
       copy.append(heading, activity, physical);
       context.append(location, movementBadge(agent, currentPreferences.distanceUnit, true));
       item.append(copy, context, signals);
+      item.dataset.agentId = agent.id;
+      item.dataset.testid = `roster-agent-${agent.id}`;
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
       item.addEventListener('click', () => selectAgent(agent.id, 'reveal'));
+      item.addEventListener('pointerenter', () => setRosterHoverAgentId(agent.id));
+      item.addEventListener('pointerleave', () =>
+        setRosterHoverAgentId(current => (current === agent.id ? null : current)),
+      );
+      item.addEventListener('focus', () => setRosterHoverAgentId(agent.id));
+      item.addEventListener('blur', () =>
+        setRosterHoverAgentId(current => (current === agent.id ? null : current)),
+      );
       return item;
     });
     rosterList.replaceChildren(...items);
@@ -2710,7 +2725,10 @@ function createWorkbench(): HTMLElement {
     if (event.target === scenarioInfoOverlay) closeScenarioInfo(true);
   });
   time.addEventListener('click', () => setShowTickNumber(current => !current));
-  searchInput.addEventListener('input', () => setSearch(searchInput.value));
+  searchInput.addEventListener('input', () => {
+    setRosterHoverAgentId(null);
+    setSearch(searchInput.value);
+  });
   layerSwitcher.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
     const control = event.target.closest<HTMLButtonElement>('button[data-projection]');

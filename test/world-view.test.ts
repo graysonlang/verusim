@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   agentIdAtScreenPoint,
+  agentMarkerAppearance,
   cameraRevealingPoint,
   cameraForGesture,
   CSS_PIXELS_PER_METER_AT_100_PERCENT,
@@ -36,6 +37,30 @@ describe('world view selection', () => {
       y: 120,
       zoom: 1,
     });
+  });
+});
+
+describe('agent marker appearance', () => {
+  it('adds a distinct transient ring and stronger marker for roster hover', () => {
+    const ordinary = agentMarkerAppearance(false, false, false);
+    const hovered = agentMarkerAppearance(false, true, false);
+    assert.equal(ordinary.ringColor, null);
+    assert.notEqual(hovered.ringColor, null);
+    assert.ok(hovered.radiusPixels > ordinary.radiusPixels);
+    assert.equal(hovered.labelWeight, 600);
+  });
+
+  it('lifts a hovered cross-layer marker above its ordinary dimmed presentation', () => {
+    const dimmed = agentMarkerAppearance(false, false, true);
+    const hovered = agentMarkerAppearance(false, true, true);
+    assert.ok(hovered.alpha > dimmed.alpha);
+  });
+
+  it('keeps selected appearance authoritative while its roster card is hovered', () => {
+    assert.deepEqual(
+      agentMarkerAppearance(true, true, false),
+      agentMarkerAppearance(true, false, false),
+    );
   });
 });
 

@@ -42,6 +42,7 @@ interface WorldViewOptions {
   indicatorSettings: Accessor<IndicatorSettings>;
   onHover: (hover: WorldHover | null) => void;
   onSelect: (agentId: string | null) => void;
+  rosterHoverAgentId: Accessor<string | null>;
   selectedAgentId: Accessor<string | null>;
   state: Accessor<SimulationState>;
 }
@@ -197,6 +198,58 @@ function clamp(value: number, minimum: number, maximum: number): number {
 
 function pixelsPerMeter(zoom: number): number {
   return zoom * CSS_PIXELS_PER_METER_AT_100_PERCENT;
+}
+
+export interface AgentMarkerAppearance {
+  alpha: number;
+  fill: string;
+  labelFill: string;
+  labelWeight: 500 | 600;
+  radiusPixels: number;
+  ringColor: string | null;
+  ringRadiusPixels: number;
+  ringWidthPixels: number;
+}
+
+export function agentMarkerAppearance(
+  selected: boolean,
+  rosterHovered: boolean,
+  dimmed: boolean,
+): AgentMarkerAppearance {
+  if (selected) {
+    return {
+      alpha: dimmed ? 0.38 : 1,
+      fill: '#f5cc68',
+      labelFill: '#fff3c4',
+      labelWeight: 600,
+      radiusPixels: 10,
+      ringColor: '#f5cc68',
+      ringRadiusPixels: 15,
+      ringWidthPixels: 2,
+    };
+  }
+  if (rosterHovered) {
+    return {
+      alpha: dimmed ? 0.9 : 1,
+      fill: '#d6f0e8',
+      labelFill: '#d8f7ef',
+      labelWeight: 600,
+      radiusPixels: 9,
+      ringColor: '#9bd4c7',
+      ringRadiusPixels: 14,
+      ringWidthPixels: 2,
+    };
+  }
+  return {
+    alpha: dimmed ? 0.38 : 1,
+    fill: '#f4ede0',
+    labelFill: 'rgb(255 250 234 / 78%)',
+    labelWeight: 500,
+    radiusPixels: 8,
+    ringColor: null,
+    ringRadiusPixels: 0,
+    ringWidthPixels: 0,
+  };
 }
 
 export function cameraForGesture(
@@ -706,6 +759,7 @@ function drawWorld(
   state: SimulationState,
   camera: Camera,
   selectedAgentId: string | null,
+  rosterHoverAgentId: string | null,
   indicatorSettings: IndicatorSettings,
   projection: WorldProjection,
   width: number,
@@ -870,26 +924,37 @@ function drawWorld(
   for (const agent of state.agents) {
     const style = agentProjectionStyle(state.environment, agent, projection);
     const selected = agent.id === selectedAgentId;
-    const radius = (selected ? 10 : 8) / screenPixelsPerMeter;
+    const appearance = agentMarkerAppearance(
+      selected,
+      agent.id === rosterHoverAgentId,
+      style.dimmed,
+    );
+    const radius = appearance.radiusPixels / screenPixelsPerMeter;
     context.save();
-    if (style.dimmed) context.globalAlpha = 0.38;
-    if (selected) {
+    context.globalAlpha = appearance.alpha;
+    if (appearance.ringColor !== null) {
       context.beginPath();
-      context.arc(agent.position.x, agent.position.y, 15 / screenPixelsPerMeter, 0, Math.PI * 2);
-      context.strokeStyle = '#f5cc68';
-      context.lineWidth = 2 / screenPixelsPerMeter;
+      context.arc(
+        agent.position.x,
+        agent.position.y,
+        appearance.ringRadiusPixels / screenPixelsPerMeter,
+        0,
+        Math.PI * 2,
+      );
+      context.strokeStyle = appearance.ringColor;
+      context.lineWidth = appearance.ringWidthPixels / screenPixelsPerMeter;
       context.stroke();
     }
     context.beginPath();
     context.arc(agent.position.x, agent.position.y, radius, 0, Math.PI * 2);
-    context.fillStyle = selected ? '#f5cc68' : '#f4ede0';
+    context.fillStyle = appearance.fill;
     context.fill();
     context.strokeStyle = '#29362d';
     context.lineWidth = 2 / screenPixelsPerMeter;
     context.stroke();
 
-    context.fillStyle = selected ? '#fff3c4' : 'rgb(255 250 234 / 78%)';
-    context.font = `${selected ? 600 : 500} ${11 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
+    context.fillStyle = appearance.labelFill;
+    context.font = `${appearance.labelWeight} ${11 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
     context.textAlign = 'center';
     context.fillText(
       agent.profile.name,
@@ -1157,6 +1222,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   createEffect(() => {
     const state = options.state();
     const selectedAgentId = options.selectedAgentId();
+    const rosterHoverAgentId = options.rosterHoverAgentId();
     const indicatorSettings = options.indicatorSettings();
     const currentCamera = camera();
     const projection = activeProjection();
@@ -1190,6 +1256,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
       state,
       currentCamera,
       selectedAgentId,
+      rosterHoverAgentId,
       indicatorSettings,
       projection,
       width,
