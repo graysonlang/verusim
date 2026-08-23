@@ -5,21 +5,6 @@ Keep active and future work in [PLAN.md](PLAN.md), move a reopened phase back th
 Newly completed or reopened phase entries also summarize the evidence that closed the phase: discriminating scenarios or fixtures, regression coverage for exit probes, snapshot replay when persisted state changed, UI verification when presentation changed, and schema or migration boundaries when storage changed.
 Evidence categories that do not apply are omitted rather than recorded as placeholders.
 
-## Phase 0 — simulation substrate
-
-Status: complete.
-
-Establish versioned content files, reusable libraries, pure deterministic stepping, causal traces, state intervention, import/export, a pannable world view, roster navigation, inspection, and time transport.
-Implement the top-level action appraisal equation without guessing the deeper inputs.
-
-Exit probes:
-
-- load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace
-- moving-character pace is presented as distance per second in the selected-character workbench while authored and authoritative locomotion remain meters per simulation minute
-
-Movement-format regression coverage checks both metric and US display units without changing the meter source value.
-Isolated browser verification confirmed a moving character's expanded badge, tooltip, and accessibility label use one consistent feet-per-second value while stationary characters omit a zero rate.
-
 ## Phase 1 — the highwayman vertical slice
 
 Status: complete.
