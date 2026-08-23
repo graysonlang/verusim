@@ -64,8 +64,26 @@ export interface WorldView {
 }
 
 export type WorldProjection = { kind: 'exterior' } | { kind: 'layer'; layerId: string };
+export type ProjectionStepDirection = 'higher' | 'lower';
 
 export const EXTERIOR_PROJECTION: WorldProjection = Object.freeze({ kind: 'exterior' });
+
+export function projectionAfterVerticalStep(
+  environment: EnvironmentDefinition,
+  projection: WorldProjection,
+  direction: ProjectionStepDirection,
+): WorldProjection {
+  const layersLowToHigh = environmentLayersTopDown(environment).toReversed();
+  const currentIndex =
+    projection.kind === 'exterior'
+      ? layersLowToHigh.length
+      : layersLowToHigh.findIndex(layer => layer.id === projection.layerId);
+  if (currentIndex < 0) return EXTERIOR_PROJECTION;
+  const delta = direction === 'higher' ? 1 : -1;
+  const nextIndex = Math.min(layersLowToHigh.length, Math.max(0, currentIndex + delta));
+  const nextLayer = layersLowToHigh[nextIndex];
+  return nextLayer === undefined ? EXTERIOR_PROJECTION : { kind: 'layer', layerId: nextLayer.id };
+}
 
 export interface AgentProjectionStyle {
   dimmed: boolean;

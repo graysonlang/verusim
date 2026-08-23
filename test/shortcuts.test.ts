@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   workbenchActionForShortcut,
+  workbenchEscapeAction,
   zoomActionForShortcut,
   type ShortcutInput,
 } from '../app/shortcuts.js';
@@ -43,6 +44,21 @@ describe('canvas zoom shortcuts', () => {
 });
 
 describe('workbench shortcuts', () => {
+  it('decays Escape from selection through exterior to fit', () => {
+    assert.equal(
+      workbenchEscapeAction({ hasSelection: true, isExterior: false }),
+      'clear-selection',
+    );
+    assert.equal(
+      workbenchEscapeAction({ hasSelection: false, isExterior: false }),
+      'projection-exterior',
+    );
+    assert.equal(
+      workbenchEscapeAction({ hasSelection: false, isExterior: true }),
+      'fit-environment',
+    );
+  });
+
   it('opens settings with the primary comma shortcut', () => {
     assert.equal(workbenchActionForShortcut(shortcut('Comma', { metaKey: true })), 'settings');
     assert.equal(workbenchActionForShortcut(shortcut('Comma', { ctrlKey: true })), 'settings');
@@ -57,6 +73,36 @@ describe('workbench shortcuts', () => {
     assert.equal(
       workbenchActionForShortcut(shortcut('KeyR', { shiftKey: true })),
       'reset-scenario',
+    );
+  });
+
+  it('maps projection and sidebar punctuation keys without alternate modifiers', () => {
+    assert.equal(workbenchActionForShortcut(shortcut('BracketLeft')), 'projection-lower');
+    assert.equal(workbenchActionForShortcut(shortcut('BracketRight')), 'projection-higher');
+    assert.equal(workbenchActionForShortcut(shortcut('Backslash')), 'projection-exterior');
+    assert.equal(
+      workbenchActionForShortcut(shortcut('BracketLeft', { shiftKey: true })),
+      'toggle-left-sidebar',
+    );
+    assert.equal(
+      workbenchActionForShortcut(shortcut('BracketRight', { shiftKey: true })),
+      'toggle-right-sidebar',
+    );
+    assert.equal(
+      workbenchActionForShortcut(shortcut('Backslash', { shiftKey: true })),
+      'toggle-sidebars',
+    );
+  });
+
+  it('leaves modified punctuation shortcuts available to the host', () => {
+    assert.equal(workbenchActionForShortcut(shortcut('BracketLeft', { metaKey: true })), null);
+    assert.equal(
+      workbenchActionForShortcut(shortcut('BracketRight', { ctrlKey: true, shiftKey: true })),
+      null,
+    );
+    assert.equal(
+      workbenchActionForShortcut(shortcut('Backslash', { altKey: true, shiftKey: true })),
+      null,
     );
   });
 

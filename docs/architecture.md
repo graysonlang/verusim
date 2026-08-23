@@ -99,6 +99,9 @@ Exterior renders structure roofs and dims enclosed characters with relative-leve
 A cutaway renders active interiors as floors and walls while retaining muted ground, inactive structures, and dimmed off-layer interior characters as plan context.
 Ground and inactive structure geometry render opaquely below one environment-sized scrim; the active layer renders afterward so contextual footprints cannot accumulate transparency where they overlap.
 Changing that projection or following a character between floors does not mutate authoritative state.
+For keyboard traversal, authored layers form a clamped lowest-to-highest sequence with Exterior above the highest floor: `[` steps lower, `]` steps higher, and `\` selects Exterior directly.
+With transient menus and dialogs closed, repeated Escape presses clear a selected character, return a non-exterior canvas to Exterior, and then fit an already exterior unselected canvas.
+Shifted square brackets toggle the corresponding sidebar independently, while `|` hides both when either is visible and shows both when neither is visible.
 
 Current movement speed is a derived observation rather than additional mutable state.
 An agent at their destination is still; an agent in transit exposes an observer-facing speed class from crawling through sprinting and presents the authored meters-per-simulation-minute pace as configured distance per second.

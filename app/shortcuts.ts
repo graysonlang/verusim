@@ -6,9 +6,15 @@ export type ZoomActionId =
   | 'zoom-selection';
 export type WorkbenchShortcutActionId =
   | ZoomActionId
+  | 'projection-exterior'
+  | 'projection-higher'
+  | 'projection-lower'
   | 'reset-scenario'
   | 'save-snapshot'
-  | 'settings';
+  | 'settings'
+  | 'toggle-left-sidebar'
+  | 'toggle-right-sidebar'
+  | 'toggle-sidebars';
 
 export interface ShortcutInput {
   altKey: boolean;
@@ -16,6 +22,16 @@ export interface ShortcutInput {
   ctrlKey: boolean;
   metaKey: boolean;
   shiftKey: boolean;
+}
+
+export type WorkbenchEscapeActionId = 'clear-selection' | 'fit-environment' | 'projection-exterior';
+
+export function workbenchEscapeAction(input: {
+  hasSelection: boolean;
+  isExterior: boolean;
+}): WorkbenchEscapeActionId {
+  if (input.hasSelection) return 'clear-selection';
+  return input.isExterior ? 'fit-environment' : 'projection-exterior';
 }
 
 export function zoomActionForShortcut(input: ShortcutInput): ZoomActionId | null {
@@ -43,6 +59,18 @@ export function workbenchActionForShortcut(input: ShortcutInput): WorkbenchShort
   }
   const zoomAction = zoomActionForShortcut(input);
   if (zoomAction !== null) return zoomAction;
+
+  if (!input.altKey && !input.ctrlKey && !input.metaKey) {
+    if (input.shiftKey) {
+      if (input.code === 'Backslash') return 'toggle-sidebars';
+      if (input.code === 'BracketLeft') return 'toggle-left-sidebar';
+      if (input.code === 'BracketRight') return 'toggle-right-sidebar';
+    } else {
+      if (input.code === 'Backslash') return 'projection-exterior';
+      if (input.code === 'BracketLeft') return 'projection-lower';
+      if (input.code === 'BracketRight') return 'projection-higher';
+    }
+  }
 
   if (input.shiftKey && !input.altKey && !input.ctrlKey && !input.metaKey) {
     if (input.code === 'KeyR') return 'reset-scenario';

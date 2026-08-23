@@ -46,6 +46,17 @@ export function toggleSidebar(layout: SidebarLayout): SidebarLayout {
   return { ...layout, visible: !layout.visible };
 }
 
+export function toggleSidebarPair(
+  left: SidebarLayout,
+  right: SidebarLayout,
+): { left: SidebarLayout; right: SidebarLayout } {
+  const visible = !(left.visible || right.visible);
+  return {
+    left: { ...left, visible },
+    right: { ...right, visible },
+  };
+}
+
 export function doubleClickSidebar(layout: SidebarLayout, defaultWidth: number): SidebarLayout {
   if (!layout.visible) return { visible: true, width: defaultWidth };
   if (layout.width === defaultWidth) return { visible: false, width: defaultWidth };

@@ -69,6 +69,7 @@ import {
   bindSidebarResize,
   sidebarMaximumWidth,
   toggleSidebar,
+  toggleSidebarPair,
   type SidebarLayout,
 } from './sidebar-layout.js';
 import {
@@ -77,11 +78,12 @@ import {
   DEFAULT_BUILT_IN_SCENARIO,
   type BuiltInScenario,
 } from './scenarios.js';
-import { workbenchActionForShortcut } from './shortcuts.js';
+import { workbenchActionForShortcut, workbenchEscapeAction } from './shortcuts.js';
 import { formatDistance, formatMovementSpeed, formatTemperature } from './units.js';
 import {
   EXTERIOR_PROJECTION,
   createWorldView,
+  projectionAfterVerticalStep,
   scaleBarForZoom,
   type WorldHover,
 } from './world-view.js';
@@ -1751,6 +1753,18 @@ function createWorkbench(): HTMLElement {
   const onRightSidebarToggle = (): void => {
     commitRightSidebarLayout(toggleSidebar(rightSidebarLayout()));
   };
+  const toggleBothSidebarVisibility = (): void => {
+    const next = toggleSidebarPair(leftSidebarLayout(), rightSidebarLayout());
+    setLeftSidebarLayout(next.left);
+    setRightSidebarLayout(next.right);
+    setPreferences(current => ({
+      ...current,
+      leftSidebarVisible: next.left.visible,
+      leftSidebarWidth: next.left.width,
+      rightSidebarVisible: next.right.visible,
+      rightSidebarWidth: next.right.width,
+    }));
+  };
   leftSidebarToggle.addEventListener('click', onLeftSidebarToggle);
   rightSidebarToggle.addEventListener('click', onRightSidebarToggle);
   let renderedLayerSignature = '';
@@ -1857,6 +1871,54 @@ function createWorkbench(): HTMLElement {
       keywords: ['footer', 'interface', 'status', 'visibility'],
       label: 'Toggle status bar',
       run: () => setPreferences(current => ({ ...current, showStatusBar: !current.showStatusBar })),
+    },
+    {
+      id: 'toggle-left-sidebar',
+      keywords: ['character', 'roster', 'panel', 'interface', 'visibility'],
+      label: 'Toggle character roster',
+      run: onLeftSidebarToggle,
+      shortcut: '{',
+    },
+    {
+      id: 'toggle-right-sidebar',
+      keywords: ['character', 'inspector', 'panel', 'interface', 'visibility'],
+      label: 'Toggle character inspector',
+      run: onRightSidebarToggle,
+      shortcut: '}',
+    },
+    {
+      id: 'toggle-sidebars',
+      keywords: ['both', 'panels', 'interface', 'visibility'],
+      label: 'Toggle both sidebars',
+      run: toggleBothSidebarVisibility,
+      shortcut: '|',
+    },
+    {
+      id: 'projection-lower',
+      keywords: ['canvas', 'floor', 'layer', 'lower', 'projection'],
+      label: 'Show next lower layer',
+      run: () =>
+        worldView.setProjection(
+          projectionAfterVerticalStep(state().environment, worldView.activeProjection(), 'lower'),
+        ),
+      shortcut: '[',
+    },
+    {
+      id: 'projection-higher',
+      keywords: ['canvas', 'floor', 'layer', 'higher', 'projection'],
+      label: 'Show next higher layer',
+      run: () =>
+        worldView.setProjection(
+          projectionAfterVerticalStep(state().environment, worldView.activeProjection(), 'higher'),
+        ),
+      shortcut: ']',
+    },
+    {
+      id: 'projection-exterior',
+      keywords: ['canvas', 'exterior', 'roof', 'layer', 'projection'],
+      label: 'Show Exterior projection',
+      run: () => worldView.setProjection(EXTERIOR_PROJECTION),
+      shortcut: '\\',
     },
     {
       enabled: () => selectedAgentId() !== null,
@@ -2613,7 +2675,7 @@ function createWorkbench(): HTMLElement {
     }
     const entry = BUILT_IN_SCENARIOS.find(candidate => candidate.id === control.dataset.scenarioId);
     if (entry === undefined) return;
-    setScenarioMenuOpen(false);
+    setScenarioMenuOpen(false, true);
     loadBuiltInScenario(entry);
   });
   scenarioMenu.addEventListener('keydown', event => {
@@ -2967,11 +3029,19 @@ function createWorkbench(): HTMLElement {
         closeQuickActions(true);
         return;
       }
-      if (selectedAgentId() !== null) {
-        event.preventDefault();
+      event.preventDefault();
+      const escapeAction = workbenchEscapeAction({
+        hasSelection: selectedAgentId() !== null,
+        isExterior: worldView.activeProjection().kind === 'exterior',
+      });
+      if (escapeAction === 'clear-selection') {
         setSelectedAgentId(null);
-        return;
+      } else if (escapeAction === 'projection-exterior') {
+        worldView.setProjection(EXTERIOR_PROJECTION);
+      } else {
+        worldView.fit();
       }
+      return;
     }
     if (quickActionsOverlay.classList.contains('open')) return;
     const target = event.target;

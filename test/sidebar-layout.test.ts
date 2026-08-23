@@ -8,6 +8,7 @@ import {
   resizeSidebar,
   stepSidebar,
   toggleSidebar,
+  toggleSidebarPair,
 } from '../app/sidebar-layout.js';
 
 describe('sidebar layout', () => {
@@ -24,6 +25,20 @@ describe('sidebar layout', () => {
     const closed = toggleSidebar({ visible: true, width: 312 });
     assert.deepEqual(closed, { visible: false, width: 312 });
     assert.deepEqual(toggleSidebar(closed), { visible: true, width: 312 });
+  });
+
+  it('decays mixed sidebar visibility to hidden before showing both', () => {
+    const left = { visible: true, width: 250 };
+    const right = { visible: false, width: 380 };
+    const hidden = toggleSidebarPair(left, right);
+    assert.deepEqual(hidden, {
+      left: { visible: false, width: 250 },
+      right: { visible: false, width: 380 },
+    });
+    assert.deepEqual(toggleSidebarPair(hidden.left, hidden.right), {
+      left: { visible: true, width: 250 },
+      right: { visible: true, width: 380 },
+    });
   });
 
   it('cycles double-click from custom to default to closed to default', () => {

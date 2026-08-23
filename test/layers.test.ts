@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { BUILT_IN_SCENARIOS } from '../app/scenarios.js';
-import { EXTERIOR_PROJECTION, agentProjectionStyle } from '../app/world-view.js';
+import {
+  EXTERIOR_PROJECTION,
+  agentProjectionStyle,
+  projectionAfterVerticalStep,
+} from '../app/world-view.js';
 import {
   advanceSimulation,
   createSimulation,
@@ -160,6 +164,25 @@ describe('layered environments', () => {
       environmentLayersTopDown(state.environment).map(layer => layer.id),
       ['upper', 'surface', 'cellars'],
     );
+  });
+
+  it('steps projections from the lowest floor through exterior without wrapping', () => {
+    const environment = townState().environment;
+    const cellar = { kind: 'layer' as const, layerId: 'cellars' };
+    const surface = { kind: 'layer' as const, layerId: 'surface' };
+    const upper = { kind: 'layer' as const, layerId: 'upper' };
+    assert.deepEqual(projectionAfterVerticalStep(environment, cellar, 'lower'), cellar);
+    assert.deepEqual(projectionAfterVerticalStep(environment, cellar, 'higher'), surface);
+    assert.deepEqual(projectionAfterVerticalStep(environment, surface, 'higher'), upper);
+    assert.deepEqual(
+      projectionAfterVerticalStep(environment, upper, 'higher'),
+      EXTERIOR_PROJECTION,
+    );
+    assert.deepEqual(
+      projectionAfterVerticalStep(environment, EXTERIOR_PROJECTION, 'higher'),
+      EXTERIOR_PROJECTION,
+    );
+    assert.deepEqual(projectionAfterVerticalStep(environment, EXTERIOR_PROJECTION, 'lower'), upper);
   });
 
   it('keeps inactive interior characters visible but dimmed with their relative level', () => {
