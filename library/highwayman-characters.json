@@ -1,11 +1,17 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "characters": [
     {
       "id": "corvin-rusk",
       "name": "Corvin Rusk",
       "role": "Highwayman",
       "summary": "A distant opportunist who treats strangers as pieces of the road.",
+      "physical": {
+        "ageYears": 36,
+        "sex": "male",
+        "build": { "heightClass": "tall", "weightClass": "average" },
+        "comeliness": 0.46
+      },
       "capabilities": {
         "acuity": 0.73,
         "evidenceCalibration": 0.58,
@@ -97,6 +103,12 @@
       "name": "Orin Hale",
       "role": "Traveler",
       "summary": "An ordinary traveler with broad concern and little respect for road law.",
+      "physical": {
+        "ageYears": 28,
+        "sex": "male",
+        "build": { "heightClass": "average", "weightClass": "average" },
+        "comeliness": 0.56
+      },
       "capabilities": {
         "acuity": 0.55,
         "evidenceCalibration": 0.56,
@@ -188,6 +200,12 @@
       "name": "Jon Mere",
       "role": "Merchant",
       "summary": "A traveling cloth merchant carrying a season's receipts.",
+      "physical": {
+        "ageYears": 41,
+        "sex": "male",
+        "build": { "heightClass": "average", "weightClass": "heavy" },
+        "comeliness": 0.6
+      },
       "capabilities": {
         "acuity": 0.68,
         "evidenceCalibration": 0.78,
@@ -279,6 +297,12 @@
       "name": "Lena Rusk",
       "role": "Actor's cousin",
       "summary": "A family witness whose loyalty lies with the actor.",
+      "physical": {
+        "ageYears": 33,
+        "sex": "female",
+        "build": { "heightClass": "short", "weightClass": "light" },
+        "comeliness": 0.58
+      },
       "capabilities": {
         "acuity": 0.62,
         "evidenceCalibration": 0.59,
@@ -370,6 +394,12 @@
       "name": "Petra Mere",
       "role": "Merchant's cousin",
       "summary": "A family witness whose loyalty lies with the merchant.",
+      "physical": {
+        "ageYears": 38,
+        "sex": "female",
+        "build": { "heightClass": "average", "weightClass": "average" },
+        "comeliness": 0.52
+      },
       "capabilities": {
         "acuity": 0.72,
         "evidenceCalibration": 0.71,

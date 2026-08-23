@@ -223,5 +223,5 @@ Phase 2A keeps scenarios as initial conditions and introduces a separate version
 
 ## Decisions that can wait
 
-Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, physical capabilities, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
+Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, task-specific physical capability checks beyond the existing build contributions, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
 Premature fields would look authoritative while carrying no tested consequence.

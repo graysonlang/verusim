@@ -13,6 +13,7 @@ import {
   createSimulation,
   createSimulationFromSnapshot,
   describeAgent,
+  deriveBuildEffects,
   evaluateEavesdropping,
   evaluateProximity,
   evaluateSpatialPerception,
@@ -64,7 +65,7 @@ import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
-  schemaVersion: 4,
+  schemaVersion: 5,
 };
 const environmentLibrary = {
   environments: [...environments.environments, ...highwaymanEnvironments.environments],
@@ -223,6 +224,59 @@ function roleBadge(agent: SimulationAgent): HTMLElement {
   badge.setAttribute('aria-label', badge.title);
   badge.append(label, role);
   return badge;
+}
+
+const SEX_LABELS: Record<SimulationAgent['profile']['physical']['sex'], string> = {
+  female: 'Female',
+  intersex: 'Intersex',
+  male: 'Male',
+  unspecified: 'Unspecified',
+};
+
+const SEX_ABBREVIATIONS: Record<SimulationAgent['profile']['physical']['sex'], string> = {
+  female: 'F',
+  intersex: 'I',
+  male: 'M',
+  unspecified: '?',
+};
+
+function classLabel(value: string): string {
+  return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
+}
+
+function physicalProfileSummary(agent: SimulationAgent, compact = false): string {
+  const physical = agent.profile.physical;
+  if (compact) {
+    const height =
+      physical.build.heightClass === 'average' ? 'Avg' : classLabel(physical.build.heightClass);
+    const weight = physical.build.weightClass === 'average' ? 'avg' : physical.build.weightClass;
+    return `${physical.ageYears} / ${SEX_ABBREVIATIONS[physical.sex]} / ${height}, ${weight} / C${Math.round(physical.comeliness * 100)}`;
+  }
+  return `${physical.ageYears} / ${SEX_LABELS[physical.sex]} / ${classLabel(physical.build.heightClass)}, ${physical.build.weightClass} build / comeliness ${Math.round(physical.comeliness * 100)}`;
+}
+
+function physicalProfileBadge(agent: SimulationAgent): HTMLElement {
+  const badge = element('span', 'profile-badge');
+  const label = element('span', 'profile-label');
+  const profile = element('strong');
+  const summary = physicalProfileSummary(agent);
+  label.textContent = 'Profile';
+  profile.textContent = summary;
+  badge.title = `Physical profile: ${summary}`;
+  badge.setAttribute('aria-label', badge.title);
+  badge.append(label, profile);
+  return badge;
+}
+
+function signedModifier(value: number): string {
+  if (value === 0) return 'neutral';
+  return `${value > 0 ? '+' : ''}${value.toFixed(2)}`;
+}
+
+function signedPercent(value: number): string {
+  const percent = Math.round((value - 1) * 100);
+  if (percent === 0) return 'neutral';
+  return `${percent > 0 ? '+' : ''}${percent}%`;
 }
 
 function locationBadge(state: SimulationState, agent: SimulationAgent): HTMLElement {
@@ -393,6 +447,7 @@ function renderInspector(
     roleBadge(agent),
     locationBadge(state, agent),
     movementBadge(agent, preferences.distanceUnit),
+    physicalProfileBadge(agent),
     signals,
   );
   hero.append(name, summary, cardMeta);
@@ -404,6 +459,28 @@ function renderInspector(
     metricRow('Allostatic load', observation.allostaticLoad.toFixed(2), observation.allostaticLoad),
     metricRow('Resource strain', observation.resourceStrain.toFixed(2), observation.resourceStrain),
   );
+
+  const physical = makeSection('Physical profile', 'Stable traits / derived build contributions');
+  const physicalGrid = element('dl', 'definition-grid');
+  const buildEffects = deriveBuildEffects(agent.profile.physical.build);
+  const physicalDetails: Array<[string, string]> = [
+    ['Age', `${agent.profile.physical.ageYears} years`],
+    ['Sex', SEX_LABELS[agent.profile.physical.sex]],
+    ['Height class', classLabel(agent.profile.physical.build.heightClass)],
+    ['Weight class', classLabel(agent.profile.physical.build.weightClass)],
+    ['Comeliness baseline', String(Math.round(agent.profile.physical.comeliness * 100))],
+    ['Walking pace', signedPercent(buildEffects.walkingPaceMultiplier)],
+    ['Gross strength', signedModifier(buildEffects.grossStrengthModifier)],
+    ['Physical presence', signedModifier(buildEffects.physicalPresenceModifier)],
+  ];
+  for (const [label, value] of physicalDetails) {
+    const term = element('dt');
+    const definition = element('dd');
+    term.textContent = label;
+    definition.textContent = value;
+    physicalGrid.append(term, definition);
+  }
+  physical.body.append(physicalGrid);
 
   const spatial = makeSection('Spatial context', 'Personal space / sight / hearing');
   const spatialList = element('ol', 'event-list spatial-list');
@@ -787,6 +864,7 @@ function renderInspector(
     facts.section,
     constitution.section,
     capabilities.section,
+    physical.section,
     evaluationShape.section,
     identity.section,
     decisionSection.section,
@@ -1687,7 +1765,9 @@ function createWorkbench(): HTMLElement {
     const query = search().trim().toLowerCase();
     const selected = selectedAgentId();
     const filtered = current.agents.filter(agent =>
-      `${agent.profile.name} ${agent.profile.role}`.toLowerCase().includes(query),
+      `${agent.profile.name} ${agent.profile.role} ${physicalProfileSummary(agent)}`
+        .toLowerCase()
+        .includes(query),
     );
     rosterCount.textContent = String(filtered.length);
     const items = filtered.map(agent => {
@@ -1696,6 +1776,7 @@ function createWorkbench(): HTMLElement {
       const heading = element('span', 'roster-heading');
       const name = element('strong');
       const activity = element('span');
+      const physical = element('span', 'roster-physical');
       const context = element('span', 'roster-context');
       const location = element('span', 'roster-location');
       const signals = indicatorStrip(
@@ -1707,9 +1788,11 @@ function createWorkbench(): HTMLElement {
       );
       name.textContent = agent.profile.name;
       activity.textContent = agent.currentActivity;
+      physical.textContent = physicalProfileSummary(agent, true);
+      physical.title = physicalProfileSummary(agent);
       location.textContent = locationName(current, agent);
       heading.append(name, roleBadge(agent));
-      copy.append(heading, activity);
+      copy.append(heading, activity, physical);
       context.append(location, movementBadge(agent, currentPreferences.distanceUnit, true));
       item.append(copy, context, signals);
       item.classList.toggle('selected', agent.id === selected);
@@ -1766,6 +1849,7 @@ function createWorkbench(): HTMLElement {
       roleBadge(agent),
       locationBadge(current, agent),
       movementBadge(agent, currentPreferences.distanceUnit),
+      physicalProfileBadge(agent),
     );
     activity.textContent = agent.currentActivity;
     mind.textContent = `${observation.mood} mood. ${observation.stateOfMind}.`;

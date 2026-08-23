@@ -28,6 +28,7 @@ import { parseSnapshot } from '../scenario/snapshot.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
+import { applyBuildToWalkingPace } from './physical.js';
 import { appendTrace, createTrace, traceTerm } from './trace.js';
 
 const DAY_MINUTES = 1440;
@@ -159,7 +160,10 @@ function initializeAgent(
     resources: { ...DEFAULT_RESOURCES, ...placement.initialResources },
     schedule: placement.schedule.map(scheduleBlock => ({ ...scheduleBlock })),
     values: initialValues(profile, placement),
-    walkingMetersPerMinute: placement.walkingMetersPerMinute ?? 16,
+    walkingMetersPerMinute: applyBuildToWalkingPace(
+      placement.walkingMetersPerMinute ?? 16,
+      profile.physical.build,
+    ),
   };
 }
 

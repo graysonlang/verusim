@@ -121,6 +121,10 @@ describe('simulation runtime', () => {
     assert.equal(moving.movementSpeedClass, 'plodding');
     assert.equal(arrived.movementMetersPerMinute, 0);
     assert.equal(arrived.movementSpeedClass, 'still');
+
+    const tomas = starterSimulation().agents.find(agent => agent.id === 'tomas');
+    assert.ok(tomas);
+    assert.ok(Math.abs(tomas.walkingMetersPerMinute - 17 * 1.04 * 0.94) < 1e-12);
   });
 
   it('lets depleted social battery impair otherwise neutral mood', () => {

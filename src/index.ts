@@ -2,7 +2,15 @@
 // esbuild's `define` (see scripts/build.mjs). They are not runtime globals.
 /* global __APP_VERSION__, __COMMIT_SHA__ */
 
-export { CAPABILITY_IDS, SOCIAL_FEATURE_IDS, TIME_RATE_IDS, VALUE_IDS } from './model/types.js';
+export {
+  CAPABILITY_IDS,
+  HEIGHT_CLASSES,
+  SEX_IDS,
+  SOCIAL_FEATURE_IDS,
+  TIME_RATE_IDS,
+  VALUE_IDS,
+  WEIGHT_CLASSES,
+} from './model/types.js';
 export type * from './model/types.js';
 export { parseCharacterLibrary, parseEnvironmentLibrary, parseScenario } from './scenario/parse.js';
 export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
@@ -40,6 +48,8 @@ export {
   formatSimulationTime,
 } from './simulation/observe.js';
 export type { MovementSpeedClass } from './simulation/observe.js';
+export { applyBuildToWalkingPace, deriveBuildEffects } from './simulation/physical.js';
+export type { BuildEffects } from './simulation/physical.js';
 export { effectiveValueWeights } from './simulation/salience.js';
 export {
   evaluateEavesdropping,

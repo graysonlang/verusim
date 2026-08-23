@@ -48,9 +48,10 @@ describe('scenario validation', () => {
     const profiles = legacyCharacters.characters as Record<string, unknown>[];
     for (const profile of profiles) delete profile.disclosure;
     const migratedCharacters = parseCharacterLibrary(legacyCharacters);
-    assert.equal(migratedCharacters.schemaVersion, 4);
+    assert.equal(migratedCharacters.schemaVersion, 5);
     assert.equal(migratedCharacters.characters[0]?.capabilities.acuity, 0.5);
     assert.equal(migratedCharacters.characters[0]?.disclosure.troughPosition, 0.52);
+    assert.equal(migratedCharacters.characters[0]?.physical.sex, 'unspecified');
 
     const relationalCharacters = structuredClone(characters) as unknown as Record<string, unknown>;
     relationalCharacters.schemaVersion = 3;
@@ -58,8 +59,21 @@ describe('scenario validation', () => {
       delete profile.capabilities;
     }
     const migratedRelationalCharacters = parseCharacterLibrary(relationalCharacters);
-    assert.equal(migratedRelationalCharacters.schemaVersion, 4);
+    assert.equal(migratedRelationalCharacters.schemaVersion, 5);
     assert.equal(migratedRelationalCharacters.characters[0]?.capabilities.expressiveControl, 0.5);
+
+    const capabilityCharacters = structuredClone(characters) as unknown as Record<string, unknown>;
+    capabilityCharacters.schemaVersion = 4;
+    for (const profile of capabilityCharacters.characters as Record<string, unknown>[]) {
+      delete profile.physical;
+    }
+    const migratedCapabilityCharacters = parseCharacterLibrary(capabilityCharacters);
+    assert.equal(migratedCapabilityCharacters.schemaVersion, 5);
+    assert.equal(migratedCapabilityCharacters.characters[0]?.capabilities.acuity, 0.72);
+    assert.deepEqual(migratedCapabilityCharacters.characters[0]?.physical.build, {
+      heightClass: 'average',
+      weightClass: 'average',
+    });
 
     const legacyScenario = structuredClone(scenario) as unknown as Record<string, unknown>;
     legacyScenario.schemaVersion = 2;
@@ -218,6 +232,24 @@ describe('scenario validation', () => {
     assert.throws(
       () => parseCharacterLibrary(malformed),
       /characterLibrary\.characters\[0\]\.capabilities\.acuity/,
+    );
+  });
+
+  it('reports malformed physical profiles at their authored path', () => {
+    const malformed = structuredClone(characters);
+    const first = malformed.characters[0];
+    assert.ok(first);
+    first.physical.build.heightClass = 'towering';
+    assert.throws(
+      () => parseCharacterLibrary(malformed),
+      /characterLibrary\.characters\[0\]\.physical\.build\.heightClass/,
+    );
+
+    first.physical.build.heightClass = 'average';
+    first.physical.ageYears = 10;
+    assert.throws(
+      () => parseCharacterLibrary(malformed),
+      /characterLibrary\.characters\[0\]\.formativeEvents\[0\]\.age/,
     );
   });
 

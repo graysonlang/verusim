@@ -835,7 +835,17 @@ Benefits: coherence is free (one code path for priming and drift); **the backsto
 
 A role is a correlated bundle across subsystems — value weights, markers + centralities, satisfier flavors, cascade prior, envelope feature weights. Sample the bundle, draw role-conditioned formative events, then **perturb every parameter independently by a healthy margin**. Nothing is ever a class; a role is a region of continuous space that agents cluster in.
 
-### 15.3 Cohort generation notes
+### 15.3 Physical profile and build
+
+A character definition carries current age, sex, categorical height and weight classes, and a `[0, 1]` comeliness baseline. Height and weight remain coarse build descriptors rather than exact measurements; they are sufficient for prose, recognition, concealment, movement calibration, and later feasibility checks without pretending the simulation has biometric precision.
+
+Build derives a small walking-pace multiplier plus signed gross-strength and physical-presence contributions. Gross strength still needs a task-specific capability and current stamina before it can resolve an operation. Physical presence is one possible input to intimidation, never intimidation itself: intent, reputation, relationship, witnesses, context, and the observer's state determine whether a threat lands.
+
+Comeliness is a stable appearance baseline, not universal attraction, social worth, charisma, or a persuasion bonus. A particular observer's response may later combine it with preference, culture, familiarity, presentation, and current condition. Until that observer-specific mechanism exists, comeliness remains descriptive and does not select behavior.
+
+Age and sex are also descriptive at this boundary. They must not silently produce capability, personality, or social-response modifiers; any later consequence needs an explicit, testable mechanism with causal provenance.
+
+### 15.4 Cohort generation notes
 
 - **Bias toward spread over fidelity.** Small cohorts sample sparsely — twelve agents from well-calibrated ranges can be twelve variations on one person, and situational variety won't fix a bland draw. Stratify, or reject draws too close to an existing character in parameter space. Being *distinguishable* matters more than population statistics being right.
 - **Stagger the recent-event timeline.** If every agent's recent trauma dates to just before the player arrives, the village reads as staged. Scatter across preceding years — some resolved, some mid-recovery, some fresh.

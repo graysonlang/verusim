@@ -29,6 +29,30 @@ export type CapabilityId = (typeof CAPABILITY_IDS)[number];
 
 export type CapabilityMap<Value> = { [Key in CapabilityId]: Value };
 
+export const HEIGHT_CLASSES = ['short', 'average', 'tall'] as const;
+
+export type HeightClass = (typeof HEIGHT_CLASSES)[number];
+
+export const WEIGHT_CLASSES = ['light', 'average', 'heavy'] as const;
+
+export type WeightClass = (typeof WEIGHT_CLASSES)[number];
+
+export const SEX_IDS = ['female', 'male', 'intersex', 'unspecified'] as const;
+
+export type Sex = (typeof SEX_IDS)[number];
+
+export interface PhysicalBuild {
+  heightClass: HeightClass;
+  weightClass: WeightClass;
+}
+
+export interface PhysicalProfile {
+  ageYears: number;
+  build: PhysicalBuild;
+  comeliness: number;
+  sex: Sex;
+}
+
 export type CapabilityResolutionBand =
   | 'strong-yes'
   | 'weak-yes'
@@ -188,6 +212,7 @@ export interface CharacterDefinition {
   identity: IdentityMarker[];
   name: string;
   narrativeClaims: string[];
+  physical: PhysicalProfile;
   role: string;
   summary: string;
   values: ValueMap<ValueDisposition>;
@@ -195,7 +220,7 @@ export interface CharacterDefinition {
 
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
-  schemaVersion: 4;
+  schemaVersion: 5;
 }
 
 export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'path' | 'water';

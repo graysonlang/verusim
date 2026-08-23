@@ -587,7 +587,7 @@ input[type="search"]::placeholder {
   grid-template-columns: minmax(0, 1fr);
   gap: 3px;
   width: 100%;
-  min-height: 79px;
+  min-height: 91px;
   padding: 9px 8px;
   border-color: transparent;
   border-radius: 6px;
@@ -650,7 +650,8 @@ input[type="search"]::placeholder {
 
 .role-badge,
 .location-badge,
-.movement-badge {
+.movement-badge,
+.profile-badge {
   display: inline-flex;
   min-width: 0;
   min-height: 20px;
@@ -667,7 +668,8 @@ input[type="search"]::placeholder {
 
 .role-label,
 .location-label,
-.movement-label {
+.movement-label,
+.profile-label {
   padding: 0 4px;
   border-right: 1px solid rgb(240 201 102 / 20%);
   background: rgb(240 201 102 / 9%);
@@ -681,7 +683,8 @@ input[type="search"]::placeholder {
 
 .role-badge strong,
 .location-badge strong,
-.movement-badge strong {
+.movement-badge strong,
+.profile-badge strong {
   overflow: hidden;
   padding: 0 5px;
   font-size: 8px;
@@ -699,6 +702,18 @@ input[type="search"]::placeholder {
   border-right-color: rgb(135 178 166 / 20%);
   background: rgb(135 178 166 / 9%);
   color: #9fc8bb;
+}
+
+.profile-badge {
+  border-color: rgb(183 150 205 / 28%);
+  background: rgb(183 150 205 / 8%);
+  color: #dbc9e7;
+}
+
+.profile-label {
+  border-right-color: rgb(183 150 205 / 20%);
+  background: rgb(183 150 205 / 9%);
+  color: #c6a9da;
 }
 
 .movement-badge {
@@ -886,7 +901,7 @@ input[type="search"]::placeholder {
 
 .character-hover-card {
   z-index: 6;
-  width: min(250px, calc(100% - 16px));
+  width: min(290px, calc(100% - 16px));
   padding: 11px;
   border-radius: 8px;
   pointer-events: none;
@@ -1117,14 +1132,16 @@ input[type="search"]::placeholder {
 
 .character-card-meta > .role-badge,
 .character-card-meta > .location-badge,
-.character-card-meta > .movement-badge {
+.character-card-meta > .movement-badge,
+.character-card-meta > .profile-badge {
   min-height: 22px;
   line-height: 20px;
 }
 
 .character-card-meta > .role-badge strong,
 .character-card-meta > .location-badge strong,
-.character-card-meta > .movement-badge strong {
+.character-card-meta > .movement-badge strong,
+.character-card-meta > .profile-badge strong {
   padding-right: 7px;
   padding-left: 7px;
   font-size: 9px;

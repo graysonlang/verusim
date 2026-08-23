@@ -1,11 +1,17 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "characters": [
     {
       "id": "mara-vale",
       "name": "Mara Vale",
       "role": "Innkeeper",
       "summary": "A capable host whose generosity depends on keeping a room predictable.",
+      "physical": {
+        "ageYears": 38,
+        "sex": "female",
+        "build": { "heightClass": "average", "weightClass": "average" },
+        "comeliness": 0.64
+      },
       "capabilities": {
         "acuity": 0.72,
         "evidenceCalibration": 0.67,
@@ -108,6 +114,12 @@
       "name": "Tomas Reed",
       "role": "Blacksmith",
       "summary": "A precise craftsperson who hears technical criticism more clearly than affection.",
+      "physical": {
+        "ageYears": 42,
+        "sex": "male",
+        "build": { "heightClass": "tall", "weightClass": "heavy" },
+        "comeliness": 0.48
+      },
       "capabilities": {
         "acuity": 0.84,
         "evidenceCalibration": 0.76,
@@ -210,6 +222,12 @@
       "name": "Nessa Arden",
       "role": "Healer",
       "summary": "A patient observer who protects other people's confidences at personal cost.",
+      "physical": {
+        "ageYears": 34,
+        "sex": "female",
+        "build": { "heightClass": "short", "weightClass": "light" },
+        "comeliness": 0.68
+      },
       "capabilities": {
         "acuity": 0.9,
         "evidenceCalibration": 0.82,
@@ -312,6 +330,12 @@
       "name": "Elian Voss",
       "role": "Gate warden",
       "summary": "A sociable guard who invests heavily in rules that promise mutual protection.",
+      "physical": {
+        "ageYears": 31,
+        "sex": "male",
+        "build": { "heightClass": "tall", "weightClass": "average" },
+        "comeliness": 0.62
+      },
       "capabilities": {
         "acuity": 0.61,
         "evidenceCalibration": 0.63,
@@ -414,6 +438,12 @@
       "name": "Sera Dane",
       "role": "Miller",
       "summary": "A reserved miller whose sense of autonomy is bound to control of her work.",
+      "physical": {
+        "ageYears": 47,
+        "sex": "female",
+        "build": { "heightClass": "average", "weightClass": "average" },
+        "comeliness": 0.55
+      },
       "capabilities": {
         "acuity": 0.78,
         "evidenceCalibration": 0.74,

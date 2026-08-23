@@ -1,8 +1,11 @@
 import {
   CAPABILITY_IDS,
+  HEIGHT_CLASSES,
+  SEX_IDS,
   SOCIAL_FEATURE_IDS,
   TIME_RATE_IDS,
   VALUE_IDS,
+  WEIGHT_CLASSES,
   type AreaKind,
   type CharacterLibraryFile,
   type EnvironmentLibraryFile,
@@ -25,6 +28,9 @@ const DYAD_MODES = new Set(['courteous', 'contesting', 'guarded', 'ruptured', 'w
 const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'want']);
 const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
 const TIME_RATE_ID_SET = new Set<string>(TIME_RATE_IDS);
+const HEIGHT_CLASS_SET = new Set<string>(HEIGHT_CLASSES);
+const SEX_ID_SET = new Set<string>(SEX_IDS);
+const WEIGHT_CLASS_SET = new Set<string>(WEIGHT_CLASSES);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export class ScenarioValidationError extends Error {
@@ -126,6 +132,23 @@ function validateCapabilities(value: unknown, path: string): void {
   for (const capabilityId of CAPABILITY_IDS) {
     numberValue(capabilities[capabilityId], `${path}.${capabilityId}`, 0, 1);
   }
+}
+
+function validatePhysicalProfile(value: unknown, path: string): number {
+  const physical = objectValue(value, path);
+  const ageYears = integerValue(physical.ageYears, `${path}.ageYears`, 0, 130);
+  const build = objectValue(physical.build, `${path}.build`);
+  if (typeof build.heightClass !== 'string' || !HEIGHT_CLASS_SET.has(build.heightClass)) {
+    throw new ScenarioValidationError(`${path}.build.heightClass`, 'expected a known height class');
+  }
+  if (typeof build.weightClass !== 'string' || !WEIGHT_CLASS_SET.has(build.weightClass)) {
+    throw new ScenarioValidationError(`${path}.build.weightClass`, 'expected a known weight class');
+  }
+  numberValue(physical.comeliness, `${path}.comeliness`, 0, 1);
+  if (typeof physical.sex !== 'string' || !SEX_ID_SET.has(physical.sex)) {
+    throw new ScenarioValidationError(`${path}.sex`, 'expected a known sex identifier');
+  }
+  return ageYears;
 }
 
 function validateSocialFeatures(value: unknown, path: string): void {
@@ -235,17 +258,23 @@ function legacyRecoveryMode(activity: unknown): RecoveryMode {
 
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
-  if (file.schemaVersion === 4) return file;
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
+  if (file.schemaVersion === 5) return file;
+  if (
+    file.schemaVersion !== 1 &&
+    file.schemaVersion !== 2 &&
+    file.schemaVersion !== 3 &&
+    file.schemaVersion !== 4
+  ) {
     throw new ScenarioValidationError(
       'characterLibrary.schemaVersion',
       'unsupported schema version',
     );
   }
+  const sourceVersion = file.schemaVersion;
   const characters = arrayValue(file.characters, 'characterLibrary.characters');
   for (const value of characters) {
     const character = objectValue(value, 'characterLibrary.characters');
-    if (file.schemaVersion === 1) {
+    if (sourceVersion === 1) {
       character.contractAdherence = 0.65;
       character.empathy = {
         ceiling: 1,
@@ -262,7 +291,7 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
         threatSensitivity: 0.5,
       };
     }
-    if (file.schemaVersion === 1 || file.schemaVersion === 2) {
+    if (sourceVersion === 1 || sourceVersion === 2) {
       character.disclosure = {
         intimateSafety: 0.92,
         strangerSafety: 0.72,
@@ -271,13 +300,28 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
         troughWidth: 0.2,
       };
     }
-    character.capabilities = {
-      acuity: 0.5,
-      evidenceCalibration: 0.5,
-      expressiveControl: 0.5,
+    if (sourceVersion !== 4) {
+      character.capabilities = {
+        acuity: 0.5,
+        evidenceCalibration: 0.5,
+        expressiveControl: 0.5,
+      };
+    }
+    const latestFormativeAge = Array.isArray(character.formativeEvents)
+      ? character.formativeEvents.reduce((latest, event) => {
+          if (typeof event !== 'object' || event === null || Array.isArray(event)) return latest;
+          const age = (event as Record<string, unknown>).age;
+          return typeof age === 'number' && Number.isFinite(age) ? Math.max(latest, age) : latest;
+        }, 0)
+      : 0;
+    character.physical = {
+      ageYears: Math.min(130, Math.max(30, latestFormativeAge + 10)),
+      build: { heightClass: 'average', weightClass: 'average' },
+      comeliness: 0.5,
+      sex: 'unspecified',
     };
   }
-  file.schemaVersion = 4;
+  file.schemaVersion = 5;
   return file;
 }
 
@@ -334,7 +378,7 @@ function migrateScenario(value: unknown): Record<string, unknown> {
 
 export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
   const file = migrateCharacterLibrary(value);
-  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 4);
+  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 5);
   const characters = arrayValue(file.characters, 'characterLibrary.characters').map(
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
@@ -345,6 +389,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       stringValue(character.summary, `${path}.summary`);
       validateCapabilities(character.capabilities, `${path}.capabilities`);
       validateConstitution(character.constitution, `${path}.constitution`);
+      const ageYears = validatePhysicalProfile(character.physical, `${path}.physical`);
       numberValue(character.contractAdherence, `${path}.contractAdherence`, 0, 1);
       validateDisclosureEnvelope(character.disclosure, `${path}.disclosure`);
       validateEmpathyEnvelope(character.empathy, `${path}.empathy`);
@@ -371,7 +416,13 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
         (entry, eventIndex) => {
           const eventPath = `${path}.formativeEvents[${eventIndex}]`;
           const event = objectValue(entry, eventPath);
-          integerValue(event.age, `${eventPath}.age`, 0, 120);
+          const eventAge = integerValue(event.age, `${eventPath}.age`, 0, 120);
+          if (eventAge > ageYears) {
+            throw new ScenarioValidationError(
+              `${eventPath}.age`,
+              'expected an age at or before the current character age',
+            );
+          }
           if (event.attribution !== null)
             stringValue(event.attribution, `${eventPath}.attribution`);
           numberValue(event.copingPotential, `${eventPath}.copingPotential`, 0, 1);

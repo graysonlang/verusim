@@ -46,7 +46,7 @@ It may display or edit simulation state but may not invent behavioral state.
 
 The implementation keeps the design's three lifetimes visible in the data model.
 
-1. Constitutional gains and broad capabilities live on reusable character definitions and are not changed by normal stepping.
+1. Constitutional gains, broad capabilities, and descriptive physical profiles live on reusable character definitions and are not changed by normal stepping.
 2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Runtime agents may read that seed directly while no tier-2 writer exists. Before Phase 5 introduces the rare §14.4 writes, each instance must gain a sparse, snapshot-persisted override so one instance can crystallize without mutating every agent that references the same definition.
 3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
@@ -93,7 +93,11 @@ They author an owner, item, audience, network context, and disclosure benefit wh
 
 Character-library capabilities are generation-fixed gains, while learned skills and claim commitments remain history-derived content and resource availability remains situational state.
 The initial capability vocabulary contains acuity, evidence calibration, and expressive control because Phase 2C immediately consumes them.
-Physical capabilities remain outside the schema until task feasibility can test their consequences.
+The physical profile records current age, sex, coarse height and weight classes, and a comeliness baseline.
+Build classes derive a small walking-pace multiplier and signed gross-strength and physical-presence contributions.
+These contributions are not complete checks: gross strength still requires a task-specific capability and current availability, while physical presence is only one possible input to an observer-specific intimidation appraisal.
+Task-specific physical capabilities remain outside the character schema until feasibility can test their consequences.
+Comeliness remains descriptive until an observer-specific response combines it with preference and context; it is not charisma, persuasion, social worth, or universal attraction.
 
 The shared resolver is deterministic and medium-independent.
 It multiplies a base capability by resource-derived availability, compares that effective capability with difficulty, applies explicit signed modifiers, and returns one of the five ordinal dial positions or the nonnumeric Strike and Pass outcomes.
@@ -226,8 +230,8 @@ Resource recovery is applied by the same deterministic tick transition used by t
 Derived affect keeps value valence and resource strain separate.
 Social battery below `0.50` contributes up to `0.38` negative valence and physical stamina below `0.30` contributes up to `0.16`; this can impair mood without mutating value charge or allostatic load.
 
-Character-library schema version 4 adds the Phase 2C epistemic capability vocabulary to the Phase 2A disclosure format.
-Explicit migrations preserve versions 1 through 3, using neutral capability defaults where older libraries expressed no distinction.
+Character-library schema version 5 adds descriptive physical profiles and coarse build effects to the version 4 epistemic capability format.
+Explicit migrations preserve versions 1 through 4, using neutral capability defaults where versions 1 through 3 expressed no distinction and an unspecified, average physical profile where older libraries expressed no physical data.
 Scenario schema version 5 adds explicit schedule and task recovery modes to the version 4 world-fact, goal, and task-operator format.
 Explicit migrations preserve version 1 through 4 scenarios by supplying missing behavioral collections, mapping legacy sleeping blocks to sleep recovery, and leaving other activities and tasks non-restorative.
 Snapshot schema version 3 persists agenda state and causal-trace schema version 1 separately from scenario versioning, and validates plan, intention, goal, fact, dyad, trace, and agent references before runtime restoration.

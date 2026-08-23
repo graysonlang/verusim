@@ -19,7 +19,7 @@ import {
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
-  schemaVersion: 4,
+  schemaVersion: 5,
 };
 const environmentLibrary = {
   environments: [...environments.environments, ...highwaymanEnvironments.environments],
