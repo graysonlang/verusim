@@ -64,6 +64,14 @@ import {
   type TemperatureUnit,
 } from './preferences.js';
 import {
+  LEFT_SIDEBAR_DEFAULT_WIDTH,
+  RIGHT_SIDEBAR_DEFAULT_WIDTH,
+  bindSidebarResize,
+  sidebarMaximumWidth,
+  toggleSidebar,
+  type SidebarLayout,
+} from './sidebar-layout.js';
+import {
   BUILT_IN_SCENARIOS,
   BUILT_IN_RESOURCE_CATALOG,
   DEFAULT_BUILT_IN_SCENARIO,
@@ -121,6 +129,32 @@ function hamburgerIcon(): SVGSVGElement {
   path.setAttribute('stroke-linecap', 'round');
   path.setAttribute('stroke-width', '1.5');
   icon.append(path);
+  return icon;
+}
+
+function sidebarIcon(side: 'left' | 'right'): SVGSVGElement {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const icon = document.createElementNS(namespace, 'svg');
+  const frame = document.createElementNS(namespace, 'rect');
+  const divider = document.createElementNS(namespace, 'path');
+  icon.classList.add('control-icon');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('height', '16');
+  icon.setAttribute('viewBox', '0 0 16 16');
+  icon.setAttribute('width', '16');
+  frame.setAttribute('fill', 'none');
+  frame.setAttribute('height', '12');
+  frame.setAttribute('rx', '1');
+  frame.setAttribute('stroke', 'currentColor');
+  frame.setAttribute('stroke-width', '1.25');
+  frame.setAttribute('width', '12');
+  frame.setAttribute('x', '2');
+  frame.setAttribute('y', '2');
+  divider.setAttribute('d', side === 'left' ? 'M6 2v12' : 'M10 2v12');
+  divider.setAttribute('fill', 'none');
+  divider.setAttribute('stroke', 'currentColor');
+  divider.setAttribute('stroke-width', '1.25');
+  icon.append(frame, divider);
   return icon;
 }
 
@@ -1128,6 +1162,14 @@ function createWorkbench(): HTMLElement {
     initialTimeRateForScenario(initial.scenario, storedPreferences),
   );
   const [preferences, setPreferences] = createSignal<ApplicationPreferences>(storedPreferences);
+  const [leftSidebarLayout, setLeftSidebarLayout] = createSignal<SidebarLayout>({
+    visible: storedPreferences.leftSidebarVisible,
+    width: storedPreferences.leftSidebarWidth,
+  });
+  const [rightSidebarLayout, setRightSidebarLayout] = createSignal<SidebarLayout>({
+    visible: storedPreferences.rightSidebarVisible,
+    width: storedPreferences.rightSidebarWidth,
+  });
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
   const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
@@ -1139,6 +1181,7 @@ function createWorkbench(): HTMLElement {
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
   const menuButton = button('', 'menu-button');
+  const leftSidebarToggle = button('', 'sidebar-toggle-button');
   const appMenu = element('nav', 'app-menu');
   const fileActions = element('div', 'file-actions');
   const fileInput = element('input');
@@ -1164,6 +1207,7 @@ function createWorkbench(): HTMLElement {
   const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
   const indicatorStateLabels = new Map<IndicatorKind, HTMLElement>();
   const zoomLevelButton = button('', 'zoom-level-button');
+  const rightSidebarToggle = button('', 'sidebar-toggle-button');
   const zoomLevelValue = element('span', 'zoom-level-value');
   const zoomLevelDisclosure = element('span', 'zoom-level-disclosure');
   const zoomMenu = element('section', 'zoom-menu');
@@ -1199,6 +1243,7 @@ function createWorkbench(): HTMLElement {
   const conditionSeparatorTwo = element('span', 'condition-separator');
   const conditionWeather = element('span', 'condition-weather');
   const roster = element('aside', 'roster');
+  const leftSidebarResize = element('div', 'sidebar-resize-handle left-sidebar-resize');
   const rosterHeader = element('div', 'panel-header');
   const rosterTitleWrap = element('div');
   const rosterTitle = element('h2');
@@ -1213,6 +1258,7 @@ function createWorkbench(): HTMLElement {
   const worldScaleLabel = element('span', 'world-scale-label');
   const worldScaleRule = element('span', 'world-scale-rule');
   const inspector = element('aside', 'inspector');
+  const rightSidebarResize = element('div', 'sidebar-resize-handle right-sidebar-resize');
   const inspectorContent = element('div', 'inspector-content');
   const activityInspector = createActivityInspector();
   const footer = element('footer', 'status-bar');
@@ -1249,6 +1295,9 @@ function createWorkbench(): HTMLElement {
   menuButton.setAttribute('aria-controls', 'app-menu');
   menuButton.setAttribute('aria-expanded', 'false');
   menuButton.setAttribute('aria-label', 'Main menu');
+  leftSidebarToggle.dataset.testid = 'left-sidebar-toggle';
+  leftSidebarToggle.setAttribute('aria-controls', 'character-roster');
+  leftSidebarToggle.append(sidebarIcon('left'));
   appMenu.id = 'app-menu';
   appMenu.hidden = true;
   appMenu.setAttribute('aria-label', 'Main menu');
@@ -1331,7 +1380,7 @@ function createWorkbench(): HTMLElement {
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
-  fileActions.append(menuButton, scenarioSelector, fileInput);
+  fileActions.append(menuButton, leftSidebarToggle, scenarioSelector, fileInput);
   resetScenario.dataset.testid = 'transport-reset';
   resetScenario.setAttribute('aria-label', 'Reset loaded scenario');
   resetScenario.append(controlIcon('reset'));
@@ -1396,6 +1445,9 @@ function createWorkbench(): HTMLElement {
   zoomLevelButton.setAttribute('aria-expanded', 'false');
   zoomLevelDisclosure.append(controlIcon('chevron'));
   zoomLevelButton.append(zoomLevelValue, zoomLevelDisclosure);
+  rightSidebarToggle.dataset.testid = 'right-sidebar-toggle';
+  rightSidebarToggle.setAttribute('aria-controls', 'character-inspector');
+  rightSidebarToggle.append(sidebarIcon('right'));
   zoomMenu.id = 'zoom-menu';
   zoomMenu.dataset.testid = 'zoom-menu';
   zoomMenu.hidden = true;
@@ -1419,6 +1471,7 @@ function createWorkbench(): HTMLElement {
   zoomMenu.append(zoomForm, zoomActualSize, zoomFit, zoomSelection);
 
   rosterTitle.textContent = 'Characters';
+  roster.id = 'character-roster';
   rosterTitleWrap.append(rosterTitle, rosterCount);
   searchInput.type = 'search';
   searchInput.placeholder = 'Find a character';
@@ -1481,11 +1534,26 @@ function createWorkbench(): HTMLElement {
     signalMenu.append(toggle);
   }
   signalControls.setAttribute('aria-label', 'Field signals');
-  signalControls.append(signalMenuButton, zoomLevelButton);
+  signalControls.append(signalMenuButton, zoomLevelButton, rightSidebarToggle);
   header.append(fileActions, transport, signalControls);
   stage.append(canvas, layerSwitcher, characterHoverCard, worldScale);
 
+  inspector.id = 'character-inspector';
   inspector.append(inspectorContent);
+  leftSidebarResize.dataset.testid = 'left-sidebar-resize';
+  leftSidebarResize.tabIndex = 0;
+  leftSidebarResize.setAttribute('aria-controls', roster.id);
+  leftSidebarResize.setAttribute('aria-label', 'Resize character roster');
+  leftSidebarResize.setAttribute('aria-orientation', 'vertical');
+  leftSidebarResize.setAttribute('aria-valuemin', '0');
+  leftSidebarResize.setAttribute('role', 'separator');
+  rightSidebarResize.dataset.testid = 'right-sidebar-resize';
+  rightSidebarResize.tabIndex = 0;
+  rightSidebarResize.setAttribute('aria-controls', inspector.id);
+  rightSidebarResize.setAttribute('aria-label', 'Resize character inspector');
+  rightSidebarResize.setAttribute('aria-orientation', 'vertical');
+  rightSidebarResize.setAttribute('aria-valuemin', '0');
+  rightSidebarResize.setAttribute('role', 'separator');
   footer.dataset.testid = 'status-bar';
   footer.hidden = !storedPreferences.showStatusBar;
   shell.classList.toggle('status-bar-visible', storedPreferences.showStatusBar);
@@ -1625,7 +1693,9 @@ function createWorkbench(): HTMLElement {
     header,
     scenarioInfoTooltip,
     roster,
+    leftSidebarResize,
     stage,
+    rightSidebarResize,
     inspector,
     footer,
     quickActionsOverlay,
@@ -1641,6 +1711,48 @@ function createWorkbench(): HTMLElement {
     selectedAgentId,
     state,
   });
+  const commitLeftSidebarLayout = (layout: SidebarLayout): void => {
+    setLeftSidebarLayout(layout);
+    setPreferences(current => ({
+      ...current,
+      leftSidebarVisible: layout.visible,
+      leftSidebarWidth: layout.width,
+    }));
+  };
+  const commitRightSidebarLayout = (layout: SidebarLayout): void => {
+    setRightSidebarLayout(layout);
+    setPreferences(current => ({
+      ...current,
+      rightSidebarVisible: layout.visible,
+      rightSidebarWidth: layout.width,
+    }));
+  };
+  const unbindLeftSidebarResize = bindSidebarResize({
+    commit: commitLeftSidebarLayout,
+    defaultWidth: LEFT_SIDEBAR_DEFAULT_WIDTH,
+    edge: 'left',
+    handle: leftSidebarResize,
+    preview: setLeftSidebarLayout,
+    read: leftSidebarLayout,
+    viewportWidth: () => window.innerWidth,
+  });
+  const unbindRightSidebarResize = bindSidebarResize({
+    commit: commitRightSidebarLayout,
+    defaultWidth: RIGHT_SIDEBAR_DEFAULT_WIDTH,
+    edge: 'right',
+    handle: rightSidebarResize,
+    preview: setRightSidebarLayout,
+    read: rightSidebarLayout,
+    viewportWidth: () => window.innerWidth,
+  });
+  const onLeftSidebarToggle = (): void => {
+    commitLeftSidebarLayout(toggleSidebar(leftSidebarLayout()));
+  };
+  const onRightSidebarToggle = (): void => {
+    commitRightSidebarLayout(toggleSidebar(rightSidebarLayout()));
+  };
+  leftSidebarToggle.addEventListener('click', onLeftSidebarToggle);
+  rightSidebarToggle.addEventListener('click', onRightSidebarToggle);
   let renderedLayerSignature = '';
 
   function selectAndFocus(agentId: string): void {
@@ -2282,6 +2394,60 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
+    const layout = leftSidebarLayout();
+    const width = layout.visible ? layout.width : 0;
+    const maximum = Math.max(layout.width, sidebarMaximumWidth(window.innerWidth));
+    shell.style.setProperty('--left-sidebar-width', `${width}px`);
+    roster.hidden = !layout.visible;
+    leftSidebarToggle.classList.toggle('active', layout.visible);
+    leftSidebarToggle.setAttribute('aria-pressed', String(layout.visible));
+    leftSidebarToggle.setAttribute(
+      'aria-label',
+      layout.visible ? 'Hide character roster' : 'Show character roster',
+    );
+    leftSidebarToggle.title = layout.visible ? 'Hide character roster' : 'Show character roster';
+    leftSidebarResize.setAttribute('aria-valuemax', String(maximum));
+    leftSidebarResize.setAttribute('aria-valuenow', String(width));
+    leftSidebarResize.setAttribute(
+      'aria-valuetext',
+      layout.visible ? `${layout.width} pixels` : 'Closed',
+    );
+    leftSidebarResize.title = !layout.visible
+      ? 'Drag or double-click to open the character roster'
+      : layout.width === LEFT_SIDEBAR_DEFAULT_WIDTH
+        ? 'Drag to resize or double-click to close the character roster'
+        : 'Drag to resize or double-click to reset the character roster';
+  });
+
+  createEffect(() => {
+    const layout = rightSidebarLayout();
+    const width = layout.visible ? layout.width : 0;
+    const maximum = Math.max(layout.width, sidebarMaximumWidth(window.innerWidth));
+    shell.style.setProperty('--right-sidebar-width', `${width}px`);
+    inspector.hidden = !layout.visible;
+    rightSidebarToggle.classList.toggle('active', layout.visible);
+    rightSidebarToggle.setAttribute('aria-pressed', String(layout.visible));
+    rightSidebarToggle.setAttribute(
+      'aria-label',
+      layout.visible ? 'Hide character inspector' : 'Show character inspector',
+    );
+    rightSidebarToggle.title = layout.visible
+      ? 'Hide character inspector'
+      : 'Show character inspector';
+    rightSidebarResize.setAttribute('aria-valuemax', String(maximum));
+    rightSidebarResize.setAttribute('aria-valuenow', String(width));
+    rightSidebarResize.setAttribute(
+      'aria-valuetext',
+      layout.visible ? `${layout.width} pixels` : 'Closed',
+    );
+    rightSidebarResize.title = !layout.visible
+      ? 'Drag or double-click to open the character inspector'
+      : layout.width === RIGHT_SIDEBAR_DEFAULT_WIDTH
+        ? 'Drag to resize or double-click to close the character inspector'
+        : 'Drag to resize or double-click to reset the character inspector';
+  });
+
+  createEffect(() => {
     statusText.textContent = status();
   });
 
@@ -2849,6 +3015,10 @@ function createWorkbench(): HTMLElement {
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('keydown', onKeyDown);
   onCleanup(() => {
+    unbindLeftSidebarResize();
+    unbindRightSidebarResize();
+    leftSidebarToggle.removeEventListener('click', onLeftSidebarToggle);
+    rightSidebarToggle.removeEventListener('click', onRightSidebarToggle);
     document.removeEventListener('pointerdown', onDocumentPointerDown);
     window.removeEventListener('resize', onWindowResize);
     window.removeEventListener('keydown', onKeyDown);

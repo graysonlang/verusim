@@ -11,7 +11,7 @@ import {
 import { formatDistance, formatMovementSpeed, formatTemperature } from '../app/units.js';
 
 describe('application preferences', () => {
-  it('defaults to one simulated minute per second, 12-hour time, US units, and no status bar', () => {
+  it('defaults time, units, sidebars, and status-bar presentation', () => {
     assert.deepEqual(parsePreferences(null), DEFAULT_APPLICATION_PREFERENCES);
     assert.deepEqual(parsePreferences({}), DEFAULT_APPLICATION_PREFERENCES);
   });
@@ -22,6 +22,10 @@ describe('application preferences', () => {
         clockFormat: '24-hour',
         defaultTimeRate: '10x',
         distanceUnit: 'feet',
+        leftSidebarVisible: false,
+        leftSidebarWidth: 300,
+        rightSidebarVisible: false,
+        rightSidebarWidth: 400,
         showStatusBar: true,
         temperatureUnit: 'celsius',
       }),
@@ -29,6 +33,10 @@ describe('application preferences', () => {
         clockFormat: '24-hour',
         defaultTimeRate: '10x',
         distanceUnit: 'feet',
+        leftSidebarVisible: false,
+        leftSidebarWidth: 300,
+        rightSidebarVisible: false,
+        rightSidebarWidth: 400,
         showStatusBar: true,
         temperatureUnit: 'celsius',
       },
@@ -38,6 +46,10 @@ describe('application preferences', () => {
         clockFormat: 'dial',
         defaultTimeRate: 'warp-speed',
         distanceUnit: 'yards',
+        leftSidebarVisible: 'no',
+        leftSidebarWidth: 79,
+        rightSidebarVisible: 'yes',
+        rightSidebarWidth: Number.POSITIVE_INFINITY,
         showStatusBar: 'yes',
         temperatureUnit: 'kelvin',
       }),
@@ -90,6 +102,7 @@ describe('application preferences', () => {
         },
       },
       {
+        ...DEFAULT_APPLICATION_PREFERENCES,
         clockFormat: '24-hour',
         defaultTimeRate: '5x',
         distanceUnit: 'feet',
@@ -100,7 +113,7 @@ describe('application preferences', () => {
     assert.equal(savedKey, PREFERENCES_KEY);
     assert.equal(
       savedValue,
-      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","showStatusBar":true,"temperatureUnit":"celsius"}',
+      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","leftSidebarVisible":true,"leftSidebarWidth":250,"rightSidebarVisible":true,"rightSidebarWidth":350,"showStatusBar":true,"temperatureUnit":"celsius"}',
     );
   });
 });

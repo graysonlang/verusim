@@ -91,13 +91,15 @@ select:focus-visible {
 }
 
 .app-shell {
+  --left-sidebar-width: 250px;
+  --right-sidebar-width: 350px;
   --status-bar-height: 0px;
   display: grid;
   grid-template:
-    "header header header" 58px
-    "roster stage inspector" minmax(0, 1fr)
-    "footer footer footer" var(--status-bar-height) /
-    250px minmax(380px, 1fr) 350px;
+    "header header header header header" 58px
+    "roster left-resize stage right-resize inspector" minmax(0, 1fr)
+    "footer footer footer footer footer" var(--status-bar-height) /
+    var(--left-sidebar-width) 1px minmax(380px, 1fr) 1px var(--right-sidebar-width);
   width: 100%;
   height: 100%;
 }
@@ -144,6 +146,27 @@ select:focus-visible {
   padding: 0;
 }
 
+.sidebar-toggle-button {
+  display: flex;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.sidebar-toggle-button:hover,
+.sidebar-toggle-button.active {
+  border-color: var(--line);
+  background: rgb(255 255 255 / 4%);
+  color: var(--text);
+}
+
 .menu-icon {
   display: block;
 }
@@ -152,7 +175,7 @@ select:focus-visible {
   display: flex;
   min-width: 0;
   width: max-content;
-  max-width: calc(100% - 38px);
+  max-width: calc(100% - 76px);
   flex: 0 1 auto;
   align-items: center;
   gap: 4px;
@@ -978,8 +1001,48 @@ select {
   min-width: 0;
   min-height: 0;
   flex-direction: column;
-  border-right: 1px solid var(--line);
   background: var(--panel-deep);
+}
+
+.roster[hidden],
+.inspector[hidden] {
+  display: none;
+}
+
+.sidebar-resize-handle {
+  position: relative;
+  z-index: 5;
+  min-width: 1px;
+  min-height: 0;
+  cursor: col-resize;
+  background: var(--line);
+  touch-action: none;
+  transition: background 120ms ease;
+}
+
+.sidebar-resize-handle::before {
+  position: absolute;
+  inset: 0 -5px;
+  content: "";
+}
+
+.sidebar-resize-handle:hover,
+.sidebar-resize-handle:focus-visible,
+.sidebar-resize-handle.dragging {
+  background: var(--accent);
+}
+
+.sidebar-resize-handle:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.left-sidebar-resize {
+  grid-area: left-resize;
+}
+
+.right-sidebar-resize {
+  grid-area: right-resize;
 }
 
 .panel-header {
@@ -1491,7 +1554,6 @@ input[type="search"]::placeholder {
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  border-left: 1px solid var(--line);
   background: var(--panel);
 }
 
@@ -2305,10 +2367,6 @@ input[type="search"]::placeholder {
 }
 
 @media (max-width: 1080px) {
-  .app-shell {
-    grid-template-columns: 210px minmax(330px, 1fr) 310px;
-  }
-
   .app-header {
     grid-template-columns: minmax(240px, 1.2fr) max-content minmax(130px, 0.8fr);
   }

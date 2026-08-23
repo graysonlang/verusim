@@ -66,9 +66,13 @@ The built-in scenarios use one-minute ticks so movement, deadlines, recovery, an
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
 Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
-Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, Fahrenheit, and a hidden status bar.
+Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, Fahrenheit, a hidden status bar, and visible 250-pixel roster and 350-pixel inspector sidebars.
 Distance and temperature units are independent presentation choices; a stored preference from before that split preserves its former meter/Celsius or feet/Fahrenheit pairing until the user changes either field.
 A main-menu action shows or hides the status bar, persists that presentation choice locally, and removes or restores the footer grid row so hidden state does not reserve empty space.
+The roster and inspector retain independent device-local visibility and expanded-width preferences; they are workbench presentation state and never enter scenarios, snapshots, or simulation transitions.
+Their adjacent separators remain available while closed, clamp dragging from a 180-pixel minimum through 25 percent of the viewport, and snap widths below an 80-pixel detent closed so the same gesture can close or reopen a panel.
+Double-clicking a custom-width separator restores its default, double-clicking at the default closes it, and double-clicking while closed opens it at the default.
+A roster visibility control sits directly after the main-menu control, while the inspector visibility control is the rightmost header action after canvas zoom.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
 

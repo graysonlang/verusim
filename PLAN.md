@@ -25,9 +25,6 @@ Let scenarios place contracts into explicit location, institution, group, or eve
 This slice closes the Phase 5 sharing and placement probes for norms and social contracts after Phase 5B established layered environment topology and its expanded reference town.
 The same contract must be reusable without copying its norms, the same physical layout must accept different social-context placements, and multiple contracts must be able to coexist without selecting a winner.
 
-A bounded reopened Phase 0 shell slice is active alongside the model focus.
-It gives both workbench sidebars persistent visibility controls and Artifactorial-style resize handles without changing simulation state or broadening the authoring phase.
-
 ### Current-focus non-goals
 
 - no population or formative-event generation
@@ -36,27 +33,6 @@ It gives both workbench sidebars persistent visibility controls and Artifactoria
 - no conversion of Pottsfield's bounded common-turn fixture into incident truth
 - no contract priority, winning-culture selection, or implicit scope precedence
 - no package manager, remote dependency resolver, archive format, authoring UI, or pack writer
-
-## Phase 0 — simulation substrate
-
-Status: reopened for workbench sidebar interaction.
-
-Establish versioned content files, reusable libraries, pure deterministic stepping, causal traces, state intervention, import/export, a pannable world view, roster navigation, inspection, and time transport.
-Implement the top-level action appraisal equation without guessing the deeper inputs.
-
-Exit probes:
-
-- load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace
-- moving-character pace is presented as distance per second in the selected-character workbench while authored and authoritative locomotion remain meters per simulation minute
-- the status bar defaults to hidden without reserving an empty grid row, can be shown or hidden from the application menu, and persists only as a device-local presentation preference
-- each sidebar can be resized from its adjacent divider, snaps closed below a detent and open at its minimum, preserves its last expanded width through the header visibility control, and persists presentation state locally
-- double-clicking a custom-width divider restores its default, double-clicking at the default closes it, and double-clicking while closed reopens it at the default
-
-Movement-format regression coverage checks both metric and US display units without changing the meter source value.
-Preference regression coverage verifies the status-bar default, boolean validation, legacy missing-field fallback, and serialized device-local record.
-Isolated browser verification confirmed a moving character's expanded badge, tooltip, and accessibility label use one consistent feet-per-second value while stationary characters omit a zero rate.
-Follow-up isolated browser verification confirmed a fresh profile reclaims the hidden footer row, the menu action shows and hides the bar, and a visible choice survives reload.
-The unversioned device-local preference record adds an optional `showStatusBar` boolean whose missing or malformed value migrates to hidden; scenario and snapshot schemas are unchanged.
 
 ## Phase 5 — authoring and population generation
 

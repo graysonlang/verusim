@@ -1,4 +1,9 @@
 import { TIME_RATE_IDS, type ScenarioFile, type TimeRateId } from '../src/model/types.js';
+import {
+  LEFT_SIDEBAR_DEFAULT_WIDTH,
+  RIGHT_SIDEBAR_DEFAULT_WIDTH,
+  isStoredSidebarWidth,
+} from './sidebar-layout.js';
 
 export type ClockFormat = '12-hour' | '24-hour';
 export type DistanceUnit = 'feet' | 'meters';
@@ -8,6 +13,10 @@ export interface ApplicationPreferences {
   clockFormat: ClockFormat;
   defaultTimeRate: TimeRateId;
   distanceUnit: DistanceUnit;
+  leftSidebarVisible: boolean;
+  leftSidebarWidth: number;
+  rightSidebarVisible: boolean;
+  rightSidebarWidth: number;
   showStatusBar: boolean;
   temperatureUnit: TemperatureUnit;
 }
@@ -18,6 +27,10 @@ export const DEFAULT_APPLICATION_PREFERENCES: ApplicationPreferences = Object.fr
   clockFormat: '12-hour',
   defaultTimeRate: '1-minute-per-second',
   distanceUnit: 'feet',
+  leftSidebarVisible: true,
+  leftSidebarWidth: LEFT_SIDEBAR_DEFAULT_WIDTH,
+  rightSidebarVisible: true,
+  rightSidebarWidth: RIGHT_SIDEBAR_DEFAULT_WIDTH,
   showStatusBar: false,
   temperatureUnit: 'fahrenheit',
 });
@@ -66,6 +79,20 @@ export function parsePreferences(raw: unknown): ApplicationPreferences {
         ? record.defaultTimeRate
         : DEFAULT_APPLICATION_PREFERENCES.defaultTimeRate,
     distanceUnit,
+    leftSidebarVisible:
+      typeof record.leftSidebarVisible === 'boolean'
+        ? record.leftSidebarVisible
+        : DEFAULT_APPLICATION_PREFERENCES.leftSidebarVisible,
+    leftSidebarWidth: isStoredSidebarWidth(record.leftSidebarWidth)
+      ? record.leftSidebarWidth
+      : DEFAULT_APPLICATION_PREFERENCES.leftSidebarWidth,
+    rightSidebarVisible:
+      typeof record.rightSidebarVisible === 'boolean'
+        ? record.rightSidebarVisible
+        : DEFAULT_APPLICATION_PREFERENCES.rightSidebarVisible,
+    rightSidebarWidth: isStoredSidebarWidth(record.rightSidebarWidth)
+      ? record.rightSidebarWidth
+      : DEFAULT_APPLICATION_PREFERENCES.rightSidebarWidth,
     showStatusBar:
       typeof record.showStatusBar === 'boolean'
         ? record.showStatusBar
