@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "endicott"
+  },
+  "profile": {
+    "name": "Endicott",
+    "role": "Guarded recluse",
+    "summary": "A hesitant neighbor whose long uncertainty has hardened into a mistaken expectation of rejection.",
+    "physical": {
+      "ageYears": 36,
+      "sex": "male",
+      "build": {
+        "heightClass": "average",
+        "weightClass": "light"
+      },
+      "comeliness": 0.54
+    },
+    "capabilities": {
+      "acuity": 0.76,
+      "evidenceCalibration": 0.84,
+      "expressiveControl": 0.36
+    },
+    "constitution": {
+      "reactivity": 0.62,
+      "threshold": 0.58,
+      "recoveryRate": 0.39,
+      "socialValence": -0.08,
+      "habituationRate": 0.44,
+      "baselineArousal": 0.48
+    },
+    "contractAdherence": 0.8,
+    "disclosure": {
+      "intimateSafety": 0.9,
+      "strangerSafety": 0.68,
+      "troughDepth": 0.78,
+      "troughPosition": 0.52,
+      "troughWidth": 0.23
+    },
+    "empathy": {
+      "floor": 0.31,
+      "ceiling": 0.96,
+      "steepness": 2.9,
+      "selfPosition": 0,
+      "threatSensitivity": 0.59,
+      "featureWeights": {
+        "kinship": 1,
+        "familiarity": 1.25,
+        "similarity": 0.7,
+        "reciprocity": 1.1,
+        "category": 0.5
+      }
+    },
+    "identity": [
+      {
+        "marker": "careful neighbor",
+        "centrality": 0.72
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1.22,
+        "initialCharge": -0.12,
+        "initialDeficit": 0.2,
+        "initialVariance": 0.24
+      },
+      "belonging": {
+        "weight": 1.18,
+        "initialCharge": -0.2,
+        "initialDeficit": 0.26,
+        "initialVariance": 0.28
+      },
+      "respect": {
+        "weight": 0.86,
+        "initialCharge": -0.08,
+        "initialDeficit": 0.14,
+        "initialVariance": 0.2
+      },
+      "autonomy": {
+        "weight": 0.82,
+        "initialCharge": 0.1,
+        "initialDeficit": 0.08,
+        "initialVariance": 0.12
+      },
+      "competence": {
+        "weight": 0.7,
+        "initialCharge": 0.14,
+        "initialDeficit": 0.06,
+        "initialVariance": 0.1
+      },
+      "fairness": {
+        "weight": 0.94,
+        "initialCharge": 0.04,
+        "initialDeficit": 0.09,
+        "initialVariance": 0.13
+      }
+    },
+    "narrativeClaims": [],
+    "formativeEvents": [],
+    "characterId": "endicott",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "endicott"
+  }
+}

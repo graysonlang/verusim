@@ -6,8 +6,7 @@ import {
   indicatorsForAgent,
   inspectionIndicatorSettings,
 } from '../app/indicators.js';
-import characters from '../library/characters.json';
-import environments from '../library/environments.json';
+import { characters, environments } from './fixtures.js';
 import disclosureScenario from '../scenarios/disclosure-audience.json';
 import marketScenario from '../scenarios/market-morning.json';
 import {

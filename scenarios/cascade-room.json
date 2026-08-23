@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 10,
+  "schemaVersion": 12,
   "id": "cascade-room",
   "title": "Two Audiences in One Room",
   "summary": "One threat drives target-specific fawning toward an abuser while a separate request from a therapist still receives superficial cooperation.",
-  "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -32,7 +31,8 @@
       "predictionError": 0,
       "suspicion": 0,
       "exposureDebt": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [],
@@ -74,9 +74,11 @@
   "characters": [
     {
       "instanceId": "witness",
-      "characterId": "sera-dane",
       "normPerspectives": [],
-      "position": { "x": 108, "y": 76 },
+      "position": {
+        "x": 108,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -86,13 +88,22 @@
           "resourceDrainsPerHour": {},
           "maskingDemand": null
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "sera-dane"
+      }
     },
     {
       "instanceId": "therapist",
-      "characterId": "nessa-arden",
       "normPerspectives": [],
-      "position": { "x": 110, "y": 76 },
+      "position": {
+        "x": 110,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -102,13 +113,22 @@
           "resourceDrainsPerHour": {},
           "maskingDemand": null
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     },
     {
       "instanceId": "abuser",
-      "characterId": "tomas-reed",
       "normPerspectives": [],
-      "position": { "x": 112, "y": 76 },
+      "position": {
+        "x": 112,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -118,7 +138,22 @@
           "resourceDrainsPerHour": {},
           "maskingDemand": null
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "tomas-reed"
+      }
     }
-  ]
+  ],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

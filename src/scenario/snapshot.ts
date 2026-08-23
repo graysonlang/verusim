@@ -2,9 +2,11 @@ import {
   OUTLET_OPERATIONS,
   VALUE_IDS,
   type RecoveryMode,
+  type ResourceAddress,
   type SimulationSnapshotFile,
 } from '../model/types.js';
-import { parseScenario, ScenarioValidationError } from './parse.js';
+import { ScenarioValidationError } from '../model/validation.js';
+import { parseResourceAddress, parseScenario, resourceAddressKey } from './parse.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
 const MEMORY_TYPES = new Set([
@@ -170,7 +172,7 @@ function validateMaskingDemand(value: unknown, path: string): void {
 function validateAgent(value: unknown, path: string): void {
   const agent = objectValue(value, path);
   stringValue(agent.id, `${path}.id`);
-  stringValue(agent.profileId, `${path}.profileId`);
+  parseResourceAddress(agent.profile, `${path}.profile`, 'character-profile');
   validatePoint(agent.position, `${path}.position`);
   validatePoint(agent.destination, `${path}.destination`);
   if (agent.currentLocationId !== null) {
@@ -849,7 +851,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 5 &&
     file.schemaVersion !== 6 &&
     file.schemaVersion !== 7 &&
-    file.schemaVersion !== 8
+    file.schemaVersion !== 8 &&
+    file.schemaVersion !== 9
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -942,7 +945,53 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.resolvedAspirationOpportunityIds = [];
     file.resolvedNarrativeEventIds = [];
   }
-  file.schemaVersion = 8;
+  if (sourceVersion < 9) {
+    const scenario = parseScenario(file.scenario);
+    const legacyEnvironmentId = stringValue(file.environmentId, 'snapshot.environmentId');
+    if (legacyEnvironmentId !== scenario.environment.resourceId) {
+      throw new ScenarioValidationError(
+        'snapshot.environmentId',
+        'must match the snapshot scenario environment',
+      );
+    }
+    file.scenario = scenario;
+    file.environment = scenario.environment;
+    delete file.environmentId;
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      const agent = objectValue(agentValue, 'snapshot.agents');
+      const placement = scenario.characters.find(candidate => candidate.instanceId === agent.id);
+      if (placement === undefined) {
+        throw new ScenarioValidationError(
+          'snapshot.agents.id',
+          `unknown scenario agent "${String(agent.id)}"`,
+        );
+      }
+      const legacyProfileId = stringValue(agent.profileId, 'snapshot.agents.profileId');
+      if (legacyProfileId !== placement.profile.resourceId) {
+        throw new ScenarioValidationError(
+          'snapshot.agents.profileId',
+          'must match the snapshot scenario character profile',
+        );
+      }
+      agent.profile = placement.profile;
+      delete agent.profileId;
+    }
+    const byKey = new Map<string, ResourceAddress>();
+    for (const address of [
+      scenario.environment,
+      ...scenario.characters.map(item => item.profile),
+    ]) {
+      byKey.set(resourceAddressKey(address), address);
+    }
+    file.resourceLock = {
+      resources: [...byKey.values()].sort((left, right) => {
+        const leftKey = resourceAddressKey(left);
+        const rightKey = resourceAddressKey(right);
+        return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
+      }),
+    };
+  }
+  file.schemaVersion = 9;
   return file;
 }
 
@@ -951,15 +1000,40 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 8) {
+  if (file.schemaVersion !== 9) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
-  const environmentId = stringValue(file.environmentId, 'snapshot.environmentId');
-  if (environmentId !== scenario.environmentId) {
+  const environment = parseResourceAddress(
+    file.environment,
+    'snapshot.environment',
+    'environment-layout',
+  );
+  if (resourceAddressKey(environment) !== resourceAddressKey(scenario.environment)) {
     throw new ScenarioValidationError(
-      'snapshot.environmentId',
+      'snapshot.environment',
       'must match the snapshot scenario environment',
+    );
+  }
+  const resourceLock = objectValue(file.resourceLock, 'snapshot.resourceLock');
+  const lockedResources = arrayValue(resourceLock.resources, 'snapshot.resourceLock.resources').map(
+    (address, index) => parseResourceAddress(address, `snapshot.resourceLock.resources[${index}]`),
+  );
+  const lockKeys = lockedResources.map(resourceAddressKey);
+  if (new Set(lockKeys).size !== lockKeys.length) {
+    throw new ScenarioValidationError(
+      'snapshot.resourceLock.resources',
+      'duplicate resource address',
+    );
+  }
+  const expectedKeys = [scenario.environment, ...scenario.characters.map(item => item.profile)]
+    .map(resourceAddressKey)
+    .filter((key, index, keys) => keys.indexOf(key) === index)
+    .sort();
+  if (JSON.stringify(lockKeys) !== JSON.stringify(expectedKeys)) {
+    throw new ScenarioValidationError(
+      'snapshot.resourceLock.resources',
+      'must contain exactly the scenario resource dependencies in semantic order',
     );
   }
   integerValue(file.minute, 'snapshot.minute');

@@ -9,6 +9,7 @@ export {
   OBSERVATION_CHANNELS,
   OBSERVATION_EVENT_TYPES,
   OUTLET_OPERATIONS,
+  RESOURCE_KINDS,
   SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
@@ -18,7 +19,23 @@ export {
   WEIGHT_CLASSES,
 } from './model/types.js';
 export type * from './model/types.js';
-export { parseCharacterLibrary, parseEnvironmentLibrary, parseScenario } from './scenario/parse.js';
+export {
+  DEFAULT_RESOURCE_PACKAGE_ID,
+  parseCharacterLibrary,
+  parseEnvironmentLibrary,
+  parseResourceFile,
+  parseScenario,
+  resourceAddressKey,
+} from './scenario/parse.js';
+export {
+  createResourceCatalog,
+  createResourceCatalogFromLibraries,
+  dependencyClosure,
+  prepareScenario,
+  prepareScenarioFromLibraries,
+  prepareScenarioFromSource,
+} from './scenario/prepare.js';
+export { createSimulation, createSimulationFromSnapshot } from './scenario/load.js';
 export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
 export { parseSnapshot } from './scenario/snapshot.js';
 export {
@@ -48,8 +65,8 @@ export {
 } from './simulation/coping.js';
 export {
   advanceSimulation,
-  createSimulation,
-  createSimulationFromSnapshot,
+  createSimulationFromPrepared,
+  createSimulationFromPreparedSnapshot,
   setAgentResource,
   setAgentValueCharge,
 } from './simulation/runtime.js';

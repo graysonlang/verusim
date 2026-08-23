@@ -15,6 +15,9 @@ import { spawn } from 'node:child_process';
 import { glob, rm } from 'node:fs/promises';
 import { build } from 'esbuild';
 import { createDefines } from './defines.mjs';
+import { generateResourceCatalog } from './generate-resource-catalog.mjs';
+
+await generateResourceCatalog({ check: true });
 
 const OUT = 'dist-tests';
 const PATTERNS = [

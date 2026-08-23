@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 8,
+  "schemaVersion": 12,
   "id": "pottsfield",
   "title": "Pottsfield",
   "summary": "Residents and a visitor read the same harvest observance through opposite value turns while the local rationale remains opaque to the outsider.",
-  "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -39,7 +38,9 @@
       "estimateConfidence": 0.7,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "warm"
+      "mode": "warm",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "visitor",
@@ -59,7 +60,9 @@
       "estimateConfidence": 0.3,
       "predictionError": 0.15,
       "suspicion": 0.35,
-      "mode": "guarded"
+      "mode": "guarded",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [],
@@ -90,8 +93,10 @@
   "characters": [
     {
       "instanceId": "reeve",
-      "characterId": "pottsfield-reeve",
-      "position": { "x": 112, "y": 72.5 },
+      "position": {
+        "x": 112,
+        "y": 72.5
+      },
       "normPerspectives": [
         {
           "normId": "harvest-observance",
@@ -104,14 +109,25 @@
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Conducting the harvest observance",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-reeve"
+      }
     },
     {
       "instanceId": "resident",
-      "characterId": "pottsfield-resident",
-      "position": { "x": 112, "y": 72.5 },
+      "position": {
+        "x": 112,
+        "y": 72.5
+      },
       "normPerspectives": [
         {
           "normId": "harvest-observance",
@@ -124,14 +140,25 @@
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Attending the harvest observance",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-resident"
+      }
     },
     {
       "instanceId": "visitor",
-      "characterId": "pottsfield-visitor",
-      "position": { "x": 112, "y": 72.5 },
+      "position": {
+        "x": 112,
+        "y": 72.5
+      },
       "normPerspectives": [
         {
           "normId": "harvest-observance",
@@ -144,9 +171,29 @@
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Watching an unfamiliar observance",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-visitor"
+      }
     }
-  ]
+  ],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

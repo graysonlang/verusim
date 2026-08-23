@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 12,
   "id": "highwayman-square",
   "title": "The Highwayman: Town Square",
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
-  "environmentId": "old-king-road",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -30,7 +29,9 @@
       "estimateConfidence": 0.1,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "actor-kin",
@@ -50,7 +51,9 @@
       "estimateConfidence": 0.1,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "actor-kin",
@@ -70,7 +73,9 @@
       "estimateConfidence": 0.1,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "merchant-kin",
@@ -90,7 +95,9 @@
       "estimateConfidence": 0.1,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "merchant-kin",
@@ -110,7 +117,9 @@
       "estimateConfidence": 0.1,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [],
@@ -138,17 +147,25 @@
           "operation": "take",
           "contractViolation": 0.35,
           "repercussionSeverity": 2,
-          "narrativeExpression": 0,
           "impacts": [
             {
               "subjectId": "actor",
-              "turns": { "safety": 0.55, "autonomy": 0.25, "competence": 0.1 }
+              "turns": {
+                "safety": 0.55,
+                "autonomy": 0.25,
+                "competence": 0.1
+              }
             },
             {
               "subjectId": "merchant",
-              "turns": { "safety": -0.8, "autonomy": -0.7, "fairness": -0.6 }
+              "turns": {
+                "safety": -0.8,
+                "autonomy": -0.7,
+                "fairness": -0.6
+              }
             }
-          ]
+          ],
+          "claimExpressions": []
         },
         {
           "id": "greet",
@@ -156,11 +173,21 @@
           "operation": "acknowledge",
           "contractViolation": 0,
           "repercussionSeverity": 0,
-          "narrativeExpression": 0,
           "impacts": [
-            { "subjectId": "actor", "turns": { "belonging": 0.04 } },
-            { "subjectId": "merchant", "turns": { "respect": 0.08 } }
-          ]
+            {
+              "subjectId": "actor",
+              "turns": {
+                "belonging": 0.04
+              }
+            },
+            {
+              "subjectId": "merchant",
+              "turns": {
+                "respect": 0.08
+              }
+            }
+          ],
+          "claimExpressions": []
         }
       ]
     }
@@ -168,68 +195,140 @@
   "characters": [
     {
       "instanceId": "actor",
-      "characterId": "corvin-rusk",
-      "position": { "x": 71.7, "y": 40 },
+      "position": {
+        "x": 71.7,
+        "y": 40
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "town-square",
           "activity": "Crossing the square",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "corvin-rusk"
+      }
     },
     {
       "instanceId": "merchant",
-      "characterId": "jon-mere",
-      "position": { "x": 81.7, "y": 43.3 },
+      "position": {
+        "x": 81.7,
+        "y": 43.3
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "town-square",
           "activity": "Opening a ledger",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "jon-mere"
+      }
     },
     {
       "instanceId": "warden",
-      "characterId": "elian-voss",
-      "position": { "x": 88.3, "y": 31.7 },
+      "position": {
+        "x": 88.3,
+        "y": 31.7
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "watch-house",
           "activity": "Watching the square",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "elian-voss"
+      }
     },
     {
       "instanceId": "actor-kin",
-      "characterId": "lena-rusk",
-      "position": { "x": 65, "y": 50 },
+      "position": {
+        "x": 65,
+        "y": 50
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "town-square",
           "activity": "Waiting by the road",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "lena-rusk"
+      }
     },
     {
       "instanceId": "merchant-kin",
-      "characterId": "petra-mere",
-      "position": { "x": 86.7, "y": 51.7 },
+      "position": {
+        "x": 86.7,
+        "y": 51.7
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "town-square",
           "activity": "Waiting by the stalls",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "petra-mere"
+      }
     }
-  ]
+  ],
+  "localNorms": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "old-king-road"
+  }
 }

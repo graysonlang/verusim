@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 10,
+  "schemaVersion": 12,
   "id": "innkeeper-coping",
   "title": "The Innkeeper Under Load",
   "summary": "A directly seeded safety deficit drives Mara toward the highest-ranked control outlet the current environment actually supplies.",
-  "environmentId": "coping-inn",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -26,9 +25,11 @@
   "characters": [
     {
       "instanceId": "mara",
-      "characterId": "mara-under-load",
       "normPerspectives": [],
-      "position": { "x": 50, "y": 40 },
+      "position": {
+        "x": 50,
+        "y": 40
+      },
       "initialResources": {
         "executiveBudget": 0.62,
         "physicalStamina": 0.7,
@@ -59,7 +60,22 @@
             "fabricated": false
           }
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "mara-under-load"
+      }
     }
-  ]
+  ],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "coping-inn"
+  }
 }

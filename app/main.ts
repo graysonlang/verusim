@@ -1,12 +1,4 @@
 import { createEffect, createRoot, createSignal, onCleanup } from 'solid-js';
-import characters from '../library/characters.json';
-import copingCharacters from '../library/coping-characters.json';
-import copingEnvironments from '../library/coping-environments.json';
-import environments from '../library/environments.json';
-import highwaymanCharacters from '../library/highwayman-characters.json';
-import highwaymanEnvironments from '../library/highwayman-environments.json';
-import mindModelCharacters from '../library/mind-model-characters.json';
-import normCharacters from '../library/norm-characters.json';
 import {
   CAPABILITY_IDS,
   DAY_PERIOD_LABELS,
@@ -22,6 +14,8 @@ import {
   evaluateEavesdropping,
   evaluateProximity,
   evaluateSpatialPerception,
+  parseSnapshot,
+  prepareScenario,
   serializeSnapshot,
   setAgentResource,
   setAgentValueCharge,
@@ -69,6 +63,7 @@ import {
 } from './preferences.js';
 import {
   BUILT_IN_SCENARIOS,
+  BUILT_IN_RESOURCE_CATALOG,
   DEFAULT_BUILT_IN_SCENARIO,
   type BuiltInScenario,
 } from './scenarios.js';
@@ -80,25 +75,6 @@ import {
   formatTemperature,
 } from './units.js';
 import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.js';
-
-const characterLibrary = {
-  characters: [
-    ...characters.characters,
-    ...copingCharacters.characters,
-    ...highwaymanCharacters.characters,
-    ...mindModelCharacters.characters,
-    ...normCharacters.characters,
-  ],
-  schemaVersion: 5,
-};
-const environmentLibrary = {
-  environments: [
-    ...environments.environments,
-    ...copingEnvironments.environments,
-    ...highwaymanEnvironments.environments,
-  ],
-  schemaVersion: 1,
-};
 
 const INDICATOR_VERBOSITIES = ['off', 'minimal', 'standard', 'detailed'] as const;
 const INDICATOR_VERBOSITY_LABELS: Record<IndicatorVerbosity, string> = {
@@ -366,11 +342,7 @@ function movementBadge(
 }
 
 function createStarterSimulation(): SimulationState {
-  return createSimulation({
-    characterLibrary,
-    environmentLibrary,
-    scenario: DEFAULT_BUILT_IN_SCENARIO.scenario,
-  });
+  return createSimulation(DEFAULT_BUILT_IN_SCENARIO.prepared);
 }
 
 const VALUE_LABELS: Record<ValueId, string> = {
@@ -1694,11 +1666,7 @@ function createWorkbench(): HTMLElement {
 
   function loadBuiltInScenario(entry: BuiltInScenario): void {
     try {
-      const loaded = createSimulation({
-        characterLibrary,
-        environmentLibrary,
-        scenario: entry.scenario,
-      });
+      const loaded = createSimulation(entry.prepared);
       activateLoadedSimulation(loaded, `Loaded ${entry.title}`, entry.id);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
@@ -2619,12 +2587,17 @@ function createWorkbench(): HTMLElement {
         contents !== null &&
         'type' in contents &&
         contents.type === 'verusim-snapshot'
-          ? createSimulationFromSnapshot({
-              characterLibrary,
-              environmentLibrary,
-              snapshot: contents,
-            })
-          : createSimulation({ characterLibrary, environmentLibrary, scenario: contents });
+          ? (() => {
+              const snapshot = parseSnapshot(contents);
+              const prepared = prepareScenario({
+                catalog: BUILT_IN_RESOURCE_CATALOG,
+                scenario: snapshot.scenario,
+              });
+              return createSimulationFromSnapshot({ prepared, snapshot });
+            })()
+          : createSimulation(
+              prepareScenario({ catalog: BUILT_IN_RESOURCE_CATALOG, scenario: contents }),
+            );
       activateLoadedSimulation(loaded, `Loaded ${file.name}`, null);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));

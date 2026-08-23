@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import environments from '../library/environments.json';
-import normCharacters from '../library/norm-characters.json';
+import { environments, normCharacters } from './fixtures.js';
 import scenario from '../scenarios/pottsfield.json';
 import {
   advanceSimulation,

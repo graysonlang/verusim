@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_SCENARIOS, DEFAULT_BUILT_IN_SCENARIO } from '../app/scenarios.js';
-import characters from '../library/characters.json';
-import copingCharacters from '../library/coping-characters.json';
-import copingEnvironments from '../library/coping-environments.json';
-import environments from '../library/environments.json';
-import highwaymanCharacters from '../library/highwayman-characters.json';
-import highwaymanEnvironments from '../library/highwayman-environments.json';
-import mindModelCharacters from '../library/mind-model-characters.json';
-import normCharacters from '../library/norm-characters.json';
+import {
+  characters,
+  copingCharacters,
+  copingEnvironments,
+  environments,
+  highwaymanCharacters,
+  highwaymanEnvironments,
+  mindModelCharacters,
+  normCharacters,
+} from './fixtures.js';
 import { createSimulation } from '../src/index.js';
 
 const characterLibrary = {

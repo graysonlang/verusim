@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "jon-mere"
+  },
+  "profile": {
+    "name": "Jon Mere",
+    "role": "Merchant",
+    "summary": "A traveling cloth merchant carrying a season's receipts.",
+    "physical": {
+      "ageYears": 41,
+      "sex": "male",
+      "build": {
+        "heightClass": "average",
+        "weightClass": "heavy"
+      },
+      "comeliness": 0.6
+    },
+    "capabilities": {
+      "acuity": 0.68,
+      "evidenceCalibration": 0.78,
+      "expressiveControl": 0.66
+    },
+    "constitution": {
+      "reactivity": 0.5,
+      "threshold": 0.58,
+      "recoveryRate": 0.42,
+      "socialValence": 0.15,
+      "habituationRate": 0.3,
+      "baselineArousal": 0.4
+    },
+    "contractAdherence": 0.76,
+    "disclosure": {
+      "intimateSafety": 0.82,
+      "strangerSafety": 0.5,
+      "troughDepth": 0.7,
+      "troughPosition": 0.5,
+      "troughWidth": 0.18
+    },
+    "empathy": {
+      "floor": 0.25,
+      "ceiling": 0.95,
+      "steepness": 3,
+      "selfPosition": 0,
+      "threatSensitivity": 0.55,
+      "featureWeights": {
+        "kinship": 1,
+        "familiarity": 1,
+        "similarity": 0.6,
+        "reciprocity": 0.9,
+        "category": 0.7
+      }
+    },
+    "identity": [
+      {
+        "marker": "Mere trading house",
+        "centrality": 0.8
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1.2,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.08,
+        "initialVariance": 0.14
+      },
+      "belonging": {
+        "weight": 0.9,
+        "initialCharge": 0.18,
+        "initialDeficit": 0.05,
+        "initialVariance": 0.1
+      },
+      "respect": {
+        "weight": 1,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.1
+      },
+      "autonomy": {
+        "weight": 1.1,
+        "initialCharge": 0.22,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.09
+      },
+      "competence": {
+        "weight": 1.1,
+        "initialCharge": 0.26,
+        "initialDeficit": 0.03,
+        "initialVariance": 0.08
+      },
+      "fairness": {
+        "weight": 1,
+        "initialCharge": 0.15,
+        "initialDeficit": 0.05,
+        "initialVariance": 0.1
+      }
+    },
+    "narrativeClaims": [
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-1",
+        "kind": "affirm",
+        "statement": "A bargain binds both hands"
+      }
+    ],
+    "formativeEvents": [
+      {
+        "age": 22,
+        "value": "competence",
+        "turn": 0.42,
+        "attribution": "the Mere trading house",
+        "copingPotential": 0.8,
+        "summary": "He returned from his first solo route with every account balanced."
+      }
+    ],
+    "characterId": "jon-mere",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "jon-mere"
+  }
+}

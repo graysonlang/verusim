@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "pottsfield-reeve"
+  },
+  "profile": {
+    "name": "Reeve Orson",
+    "role": "Keeper of the harvest rite",
+    "summary": "A calm local official conducting a familiar communal observance.",
+    "physical": {
+      "ageYears": 58,
+      "sex": "male",
+      "build": {
+        "heightClass": "average",
+        "weightClass": "average"
+      },
+      "comeliness": 0.48
+    },
+    "capabilities": {
+      "acuity": 0.68,
+      "evidenceCalibration": 0.72,
+      "expressiveControl": 0.7
+    },
+    "constitution": {
+      "reactivity": 0.42,
+      "threshold": 0.7,
+      "recoveryRate": 0.5,
+      "socialValence": 0.08,
+      "habituationRate": 0.38,
+      "baselineArousal": 0.34
+    },
+    "contractAdherence": 0.86,
+    "disclosure": {
+      "intimateSafety": 0.9,
+      "strangerSafety": 0.58,
+      "troughDepth": 0.62,
+      "troughPosition": 0.5,
+      "troughWidth": 0.22
+    },
+    "empathy": {
+      "floor": 0.34,
+      "ceiling": 0.96,
+      "steepness": 2.4,
+      "selfPosition": 0,
+      "threatSensitivity": 0.4,
+      "featureWeights": {
+        "kinship": 1,
+        "familiarity": 1.1,
+        "similarity": 0.8,
+        "reciprocity": 1,
+        "category": 0.7
+      }
+    },
+    "identity": [
+      {
+        "marker": "harvest keeper",
+        "centrality": 0.82
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "belonging": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "respect": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "autonomy": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "competence": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "fairness": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      }
+    },
+    "narrativeClaims": [],
+    "formativeEvents": [],
+    "characterId": "pottsfield-reeve",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "pottsfield-reeve"
+  }
+}

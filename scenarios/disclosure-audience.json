@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 12,
   "id": "disclosure-audience",
   "title": "Disclosure Under Mixed Audiences",
   "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
-  "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -30,7 +29,9 @@
       "estimateConfidence": 0.8,
       "predictionError": 0.05,
       "suspicion": 0.02,
-      "mode": "warm"
+      "mode": "warm",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "owner",
@@ -50,7 +51,9 @@
       "estimateConfidence": 0.75,
       "predictionError": 0.12,
       "suspicion": 0.18,
-      "mode": "guarded"
+      "mode": "guarded",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [
@@ -90,42 +93,90 @@
   "characters": [
     {
       "instanceId": "owner",
-      "characterId": "nessa-arden",
-      "position": { "x": 108, "y": 76 },
+      "position": {
+        "x": 108,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Considering a reply",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     },
     {
       "instanceId": "friend",
-      "characterId": "sera-dane",
-      "position": { "x": 113, "y": 76 },
+      "position": {
+        "x": 113,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Listening privately",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "sera-dane"
+      }
     },
     {
       "instanceId": "hostile",
-      "characterId": "tomas-reed",
-      "position": { "x": 118, "y": 76 },
+      "position": {
+        "x": 118,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Waiting nearby",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "tomas-reed"
+      }
     }
-  ]
+  ],
+  "localNorms": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

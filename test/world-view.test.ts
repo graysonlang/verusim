@@ -7,8 +7,7 @@ import {
   scaleBarForZoom,
   worldPaletteFor,
 } from '../app/world-view.js';
-import environments from '../library/environments.json';
-import highwaymanEnvironments from '../library/highwayman-environments.json';
+import { environments, highwaymanEnvironments } from './fixtures.js';
 
 describe('world view selection', () => {
   const agents = [

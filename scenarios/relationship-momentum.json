@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 9,
+  "schemaVersion": 12,
   "id": "relationship-momentum",
   "title": "The Requests at Bellweather",
   "summary": "Graduated requests move one dyad while a separate fall in estimated regard reprices an old disclosure before sleep consolidates the episodes.",
-  "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -32,7 +31,8 @@
       "predictionError": 0,
       "suspicion": 0,
       "exposureDebt": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "validatorClaimIds": []
     },
     {
       "observerId": "responder",
@@ -53,7 +53,8 @@
       "predictionError": 0.1,
       "suspicion": 0.05,
       "exposureDebt": 0,
-      "mode": "contesting"
+      "mode": "contesting",
+      "validatorClaimIds": []
     },
     {
       "observerId": "requester",
@@ -74,7 +75,8 @@
       "predictionError": 0,
       "suspicion": 0,
       "exposureDebt": 0.09,
-      "mode": "courteous"
+      "mode": "courteous",
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [
@@ -154,57 +156,103 @@
   "characters": [
     {
       "instanceId": "requester",
-      "characterId": "sera-dane",
       "normPerspectives": [],
-      "position": { "x": 108, "y": 76 },
+      "position": {
+        "x": 108,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Making careful requests",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 660,
           "locationId": "market-square",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "sera-dane"
+      }
     },
     {
       "instanceId": "responder",
-      "characterId": "nessa-arden",
       "normPerspectives": [],
-      "position": { "x": 110, "y": 76 },
+      "position": {
+        "x": 110,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Considering each request",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 660,
           "locationId": "market-square",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     },
     {
       "instanceId": "abrasive",
-      "characterId": "tomas-reed",
       "normPerspectives": [],
-      "position": { "x": 112, "y": 76 },
+      "position": {
+        "x": 112,
+        "y": 76
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Working nearby",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "tomas-reed"
+      }
     }
-  ]
+  ],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

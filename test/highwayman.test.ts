@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import characters from '../library/characters.json';
-import environments from '../library/environments.json';
-import highwaymanCharacters from '../library/highwayman-characters.json';
-import highwaymanEnvironments from '../library/highwayman-environments.json';
+import {
+  characters,
+  environments,
+  highwaymanCharacters,
+  highwaymanEnvironments,
+} from './fixtures.js';
 import roadScenario from '../scenarios/highwayman-road.json';
 import squareScenario from '../scenarios/highwayman-square.json';
 import {
@@ -12,8 +14,8 @@ import {
   effectiveValueWeights,
   evaluateEmpathy,
   evaluateOpportunity,
+  parseScenario,
   type BehaviorOpportunity,
-  type ScenarioFile,
   type SimulationState,
 } from '../src/index.js';
 
@@ -75,16 +77,16 @@ describe('highwayman factorial', () => {
     const normal = structuredClone(roadScenario);
     const actor = normal.characters.find(placement => placement.instanceId === 'actor');
     assert.ok(actor);
-    actor.characterId = 'orin-hale';
+    actor.profile.resourceId = 'orin-hale';
     const result = advanceSimulation(createHighwaymanSimulation(normal), 5);
     assert.equal(selectedCandidate(result), 'greet');
   });
 
   it('lets deprivation move a normal-floor actor to robbery with a remorse aftermath', () => {
-    const starving = structuredClone(roadScenario) as unknown as ScenarioFile;
+    const starving = parseScenario(roadScenario);
     const actor = starving.characters.find(placement => placement.instanceId === 'actor');
     assert.ok(actor);
-    actor.characterId = 'orin-hale';
+    actor.profile.resourceId = 'orin-hale';
     actor.initialValues = {
       safety: { charge: -1, deficitIntegral: 1, variance: 0.1 },
     };
@@ -143,7 +145,7 @@ describe('highwayman factorial', () => {
   it('keeps contract adherence separate from the empathy envelope', () => {
     const highContractLibrary = structuredClone(characterLibrary);
     const actorProfile = highContractLibrary.characters.find(
-      character => character.id === 'corvin-rusk',
+      character => character.profileId === 'corvin-rusk',
     );
     assert.ok(actorProfile);
     actorProfile.contractAdherence = 1;

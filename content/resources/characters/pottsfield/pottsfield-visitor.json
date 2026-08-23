@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "pottsfield-visitor"
+  },
+  "profile": {
+    "name": "Ira Bell",
+    "role": "Passing visitor",
+    "summary": "A visitor who can see the rite but has no access to the local account of it.",
+    "physical": {
+      "ageYears": 29,
+      "sex": "male",
+      "build": {
+        "heightClass": "tall",
+        "weightClass": "light"
+      },
+      "comeliness": 0.52
+    },
+    "capabilities": {
+      "acuity": 0.78,
+      "evidenceCalibration": 0.8,
+      "expressiveControl": 0.5
+    },
+    "constitution": {
+      "reactivity": 0.5,
+      "threshold": 0.64,
+      "recoveryRate": 0.46,
+      "socialValence": -0.04,
+      "habituationRate": 0.4,
+      "baselineArousal": 0.38
+    },
+    "contractAdherence": 0.8,
+    "disclosure": {
+      "intimateSafety": 0.88,
+      "strangerSafety": 0.64,
+      "troughDepth": 0.58,
+      "troughPosition": 0.5,
+      "troughWidth": 0.24
+    },
+    "empathy": {
+      "floor": 0.38,
+      "ceiling": 0.95,
+      "steepness": 2.2,
+      "selfPosition": 0,
+      "threatSensitivity": 0.44,
+      "featureWeights": {
+        "kinship": 0.8,
+        "familiarity": 1.1,
+        "similarity": 0.9,
+        "reciprocity": 1,
+        "category": 0.6
+      }
+    },
+    "identity": [
+      {
+        "marker": "independent traveler",
+        "centrality": 0.7
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "belonging": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "respect": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "autonomy": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "competence": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      },
+      "fairness": {
+        "weight": 1,
+        "initialCharge": 0,
+        "initialDeficit": 0,
+        "initialVariance": 0.1
+      }
+    },
+    "narrativeClaims": [],
+    "formativeEvents": [],
+    "characterId": "pottsfield-visitor",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "pottsfield-visitor"
+  }
+}

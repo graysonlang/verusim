@@ -12,12 +12,22 @@ import {
   WEATHER_IDS,
   WEIGHT_CLASSES,
   type AreaKind,
+  type CharacterProfileAddress,
+  type CharacterProfileResourceFile,
   type CharacterLibraryFile,
+  type EnvironmentLayoutAddress,
+  type EnvironmentLayoutResourceFile,
   type EnvironmentLibraryFile,
   type RecoveryMode,
+  type ResourceAddress,
+  type ResourceFile,
+  type ResourceKind,
   type ScenarioFile,
   type ValueId,
 } from '../model/types.js';
+import { ScenarioValidationError } from '../model/validation.js';
+
+export { ScenarioValidationError } from '../model/validation.js';
 
 const AREA_KINDS = new Set<AreaKind>([
   'building',
@@ -46,13 +56,7 @@ const SEX_ID_SET = new Set<string>(SEX_IDS);
 const WEATHER_ID_SET = new Set<string>(WEATHER_IDS);
 const WEIGHT_CLASS_SET = new Set<string>(WEIGHT_CLASSES);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-export class ScenarioValidationError extends Error {
-  constructor(path: string, message: string) {
-    super(`${path}: ${message}`);
-    this.name = 'ScenarioValidationError';
-  }
-}
+export const DEFAULT_RESOURCE_PACKAGE_ID = 'verusim';
 
 function objectValue(value: unknown, path: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
@@ -114,6 +118,42 @@ function uniqueIds(items: Record<string, unknown>[], path: string): void {
       throw new ScenarioValidationError(`${path}[${index}].id`, 'duplicate identifier');
     ids.add(id);
   }
+}
+
+function uniqueIdentifierField(
+  items: Record<string, unknown>[],
+  path: string,
+  field: string,
+): void {
+  const ids = new Set<string>();
+  for (let index = 0; index < items.length; index += 1) {
+    const id = identifierValue(items[index]?.[field], `${path}[${index}].${field}`);
+    if (ids.has(id)) {
+      throw new ScenarioValidationError(`${path}[${index}].${field}`, 'duplicate identifier');
+    }
+    ids.add(id);
+  }
+}
+
+export function parseResourceAddress(
+  value: unknown,
+  path: string,
+  expectedKind?: ResourceKind,
+): ResourceAddress {
+  const address = objectValue(value, path);
+  const packageId = identifierValue(address.packageId, `${path}.packageId`);
+  const resourceId = identifierValue(address.resourceId, `${path}.resourceId`);
+  if (address.kind !== 'character-profile' && address.kind !== 'environment-layout') {
+    throw new ScenarioValidationError(`${path}.kind`, 'expected a known resource kind');
+  }
+  if (expectedKind !== undefined && address.kind !== expectedKind) {
+    throw new ScenarioValidationError(`${path}.kind`, `expected ${expectedKind}`);
+  }
+  return { kind: address.kind, packageId, resourceId };
+}
+
+export function resourceAddressKey(address: ResourceAddress): string {
+  return `${address.packageId}:${address.kind}:${address.resourceId}`;
 }
 
 function validatePoint(value: unknown, path: string): void {
@@ -311,7 +351,15 @@ function legacyRecoveryMode(activity: unknown): RecoveryMode {
 
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
-  if (file.schemaVersion === 7) return file;
+  if (file.schemaVersion === 7) {
+    for (const value of arrayValue(file.characters, 'characterLibrary.characters')) {
+      const character = objectValue(value, 'characterLibrary.characters');
+      character.profileId ??= character.id;
+      character.characterId ??= character.profileId;
+      delete character.id;
+    }
+    return file;
+  }
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -329,6 +377,9 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const characters = arrayValue(file.characters, 'characterLibrary.characters');
   for (const value of characters) {
     const character = objectValue(value, 'characterLibrary.characters');
+    character.profileId ??= character.id;
+    character.characterId ??= character.profileId;
+    delete character.id;
     if (sourceVersion === 1) {
       character.contractAdherence = 0.65;
       character.empathy = {
@@ -414,7 +465,15 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'environmentLibrary'));
-  if (file.schemaVersion === 2) return file;
+  if (file.schemaVersion === 2) {
+    for (const value of arrayValue(file.environments, 'environmentLibrary.environments')) {
+      const environment = objectValue(value, 'environmentLibrary.environments');
+      environment.layoutId ??= environment.id;
+      environment.environmentId ??= environment.layoutId;
+      delete environment.id;
+    }
+    return file;
+  }
   if (file.schemaVersion !== 1) {
     throw new ScenarioValidationError(
       'environmentLibrary.schemaVersion',
@@ -423,6 +482,9 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
   }
   for (const environmentValue of arrayValue(file.environments, 'environmentLibrary.environments')) {
     const environment = objectValue(environmentValue, 'environmentLibrary.environments');
+    environment.layoutId ??= environment.id;
+    environment.environmentId ??= environment.layoutId;
+    delete environment.id;
     environment.outletAffordances ??= [];
   }
   file.schemaVersion = 2;
@@ -431,7 +493,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 11) return file;
+  if (file.schemaVersion === 12) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -442,7 +504,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 7 &&
     file.schemaVersion !== 8 &&
     file.schemaVersion !== 9 &&
-    file.schemaVersion !== 10
+    file.schemaVersion !== 10 &&
+    file.schemaVersion !== 11
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -534,39 +597,56 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       }
     }
   }
-  file.aspirationOpportunities = [];
-  file.narrativeEvents = [];
-  file.reputationGroups = [];
-  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-    const placement = objectValue(placementValue, 'scenario.characters');
-    placement.agency = 'responder';
-    placement.narrativeOverrides = [];
-  }
-  for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
-    const dyad = objectValue(dyadValue, 'scenario.dyads');
-    dyad.validatorClaimIds = [];
-  }
-  for (const goalValue of arrayValue(file.agendaGoals, 'scenario.agendaGoals')) {
-    objectValue(goalValue, 'scenario.agendaGoals').claimExpressions = [];
-  }
-  for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-    objectValue(taskValue, 'scenario.taskOperators').claimExpressions = [];
-  }
-  for (const opportunityValue of arrayValue(
-    file.behaviorOpportunities,
-    'scenario.behaviorOpportunities',
-  )) {
-    const opportunity = objectValue(opportunityValue, 'scenario.behaviorOpportunities');
-    for (const candidateValue of arrayValue(
-      opportunity.candidates,
-      'scenario.behaviorOpportunities.candidates',
+  if (sourceVersion < 11) {
+    file.aspirationOpportunities = [];
+    file.narrativeEvents = [];
+    file.reputationGroups = [];
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      placement.agency = 'responder';
+      placement.narrativeOverrides = [];
+    }
+    for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
+      const dyad = objectValue(dyadValue, 'scenario.dyads');
+      dyad.validatorClaimIds = [];
+    }
+    for (const goalValue of arrayValue(file.agendaGoals, 'scenario.agendaGoals')) {
+      objectValue(goalValue, 'scenario.agendaGoals').claimExpressions = [];
+    }
+    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+      objectValue(taskValue, 'scenario.taskOperators').claimExpressions = [];
+    }
+    for (const opportunityValue of arrayValue(
+      file.behaviorOpportunities,
+      'scenario.behaviorOpportunities',
     )) {
-      const candidate = objectValue(candidateValue, 'scenario.behaviorOpportunities.candidates');
-      candidate.claimExpressions = [];
-      delete candidate.narrativeExpression;
+      const opportunity = objectValue(opportunityValue, 'scenario.behaviorOpportunities');
+      for (const candidateValue of arrayValue(
+        opportunity.candidates,
+        'scenario.behaviorOpportunities.candidates',
+      )) {
+        const candidate = objectValue(candidateValue, 'scenario.behaviorOpportunities.candidates');
+        candidate.claimExpressions = [];
+        delete candidate.narrativeExpression;
+      }
     }
   }
-  file.schemaVersion = 11;
+  file.environment = {
+    kind: 'environment-layout',
+    packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+    resourceId: identifierValue(file.environmentId, 'scenario.environmentId'),
+  };
+  delete file.environmentId;
+  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+    const placement = objectValue(placementValue, 'scenario.characters');
+    placement.profile = {
+      kind: 'character-profile',
+      packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+      resourceId: identifierValue(placement.characterId, 'scenario.characters.characterId'),
+    };
+    delete placement.characterId;
+  }
+  file.schemaVersion = 12;
   return file;
 }
 
@@ -577,7 +657,8 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
       const character = objectValue(item, path);
-      identifierValue(character.id, `${path}.id`);
+      identifierValue(character.profileId, `${path}.profileId`);
+      identifierValue(character.characterId, `${path}.characterId`);
       stringValue(character.name, `${path}.name`);
       stringValue(character.role, `${path}.role`);
       stringValue(character.summary, `${path}.summary`);
@@ -704,7 +785,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       return character;
     },
   );
-  uniqueIds(characters, 'characterLibrary.characters');
+  uniqueIdentifierField(characters, 'characterLibrary.characters', 'profileId');
   return clone(file) as unknown as CharacterLibraryFile;
 }
 
@@ -715,7 +796,8 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
     (item, index) => {
       const path = `environmentLibrary.environments[${index}]`;
       const environment = objectValue(item, path);
-      identifierValue(environment.id, `${path}.id`);
+      identifierValue(environment.layoutId, `${path}.layoutId`);
+      identifierValue(environment.environmentId, `${path}.environmentId`);
       stringValue(environment.name, `${path}.name`);
       numberValue(environment.width, `${path}.width`, 1);
       numberValue(environment.height, `${path}.height`, 1);
@@ -798,17 +880,69 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
       return environment;
     },
   );
-  uniqueIds(environments, 'environmentLibrary.environments');
+  uniqueIdentifierField(environments, 'environmentLibrary.environments', 'layoutId');
   return clone(file) as unknown as EnvironmentLibraryFile;
+}
+
+export function parseResourceFile(value: unknown, path = 'resource'): ResourceFile {
+  const file = objectValue(value, path);
+  schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
+  const address = parseResourceAddress(file.address, `${path}.address`);
+  if (address.kind === 'character-profile') {
+    let profile: CharacterLibraryFile['characters'][number] | undefined;
+    try {
+      profile = parseCharacterLibrary({ characters: [file.profile], schemaVersion: 7 })
+        .characters[0];
+    } catch (error) {
+      if (error instanceof ScenarioValidationError) {
+        throw new ScenarioValidationError(path, error.message);
+      }
+      throw error;
+    }
+    if (profile === undefined) throw new Error('Validated resource contains one character profile');
+    if (profile.profileId !== address.resourceId) {
+      throw new ScenarioValidationError(
+        `${path}.profile.profileId`,
+        'must match the resource address identifier',
+      );
+    }
+    return clone({
+      address: address as CharacterProfileAddress,
+      profile,
+      schemaVersion: 1,
+    }) as CharacterProfileResourceFile;
+  }
+  let layout: EnvironmentLibraryFile['environments'][number] | undefined;
+  try {
+    layout = parseEnvironmentLibrary({ environments: [file.layout], schemaVersion: 2 })
+      .environments[0];
+  } catch (error) {
+    if (error instanceof ScenarioValidationError) {
+      throw new ScenarioValidationError(path, error.message);
+    }
+    throw error;
+  }
+  if (layout === undefined) throw new Error('Validated resource contains one environment layout');
+  if (layout.layoutId !== address.resourceId) {
+    throw new ScenarioValidationError(
+      `${path}.layout.layoutId`,
+      'must match the resource address identifier',
+    );
+  }
+  return clone({
+    address: address as EnvironmentLayoutAddress,
+    layout,
+    schemaVersion: 1,
+  }) as EnvironmentLayoutResourceFile;
 }
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 11);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 12);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
-  identifierValue(file.environmentId, 'scenario.environmentId');
+  parseResourceAddress(file.environment, 'scenario.environment', 'environment-layout');
   const environmentConditions = objectValue(
     file.environmentConditions,
     'scenario.environmentConditions',
@@ -1006,7 +1140,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     const path = `scenario.characters[${index}]`;
     const placement = objectValue(item, path);
     identifierValue(placement.instanceId, `${path}.instanceId`);
-    identifierValue(placement.characterId, `${path}.characterId`);
+    parseResourceAddress(placement.profile, `${path}.profile`, 'character-profile');
     if (typeof placement.agency !== 'string' || !AGENCY_MODES.has(placement.agency)) {
       throw new ScenarioValidationError(`${path}.agency`, 'expected invoker or responder');
     }

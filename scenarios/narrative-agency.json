@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "id": "narrative-agency",
   "title": "Stories in the Square",
   "summary": "Agreement, contradiction, reputation, validators, and aspiration expose distinct consequences of the stories characters keep about themselves.",
-  "environmentId": "alders-edge",
   "startMinute": 0,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -62,12 +61,22 @@
       "believedLeverage": false,
       "exitAvailable": false,
       "socialTargetId": "dominant",
-      "turns": { "safety": -0.3 }
+      "turns": {
+        "safety": -0.3
+      }
     }
   ],
   "reputationGroups": [
-    { "id": "guild", "label": "Market Guild", "memberIds": ["fishing", "preemptive"] },
-    { "id": "neighbors", "label": "Near Neighbors", "memberIds": ["genuine", "lowering"] }
+    {
+      "id": "guild",
+      "label": "Market Guild",
+      "memberIds": ["fishing", "preemptive"]
+    },
+    {
+      "id": "neighbors",
+      "label": "Near Neighbors",
+      "memberIds": ["genuine", "lowering"]
+    }
   ],
   "narrativeEvents": [
     {
@@ -148,7 +157,12 @@
       "summary": "The neighbors called the invoker unreliable."
     }
   ],
-  "worldFacts": [{ "id": "square-helped", "amount": 0 }],
+  "worldFacts": [
+    {
+      "id": "square-helped",
+      "amount": 0
+    }
+  ],
   "agendaGoals": [],
   "aspirationOpportunities": [
     {
@@ -160,10 +174,26 @@
       "commitment": 0.8,
       "deadlineMinute": null,
       "urgencyHorizonMinutes": 120,
-      "desired": [{ "factId": "square-helped", "minimum": 1 }],
-      "successTurns": { "belonging": 0.2, "competence": 0.2 },
-      "failureTurns": { "respect": -0.1 },
-      "claimExpressions": [{ "claimId": "claim-1", "valueId": "belonging", "strength": 0.8 }]
+      "desired": [
+        {
+          "factId": "square-helped",
+          "minimum": 1
+        }
+      ],
+      "successTurns": {
+        "belonging": 0.2,
+        "competence": 0.2
+      },
+      "failureTurns": {
+        "respect": -0.1
+      },
+      "claimExpressions": [
+        {
+          "claimId": "claim-1",
+          "valueId": "belonging",
+          "strength": 0.8
+        }
+      ]
     },
     {
       "id": "responder-help-square",
@@ -174,10 +204,26 @@
       "commitment": 0.8,
       "deadlineMinute": null,
       "urgencyHorizonMinutes": 120,
-      "desired": [{ "factId": "square-helped", "minimum": 1 }],
-      "successTurns": { "belonging": 0.2, "competence": 0.2 },
-      "failureTurns": { "respect": -0.1 },
-      "claimExpressions": [{ "claimId": "claim-1", "valueId": "belonging", "strength": 0.8 }]
+      "desired": [
+        {
+          "factId": "square-helped",
+          "minimum": 1
+        }
+      ],
+      "successTurns": {
+        "belonging": 0.2,
+        "competence": 0.2
+      },
+      "failureTurns": {
+        "respect": -0.1
+      },
+      "claimExpressions": [
+        {
+          "claimId": "claim-1",
+          "valueId": "belonging",
+          "strength": 0.8
+        }
+      ]
     }
   ],
   "taskOperators": [
@@ -186,10 +232,17 @@
       "label": "Offer help in the square",
       "actorIds": ["invoker", "responder"],
       "preconditions": [],
-      "effects": [{ "factId": "square-helped", "delta": 1 }],
+      "effects": [
+        {
+          "factId": "square-helped",
+          "delta": 1
+        }
+      ],
       "durationMinutes": 10,
       "locationId": "market-square",
-      "resourceCosts": { "executiveBudget": 0.05 },
+      "resourceCosts": {
+        "executiveBudget": 0.05
+      },
       "resourceDrainsPerHour": {},
       "maskingDemand": null,
       "recoveryMode": "none",
@@ -197,18 +250,32 @@
       "contractViolation": 0,
       "availableFromMinute": null,
       "availableUntilMinute": null,
-      "claimExpressions": [{ "claimId": "claim-1", "valueId": "competence", "strength": 0.7 }]
+      "claimExpressions": [
+        {
+          "claimId": "claim-1",
+          "valueId": "competence",
+          "strength": 0.7
+        }
+      ]
     }
   ],
   "behaviorOpportunities": [],
   "characters": [
     {
       "instanceId": "fishing",
-      "characterId": "mara-vale",
       "agency": "invoker",
       "narrativeOverrides": [],
-      "position": { "x": 100, "y": 70 },
-      "initialValues": { "respect": { "charge": -0.4, "deficitIntegral": 0.75, "variance": 0.2 } },
+      "position": {
+        "x": 100,
+        "y": 70
+      },
+      "initialValues": {
+        "respect": {
+          "charge": -0.4,
+          "deficitIntegral": 0.75,
+          "variance": 0.2
+        }
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -219,14 +286,21 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "mara-vale"
+      }
     },
     {
       "instanceId": "preemptive",
-      "characterId": "tomas-reed",
       "agency": "invoker",
       "narrativeOverrides": [],
-      "position": { "x": 102, "y": 70 },
+      "position": {
+        "x": 102,
+        "y": 70
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -237,14 +311,26 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "tomas-reed"
+      }
     },
     {
       "instanceId": "genuine",
-      "characterId": "nessa-arden",
       "agency": "invoker",
-      "narrativeOverrides": [{ "claimId": "claim-1", "confidence": 0.2 }],
-      "position": { "x": 104, "y": 70 },
+      "narrativeOverrides": [
+        {
+          "claimId": "claim-1",
+          "confidence": 0.2
+        }
+      ],
+      "position": {
+        "x": 104,
+        "y": 70
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -255,14 +341,21 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     },
     {
       "instanceId": "lowering",
-      "characterId": "elian-voss",
       "agency": "invoker",
       "narrativeOverrides": [],
-      "position": { "x": 106, "y": 70 },
+      "position": {
+        "x": 106,
+        "y": 70
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -273,14 +366,21 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "elian-voss"
+      }
     },
     {
       "instanceId": "dominant",
-      "characterId": "sera-dane",
       "agency": "responder",
       "narrativeOverrides": [],
-      "position": { "x": 108, "y": 70 },
+      "position": {
+        "x": 108,
+        "y": 70
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -291,14 +391,21 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "sera-dane"
+      }
     },
     {
       "instanceId": "invoker",
-      "characterId": "nessa-arden",
       "agency": "invoker",
       "narrativeOverrides": [],
-      "position": { "x": 110, "y": 70 },
+      "position": {
+        "x": 110,
+        "y": 70
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -309,14 +416,21 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     },
     {
       "instanceId": "responder",
-      "characterId": "nessa-arden",
       "agency": "responder",
       "narrativeOverrides": [],
-      "position": { "x": 112, "y": 70 },
+      "position": {
+        "x": 112,
+        "y": 70
+      },
       "schedule": [
         {
           "startMinute": 0,
@@ -327,7 +441,17 @@
           "maskingDemand": null
         }
       ],
-      "normPerspectives": []
+      "normPerspectives": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     }
-  ]
+  ],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

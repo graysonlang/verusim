@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 12,
   "id": "highwayman-road",
   "title": "The Highwayman: Empty Road",
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
-  "environmentId": "old-king-road",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -30,7 +29,9 @@
       "estimateConfidence": 0.1,
       "predictionError": 0,
       "suspicion": 0,
-      "mode": "courteous"
+      "mode": "courteous",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [],
@@ -58,17 +59,25 @@
           "operation": "take",
           "contractViolation": 0.35,
           "repercussionSeverity": 2,
-          "narrativeExpression": 0,
           "impacts": [
             {
               "subjectId": "actor",
-              "turns": { "safety": 0.55, "autonomy": 0.25, "competence": 0.1 }
+              "turns": {
+                "safety": 0.55,
+                "autonomy": 0.25,
+                "competence": 0.1
+              }
             },
             {
               "subjectId": "merchant",
-              "turns": { "safety": -0.8, "autonomy": -0.7, "fairness": -0.6 }
+              "turns": {
+                "safety": -0.8,
+                "autonomy": -0.7,
+                "fairness": -0.6
+              }
             }
-          ]
+          ],
+          "claimExpressions": []
         },
         {
           "id": "greet",
@@ -76,11 +85,21 @@
           "operation": "acknowledge",
           "contractViolation": 0,
           "repercussionSeverity": 0,
-          "narrativeExpression": 0,
           "impacts": [
-            { "subjectId": "actor", "turns": { "belonging": 0.04 } },
-            { "subjectId": "merchant", "turns": { "respect": 0.08 } }
-          ]
+            {
+              "subjectId": "actor",
+              "turns": {
+                "belonging": 0.04
+              }
+            },
+            {
+              "subjectId": "merchant",
+              "turns": {
+                "respect": 0.08
+              }
+            }
+          ],
+          "claimExpressions": []
         }
       ]
     }
@@ -88,29 +107,65 @@
   "characters": [
     {
       "instanceId": "actor",
-      "characterId": "corvin-rusk",
-      "position": { "x": 45.8, "y": 41.7 },
+      "position": {
+        "x": 45.8,
+        "y": 41.7
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "dark-road",
           "activity": "Watching the road",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "corvin-rusk"
+      }
     },
     {
       "instanceId": "merchant",
-      "characterId": "jon-mere",
-      "position": { "x": 54.2, "y": 41.7 },
+      "position": {
+        "x": 54.2,
+        "y": 41.7
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "dark-road",
           "activity": "Traveling west",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "jon-mere"
+      }
     }
-  ]
+  ],
+  "localNorms": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "old-king-road"
+  }
 }

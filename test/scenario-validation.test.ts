@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import characters from '../library/characters.json';
-import copingCharacters from '../library/coping-characters.json';
-import copingEnvironments from '../library/coping-environments.json';
-import environments from '../library/environments.json';
-import mindModelCharacters from '../library/mind-model-characters.json';
-import normCharacters from '../library/norm-characters.json';
+import {
+  characters,
+  copingCharacters,
+  copingEnvironments,
+  environments,
+  mindModelCharacters,
+  normCharacters,
+} from './fixtures.js';
 import scenario from '../scenarios/market-morning.json';
 import mindModelScenario from '../scenarios/endicott-margueritte.json';
 import normScenario from '../scenarios/pottsfield.json';
@@ -36,14 +38,46 @@ function replaceWithLegacyTrace(snapshot: Record<string, unknown>): void {
   });
 }
 
+function downgradeScenarioReferences(
+  value: unknown,
+  schemaVersion: number,
+): Record<string, unknown> {
+  const legacy = structuredClone(value) as Record<string, unknown>;
+  const environment = legacy.environment as { resourceId: string };
+  legacy.environmentId = environment.resourceId;
+  delete legacy.environment;
+  for (const placement of legacy.characters as Array<Record<string, unknown>>) {
+    const profile = placement.profile as { resourceId: string };
+    placement.characterId = profile.resourceId;
+    delete placement.profile;
+  }
+  legacy.schemaVersion = schemaVersion;
+  return legacy;
+}
+
+function downgradeSnapshotReferences(
+  snapshot: Record<string, unknown>,
+  schemaVersion: number,
+): void {
+  const environment = snapshot.environment as { resourceId: string };
+  snapshot.environmentId = environment.resourceId;
+  delete snapshot.environment;
+  delete snapshot.resourceLock;
+  for (const agent of snapshot.agents as Array<Record<string, unknown>>) {
+    const profile = agent.profile as { resourceId: string };
+    agent.profileId = profile.resourceId;
+    delete agent.profile;
+  }
+  snapshot.schemaVersion = schemaVersion;
+}
+
 describe('scenario validation', () => {
   it('migrates Phase 0 scenarios to the agenda content shape', () => {
-    const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
-    legacy.schemaVersion = 1;
+    const legacy = downgradeScenarioReferences(scenario, 1);
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
@@ -103,8 +137,7 @@ describe('scenario validation', () => {
     assert.equal(migratedEnvironments.schemaVersion, 2);
     assert.deepEqual(migratedEnvironments.environments[0]?.outletAffordances, []);
 
-    const legacyScenario = structuredClone(scenario) as unknown as Record<string, unknown>;
-    legacyScenario.schemaVersion = 2;
+    const legacyScenario = downgradeScenarioReferences(scenario, 2);
     delete legacyScenario.dyads;
     delete legacyScenario.disclosureItems;
     delete legacyScenario.disclosureOpportunities;
@@ -116,7 +149,7 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 11);
+    assert.equal(migratedScenario.schemaVersion, 12);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
     assert.equal(migratedScenario.dyads[0]?.suspicion, 0);
@@ -125,13 +158,12 @@ describe('scenario validation', () => {
   });
 
   it('migrates relational scenarios and snapshots to the agenda boundary', () => {
-    const relationalScenario = structuredClone(scenario) as unknown as Record<string, unknown>;
-    relationalScenario.schemaVersion = 3;
+    const relationalScenario = downgradeScenarioReferences(scenario, 3);
     delete relationalScenario.agendaGoals;
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 11);
+    assert.equal(migratedScenario.schemaVersion, 12);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -142,7 +174,7 @@ describe('scenario validation', () => {
       }),
     ) as unknown as Record<string, unknown>;
     replaceWithLegacyTrace(snapshot);
-    snapshot.schemaVersion = 1;
+    downgradeSnapshotReferences(snapshot, 1);
     snapshot.scenario = relationalScenario;
     delete snapshot.agendaDecisions;
     delete snapshot.agendaGoals;
@@ -151,7 +183,7 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 8);
+    assert.equal(migratedSnapshot.schemaVersion, 9);
     assert.equal(migratedSnapshot.trace.schemaVersion, 1);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
@@ -172,15 +204,14 @@ describe('scenario validation', () => {
       }),
     ) as unknown as Record<string, unknown>;
     replaceWithLegacyTrace(agendaSnapshot);
-    agendaSnapshot.schemaVersion = 2;
+    downgradeSnapshotReferences(agendaSnapshot, 2);
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
-    assert.equal(migratedAgendaSnapshot.schemaVersion, 8);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 9);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
   });
 
   it('migrates legacy schedule activities to explicit recovery modes', () => {
-    const legacy = structuredClone(scenario) as unknown as Record<string, unknown>;
-    legacy.schemaVersion = 4;
+    const legacy = downgradeScenarioReferences(scenario, 4);
     for (const placement of legacy.characters as Array<Record<string, unknown>>) {
       for (const block of placement.schedule as Array<Record<string, unknown>>) {
         delete block.recoveryMode;
@@ -188,7 +219,7 @@ describe('scenario validation', () => {
     }
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
 
@@ -206,15 +237,14 @@ describe('scenario validation', () => {
   });
 
   it('adds neutral atmosphere without rewriting version 5 recovery data', () => {
-    const prior = structuredClone(scenario) as unknown as Record<string, unknown>;
-    prior.schemaVersion = 5;
+    const prior = downgradeScenarioReferences(scenario, 5);
     delete prior.environmentConditions;
     const placements = prior.characters as Array<Record<string, unknown>>;
     const schedule = placements[0]?.schedule as Array<Record<string, unknown>>;
     assert.equal(schedule[0]?.recoveryMode, 'sleep');
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.deepEqual(migrated.environmentConditions, {
       season: 'spring',
@@ -224,23 +254,22 @@ describe('scenario validation', () => {
   });
 
   it('adds observation state without rewriting version 6 atmosphere data', () => {
-    const prior = structuredClone(mindModelScenario) as unknown as Record<string, unknown>;
-    prior.schemaVersion = 6;
+    const prior = downgradeScenarioReferences(mindModelScenario, 6);
     delete prior.observationEvents;
     for (const dyad of prior.dyads as Array<Record<string, unknown>>) delete dyad.suspicion;
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.deepEqual(migrated.observationEvents, []);
     assert.equal(migrated.dyads[0]?.suspicion, 0);
     assert.deepEqual(migrated.environmentConditions, mindModelScenario.environmentConditions);
   });
 
   it('adds local norm state without rewriting version 7 observations', () => {
-    const prior = structuredClone(mindModelScenario) as unknown as Record<string, unknown>;
+    const prior = downgradeScenarioReferences(mindModelScenario, 7);
     const migrated = parseScenario(prior);
 
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.deepEqual(migrated.localNorms, []);
     assert.ok(migrated.characters.every(placement => placement.normPerspectives.length === 0));
     assert.ok(migrated.observationEvents.every(event => event.eventType === 'mind-model'));
@@ -254,9 +283,9 @@ describe('scenario validation', () => {
       2,
     );
     const snapshot = serializeSnapshot(observed) as unknown as Record<string, unknown>;
-    snapshot.schemaVersion = 4;
+    downgradeSnapshotReferences(snapshot, 4);
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 8);
+    assert.equal(migratedSnapshot.schemaVersion, 9);
     assert.ok(migratedSnapshot.observations.length > 0);
     assert.ok(migratedSnapshot.observations.every(event => event.eventType === 'mind-model'));
     assert.ok(
@@ -265,8 +294,7 @@ describe('scenario validation', () => {
   });
 
   it('adds coping inputs without rewriting version 9 relationship state', () => {
-    const prior = structuredClone(relationshipScenario) as unknown as Record<string, unknown>;
-    prior.schemaVersion = 9;
+    const prior = downgradeScenarioReferences(relationshipScenario, 9);
     delete prior.appraisalEvents;
     for (const placement of prior.characters as Array<Record<string, unknown>>) {
       for (const block of placement.schedule as Array<Record<string, unknown>>) {
@@ -275,7 +303,7 @@ describe('scenario validation', () => {
       }
     }
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.deepEqual(migrated.appraisalEvents, []);
     assert.ok(
       migrated.characters.every(placement =>
@@ -294,7 +322,7 @@ describe('scenario validation', () => {
         scenario: relationshipScenario,
       }),
     ) as unknown as Record<string, unknown>;
-    snapshot.schemaVersion = 6;
+    downgradeSnapshotReferences(snapshot, 6);
     snapshot.scenario = prior;
     delete snapshot.appraisalRecords;
     delete snapshot.resolvedAppraisalEventIds;
@@ -306,15 +334,14 @@ describe('scenario validation', () => {
       delete agent.outletHistory;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 8);
+    assert.equal(migratedSnapshot.schemaVersion, 9);
     assert.deepEqual(migratedSnapshot.appraisalRecords, []);
     assert.deepEqual(migratedSnapshot.resolvedAppraisalEventIds, []);
     assert.ok(migratedSnapshot.agents.every(agent => agent.currentOutlet === null));
   });
 
   it('adds narrative agency without rewriting version 10 coping state', () => {
-    const prior = structuredClone(cascadeScenario) as unknown as Record<string, unknown>;
-    prior.schemaVersion = 10;
+    const prior = downgradeScenarioReferences(cascadeScenario, 10);
     delete prior.aspirationOpportunities;
     delete prior.narrativeEvents;
     delete prior.reputationGroups;
@@ -326,7 +353,7 @@ describe('scenario validation', () => {
       delete dyad.validatorClaimIds;
     }
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 11);
+    assert.equal(migrated.schemaVersion, 12);
     assert.equal(migrated.appraisalEvents.length, cascadeScenario.appraisalEvents.length);
     assert.deepEqual(migrated.aspirationOpportunities, []);
     assert.deepEqual(migrated.narrativeEvents, []);
@@ -342,7 +369,7 @@ describe('scenario validation', () => {
         1,
       ),
     ) as unknown as Record<string, unknown>;
-    snapshot.schemaVersion = 7;
+    downgradeSnapshotReferences(snapshot, 7);
     snapshot.scenario = prior;
     delete snapshot.narrativeRecords;
     delete snapshot.reputations;
@@ -352,7 +379,7 @@ describe('scenario validation', () => {
       delete agent.narrative;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 8);
+    assert.equal(migratedSnapshot.schemaVersion, 9);
     assert.ok(migratedSnapshot.agents.every(agent => agent.narrative === null));
     assert.ok(migratedSnapshot.agents.some(agent => agent.cascade !== 'none'));
   });
@@ -498,7 +525,7 @@ describe('scenario validation', () => {
     const malformed = structuredClone(characters);
     const first = malformed.characters[0];
     assert.ok(first);
-    first.physical.build.heightClass = 'towering';
+    first.physical.build.heightClass = 'towering' as never;
     assert.throws(
       () => parseCharacterLibrary(malformed),
       /characterLibrary\.characters\[0\]\.physical\.build\.heightClass/,
@@ -518,7 +545,7 @@ describe('scenario validation', () => {
     assert.ok(firstCharacter);
     const firstPreference = firstCharacter.outletPreferences[0];
     assert.ok(firstPreference);
-    firstPreference.operation = 'brood';
+    firstPreference.operation = 'brood' as never;
     assert.throws(
       () => parseCharacterLibrary(malformedCharacters),
       /characterLibrary\.characters\[0\]\.outletPreferences\[0\]\.operation/,
@@ -563,7 +590,7 @@ describe('scenario validation', () => {
     const malformed = structuredClone(scenario);
     const first = malformed.characters[0];
     if (first === undefined) throw new Error('Fixture must contain a character');
-    first.characterId = 'missing-character';
+    first.profile.resourceId = 'missing-character';
     assert.throws(
       () =>
         createSimulation({
@@ -571,7 +598,7 @@ describe('scenario validation', () => {
           environmentLibrary: environments,
           scenario: malformed,
         }),
-      /unknown character "missing-character"/,
+      /unknown resource "verusim:character-profile:missing-character"/,
     );
   });
 });

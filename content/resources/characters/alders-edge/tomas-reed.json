@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "tomas-reed"
+  },
+  "profile": {
+    "name": "Tomas Reed",
+    "role": "Blacksmith",
+    "summary": "A precise craftsperson who hears technical criticism more clearly than affection.",
+    "physical": {
+      "ageYears": 42,
+      "sex": "male",
+      "build": {
+        "heightClass": "tall",
+        "weightClass": "heavy"
+      },
+      "comeliness": 0.48
+    },
+    "capabilities": {
+      "acuity": 0.84,
+      "evidenceCalibration": 0.76,
+      "expressiveControl": 0.42
+    },
+    "constitution": {
+      "reactivity": 0.52,
+      "threshold": 0.64,
+      "recoveryRate": 0.28,
+      "socialValence": -0.46,
+      "habituationRate": 0.23,
+      "baselineArousal": 0.34
+    },
+    "contractAdherence": 0.68,
+    "disclosure": {
+      "intimateSafety": 0.82,
+      "strangerSafety": 0.58,
+      "troughDepth": 0.68,
+      "troughPosition": 0.5,
+      "troughWidth": 0.18
+    },
+    "empathy": {
+      "floor": 0.18,
+      "ceiling": 0.92,
+      "steepness": 3.4,
+      "selfPosition": 0,
+      "threatSensitivity": 0.45,
+      "featureWeights": {
+        "kinship": 0.85,
+        "familiarity": 1.15,
+        "similarity": 0.7,
+        "reciprocity": 1.1,
+        "category": 0.45
+      }
+    },
+    "identity": [
+      {
+        "marker": "master smith",
+        "centrality": 0.95
+      },
+      {
+        "marker": "east ward",
+        "centrality": 0.48
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 0.76,
+        "initialCharge": 0.3,
+        "initialDeficit": 0.05,
+        "initialVariance": 0.1
+      },
+      "belonging": {
+        "weight": 0.7,
+        "initialCharge": -0.08,
+        "initialDeficit": 0.17,
+        "initialVariance": 0.22
+      },
+      "respect": {
+        "weight": 1.32,
+        "initialCharge": -0.18,
+        "initialDeficit": 0.3,
+        "initialVariance": 0.29
+      },
+      "autonomy": {
+        "weight": 1,
+        "initialCharge": 0.4,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.09
+      },
+      "competence": {
+        "weight": 1.45,
+        "initialCharge": 0.36,
+        "initialDeficit": 0.12,
+        "initialVariance": 0.07
+      },
+      "fairness": {
+        "weight": 0.9,
+        "initialCharge": 0.05,
+        "initialDeficit": 0.09,
+        "initialVariance": 0.17
+      }
+    },
+    "narrativeClaims": [
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-1",
+        "kind": "affirm",
+        "statement": "My work speaks plainly"
+      },
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-2",
+        "kind": "deny",
+        "statement": "I do not need praise"
+      }
+    ],
+    "formativeEvents": [
+      {
+        "age": 15,
+        "value": "respect",
+        "turn": -0.74,
+        "attribution": "Master Orra",
+        "copingPotential": 0.18,
+        "summary": "His master mocked his first commissioned blade before the whole guild."
+      },
+      {
+        "age": 29,
+        "value": "competence",
+        "turn": 0.62,
+        "attribution": "the river guard",
+        "copingPotential": 0.9,
+        "summary": "A gate hinge he forged held through the spring flood."
+      }
+    ],
+    "characterId": "tomas-reed",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "tomas-reed"
+  }
+}

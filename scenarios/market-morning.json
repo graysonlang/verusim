@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 12,
   "id": "market-morning",
   "title": "Market Morning",
   "summary": "A cold morning after rumors of a failed eastern crop have reached Alder's Edge.",
-  "environmentId": "alders-edge",
   "startMinute": 470,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -26,235 +25,361 @@
   "characters": [
     {
       "instanceId": "mara",
-      "characterId": "mara-vale",
-      "position": { "x": 65, "y": 89 },
+      "position": {
+        "x": 65,
+        "y": 89
+      },
       "walkingMetersPerMinute": 18,
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "mara-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 360,
           "locationId": "mara-house",
           "activity": "Preparing the inn",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 480,
           "locationId": "wayfarer-inn",
           "activity": "Opening the common room",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 720,
           "locationId": "market-square",
           "activity": "Buying provisions",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 780,
           "locationId": "wayfarer-inn",
           "activity": "Serving travelers",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1320,
           "locationId": "mara-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "mara-vale"
+      }
     },
     {
       "instanceId": "tomas",
-      "characterId": "tomas-reed",
-      "position": { "x": 164, "y": 93 },
+      "position": {
+        "x": 164,
+        "y": 93
+      },
       "walkingMetersPerMinute": 17,
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "tomas-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 390,
           "locationId": "tomas-house",
           "activity": "Sharpening tools",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 480,
           "locationId": "iron-yard",
           "activity": "Working the forge",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 750,
           "locationId": "market-square",
           "activity": "Inspecting commissions",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 840,
           "locationId": "iron-yard",
           "activity": "Working the forge",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1140,
           "locationId": "wayfarer-inn",
           "activity": "Eating alone",
-          "recoveryMode": "break"
+          "recoveryMode": "break",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1260,
           "locationId": "tomas-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "tomas-reed"
+      }
     },
     {
       "instanceId": "nessa",
-      "characterId": "nessa-arden",
-      "position": { "x": 92.5, "y": 25 },
+      "position": {
+        "x": 92.5,
+        "y": 25
+      },
       "walkingMetersPerMinute": 16,
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "nessa-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 420,
           "locationId": "healers-house",
           "activity": "Sorting remedies",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 600,
           "locationId": "market-square",
           "activity": "Holding an open clinic",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 780,
           "locationId": "healers-house",
           "activity": "Receiving patients",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1110,
           "locationId": "riverside",
           "activity": "Gathering willow bark",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1260,
           "locationId": "nessa-house",
           "activity": "Reading",
-          "recoveryMode": "rest"
+          "recoveryMode": "rest",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
     },
     {
       "instanceId": "elian",
-      "characterId": "elian-voss",
-      "position": { "x": 139, "y": 25.5 },
+      "position": {
+        "x": 139,
+        "y": 25.5
+      },
       "walkingMetersPerMinute": 20,
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "elian-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 360,
           "locationId": "guard-house",
           "activity": "Reading the night report",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 450,
           "locationId": "north-gate",
           "activity": "Watching arrivals",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 720,
           "locationId": "market-square",
           "activity": "Walking the market",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 810,
           "locationId": "north-gate",
           "activity": "Watching arrivals",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1080,
           "locationId": "wayfarer-inn",
           "activity": "Meeting the late patrol",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1260,
           "locationId": "elian-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "elian-voss"
+      }
     },
     {
       "instanceId": "sera",
-      "characterId": "sera-dane",
-      "position": { "x": 76.5, "y": 108 },
+      "position": {
+        "x": 76.5,
+        "y": 108
+      },
       "walkingMetersPerMinute": 15,
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "sera-house",
           "activity": "Sleeping",
-          "recoveryMode": "sleep"
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 330,
           "locationId": "alder-mill",
           "activity": "Checking the millrace",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 540,
           "locationId": "market-square",
           "activity": "Collecting grain accounts",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 630,
           "locationId": "alder-mill",
           "activity": "Milling grain",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1080,
           "locationId": "riverside",
           "activity": "Inspecting the water level",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         },
         {
           "startMinute": 1170,
           "locationId": "sera-house",
           "activity": "Keeping her books",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "sera-dane"
+      }
     }
-  ]
+  ],
+  "localNorms": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

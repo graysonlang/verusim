@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import characters from '../library/characters.json';
-import copingCharacters from '../library/coping-characters.json';
-import copingEnvironments from '../library/coping-environments.json';
-import environments from '../library/environments.json';
+import { characters, copingCharacters, copingEnvironments, environments } from './fixtures.js';
 import cascadeScenario from '../scenarios/cascade-room.json';
 import innkeeperScenario from '../scenarios/innkeeper-coping.json';
 import {
@@ -28,7 +25,8 @@ function createInnkeeperSimulation(
   environmentId = 'coping-inn',
   input: unknown = innkeeperScenario,
 ) {
-  const authored = { ...parseScenario(input), environmentId };
+  const authored = parseScenario(input);
+  authored.environment.resourceId = environmentId;
   return createSimulation({
     characterLibrary: copingCharacters,
     environmentLibrary: copingEnvironments,

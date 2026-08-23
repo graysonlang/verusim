@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import characters from '../library/characters.json';
-import environments from '../library/environments.json';
+import { characters, environments } from './fixtures.js';
 import narrativeScenario from '../scenarios/narrative-agency.json';
 import {
   advanceSimulation,
@@ -126,7 +125,7 @@ describe('narrative-driven agency', () => {
     );
 
     const library = parseCharacterLibrary(characters);
-    const profile = library.characters.find(candidate => candidate.id === 'nessa-arden');
+    const profile = library.characters.find(candidate => candidate.profileId === 'nessa-arden');
     assert.ok(profile);
     profile.physical.ageYears = 16;
     profile.formativeEvents = profile.formativeEvents.filter(event => event.age <= 16);

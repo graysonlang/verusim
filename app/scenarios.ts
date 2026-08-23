@@ -9,19 +9,31 @@ import marketMorning from '../scenarios/market-morning.json';
 import narrativeAgency from '../scenarios/narrative-agency.json';
 import pottsfield from '../scenarios/pottsfield.json';
 import relationshipMomentum from '../scenarios/relationship-momentum.json';
-import { parseScenario, type ScenarioFile } from '../src/index.js';
+import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
+import {
+  createResourceCatalog,
+  prepareScenario,
+  type PreparedScenario,
+  type ResourceCatalog,
+  type ScenarioFile,
+} from '../src/index.js';
 
 export interface BuiltInScenario {
   id: string;
+  prepared: PreparedScenario;
   scenario: ScenarioFile;
   summary: string;
   title: string;
 }
 
+export const BUILT_IN_RESOURCE_CATALOG: ResourceCatalog = createResourceCatalog(BUILT_IN_RESOURCES);
+
 function builtInScenario(value: unknown): BuiltInScenario {
-  const scenario = parseScenario(value);
+  const prepared = prepareScenario({ catalog: BUILT_IN_RESOURCE_CATALOG, scenario: value });
+  const { scenario } = prepared;
   return {
     id: scenario.id,
+    prepared,
     scenario,
     summary: scenario.summary,
     title: scenario.title,

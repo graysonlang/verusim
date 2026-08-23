@@ -11,6 +11,24 @@ export type ValueId = (typeof VALUE_IDS)[number];
 
 export type ValueMap<Value> = { [Key in ValueId]: Value };
 
+export const RESOURCE_KINDS = ['character-profile', 'environment-layout'] as const;
+
+export type ResourceKind = (typeof RESOURCE_KINDS)[number];
+
+export interface ResourceAddress {
+  kind: ResourceKind;
+  packageId: string;
+  resourceId: string;
+}
+
+export interface CharacterProfileAddress extends ResourceAddress {
+  kind: 'character-profile';
+}
+
+export interface EnvironmentLayoutAddress extends ResourceAddress {
+  kind: 'environment-layout';
+}
+
 export const SOCIAL_FEATURE_IDS = [
   'kinship',
   'familiarity',
@@ -219,12 +237,13 @@ export interface CharacterDefinition {
   disclosure: DisclosureEnvelope;
   empathy: EmpathyEnvelope;
   formativeEvents: FormativeEvent[];
-  id: string;
+  characterId: string;
   identity: IdentityMarker[];
   name: string;
   narrativeClaims: NarrativeClaimSeed[];
   outletPreferences: OutletPreference[];
   physical: PhysicalProfile;
+  profileId: string;
   role: string;
   satisfierPreferences: SatisfierPreference[];
   summary: string;
@@ -234,6 +253,12 @@ export interface CharacterDefinition {
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
   schemaVersion: 7;
+}
+
+export interface CharacterProfileResourceFile {
+  address: CharacterProfileAddress;
+  profile: CharacterDefinition;
+  schemaVersion: 1;
 }
 
 export const OUTLET_OPERATIONS = [
@@ -278,8 +303,9 @@ export interface LocationDefinition extends Bounds {
 
 export interface EnvironmentDefinition {
   areas: EnvironmentArea[];
+  environmentId: string;
   height: number;
-  id: string;
+  layoutId: string;
   locations: LocationDefinition[];
   name: string;
   outletAffordances: OutletAffordance[];
@@ -289,6 +315,37 @@ export interface EnvironmentDefinition {
 export interface EnvironmentLibraryFile {
   environments: EnvironmentDefinition[];
   schemaVersion: 2;
+}
+
+export interface EnvironmentLayoutResourceFile {
+  address: EnvironmentLayoutAddress;
+  layout: EnvironmentDefinition;
+  schemaVersion: 1;
+}
+
+export type ResourceFile = CharacterProfileResourceFile | EnvironmentLayoutResourceFile;
+
+export interface AuthoredResource {
+  source: string;
+  value: unknown;
+}
+
+export interface ResourceCatalogEntry {
+  address: ResourceAddress;
+  resource: ResourceFile;
+  source: string;
+}
+
+export interface ResourceCatalog {
+  entries: readonly ResourceCatalogEntry[];
+}
+
+export interface ContentSource {
+  read(address: ResourceAddress): Promise<unknown>;
+}
+
+export interface ResourceLock {
+  resources: readonly ResourceAddress[];
 }
 
 export type ReinforcementSchedule = 'fixed' | 'variable-ratio';
@@ -340,7 +397,7 @@ export interface ResourceState {
 
 export interface CharacterPlacement {
   agency: AgencyMode;
-  characterId: string;
+  profile: CharacterProfileAddress;
   initialResources?: Partial<ResourceState>;
   initialValues?: Partial<ValueMap<Partial<ValueState>>>;
   instanceId: string;
@@ -655,7 +712,7 @@ export interface ScenarioFile {
   disclosureItems: DisclosureItemSeed[];
   disclosureOpportunities: DisclosureOpportunity[];
   dyads: DyadSeed[];
-  environmentId: string;
+  environment: EnvironmentLayoutAddress;
   environmentConditions: EnvironmentConditions;
   id: string;
   initialTimeRate?: TimeRateId;
@@ -665,7 +722,7 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 11;
+  schemaVersion: 12;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -806,6 +863,7 @@ export interface SimulationState {
   plans: AgendaPlan[];
   relationshipDecisions: RelationshipDecisionRecord[];
   reputations: AttributedNarrative[];
+  resourceLock: ResourceLock;
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
@@ -856,6 +914,20 @@ export interface ScenarioContent {
   characterLibrary: CharacterLibraryFile;
   environmentLibrary: EnvironmentLibraryFile;
   scenario: ScenarioFile;
+}
+
+export interface PreparedCharacterPlacement {
+  placement: CharacterPlacement;
+  profile: CharacterDefinition;
+}
+
+export interface PreparedScenario {
+  characters: readonly PreparedCharacterPlacement[];
+  environment: EnvironmentDefinition;
+  resourceLock: ResourceLock;
+  scenario: ScenarioFile;
+  schemaVersion: 1;
+  type: 'verusim-prepared-scenario';
 }
 
 export interface ValueImpact {
@@ -1099,7 +1171,7 @@ export interface SimulationAgentSnapshot {
   narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
   position: Point;
-  profileId: string;
+  profile: CharacterProfileAddress;
   resources: ResourceState;
   schedule: ScheduleBlock[];
   values: ValueMap<ValueState>;
@@ -1115,7 +1187,7 @@ export interface SimulationSnapshotFile {
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
   dyads: DyadState[];
-  environmentId: string;
+  environment: EnvironmentLayoutAddress;
   intentions: TaskIntention[];
   minute: number;
   narrativeRecords: NarrativeRecord[];
@@ -1123,6 +1195,7 @@ export interface SimulationSnapshotFile {
   plans: AgendaPlan[];
   relationshipDecisions: RelationshipDecisionRecord[];
   reputations: AttributedNarrative[];
+  resourceLock: ResourceLock;
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
@@ -1132,7 +1205,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 8;
+  schemaVersion: 9;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

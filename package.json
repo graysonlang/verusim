@@ -33,6 +33,8 @@
     "vscode:debug": "npm run serve -- --vscode",
     "vscode:debug:https": "npm run serve:https -- --vscode",
     "cert:dev": "ESP_DEV_CERT_NAME=$npm_package_config_esp_dev_cert_name esp-generate-dev-cert",
+    "catalog:generate": "node ./scripts/generate-resource-catalog.mjs",
+    "catalog:check": "node ./scripts/generate-resource-catalog.mjs --check",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",

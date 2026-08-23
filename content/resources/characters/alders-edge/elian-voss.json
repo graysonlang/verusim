@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "elian-voss"
+  },
+  "profile": {
+    "name": "Elian Voss",
+    "role": "Gate warden",
+    "summary": "A sociable guard who invests heavily in rules that promise mutual protection.",
+    "physical": {
+      "ageYears": 31,
+      "sex": "male",
+      "build": {
+        "heightClass": "tall",
+        "weightClass": "average"
+      },
+      "comeliness": 0.62
+    },
+    "capabilities": {
+      "acuity": 0.61,
+      "evidenceCalibration": 0.63,
+      "expressiveControl": 0.79
+    },
+    "constitution": {
+      "reactivity": 0.47,
+      "threshold": 0.61,
+      "recoveryRate": 0.45,
+      "socialValence": 0.63,
+      "habituationRate": 0.42,
+      "baselineArousal": 0.49
+    },
+    "contractAdherence": 0.91,
+    "disclosure": {
+      "intimateSafety": 0.78,
+      "strangerSafety": 0.5,
+      "troughDepth": 0.58,
+      "troughPosition": 0.48,
+      "troughWidth": 0.2
+    },
+    "empathy": {
+      "floor": 0.28,
+      "ceiling": 0.96,
+      "steepness": 2.5,
+      "selfPosition": 0,
+      "threatSensitivity": 0.7,
+      "featureWeights": {
+        "kinship": 1.25,
+        "familiarity": 0.95,
+        "similarity": 0.45,
+        "reciprocity": 0.8,
+        "category": 1.15
+      }
+    },
+    "identity": [
+      {
+        "marker": "north gate warden",
+        "centrality": 0.84
+      },
+      {
+        "marker": "Voss family",
+        "centrality": 0.7
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1.22,
+        "initialCharge": -0.02,
+        "initialDeficit": 0.16,
+        "initialVariance": 0.26
+      },
+      "belonging": {
+        "weight": 1.15,
+        "initialCharge": 0.38,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.09
+      },
+      "respect": {
+        "weight": 0.92,
+        "initialCharge": 0.26,
+        "initialDeficit": 0.05,
+        "initialVariance": 0.1
+      },
+      "autonomy": {
+        "weight": 0.68,
+        "initialCharge": 0.1,
+        "initialDeficit": 0.1,
+        "initialVariance": 0.13
+      },
+      "competence": {
+        "weight": 0.95,
+        "initialCharge": 0.22,
+        "initialDeficit": 0.06,
+        "initialVariance": 0.11
+      },
+      "fairness": {
+        "weight": 1.36,
+        "initialCharge": 0.12,
+        "initialDeficit": 0.08,
+        "initialVariance": 0.14
+      }
+    },
+    "narrativeClaims": [
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-1",
+        "kind": "affirm",
+        "statement": "A rule should shelter everyone"
+      },
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-2",
+        "kind": "affirm",
+        "statement": "I notice who passes my gate"
+      }
+    ],
+    "formativeEvents": [
+      {
+        "age": 8,
+        "value": "safety",
+        "turn": -0.48,
+        "attribution": "a passing militia",
+        "copingPotential": 0.24,
+        "summary": "A militia ignored the village boundary and took the family's winter stores."
+      },
+      {
+        "age": 19,
+        "value": "belonging",
+        "turn": 0.46,
+        "attribution": "the river guard",
+        "copingPotential": 0.82,
+        "summary": "The guard company pooled wages after his father's injury."
+      }
+    ],
+    "characterId": "elian-voss",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "elian-voss"
+  }
+}

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import characters from '../library/characters.json';
-import environments from '../library/environments.json';
+import { characters, environments } from './fixtures.js';
 import scenario from '../scenarios/market-morning.json';
 import {
   VALUE_IDS,
@@ -66,7 +65,7 @@ describe('simulation runtime', () => {
   it('resolves reusable character and environment references', () => {
     const state = starterSimulation();
     assert.equal(state.scenario.id, 'market-morning');
-    assert.equal(state.environment.id, 'alders-edge');
+    assert.equal(state.environment.layoutId, 'alders-edge');
     assert.deepEqual(
       state.agents.map(agent => agent.profile.name),
       ['Mara Vale', 'Tomas Reed', 'Nessa Arden', 'Elian Voss', 'Sera Dane'],

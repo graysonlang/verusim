@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "nessa-arden"
+  },
+  "profile": {
+    "name": "Nessa Arden",
+    "role": "Healer",
+    "summary": "A patient observer who protects other people's confidences at personal cost.",
+    "physical": {
+      "ageYears": 34,
+      "sex": "female",
+      "build": {
+        "heightClass": "short",
+        "weightClass": "light"
+      },
+      "comeliness": 0.68
+    },
+    "capabilities": {
+      "acuity": 0.9,
+      "evidenceCalibration": 0.82,
+      "expressiveControl": 0.58
+    },
+    "constitution": {
+      "reactivity": 0.38,
+      "threshold": 0.72,
+      "recoveryRate": 0.55,
+      "socialValence": 0.12,
+      "habituationRate": 0.29,
+      "baselineArousal": 0.3
+    },
+    "contractAdherence": 0.88,
+    "disclosure": {
+      "intimateSafety": 0.9,
+      "strangerSafety": 0.62,
+      "troughDepth": 0.6,
+      "troughPosition": 0.55,
+      "troughWidth": 0.2
+    },
+    "empathy": {
+      "floor": 0.34,
+      "ceiling": 0.98,
+      "steepness": 2.2,
+      "selfPosition": 0,
+      "threatSensitivity": 0.36,
+      "featureWeights": {
+        "kinship": 0.9,
+        "familiarity": 1.35,
+        "similarity": 0.6,
+        "reciprocity": 1.1,
+        "category": 0.35
+      }
+    },
+    "identity": [
+      {
+        "marker": "village healer",
+        "centrality": 0.88
+      },
+      {
+        "marker": "keeper of confidences",
+        "centrality": 0.83
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 0.88,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.07,
+        "initialVariance": 0.14
+      },
+      "belonging": {
+        "weight": 1.03,
+        "initialCharge": 0.16,
+        "initialDeficit": 0.08,
+        "initialVariance": 0.15
+      },
+      "respect": {
+        "weight": 0.65,
+        "initialCharge": 0.28,
+        "initialDeficit": 0.02,
+        "initialVariance": 0.08
+      },
+      "autonomy": {
+        "weight": 0.91,
+        "initialCharge": 0.14,
+        "initialDeficit": 0.07,
+        "initialVariance": 0.1
+      },
+      "competence": {
+        "weight": 1.16,
+        "initialCharge": 0.25,
+        "initialDeficit": 0.09,
+        "initialVariance": 0.12
+      },
+      "fairness": {
+        "weight": 1.3,
+        "initialCharge": -0.04,
+        "initialDeficit": 0.14,
+        "initialVariance": 0.18
+      }
+    },
+    "narrativeClaims": [
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-1",
+        "kind": "affirm",
+        "statement": "People are safe when they speak to me"
+      },
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-2",
+        "kind": "deny",
+        "statement": "Care is not a debt"
+      }
+    ],
+    "formativeEvents": [
+      {
+        "age": 9,
+        "value": "belonging",
+        "turn": 0.52,
+        "attribution": "her grandmother",
+        "copingPotential": 0.72,
+        "summary": "Her grandmother told her a family secret and trusted her to hold it."
+      },
+      {
+        "age": 20,
+        "value": "fairness",
+        "turn": -0.5,
+        "attribution": "the apothecary guild",
+        "copingPotential": 0.35,
+        "summary": "The guild denied medicine to a laborer who could not prepay."
+      }
+    ],
+    "characterId": "nessa-arden",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "nessa-arden"
+  }
+}

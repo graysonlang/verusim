@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import environments from '../library/environments.json';
-import mindModelCharacters from '../library/mind-model-characters.json';
+import { environments, mindModelCharacters } from './fixtures.js';
 import scenario from '../scenarios/endicott-margueritte.json';
 import {
   advanceSimulation,

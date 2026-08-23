@@ -7,25 +7,21 @@ import {
   type LocationDefinition,
   type MaskingDemand,
   type Point,
+  type PreparedScenario,
   type RecoveryMode,
+  type ResourceAddress,
   type ResourceState,
   type RuntimeMemory,
-  type ScenarioContent,
   type ScheduleBlock,
   type SimulationAgent,
+  type SimulationSnapshotFile,
   type SimulationState,
   type TraceEntry,
   type ValueId,
   type ValueMap,
   type ValueState,
 } from '../model/types.js';
-import {
-  parseCharacterLibrary,
-  parseEnvironmentLibrary,
-  parseScenario,
-  ScenarioValidationError,
-} from '../scenario/parse.js';
-import { parseSnapshot } from '../scenario/snapshot.js';
+import { ScenarioValidationError } from '../model/validation.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
@@ -92,6 +88,27 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+function sameAddress(left: ResourceAddress, right: ResourceAddress): boolean {
+  return (
+    left.kind === right.kind &&
+    left.packageId === right.packageId &&
+    left.resourceId === right.resourceId
+  );
+}
+
+function sameResourceLock(
+  left: readonly ResourceAddress[],
+  right: readonly ResourceAddress[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((address, index) => {
+      const candidate = right[index];
+      return candidate !== undefined && sameAddress(address, candidate);
+    })
+  );
+}
+
 function locationCenter(location: LocationDefinition): Point {
   return {
     x: location.x + location.width / 2,
@@ -144,7 +161,7 @@ function initialValues(
 
 function initialMemories(profile: CharacterDefinition): RuntimeMemory[] {
   return profile.formativeEvents.map((event, index) => ({
-    id: `formative:${profile.id}:${index}`,
+    id: `formative:${profile.profileId}:${index}`,
     minute: -1,
     summary: event.summary,
     type: 'formative',
@@ -199,412 +216,6 @@ function initializeAgent(
   };
 }
 
-function validateReferences(content: ScenarioContent): void {
-  const characters = new Map(
-    content.characterLibrary.characters.map(character => [character.id, character]),
-  );
-  const environment = content.environmentLibrary.environments.find(
-    candidate => candidate.id === content.scenario.environmentId,
-  );
-  if (environment === undefined) {
-    throw new ScenarioValidationError(
-      'scenario.environmentId',
-      `unknown environment "${content.scenario.environmentId}"`,
-    );
-  }
-  const locationIds = new Set(environment.locations.map(location => location.id));
-  const instanceIds = new Set(content.scenario.characters.map(placement => placement.instanceId));
-  const profileByInstance = new Map(
-    content.scenario.characters.map(placement => [
-      placement.instanceId,
-      characters.get(placement.characterId),
-    ]),
-  );
-  const claimIdsFor = (instanceId: string) =>
-    new Set(profileByInstance.get(instanceId)?.narrativeClaims.map(claim => claim.id) ?? []);
-  const localNormIds = new Set(content.scenario.localNorms.map(norm => norm.id));
-  content.scenario.characters.forEach((placement, index) => {
-    if (!characters.has(placement.characterId)) {
-      throw new ScenarioValidationError(
-        `scenario.characters[${index}].characterId`,
-        `unknown character "${placement.characterId}"`,
-      );
-    }
-    const profileClaimIds = new Set(
-      characters.get(placement.characterId)?.narrativeClaims.map(claim => claim.id) ?? [],
-    );
-    placement.narrativeOverrides.forEach((override, overrideIndex) => {
-      if (!profileClaimIds.has(override.claimId)) {
-        throw new ScenarioValidationError(
-          `scenario.characters[${index}].narrativeOverrides[${overrideIndex}].claimId`,
-          `unknown narrative claim "${override.claimId}"`,
-        );
-      }
-    });
-    placement.schedule.forEach((block, blockIndex) => {
-      if (!locationIds.has(block.locationId)) {
-        throw new ScenarioValidationError(
-          `scenario.characters[${index}].schedule[${blockIndex}].locationId`,
-          `unknown location "${block.locationId}"`,
-        );
-      }
-    });
-    placement.normPerspectives.forEach((perspective, perspectiveIndex) => {
-      if (!localNormIds.has(perspective.normId)) {
-        throw new ScenarioValidationError(
-          `scenario.characters[${index}].normPerspectives[${perspectiveIndex}].normId`,
-          `unknown local norm "${perspective.normId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.dyads.forEach((dyad, index) => {
-    if (!instanceIds.has(dyad.observerId)) {
-      throw new ScenarioValidationError(
-        `scenario.dyads[${index}].observerId`,
-        `unknown agent "${dyad.observerId}"`,
-      );
-    }
-    if (!instanceIds.has(dyad.subjectId)) {
-      throw new ScenarioValidationError(
-        `scenario.dyads[${index}].subjectId`,
-        `unknown agent "${dyad.subjectId}"`,
-      );
-    }
-    dyad.validatorClaimIds.forEach((claimId, claimIndex) => {
-      if (!claimIdsFor(dyad.observerId).has(claimId)) {
-        throw new ScenarioValidationError(
-          `scenario.dyads[${index}].validatorClaimIds[${claimIndex}]`,
-          `unknown narrative claim "${claimId}" for observer "${dyad.observerId}"`,
-        );
-      }
-    });
-  });
-  const disclosureItemIds = new Set(content.scenario.disclosureItems.map(item => item.id));
-  content.scenario.disclosureItems.forEach((item, index) => {
-    const path = `scenario.disclosureItems[${index}]`;
-    if (!instanceIds.has(item.ownerId)) {
-      throw new ScenarioValidationError(`${path}.ownerId`, `unknown agent "${item.ownerId}"`);
-    }
-    item.knownByIds.forEach((agentId, agentIndex) => {
-      if (!instanceIds.has(agentId)) {
-        throw new ScenarioValidationError(
-          `${path}.knownByIds[${agentIndex}]`,
-          `unknown agent "${agentId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.disclosureOpportunities.forEach((opportunity, index) => {
-    const path = `scenario.disclosureOpportunities[${index}]`;
-    if (!instanceIds.has(opportunity.ownerId)) {
-      throw new ScenarioValidationError(
-        `${path}.ownerId`,
-        `unknown agent "${opportunity.ownerId}"`,
-      );
-    }
-    if (!disclosureItemIds.has(opportunity.itemId)) {
-      throw new ScenarioValidationError(
-        `${path}.itemId`,
-        `unknown disclosure item "${opportunity.itemId}"`,
-      );
-    }
-    const item = content.scenario.disclosureItems.find(
-      candidate => candidate.id === opportunity.itemId,
-    );
-    if (item?.ownerId !== opportunity.ownerId) {
-      throw new ScenarioValidationError(
-        `${path}.itemId`,
-        'disclosure item must belong to the opportunity owner',
-      );
-    }
-    opportunity.audienceIds.forEach((agentId, agentIndex) => {
-      if (!instanceIds.has(agentId)) {
-        throw new ScenarioValidationError(
-          `${path}.audienceIds[${agentIndex}]`,
-          `unknown agent "${agentId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.observationEvents.forEach((event, index) => {
-    const path = `scenario.observationEvents[${index}]`;
-    if (!instanceIds.has(event.subjectId)) {
-      throw new ScenarioValidationError(`${path}.subjectId`, `unknown agent "${event.subjectId}"`);
-    }
-    if (event.eventType === 'norm' && !localNormIds.has(event.normId)) {
-      throw new ScenarioValidationError(`${path}.normId`, `unknown local norm "${event.normId}"`);
-    }
-    event.observerIds.forEach((observerId, observerIndex) => {
-      if (!instanceIds.has(observerId)) {
-        throw new ScenarioValidationError(
-          `${path}.observerIds[${observerIndex}]`,
-          `unknown agent "${observerId}"`,
-        );
-      }
-      if (observerId === event.subjectId) {
-        throw new ScenarioValidationError(
-          `${path}.observerIds[${observerIndex}]`,
-          'an agent cannot observe its own social signal',
-        );
-      }
-      if (
-        event.eventType === 'norm' &&
-        !content.scenario.characters
-          .find(placement => placement.instanceId === observerId)
-          ?.normPerspectives.some(perspective => perspective.normId === event.normId)
-      ) {
-        throw new ScenarioValidationError(
-          `${path}.observerIds[${observerIndex}]`,
-          `agent "${observerId}" lacks a perspective on local norm "${event.normId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.relationshipEvents.forEach((event, index) => {
-    const path = `scenario.relationshipEvents[${index}]`;
-    if (!instanceIds.has(event.observerId)) {
-      throw new ScenarioValidationError(
-        `${path}.observerId`,
-        `unknown agent "${event.observerId}"`,
-      );
-    }
-    if (!instanceIds.has(event.subjectId)) {
-      throw new ScenarioValidationError(`${path}.subjectId`, `unknown agent "${event.subjectId}"`);
-    }
-    if (event.observerId === event.subjectId) {
-      throw new ScenarioValidationError(`${path}.subjectId`, 'a dyad must contain two agents');
-    }
-  });
-  content.scenario.relationshipRequests.forEach((request, index) => {
-    const path = `scenario.relationshipRequests[${index}]`;
-    if (!instanceIds.has(request.requesterId)) {
-      throw new ScenarioValidationError(
-        `${path}.requesterId`,
-        `unknown agent "${request.requesterId}"`,
-      );
-    }
-    if (!instanceIds.has(request.responderId)) {
-      throw new ScenarioValidationError(
-        `${path}.responderId`,
-        `unknown agent "${request.responderId}"`,
-      );
-    }
-    if (request.requesterId === request.responderId) {
-      throw new ScenarioValidationError(`${path}.responderId`, 'a request requires two agents');
-    }
-  });
-  content.scenario.appraisalEvents.forEach((event, index) => {
-    const path = `scenario.appraisalEvents[${index}]`;
-    if (!instanceIds.has(event.agentId)) {
-      throw new ScenarioValidationError(`${path}.agentId`, `unknown agent "${event.agentId}"`);
-    }
-    if (event.socialTargetId !== null && !instanceIds.has(event.socialTargetId)) {
-      throw new ScenarioValidationError(
-        `${path}.socialTargetId`,
-        `unknown agent "${event.socialTargetId}"`,
-      );
-    }
-    if (event.socialTargetId === event.agentId) {
-      throw new ScenarioValidationError(
-        `${path}.socialTargetId`,
-        'an agent cannot be its own social threat target',
-      );
-    }
-  });
-  const factIds = new Set(content.scenario.worldFacts.map(fact => fact.id));
-  content.scenario.agendaGoals.forEach((goal, index) => {
-    const path = `scenario.agendaGoals[${index}]`;
-    if (!instanceIds.has(goal.actorId)) {
-      throw new ScenarioValidationError(`${path}.actorId`, `unknown agent "${goal.actorId}"`);
-    }
-    goal.claimExpressions.forEach((expression, expressionIndex) => {
-      if (!claimIdsFor(goal.actorId).has(expression.claimId)) {
-        throw new ScenarioValidationError(
-          `${path}.claimExpressions[${expressionIndex}].claimId`,
-          `unknown narrative claim "${expression.claimId}" for actor "${goal.actorId}"`,
-        );
-      }
-    });
-    goal.desired.forEach((condition, conditionIndex) => {
-      if (!factIds.has(condition.factId)) {
-        throw new ScenarioValidationError(
-          `${path}.desired[${conditionIndex}].factId`,
-          `unknown world fact "${condition.factId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.taskOperators.forEach((task, index) => {
-    const path = `scenario.taskOperators[${index}]`;
-    if (!locationIds.has(task.locationId)) {
-      throw new ScenarioValidationError(
-        `${path}.locationId`,
-        `unknown location "${task.locationId}"`,
-      );
-    }
-    task.actorIds.forEach((actorId, actorIndex) => {
-      if (!instanceIds.has(actorId)) {
-        throw new ScenarioValidationError(
-          `${path}.actorIds[${actorIndex}]`,
-          `unknown agent "${actorId}"`,
-        );
-      }
-      task.claimExpressions.forEach((expression, expressionIndex) => {
-        if (!claimIdsFor(actorId).has(expression.claimId)) {
-          throw new ScenarioValidationError(
-            `${path}.claimExpressions[${expressionIndex}].claimId`,
-            `unknown narrative claim "${expression.claimId}" for actor "${actorId}"`,
-          );
-        }
-      });
-    });
-    task.preconditions.forEach((condition, conditionIndex) => {
-      if (!factIds.has(condition.factId)) {
-        throw new ScenarioValidationError(
-          `${path}.preconditions[${conditionIndex}].factId`,
-          `unknown world fact "${condition.factId}"`,
-        );
-      }
-    });
-    task.effects.forEach((effect, effectIndex) => {
-      if (!factIds.has(effect.factId)) {
-        throw new ScenarioValidationError(
-          `${path}.effects[${effectIndex}].factId`,
-          `unknown world fact "${effect.factId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.behaviorOpportunities.forEach((opportunity, index) => {
-    const path = `scenario.behaviorOpportunities[${index}]`;
-    if (!instanceIds.has(opportunity.actorId)) {
-      throw new ScenarioValidationError(
-        `${path}.actorId`,
-        `unknown agent "${opportunity.actorId}"`,
-      );
-    }
-    if (opportunity.targetId !== null && !instanceIds.has(opportunity.targetId)) {
-      throw new ScenarioValidationError(
-        `${path}.targetId`,
-        `unknown agent "${opportunity.targetId}"`,
-      );
-    }
-    opportunity.context.witnessIds.forEach((witnessId, witnessIndex) => {
-      if (!instanceIds.has(witnessId)) {
-        throw new ScenarioValidationError(
-          `${path}.context.witnessIds[${witnessIndex}]`,
-          `unknown agent "${witnessId}"`,
-        );
-      }
-    });
-    opportunity.candidates.forEach((candidate, candidateIndex) => {
-      candidate.claimExpressions.forEach((expression, expressionIndex) => {
-        if (!claimIdsFor(opportunity.actorId).has(expression.claimId)) {
-          throw new ScenarioValidationError(
-            `${path}.candidates[${candidateIndex}].claimExpressions[${expressionIndex}].claimId`,
-            `unknown narrative claim "${expression.claimId}" for actor "${opportunity.actorId}"`,
-          );
-        }
-      });
-      candidate.impacts.forEach((impact, impactIndex) => {
-        if (!instanceIds.has(impact.subjectId)) {
-          throw new ScenarioValidationError(
-            `${path}.candidates[${candidateIndex}].impacts[${impactIndex}].subjectId`,
-            `unknown agent "${impact.subjectId}"`,
-          );
-        }
-      });
-    });
-  });
-  const groupIds = new Set(content.scenario.reputationGroups.map(group => group.id));
-  content.scenario.reputationGroups.forEach((group, index) => {
-    group.memberIds.forEach((memberId, memberIndex) => {
-      if (!instanceIds.has(memberId)) {
-        throw new ScenarioValidationError(
-          `scenario.reputationGroups[${index}].memberIds[${memberIndex}]`,
-          `unknown agent "${memberId}"`,
-        );
-      }
-    });
-  });
-  content.scenario.aspirationOpportunities.forEach((opportunity, index) => {
-    const path = `scenario.aspirationOpportunities[${index}]`;
-    if (!instanceIds.has(opportunity.actorId)) {
-      throw new ScenarioValidationError(
-        `${path}.actorId`,
-        `unknown agent "${opportunity.actorId}"`,
-      );
-    }
-    if (!claimIdsFor(opportunity.actorId).has(opportunity.claimId)) {
-      throw new ScenarioValidationError(
-        `${path}.claimId`,
-        `unknown narrative claim "${opportunity.claimId}"`,
-      );
-    }
-    opportunity.desired.forEach((condition, conditionIndex) => {
-      if (!factIds.has(condition.factId)) {
-        throw new ScenarioValidationError(
-          `${path}.desired[${conditionIndex}].factId`,
-          `unknown world fact "${condition.factId}"`,
-        );
-      }
-    });
-  });
-  const disclosureItemIdsForNarrative = new Set(
-    content.scenario.disclosureItems.map(item => item.id),
-  );
-  content.scenario.narrativeEvents.forEach((event, index) => {
-    const path = `scenario.narrativeEvents[${index}]`;
-    if (event.eventType === 'attribution') {
-      for (const [field, agentId] of [
-        ['sourceId', event.sourceId],
-        ['subjectId', event.subjectId],
-      ] as const) {
-        if (!instanceIds.has(agentId)) {
-          throw new ScenarioValidationError(`${path}.${field}`, `unknown agent "${agentId}"`);
-        }
-      }
-      if (
-        (event.audienceType === 'agent' && !instanceIds.has(event.audienceId)) ||
-        (event.audienceType === 'group' && !groupIds.has(event.audienceId))
-      ) {
-        throw new ScenarioValidationError(
-          `${path}.audienceId`,
-          `unknown ${event.audienceType} audience "${event.audienceId}"`,
-        );
-      }
-      if (!claimIdsFor(event.subjectId).has(event.selfClaimId)) {
-        throw new ScenarioValidationError(`${path}.selfClaimId`, 'unknown subject narrative claim');
-      }
-    } else {
-      if (!instanceIds.has(event.actorId)) {
-        throw new ScenarioValidationError(`${path}.actorId`, `unknown agent "${event.actorId}"`);
-      }
-      if (!claimIdsFor(event.actorId).has(event.claimId)) {
-        throw new ScenarioValidationError(`${path}.claimId`, 'unknown actor narrative claim');
-      }
-      if (event.eventType === 'self-deprecation-agreement') {
-        if (!instanceIds.has(event.responderId)) {
-          throw new ScenarioValidationError(
-            `${path}.responderId`,
-            `unknown agent "${event.responderId}"`,
-          );
-        }
-        if (
-          event.disclosureItemId !== null &&
-          !disclosureItemIdsForNarrative.has(event.disclosureItemId)
-        ) {
-          throw new ScenarioValidationError(
-            `${path}.disclosureItemId`,
-            `unknown disclosure item "${event.disclosureItemId}"`,
-          );
-        }
-      }
-    }
-  });
-}
-
 function goalSeedSignature(goal: AgendaGoalSeed): string {
   return JSON.stringify({
     activationMinute: goal.activationMinute,
@@ -622,34 +233,16 @@ function goalSeedSignature(goal: AgendaGoalSeed): string {
   });
 }
 
-export function createSimulation(input: {
-  characterLibrary: unknown;
-  environmentLibrary: unknown;
-  scenario: unknown;
-}): SimulationState {
-  const content: ScenarioContent = {
-    characterLibrary: parseCharacterLibrary(input.characterLibrary),
-    environmentLibrary: parseEnvironmentLibrary(input.environmentLibrary),
-    scenario: parseScenario(input.scenario),
-  };
-  validateReferences(content);
-  const environment = content.environmentLibrary.environments.find(
-    candidate => candidate.id === content.scenario.environmentId,
+export function createSimulationFromPrepared(prepared: PreparedScenario): SimulationState {
+  const environment = prepared.environment;
+  const agents = prepared.characters.map(({ placement, profile }) =>
+    initializeAgent(profile, placement, environment, prepared.scenario.startMinute),
   );
-  if (environment === undefined) throw new Error('References were validated before resolution');
-  const profiles = new Map(
-    content.characterLibrary.characters.map(character => [character.id, character]),
-  );
-  const agents = content.scenario.characters.map(placement => {
-    const profile = profiles.get(placement.characterId);
-    if (profile === undefined) throw new Error('References were validated before resolution');
-    return initializeAgent(profile, placement, environment, content.scenario.startMinute);
-  });
 
   let initial: SimulationState = {
     appraisalRecords: [],
     agendaDecisions: [],
-    agendaGoals: content.scenario.agendaGoals.map(goal => ({
+    agendaGoals: prepared.scenario.agendaGoals.map(goal => ({
       ...goal,
       desired: goal.desired.map(condition => ({ ...condition })),
       failureTurns: { ...goal.failureTurns },
@@ -661,23 +254,24 @@ export function createSimulation(input: {
     agents,
     decisions: [],
     disclosureDecisions: [],
-    disclosureItems: content.scenario.disclosureItems.map(item => ({
+    disclosureItems: prepared.scenario.disclosureItems.map(item => ({
       ...item,
       knownByIds: [...item.knownByIds],
     })),
-    dyads: content.scenario.dyads.map(dyad => ({
+    dyads: prepared.scenario.dyads.map(dyad => ({
       ...dyad,
       features: { ...dyad.features },
       validatorClaimIds: [...dyad.validatorClaimIds],
     })),
     environment,
     intentions: [],
-    minute: content.scenario.startMinute,
+    minute: prepared.scenario.startMinute,
     narrativeRecords: [],
     observations: [],
     plans: [],
     relationshipDecisions: [],
     reputations: [],
+    resourceLock: prepared.resourceLock,
     resolvedDisclosureOpportunityIds: [],
     resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
@@ -686,30 +280,30 @@ export function createSimulation(input: {
     resolvedNarrativeEventIds: [],
     resolvedRelationshipEventIds: [],
     resolvedRelationshipRequestIds: [],
-    scenario: content.scenario,
+    scenario: prepared.scenario,
     tick: 0,
     trace: createTrace([
       {
         agentId: null,
         id: '0:scenario',
         kind: 'scenario',
-        minute: content.scenario.startMinute,
+        minute: prepared.scenario.startMinute,
         selection: null,
-        summary: `Loaded ${content.scenario.title}`,
+        summary: `Loaded ${prepared.scenario.title}`,
         terms: [
-          traceTerm('environment', environment.id, 'scenario.environmentId'),
+          traceTerm('environment', environment.layoutId, 'scenario.environment'),
           ...agents.map(agent =>
             traceTerm(
               `character:${agent.id}`,
-              agent.profile.id,
-              `scenario.characters.${agent.id}.characterId`,
+              agent.profile.profileId,
+              `scenario.characters.${agent.id}.profile`,
             ),
           ),
         ],
         tick: 0,
       },
     ]),
-    worldFacts: content.scenario.worldFacts.map(fact => ({ ...fact })),
+    worldFacts: prepared.scenario.worldFacts.map(fact => ({ ...fact })),
     worldRevision: 0,
   };
   initial = {
@@ -719,21 +313,22 @@ export function createSimulation(input: {
   return prepareAgenda(prepareNarrativeAgency(initial));
 }
 
-export function createSimulationFromSnapshot(input: {
-  characterLibrary: unknown;
-  environmentLibrary: unknown;
-  snapshot: unknown;
+export function createSimulationFromPreparedSnapshot(input: {
+  prepared: PreparedScenario;
+  snapshot: SimulationSnapshotFile;
 }): SimulationState {
-  const snapshot = parseSnapshot(input.snapshot);
-  const base = createSimulation({
-    characterLibrary: input.characterLibrary,
-    environmentLibrary: input.environmentLibrary,
-    scenario: snapshot.scenario,
-  });
-  if (snapshot.environmentId !== base.environment.id) {
+  const snapshot = input.snapshot;
+  const base = createSimulationFromPrepared(input.prepared);
+  if (!sameAddress(snapshot.environment, base.scenario.environment)) {
     throw new ScenarioValidationError(
-      'snapshot.environmentId',
-      `unknown environment "${snapshot.environmentId}"`,
+      'snapshot.environment',
+      'must match the prepared environment layout',
+    );
+  }
+  if (!sameResourceLock(snapshot.resourceLock.resources, base.resourceLock.resources)) {
+    throw new ScenarioValidationError(
+      'snapshot.resourceLock',
+      'must match the prepared resource lock',
     );
   }
   const baseAgents = new Map(base.agents.map(agent => [agent.id, agent]));
@@ -752,10 +347,11 @@ export function createSimulationFromSnapshot(input: {
         `unknown agent "${saved.id}"`,
       );
     }
-    if (saved.profileId !== agent.profile.id) {
+    const placement = base.scenario.characters.find(item => item.instanceId === saved.id);
+    if (placement === undefined || !sameAddress(saved.profile, placement.profile)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].profileId`,
-        `expected character "${agent.profile.id}"`,
+        `snapshot.agents[${index}].profile`,
+        `expected character profile "${agent.profile.profileId}"`,
       );
     }
     if (saved.currentLocationId !== null && !locationIds.has(saved.currentLocationId)) {

@@ -1,9 +1,8 @@
 {
-  "schemaVersion": 7,
+  "schemaVersion": 12,
   "id": "endicott-margueritte",
   "title": "Endicott and Margueritte",
   "summary": "Two guarded neighbors sustain mistaken models of one another until a sufficiently revealing exchange supplies corrective evidence.",
-  "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
   "environmentConditions": {
@@ -30,7 +29,9 @@
       "estimateConfidence": 0.82,
       "predictionError": 0.2,
       "suspicion": 0.25,
-      "mode": "guarded"
+      "mode": "guarded",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     },
     {
       "observerId": "margueritte",
@@ -50,7 +51,9 @@
       "estimateConfidence": 0.8,
       "predictionError": 0.18,
       "suspicion": 0.23,
-      "mode": "guarded"
+      "mode": "guarded",
+      "exposureDebt": 0,
+      "validatorClaimIds": []
     }
   ],
   "disclosureItems": [],
@@ -67,7 +70,8 @@
       "interpretationDifficulty": 0.3,
       "channel": "sight",
       "audibleRadiusMeters": 12,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "eventType": "mind-model"
     },
     {
       "id": "margueritte-ambiguous-one",
@@ -80,7 +84,8 @@
       "interpretationDifficulty": 0.3,
       "channel": "sight",
       "audibleRadiusMeters": 12,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "eventType": "mind-model"
     },
     {
       "id": "endicott-ambiguous-two",
@@ -93,7 +98,8 @@
       "interpretationDifficulty": 0.3,
       "channel": "sight",
       "audibleRadiusMeters": 12,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "eventType": "mind-model"
     },
     {
       "id": "margueritte-ambiguous-two",
@@ -106,7 +112,8 @@
       "interpretationDifficulty": 0.3,
       "channel": "sight",
       "audibleRadiusMeters": 12,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "eventType": "mind-model"
     },
     {
       "id": "endicott-forced-exchange",
@@ -119,7 +126,8 @@
       "interpretationDifficulty": 0.2,
       "channel": "hearing",
       "audibleRadiusMeters": 18,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "eventType": "mind-model"
     },
     {
       "id": "margueritte-forced-exchange",
@@ -132,7 +140,8 @@
       "interpretationDifficulty": 0.2,
       "channel": "hearing",
       "audibleRadiusMeters": 18,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "eventType": "mind-model"
     }
   ],
   "worldFacts": [],
@@ -142,29 +151,65 @@
   "characters": [
     {
       "instanceId": "endicott",
-      "characterId": "endicott",
-      "position": { "x": 112, "y": 72.5 },
+      "position": {
+        "x": 112,
+        "y": 72.5
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Avoiding a difficult conversation",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "endicott"
+      }
     },
     {
       "instanceId": "margueritte",
-      "characterId": "margueritte",
-      "position": { "x": 116, "y": 72.5 },
+      "position": {
+        "x": 116,
+        "y": 72.5
+      },
       "schedule": [
         {
           "startMinute": 0,
           "locationId": "market-square",
           "activity": "Waiting for the other to speak",
-          "recoveryMode": "none"
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
         }
-      ]
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "margueritte"
+      }
     }
-  ]
+  ],
+  "localNorms": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
 }

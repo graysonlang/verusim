@@ -214,7 +214,7 @@ export function resolveAppraisalEvent(
                   `turn:${valueId}`,
                   appliedTurns[valueId] ?? 0,
                   `scenario.appraisalEvents.${event.id}.turns.${valueId}`,
-                  `characters.${agent.profile.id}.constitution.reactivity`,
+                  `characters.${agent.profile.profileId}.constitution.reactivity`,
                 ),
               ],
         ),
@@ -238,7 +238,7 @@ export function resolveAppraisalEvent(
         traceTerm(
           'threshold',
           agent.profile.constitution.threshold,
-          `characters.${agent.profile.id}.constitution.threshold`,
+          `characters.${agent.profile.profileId}.constitution.threshold`,
         ),
         traceTerm('next-cascade', updated.cascade, `agents.${agent.id}.cascade`),
         traceTerm(
@@ -403,34 +403,34 @@ function fireOutlet(
         traceTerm(
           'operation',
           affordance.operation,
-          `characters.${agent.profile.id}.outletPreferences`,
+          `characters.${agent.profile.profileId}.outletPreferences`,
         ),
         traceTerm(
           'affordance',
           affordance.id,
-          `environments.${state.environment.id}.outletAffordances`,
+          `environments.${state.environment.layoutId}.outletAffordances`,
         ),
         traceTerm(
           'target-value',
           affordance.targetValueId,
-          `environments.${state.environment.id}.outletAffordances.${affordance.id}`,
+          `environments.${state.environment.layoutId}.outletAffordances.${affordance.id}`,
         ),
         traceTerm('yield', outletYield, `agents.${agent.id}.outletHistory.${affordance.id}`),
         traceTerm(
           'deficit-repair',
           repairedDeficit,
-          `environments.${state.environment.id}.outletAffordances.${affordance.id}.displacesRepair`,
+          `environments.${state.environment.layoutId}.outletAffordances.${affordance.id}.displacesRepair`,
         ),
         traceTerm('habituation', habituation, `agents.${agent.id}.outletHistory.${affordance.id}`),
         traceTerm(
           'reinforcement',
           affordance.reinforcementSchedule,
-          `environments.${state.environment.id}.outletAffordances.${affordance.id}.reinforcementSchedule`,
+          `environments.${state.environment.layoutId}.outletAffordances.${affordance.id}.reinforcementSchedule`,
         ),
         traceTerm(
           'displaces-repair',
           affordance.displacesRepair,
-          `environments.${state.environment.id}.outletAffordances.${affordance.id}.displacesRepair`,
+          `environments.${state.environment.layoutId}.outletAffordances.${affordance.id}.displacesRepair`,
         ),
       ],
       tick: state.tick,

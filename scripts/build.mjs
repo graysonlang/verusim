@@ -2,6 +2,9 @@ import pluginGlobCopy from '@graysonlang/esp/esbuild-plugin-glob-copy';
 import pluginImp from '@graysonlang/esp/esbuild-plugin-imp';
 import { runBuild } from '@graysonlang/esp/esbuild-runner';
 import { createDefines } from './defines.mjs';
+import { generateResourceCatalog } from './generate-resource-catalog.mjs';
+
+await generateResourceCatalog({ check: true });
 
 /** @type {import('@graysonlang/esp/esbuild-runner').GetOptions} */
 function getOptions(args, verbose, logger) {

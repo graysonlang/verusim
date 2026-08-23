@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "sera-dane"
+  },
+  "profile": {
+    "name": "Sera Dane",
+    "role": "Miller",
+    "summary": "A reserved miller whose sense of autonomy is bound to control of her work.",
+    "physical": {
+      "ageYears": 47,
+      "sex": "female",
+      "build": {
+        "heightClass": "average",
+        "weightClass": "average"
+      },
+      "comeliness": 0.55
+    },
+    "capabilities": {
+      "acuity": 0.78,
+      "evidenceCalibration": 0.74,
+      "expressiveControl": 0.39
+    },
+    "constitution": {
+      "reactivity": 0.73,
+      "threshold": 0.48,
+      "recoveryRate": 0.25,
+      "socialValence": -0.3,
+      "habituationRate": 0.57,
+      "baselineArousal": 0.56
+    },
+    "contractAdherence": 0.61,
+    "disclosure": {
+      "intimateSafety": 0.88,
+      "strangerSafety": 0.76,
+      "troughDepth": 0.48,
+      "troughPosition": 0.52,
+      "troughWidth": 0.24
+    },
+    "empathy": {
+      "floor": 0.16,
+      "ceiling": 0.91,
+      "steepness": 3.6,
+      "selfPosition": 0,
+      "threatSensitivity": 0.66,
+      "featureWeights": {
+        "kinship": 1.05,
+        "familiarity": 0.9,
+        "similarity": 0.5,
+        "reciprocity": 1.2,
+        "category": 0.75
+      }
+    },
+    "identity": [
+      {
+        "marker": "owner of Alder Mill",
+        "centrality": 0.94
+      },
+      {
+        "marker": "south bank",
+        "centrality": 0.52
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1.04,
+        "initialCharge": 0.06,
+        "initialDeficit": 0.14,
+        "initialVariance": 0.2
+      },
+      "belonging": {
+        "weight": 0.78,
+        "initialCharge": 0.02,
+        "initialDeficit": 0.13,
+        "initialVariance": 0.24
+      },
+      "respect": {
+        "weight": 0.98,
+        "initialCharge": -0.11,
+        "initialDeficit": 0.2,
+        "initialVariance": 0.2
+      },
+      "autonomy": {
+        "weight": 1.46,
+        "initialCharge": -0.24,
+        "initialDeficit": 0.32,
+        "initialVariance": 0.27
+      },
+      "competence": {
+        "weight": 1.17,
+        "initialCharge": 0.3,
+        "initialDeficit": 0.08,
+        "initialVariance": 0.1
+      },
+      "fairness": {
+        "weight": 0.82,
+        "initialCharge": -0.02,
+        "initialDeficit": 0.11,
+        "initialVariance": 0.18
+      }
+    },
+    "narrativeClaims": [
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-1",
+        "kind": "affirm",
+        "statement": "The mill stands because I do"
+      },
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-2",
+        "kind": "affirm",
+        "statement": "What is mine stays mine"
+      }
+    ],
+    "formativeEvents": [
+      {
+        "age": 14,
+        "value": "autonomy",
+        "turn": -0.7,
+        "attribution": "her uncle",
+        "copingPotential": 0.15,
+        "summary": "Her uncle sold a harvest she had milled and kept the payment."
+      },
+      {
+        "age": 31,
+        "value": "competence",
+        "turn": 0.61,
+        "attribution": "the south bank families",
+        "copingPotential": 0.86,
+        "summary": "She rebuilt the waterwheel before the first frost."
+      }
+    ],
+    "characterId": "sera-dane",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "sera-dane"
+  }
+}

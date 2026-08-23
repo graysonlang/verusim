@@ -1,0 +1,156 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "packageId": "verusim",
+    "kind": "character-profile",
+    "resourceId": "petra-mere"
+  },
+  "profile": {
+    "name": "Petra Mere",
+    "role": "Merchant's cousin",
+    "summary": "A family witness whose loyalty lies with the merchant.",
+    "physical": {
+      "ageYears": 38,
+      "sex": "female",
+      "build": {
+        "heightClass": "average",
+        "weightClass": "average"
+      },
+      "comeliness": 0.52
+    },
+    "capabilities": {
+      "acuity": 0.72,
+      "evidenceCalibration": 0.71,
+      "expressiveControl": 0.6
+    },
+    "constitution": {
+      "reactivity": 0.45,
+      "threshold": 0.62,
+      "recoveryRate": 0.45,
+      "socialValence": 0.2,
+      "habituationRate": 0.35,
+      "baselineArousal": 0.38
+    },
+    "contractAdherence": 0.7,
+    "disclosure": {
+      "intimateSafety": 0.9,
+      "strangerSafety": 0.6,
+      "troughDepth": 0.62,
+      "troughPosition": 0.5,
+      "troughWidth": 0.2
+    },
+    "empathy": {
+      "floor": 0.18,
+      "ceiling": 0.96,
+      "steepness": 3.2,
+      "selfPosition": 0,
+      "threatSensitivity": 0.58,
+      "featureWeights": {
+        "kinship": 1.6,
+        "familiarity": 0.9,
+        "similarity": 0.5,
+        "reciprocity": 0.8,
+        "category": 0.6
+      }
+    },
+    "identity": [
+      {
+        "marker": "Mere family",
+        "centrality": 0.88
+      }
+    ],
+    "values": {
+      "safety": {
+        "weight": 1,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.05,
+        "initialVariance": 0.1
+      },
+      "belonging": {
+        "weight": 1.2,
+        "initialCharge": 0.3,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.08
+      },
+      "respect": {
+        "weight": 0.9,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.09
+      },
+      "autonomy": {
+        "weight": 0.9,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.09
+      },
+      "competence": {
+        "weight": 0.9,
+        "initialCharge": 0.2,
+        "initialDeficit": 0.04,
+        "initialVariance": 0.09
+      },
+      "fairness": {
+        "weight": 1,
+        "initialCharge": 0.18,
+        "initialDeficit": 0.05,
+        "initialVariance": 0.1
+      }
+    },
+    "narrativeClaims": [
+      {
+        "commitment": 0.7,
+        "confidence": 0.65,
+        "id": "claim-1",
+        "kind": "affirm",
+        "statement": "The house protects its own"
+      }
+    ],
+    "formativeEvents": [
+      {
+        "age": 12,
+        "value": "belonging",
+        "turn": 0.5,
+        "attribution": "the Mere family",
+        "copingPotential": 0.82,
+        "summary": "The trading house absorbed a debt rather than send her parents away."
+      }
+    ],
+    "characterId": "petra-mere",
+    "cascadePriors": {
+      "fawn": 0.5,
+      "fight": 0.5,
+      "flight": 0.5,
+      "flop": 0.5,
+      "freeze": 0.5
+    },
+    "outletPreferences": [
+      {
+        "operation": "discharge",
+        "rank": 1
+      },
+      {
+        "operation": "numb",
+        "rank": 0.9
+      },
+      {
+        "operation": "substitute",
+        "rank": 0.8
+      },
+      {
+        "operation": "regulate",
+        "rank": 0.7
+      },
+      {
+        "operation": "control",
+        "rank": 0.6
+      },
+      {
+        "operation": "avoid",
+        "rank": 0.5
+      }
+    ],
+    "satisfierPreferences": [],
+    "profileId": "petra-mere"
+  }
+}
