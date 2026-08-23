@@ -203,32 +203,6 @@ Snapshot schema version 9 persists the exact resource lock and preserves migrati
 The browser workbench now consumes prepared built-in scenarios from the generated catalog; this loading-only change does not alter presentation.
 Repository-authored resources and scenario roots share one `content/` tree, with the reserved scenario branch excluded from resource discovery and semantic identity remaining independent of every source path.
 
-## Phase 5B — layered environment topology
-
-Status: complete.
-
-Extend immutable environment layouts with named elevation layers, layer-bearing positions, areas, and locations, and explicit bidirectional stairs, ramps, and ladders.
-Schedule locomotion and agenda travel use one deterministic connector-aware route, while equal plan coordinates on different floors remain physically and perceptually separate.
-The workbench projects a selected layer without changing simulation state and follows a focused character between floors.
-
-The acceptance target is Alder's Edge Town, a compact "world in miniature" realization of the existing Alder's Edge place.
-Its stable `environmentId` is shared with the smaller market layout while its distinct `layoutId` selects a settlement containing fields and pasture, orchard, river and millstream, market and roads, civic and religious buildings, trades, an inn, manor, almshouse, watch, bridge, docks, mill, granary, upper-floor residences, cellars, a crypt, storage, and a watch cell.
-Story scale remains deliberately compact rather than claiming agricultural-yield or census accuracy.
-
-Exit probes:
-
-- an upstairs resident reaches the trade below only through the building's authored stairs
-- two characters at equal plan coordinates on different floors produce no proximity discomfort and cannot see or hear through the intervening structure
-- layer-bearing travel, destination, and position state resume exactly from a snapshot
-- a layout with an unconnected authored floor fails at an actionable content path
-- selecting a workbench layer projects only that floor's characters, geometry, locations, and connectors
-- the expanded layout preserves the place identity of the original town while remaining a separately addressable physical realization
-
-Environment-layout resource and aggregate environment-library schema version 2 add layers and connectors while migrating version 1 content onto a single `surface` layer.
-Scenario schema version 13 adds layer-bearing character placements and preserves migrations from versions 1 through 12.
-Snapshot schema version 10 persists layer-bearing positions and destinations and preserves migrations from versions 1 through 9.
-Regression coverage exercises connector routing, cross-floor spatial separation, malformed disconnected topology, workbench projection, schema migration, and exact snapshot replay.
-
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.
