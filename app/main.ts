@@ -1015,6 +1015,7 @@ function createWorkbench(): HTMLElement {
   const [loadedBuiltInScenarioId, setLoadedBuiltInScenarioId] = createSignal<string | null>(
     DEFAULT_BUILT_IN_SCENARIO.id,
   );
+  const [showTickNumber, setShowTickNumber] = createSignal(false);
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
@@ -1065,10 +1066,12 @@ function createWorkbench(): HTMLElement {
   const timeRateDisclosure = element('span', 'time-rate-disclosure');
   const timeRateMenu = element('section', 'time-rate-menu');
   const timeContext = element('span', 'time-context');
+  const time = button('', 'simulation-time');
+  const timeOfDay = element('span', 'time-of-day');
   const celestialIndicator = element('span', 'celestial-indicator');
   const celestialOrb = element('span', 'celestial-orb');
   const celestialHorizon = element('span', 'celestial-horizon');
-  const time = element('time', 'simulation-time');
+  const dayPeriodLabel = element('span', 'day-period-label');
   const environmentConditions = element('span', 'environment-conditions');
   const weatherGraphic = element('span', 'weather-graphic');
   const conditionSeason = element('span', 'condition-season');
@@ -1237,10 +1240,13 @@ function createWorkbench(): HTMLElement {
     timeRateMenu.append(control);
   }
   celestialIndicator.dataset.testid = 'day-period-indicator';
-  celestialIndicator.setAttribute('role', 'img');
+  celestialIndicator.setAttribute('aria-hidden', 'true');
   celestialIndicator.append(celestialOrb, celestialHorizon);
   time.dataset.testid = 'simulation-time';
-  timeContext.append(time, celestialIndicator);
+  time.setAttribute('aria-pressed', 'false');
+  timeOfDay.dataset.testid = 'time-of-day';
+  timeOfDay.append(celestialIndicator, dayPeriodLabel);
+  timeContext.append(time, timeOfDay);
   conditionSeparatorOne.textContent = '/';
   conditionSeparatorTwo.textContent = '/';
   conditionSeparatorOne.setAttribute('aria-hidden', 'true');
@@ -2017,12 +2023,18 @@ function createWorkbench(): HTMLElement {
       if (stateLabel !== undefined) stateLabel.textContent = selected ? 'Loaded' : '';
     }
     const formattedTime = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
-    time.textContent = formattedTime;
-    time.title = `Simulation tick ${current.tick}`;
-    time.setAttribute('aria-label', `${formattedTime}, simulation tick ${current.tick}`);
+    const showingTick = showTickNumber();
+    time.textContent = showingTick ? `Tick ${current.tick}` : formattedTime;
+    time.setAttribute(
+      'aria-label',
+      showingTick
+        ? `Simulation tick ${current.tick}. Show clock time`
+        : `${formattedTime}. Show simulation tick`,
+    );
+    time.setAttribute('aria-pressed', String(showingTick));
     celestialIndicator.dataset.dayPeriod = dayPeriod;
-    celestialIndicator.title = dayPeriodName;
-    celestialIndicator.setAttribute('aria-label', `Time of day: ${dayPeriodName}`);
+    dayPeriodLabel.textContent = dayPeriodName;
+    timeOfDay.setAttribute('aria-label', `Time of day: ${dayPeriodName}`);
     conditionSeason.textContent = seasonName;
     conditionTemperature.textContent = temperature;
     conditionWeather.textContent = weatherName;
@@ -2236,6 +2248,7 @@ function createWorkbench(): HTMLElement {
   scenarioInfoOverlay.addEventListener('pointerdown', event => {
     if (event.target === scenarioInfoOverlay) closeScenarioInfo(true);
   });
+  time.addEventListener('click', () => setShowTickNumber(current => !current));
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
   step.addEventListener('click', () => executeActionById('step'));
   play.addEventListener('click', () => executeActionById('play-pause'));
