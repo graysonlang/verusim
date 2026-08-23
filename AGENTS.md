@@ -59,6 +59,19 @@ When a phase is complete and the verification gate is green, move its complete s
 Do not leave the same phase active in both files.
 If completed scope is reopened, move that phase back to the plan before changing it, then return it to the completed record only after its new exit probes and the full gate pass.
 Keep retrospective additions concise and update both files whenever phase scope or status changes.
+For a newly completed or reopened phase, the completed record names the discriminating scenario or fixture, the regression coverage for its exit probes, snapshot replay evidence when persisted state changed, UI verification when presentation changed, and schema or migration boundaries when storage changed.
+Omit evidence categories that genuinely do not apply rather than adding placeholders.
+
+### Host and content boundaries
+
+`src/model` and `src/simulation` remain host-agnostic.
+They do not import filesystem, network, browser storage, process, terminal, or path APIs.
+Content acquisition and repository discovery live in adapters outside the simulation subsystem, and every source-backed or direct in-memory path converges on the same migration, validation, reference-resolution, and prepared-scenario boundary before state creation.
+Creating, stepping, serializing, or resuming a simulation performs no resource reads, registration, enumeration, or asynchronous lookup.
+
+Authoring discovery and packing are deterministic build concerns.
+They may not depend on filesystem enumeration order, absolute checkout paths, locale, timezone, host case sensitivity, or registration order.
+Directory paths organize source but never define semantic identity, and duplicate semantic addresses fail with actionable provenance instead of resolving by precedence or last-one-wins behavior.
 
 ### Behavioral changes
 

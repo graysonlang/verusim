@@ -2,6 +2,8 @@
 
 This file records completed Verusim implementation phases, their exit probes, and settled phase decisions.
 Keep active and future work in [PLAN.md](PLAN.md), move a reopened phase back there before changing its scope, and keep agent operating rules in [AGENTS.md](AGENTS.md).
+Newly completed or reopened phase entries also summarize the evidence that closed the phase: discriminating scenarios or fixtures, regression coverage for exit probes, snapshot replay when persisted state changed, UI verification when presentation changed, and schema or migration boundaries when storage changed.
+Evidence categories that do not apply are omitted rather than recorded as placeholders.
 
 ## Phase 0 — simulation substrate
 

@@ -16,6 +16,25 @@ Repeating one variant must produce byte-equivalent decisions and traces; variati
 The product target is a believable player-facing environment, not a continuously active society simulation.
 NPCs retain independent state and visible unavailability without requiring invented off-screen activity.
 
+## Current focus
+
+The active slice is Phase 5A: resource identity and scenario preparation.
+Split reusable character and environment definitions into independently validated documents, introduce stable semantic references for character profiles and environment layouts, generate an immutable repository catalog, and make every loading path converge on one prepared-scenario boundary before simulation begins.
+The source-backed and direct in-memory paths must resolve equivalent content, preserve actionable authored provenance, reject duplicate semantic addresses deterministically, and produce an explicit dependency closure suitable for later packing.
+
+This slice closes the Phase 5 file-relocation, preparation-equivalence, no-post-preparation-read, and initial dependency-closure probes for characters and environments.
+It must preserve existing scenario and snapshot migrations while leaving room for norm and social-contract resources to use the same catalog in the next Phase 5 slice.
+
+### Current-focus non-goals
+
+- no population or formative-event generation
+- no role bundles, cohort stratification, pre-contact relationship generation, or environment generation
+- no Phase 6 changes to normative interpretation, affiliation, internalization, enforcement, shame, or behavior
+- no runtime filesystem, network, asynchronous resource access, or mutable global registry
+- no package manager, remote dependency resolver, or implicit `latest` resource selection
+- no arbitrary profile inheritance or JSON patch chains
+- no archive format, authoring UI, or pack writer beyond a deterministic dependency-closure report
+
 ## Phase 5 — authoring and population generation
 
 Split reusable characters and environments into independently validated resource documents whose semantic addresses do not depend on their file paths.
