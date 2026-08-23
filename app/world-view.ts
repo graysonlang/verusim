@@ -13,7 +13,7 @@ import {
   type IndicatorSettings,
 } from './indicators.js';
 
-interface Camera {
+export interface Camera {
   x: number;
   y: number;
   zoom: number;
@@ -39,6 +39,7 @@ export interface WorldView {
   camera: Accessor<Camera>;
   fit: () => void;
   focusAgent: (agentId: string) => void;
+  setZoom: (zoom: number) => void;
   zoomBy: (factor: number) => void;
 }
 
@@ -62,6 +63,25 @@ const INDICATOR_COLORS: Record<Exclude<IndicatorKind, 'area'>, string> = {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+export function cameraForGesture(
+  startCamera: Camera,
+  viewport: { height: number; width: number },
+  startCentroid: Point,
+  currentCentroid: Point,
+  scale: number,
+): Camera {
+  const zoom = clamp(startCamera.zoom * scale, 0.12, 5);
+  const worldAnchor = {
+    x: startCamera.x + (startCentroid.x - viewport.width / 2) / startCamera.zoom,
+    y: startCamera.y + (startCentroid.y - viewport.height / 2) / startCamera.zoom,
+  };
+  return {
+    x: worldAnchor.x - (currentCentroid.x - viewport.width / 2) / zoom,
+    y: worldAnchor.y - (currentCentroid.y - viewport.height / 2) / zoom,
+    zoom,
+  };
 }
 
 function screenPoint(canvas: HTMLCanvasElement, event: PointerEvent | WheelEvent): Point {
@@ -451,10 +471,13 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   const { canvas } = options;
   const [camera, setCamera] = createSignal<Camera>({ x: 700, y: 450, zoom: 0.7 });
   const [viewportRevision, setViewportRevision] = createSignal(0);
-  let dragging = false;
+  const activePointers = new Map<number, Point>();
   let dragDistance = 0;
   let pointerStart = { x: 0, y: 0 };
   let cameraStart = camera();
+  let gestureCameraStart = camera();
+  let gestureCentroidStart = { x: 0, y: 0 };
+  let gestureDistanceStart = 1;
 
   function fit(): void {
     options.onHover(null);
@@ -499,6 +522,11 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     });
   }
 
+  function setZoomLevel(zoom: number): void {
+    const current = camera();
+    zoomAt(clamp(zoom, 0.12, 5) / current.zoom);
+  }
+
   function nearestAgent(screen: Point): SimulationAgent | null {
     const current = camera();
     let nearest: { agent: SimulationAgent; distance: number } | null = null;
@@ -522,21 +550,68 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     if (agent !== null) options.onSelect(agent.id);
   }
 
-  function onPointerDown(event: PointerEvent): void {
-    if (event.button !== 0) return;
-    options.onHover(null);
-    dragging = true;
-    dragDistance = 0;
-    pointerStart = screenPoint(canvas, event);
+  function firstTwoPointers(): readonly [Point, Point] | null {
+    const points = Array.from(activePointers.values());
+    const first = points[0];
+    const second = points[1];
+    return first === undefined || second === undefined ? null : [first, second];
+  }
+
+  function startSinglePointer(point: Point, allowSelection: boolean): void {
+    pointerStart = point;
     cameraStart = camera();
+    dragDistance = allowSelection ? 0 : 4;
+  }
+
+  function startMultiPointerGesture(): void {
+    const pointers = firstTwoPointers();
+    if (pointers === null) return;
+    const [first, second] = pointers;
+    gestureCameraStart = camera();
+    gestureCentroidStart = {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+    };
+    gestureDistanceStart = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+    dragDistance = Math.max(dragDistance, 4);
+  }
+
+  function onPointerDown(event: PointerEvent): void {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    options.onHover(null);
+    const point = screenPoint(canvas, event);
+    activePointers.set(event.pointerId, point);
     canvas.setPointerCapture(event.pointerId);
     canvas.classList.add('is-panning');
+    if (activePointers.size === 1) startSinglePointer(point, true);
+    else startMultiPointerGesture();
   }
 
   function onPointerMove(event: PointerEvent): void {
     const point = screenPoint(canvas, event);
-    if (!dragging) {
-      showHover(point);
+    if (!activePointers.has(event.pointerId)) {
+      if (event.pointerType === 'mouse') showHover(point);
+      return;
+    }
+    activePointers.set(event.pointerId, point);
+    if (activePointers.size >= 2) {
+      const pointers = firstTwoPointers();
+      if (pointers === null) return;
+      const [first, second] = pointers;
+      const centroid = {
+        x: (first.x + second.x) / 2,
+        y: (first.y + second.y) / 2,
+      };
+      const distance = Math.max(1, Math.hypot(second.x - first.x, second.y - first.y));
+      setCamera(
+        cameraForGesture(
+          gestureCameraStart,
+          { height: canvas.clientHeight, width: canvas.clientWidth },
+          gestureCentroidStart,
+          centroid,
+          distance / gestureDistanceStart,
+        ),
+      );
       return;
     }
     const dx = point.x - pointerStart.x;
@@ -550,21 +625,32 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   }
 
   function onPointerUp(event: PointerEvent): void {
-    if (!dragging) return;
-    dragging = false;
-    canvas.releasePointerCapture(event.pointerId);
-    canvas.classList.remove('is-panning');
+    if (!activePointers.has(event.pointerId)) return;
     const point = screenPoint(canvas, event);
-    if (event.type === 'pointercancel') {
-      options.onHover(null);
+    activePointers.set(event.pointerId, point);
+    const selectOnRelease =
+      activePointers.size === 1 && dragDistance < 4 && event.type !== 'pointercancel';
+    activePointers.delete(event.pointerId);
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+
+    if (activePointers.size >= 2) {
+      startMultiPointerGesture();
       return;
     }
-    if (dragDistance < 4) selectNearest(point);
-    showHover(point);
+    if (activePointers.size === 1) {
+      const remaining = activePointers.values().next().value;
+      if (remaining !== undefined) startSinglePointer(remaining, false);
+      return;
+    }
+
+    canvas.classList.remove('is-panning');
+    if (selectOnRelease) selectNearest(point);
+    if (event.pointerType === 'mouse' && event.type !== 'pointercancel') showHover(point);
+    else options.onHover(null);
   }
 
   function onPointerLeave(): void {
-    options.onHover(null);
+    if (activePointers.size === 0) options.onHover(null);
   }
 
   function onWheel(event: WheelEvent): void {
@@ -613,5 +699,5 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     canvas.removeEventListener('wheel', onWheel);
   });
 
-  return { actualSize, camera, fit, focusAgent, zoomBy: zoomAt };
+  return { actualSize, camera, fit, focusAgent, setZoom: setZoomLevel, zoomBy: zoomAt };
 }

@@ -28,6 +28,7 @@ describe('canvas zoom shortcuts', () => {
   it('maps shifted number keys to fixed canvas views', () => {
     assert.equal(zoomActionForShortcut(shortcut('Digit0', { shiftKey: true })), 'actual-size');
     assert.equal(zoomActionForShortcut(shortcut('Digit1', { shiftKey: true })), 'fit-environment');
+    assert.equal(zoomActionForShortcut(shortcut('Digit2', { shiftKey: true })), 'zoom-selection');
     assert.equal(zoomActionForShortcut(shortcut('Digit9', { shiftKey: true })), 'fit-environment');
   });
 

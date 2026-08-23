@@ -240,11 +240,10 @@ select:focus-visible {
   flex: 0 0 auto;
 }
 
-.time-rate-button {
+.time-rate-button,
+.zoom-level-button {
   display: grid;
-  min-width: 104px;
   min-height: 30px;
-  grid-template-columns: minmax(78px, 1fr) 25px;
   overflow: hidden;
   padding: 0;
   background: var(--panel-deep);
@@ -253,30 +252,45 @@ select:focus-visible {
   text-align: left;
 }
 
+.time-rate-button {
+  min-width: 104px;
+  grid-template-columns: minmax(78px, 1fr) 25px;
+}
+
+.zoom-level-button {
+  min-width: 76px;
+  flex: 0 0 auto;
+  grid-template-columns: minmax(49px, 1fr) 25px;
+}
+
 .time-rate-value,
-.time-rate-disclosure {
+.time-rate-disclosure,
+.zoom-level-value,
+.zoom-level-disclosure {
   display: flex;
   height: 28px;
   align-items: center;
 }
 
-.time-rate-value {
+.time-rate-value,
+.zoom-level-value {
   overflow: hidden;
   padding: 0 8px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.time-rate-disclosure {
+.time-rate-disclosure,
+.zoom-level-disclosure {
   justify-content: center;
   border-left: 1px solid var(--line);
   color: var(--muted);
 }
 
-.time-rate-menu {
+.time-rate-menu,
+.zoom-menu {
   position: fixed;
   z-index: 40;
-  width: 176px;
   padding: 6px;
   border: 1px solid var(--line-strong);
   border-radius: 7px;
@@ -284,7 +298,16 @@ select:focus-visible {
   box-shadow: 0 12px 34px var(--shadow);
 }
 
-.time-rate-menu[hidden] {
+.time-rate-menu {
+  width: 176px;
+}
+
+.zoom-menu {
+  width: 202px;
+}
+
+.time-rate-menu[hidden],
+.zoom-menu[hidden] {
   display: none;
 }
 
@@ -324,6 +347,72 @@ select:focus-visible {
 
 .time-rate-menu-item.selected small {
   color: var(--accent);
+}
+
+.zoom-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.zoom-input-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-deep);
+}
+
+.zoom-input-wrap input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.zoom-input-wrap span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.zoom-apply {
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.zoom-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  text-align: left;
+}
+
+.zoom-menu-item:first-of-type {
+  margin-top: 5px;
+}
+
+.zoom-menu-item kbd {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 9px;
 }
 
 select {
@@ -658,24 +747,12 @@ input[type="search"]::placeholder {
   cursor: grabbing;
 }
 
-.stage-tools,
-.character-hover-card,
-.stage-legend {
+.character-hover-card {
   position: absolute;
   border: 1px solid rgb(245 236 208 / 12%);
   background: rgb(15 23 18 / 82%);
   box-shadow: 0 7px 22px var(--shadow);
   backdrop-filter: blur(9px);
-}
-
-.stage-tools {
-  top: 12px;
-  left: 12px;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 4px;
-  border-radius: 8px;
 }
 
 .indicator-verbosity {
@@ -716,28 +793,6 @@ input[type="search"]::placeholder {
 
 .header-signals.is-off .indicator-toggles {
   opacity: 0.5;
-}
-
-.icon-button {
-  min-width: 29px;
-  min-height: 27px;
-  padding: 3px 8px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-}
-
-.fit-button {
-  width: auto;
-}
-
-.zoom-readout {
-  min-width: 42px;
-  padding: 0 5px;
-  color: var(--faint);
-  font-family: var(--mono);
-  font-size: 9px;
-  text-align: right;
 }
 
 .character-hover-card {
@@ -785,17 +840,6 @@ input[type="search"]::placeholder {
   font-size: 11px;
 }
 
-.stage-legend {
-  bottom: 12px;
-  left: 12px;
-  padding: 6px 9px;
-  border: 0;
-  border-radius: 5px;
-  color: rgb(235 234 216 / 48%);
-  font-size: 9px;
-  pointer-events: none;
-}
-
 .inspector {
   grid-area: inspector;
   min-width: 0;
@@ -803,6 +847,26 @@ input[type="search"]::placeholder {
   overflow-y: auto;
   border-left: 1px solid var(--line);
   background: var(--panel);
+}
+
+.inspector-empty {
+  display: grid;
+  min-height: 180px;
+  align-content: center;
+  gap: 5px;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.inspector-empty strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.inspector-empty p {
+  margin: 0;
+  font-size: 11px;
 }
 
 .character-hero {

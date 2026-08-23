@@ -766,11 +766,22 @@ function createWorkbench(): HTMLElement {
   const menuButton = button('', 'menu-button');
   const appMenu = element('nav', 'app-menu');
   const fileActions = element('div', 'file-actions');
-  const openScenario = button('Open file');
-  const saveScenario = button('Save snapshot');
   const fileInput = element('input');
   const signalControls = element('section', 'header-signals');
   const signalLabel = element('strong');
+  const zoomLevelButton = button('', 'zoom-level-button');
+  const zoomLevelValue = element('span', 'zoom-level-value');
+  const zoomLevelDisclosure = element('span', 'zoom-level-disclosure');
+  const zoomMenu = element('section', 'zoom-menu');
+  const zoomForm = element('form', 'zoom-form');
+  const zoomInputLabel = element('label', 'visually-hidden');
+  const zoomInputWrap = element('div', 'zoom-input-wrap');
+  const zoomInput = element('input');
+  const zoomPercent = element('span');
+  const zoomApply = button('Apply', 'zoom-apply');
+  const zoomActualSize = menuAction('Zoom to 100%', 'actual-size', 'Shift+0');
+  const zoomFit = menuAction('Zoom to fit', 'fit-environment', 'Shift+1');
+  const zoomSelection = menuAction('Zoom to selection', 'zoom-selection', 'Shift+2');
   const transport = element('div', 'transport');
   const resetScenario = button('', 'button transport-button');
   const play = button('', 'button transport-button primary');
@@ -790,13 +801,7 @@ function createWorkbench(): HTMLElement {
   const rosterList = element('div', 'roster-list');
   const stage = element('section', 'stage');
   const canvas = element('canvas', 'world-canvas');
-  const stageTools = element('div', 'stage-tools');
-  const zoomOut = button('-', 'icon-button');
-  const zoomIn = button('+', 'icon-button');
-  const fit = button('Fit', 'icon-button fit-button');
-  const zoomReadout = element('span', 'zoom-readout');
   const characterHoverCard = element('section', 'character-hover-card');
-  const stageLegend = element('div', 'stage-legend');
   const indicatorSelect = element('select', 'indicator-verbosity');
   const indicatorToggles = element('div', 'indicator-toggles');
   const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
@@ -841,7 +846,7 @@ function createWorkbench(): HTMLElement {
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
-  fileActions.append(menuButton, openScenario, saveScenario, fileInput);
+  fileActions.append(menuButton, fileInput);
   resetScenario.dataset.testid = 'transport-reset';
   resetScenario.setAttribute('aria-label', 'Reset loaded scenario');
   resetScenario.append(controlIcon('reset'));
@@ -879,6 +884,33 @@ function createWorkbench(): HTMLElement {
   }
   transport.append(resetScenario, play, step, timeRateButton, time);
 
+  zoomLevelButton.dataset.testid = 'zoom-level-button';
+  zoomLevelButton.setAttribute('aria-controls', 'zoom-menu');
+  zoomLevelButton.setAttribute('aria-expanded', 'false');
+  zoomLevelDisclosure.append(controlIcon('chevron'));
+  zoomLevelButton.append(zoomLevelValue, zoomLevelDisclosure);
+  zoomMenu.id = 'zoom-menu';
+  zoomMenu.dataset.testid = 'zoom-menu';
+  zoomMenu.hidden = true;
+  zoomMenu.setAttribute('aria-label', 'Canvas zoom');
+  zoomInputLabel.htmlFor = 'zoom-percentage';
+  zoomInputLabel.textContent = 'Zoom percentage';
+  zoomInput.id = 'zoom-percentage';
+  zoomInput.type = 'number';
+  zoomInput.inputMode = 'decimal';
+  zoomInput.min = '12';
+  zoomInput.max = '500';
+  zoomInput.step = '1';
+  zoomInput.setAttribute('aria-label', 'Zoom percentage');
+  zoomPercent.textContent = '%';
+  zoomApply.type = 'submit';
+  zoomInputWrap.append(zoomInput, zoomPercent);
+  zoomForm.append(zoomInputLabel, zoomInputWrap, zoomApply);
+  zoomActualSize.className = 'zoom-menu-item';
+  zoomFit.className = 'zoom-menu-item';
+  zoomSelection.className = 'zoom-menu-item';
+  zoomMenu.append(zoomForm, zoomActualSize, zoomFit, zoomSelection);
+
   scenarioName.textContent = initial.scenario.title;
   rosterTitle.textContent = 'Characters';
   rosterTitleWrap.append(rosterTitle, rosterCount);
@@ -889,17 +921,10 @@ function createWorkbench(): HTMLElement {
   roster.append(rosterHeader, rosterList);
 
   canvas.setAttribute('aria-label', 'Top-down scenario environment');
-  zoomOut.title = 'Zoom out';
-  zoomOut.setAttribute('aria-label', 'Zoom out');
-  zoomIn.title = 'Zoom in';
-  zoomIn.setAttribute('aria-label', 'Zoom in');
-  fit.title = 'Frame environment';
-  stageTools.append(zoomOut, zoomIn, fit, zoomReadout);
   characterHoverCard.dataset.testid = 'character-hover-card';
   characterHoverCard.hidden = true;
   characterHoverCard.setAttribute('aria-hidden', 'true');
   characterHoverCard.setAttribute('role', 'tooltip');
-  stageLegend.textContent = 'Drag to pan / scroll or - and = to zoom / hover or select a character';
   signalLabel.textContent = 'Signals';
   for (const [value, label] of [
     ['off', 'Off'],
@@ -922,9 +947,9 @@ function createWorkbench(): HTMLElement {
     indicatorToggles.append(toggle);
   }
   signalControls.setAttribute('aria-label', 'Field signals');
-  signalControls.append(signalLabel, indicatorSelect, indicatorToggles);
+  signalControls.append(signalLabel, indicatorSelect, indicatorToggles, zoomLevelButton);
   header.append(fileActions, transport, signalControls);
-  stage.append(canvas, stageTools, characterHoverCard, stageLegend);
+  stage.append(canvas, characterHoverCard);
 
   inspector.append(inspectorContent);
   footer.append(statusText, simulationStats);
@@ -946,6 +971,7 @@ function createWorkbench(): HTMLElement {
   shell.append(
     appMenu,
     timeRateMenu,
+    zoomMenu,
     header,
     roster,
     stage,
@@ -1022,14 +1048,14 @@ function createWorkbench(): HTMLElement {
     },
     {
       enabled: () => selectedAgentId() !== null,
-      id: 'focus-selected',
-      keywords: ['character', 'center', 'view'],
-      label: 'Focus selected character',
+      id: 'zoom-selection',
+      keywords: ['character', 'center', 'selection', 'view', 'zoom'],
+      label: 'Zoom to selected character',
       run: () => {
         const selected = selectedAgentId();
         if (selected !== null) worldView.focusAgent(selected);
       },
-      shortcut: 'F',
+      shortcut: 'Shift+2',
     },
     {
       id: 'fit-environment',
@@ -1092,6 +1118,29 @@ function createWorkbench(): HTMLElement {
     }
   }
 
+  function setZoomMenuOpen(open: boolean, restoreFocus = false): void {
+    if (open) {
+      const bounds = zoomLevelButton.getBoundingClientRect();
+      const menuWidth = 202;
+      zoomMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, bounds.right - menuWidth))}px`;
+      zoomMenu.style.top = `${bounds.bottom + 6}px`;
+      appMenu.hidden = true;
+      menuButton.setAttribute('aria-expanded', 'false');
+      setTimeRateMenuOpen(false);
+    }
+    zoomMenu.hidden = !open;
+    zoomLevelButton.setAttribute('aria-expanded', String(open));
+    if (open) {
+      zoomInput.value = String(Math.round(worldView.camera().zoom * 100));
+      requestAnimationFrame(() => {
+        zoomInput.focus();
+        zoomInput.select();
+      });
+    } else if (restoreFocus) {
+      zoomLevelButton.focus();
+    }
+  }
+
   function setTimeRateMenuOpen(open: boolean, restoreFocus = false): void {
     if (open) {
       const bounds = timeRateButton.getBoundingClientRect();
@@ -1100,6 +1149,7 @@ function createWorkbench(): HTMLElement {
       timeRateMenu.style.top = `${bounds.bottom + 6}px`;
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
+      setZoomMenuOpen(false);
     }
     timeRateMenu.hidden = !open;
     timeRateButton.setAttribute('aria-expanded', String(open));
@@ -1111,7 +1161,10 @@ function createWorkbench(): HTMLElement {
   }
 
   function setMenuOpen(open: boolean, focusFirst = false): void {
-    if (open) setTimeRateMenuOpen(false);
+    if (open) {
+      setTimeRateMenuOpen(false);
+      setZoomMenuOpen(false);
+    }
     appMenu.hidden = !open;
     menuButton.setAttribute('aria-expanded', String(open));
     if (open && focusFirst) menuButtons.find(control => !control.disabled)?.focus();
@@ -1139,6 +1192,7 @@ function createWorkbench(): HTMLElement {
     closeQuickActions();
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
+    setZoomMenuOpen(false);
     try {
       void Promise.resolve(action.run()).catch(error => {
         setStatus(error instanceof Error ? error.message : String(error));
@@ -1186,6 +1240,7 @@ function createWorkbench(): HTMLElement {
   function openQuickActions(): void {
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
+    setZoomMenuOpen(false);
     quickActionsInput.value = '';
     renderQuickActions('');
     quickActionsOverlay.inert = false;
@@ -1263,7 +1318,13 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
-    zoomReadout.textContent = `${Math.round(worldView.camera().zoom * 100)}%`;
+    const percent = Math.round(worldView.camera().zoom * 100);
+    const hasSelection = selectedAgentId() !== null;
+    zoomLevelValue.textContent = `${percent}%`;
+    zoomLevelButton.title = `Canvas zoom: ${percent}%`;
+    zoomLevelButton.setAttribute('aria-label', `Canvas zoom: ${percent}%`);
+    zoomSelection.disabled = !hasSelection;
+    if (document.activeElement !== zoomInput) zoomInput.value = String(percent);
   });
 
   createEffect(() => {
@@ -1305,9 +1366,16 @@ function createWorkbench(): HTMLElement {
   createEffect(() => {
     const current = state();
     const selected = selectedAgentId();
-    const agent = current.agents.find(candidate => candidate.id === selected) ?? current.agents[0];
+    const agent =
+      selected === null ? undefined : current.agents.find(candidate => candidate.id === selected);
     if (agent === undefined) {
-      inspectorContent.replaceChildren();
+      const empty = element('section', 'inspector-empty');
+      const title = element('strong');
+      const copy = element('p');
+      title.textContent = 'No character selected';
+      copy.textContent = 'Select a character to inspect and adjust their state.';
+      empty.append(title, copy);
+      inspectorContent.replaceChildren(empty);
       return;
     }
     renderInspector(inspectorContent, current, agent, indicatorSettings(), setState);
@@ -1381,6 +1449,35 @@ function createWorkbench(): HTMLElement {
     const nextIndex = (currentIndex + direction + timeRateButtons.length) % timeRateButtons.length;
     timeRateButtons[nextIndex]?.focus();
   });
+  zoomLevelButton.addEventListener('click', () => setZoomMenuOpen(zoomMenu.hidden));
+  zoomLevelButton.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    setZoomMenuOpen(true);
+  });
+  zoomForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const percent = Number(zoomInput.value);
+    if (!Number.isFinite(percent)) {
+      zoomInput.value = String(Math.round(worldView.camera().zoom * 100));
+      zoomInput.select();
+      return;
+    }
+    worldView.setZoom(clamp(percent, 12, 500) / 100);
+    setZoomMenuOpen(false, true);
+  });
+  zoomMenu.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest<HTMLButtonElement>('button[data-action]');
+    if (control === null || !zoomMenu.contains(control)) return;
+    executeActionById(control.dataset.action ?? '');
+  });
+  zoomMenu.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    setZoomMenuOpen(false, true);
+  });
   indicatorSelect.addEventListener('change', () => {
     setIndicatorSettings(current => ({
       ...current,
@@ -1390,11 +1487,6 @@ function createWorkbench(): HTMLElement {
   for (const [kind, toggle] of indicatorButtons) {
     toggle.addEventListener('click', () => executeActionById(`toggle-signal-${kind}`));
   }
-  zoomOut.addEventListener('click', () => executeActionById('zoom-out'));
-  zoomIn.addEventListener('click', () => executeActionById('zoom-in'));
-  fit.addEventListener('click', () => executeActionById('fit-environment'));
-  openScenario.addEventListener('click', () => executeActionById('open-file'));
-  saveScenario.addEventListener('click', () => executeActionById('save-snapshot'));
   resetScenario.addEventListener('click', () => executeActionById('reset-scenario'));
   menuButton.addEventListener('click', () => {
     syncMenuActions();
@@ -1415,6 +1507,7 @@ function createWorkbench(): HTMLElement {
   appMenu.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       event.preventDefault();
+      event.stopPropagation();
       setMenuOpen(false);
       menuButton.focus();
       return;
@@ -1493,10 +1586,18 @@ function createWorkbench(): HTMLElement {
     ) {
       setTimeRateMenuOpen(false);
     }
+    if (
+      !zoomMenu.hidden &&
+      !zoomMenu.contains(event.target) &&
+      !zoomLevelButton.contains(event.target)
+    ) {
+      setZoomMenuOpen(false);
+    }
   }
 
   function onWindowResize(): void {
     if (!timeRateMenu.hidden) setTimeRateMenuOpen(true);
+    if (!zoomMenu.hidden) setZoomMenuOpen(true);
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -1516,6 +1617,21 @@ function createWorkbench(): HTMLElement {
       if (!timeRateMenu.hidden) {
         event.preventDefault();
         setTimeRateMenuOpen(false, true);
+        return;
+      }
+      if (!zoomMenu.hidden) {
+        event.preventDefault();
+        setZoomMenuOpen(false, true);
+        return;
+      }
+      if (quickActionsOverlay.classList.contains('open')) {
+        event.preventDefault();
+        closeQuickActions(true);
+        return;
+      }
+      if (selectedAgentId() !== null) {
+        event.preventDefault();
+        setSelectedAgentId(null);
         return;
       }
     }
@@ -1553,7 +1669,7 @@ function createWorkbench(): HTMLElement {
       event.preventDefault();
       executeActionById('step');
     } else if (event.key.toLowerCase() === 'f') {
-      executeActionById('focus-selected');
+      executeActionById('zoom-selection');
     }
   }
 

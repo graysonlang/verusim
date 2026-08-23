@@ -1,4 +1,9 @@
-export type ZoomActionId = 'actual-size' | 'fit-environment' | 'zoom-in' | 'zoom-out';
+export type ZoomActionId =
+  | 'actual-size'
+  | 'fit-environment'
+  | 'zoom-in'
+  | 'zoom-out'
+  | 'zoom-selection';
 export type WorkbenchShortcutActionId = ZoomActionId | 'reset-scenario' | 'save-snapshot';
 
 export interface ShortcutInput {
@@ -15,6 +20,7 @@ export function zoomActionForShortcut(input: ShortcutInput): ZoomActionId | null
   if (input.shiftKey && !input.ctrlKey && !input.metaKey) {
     if (input.code === 'Digit0') return 'actual-size';
     if (input.code === 'Digit1' || input.code === 'Digit9') return 'fit-environment';
+    if (input.code === 'Digit2') return 'zoom-selection';
   }
 
   if (input.code === 'Minus') return 'zoom-out';
