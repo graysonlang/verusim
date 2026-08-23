@@ -57,7 +57,9 @@ export interface WorldView {
   actualSize: () => void;
   camera: Accessor<Camera>;
   fit: () => void;
+  followAgent: (agentId: string) => void;
   focusAgent: (agentId: string) => void;
+  revealAgent: (agentId: string) => void;
   setProjection: (projection: WorldProjection) => void;
   setZoom: (zoom: number) => void;
   zoomBy: (factor: number) => void;
@@ -286,6 +288,19 @@ export function agentIdAtScreenPoint(
     }
   }
   return nearest?.agentId ?? null;
+}
+
+export function cameraRevealingPoint(
+  camera: Camera,
+  viewport: { height: number; width: number },
+  point: Point,
+): Camera {
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
+  const screenX = viewport.width / 2 + (point.x - camera.x) * screenPixelsPerMeter;
+  const screenY = viewport.height / 2 + (point.y - camera.y) * screenPixelsPerMeter;
+  const visible =
+    screenX >= 0 && screenX <= viewport.width && screenY >= 0 && screenY <= viewport.height;
+  return visible ? camera : { ...camera, x: point.x, y: point.y };
 }
 
 function drawInfiniteGrid(
@@ -940,9 +955,9 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     setCamera(current => ({ ...current, zoom: 1 }));
   }
 
-  function focusAgent(agentId: string): void {
+  function followAgent(agentId: string): SimulationAgent | undefined {
     const agent = options.state().agents.find(candidate => candidate.id === agentId);
-    if (agent === undefined) return;
+    if (agent === undefined) return undefined;
     const context = environmentSpatialContextAt(options.state().environment, agent.position);
     setActiveProjection(
       context.enclosure === 'interior'
@@ -950,6 +965,24 @@ export function createWorldView(options: WorldViewOptions): WorldView {
         : EXTERIOR_PROJECTION,
     );
     options.onHover(null);
+    return agent;
+  }
+
+  function revealAgent(agentId: string): void {
+    const agent = followAgent(agentId);
+    if (agent === undefined) return;
+    setCamera(current =>
+      cameraRevealingPoint(
+        current,
+        { height: canvas.clientHeight, width: canvas.clientWidth },
+        agent.position,
+      ),
+    );
+  }
+
+  function focusAgent(agentId: string): void {
+    const agent = followAgent(agentId);
+    if (agent === undefined) return;
     setCamera(current => ({
       ...current,
       x: agent.position.x,
@@ -1179,7 +1212,9 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     actualSize,
     camera,
     fit,
+    followAgent,
     focusAgent,
+    revealAgent,
     setProjection: setActiveProjection,
     setZoom: setZoomLevel,
     zoomBy: zoomAt,

@@ -1711,7 +1711,7 @@ function createWorkbench(): HTMLElement {
     onHover: setWorldHover,
     onSelect: agentId => {
       if (agentId === null) setSelectedAgentId(null);
-      else selectAndFocus(agentId);
+      else selectAgent(agentId, 'preserve');
     },
     selectedAgentId,
     state,
@@ -1772,9 +1772,10 @@ function createWorkbench(): HTMLElement {
   rightSidebarToggle.addEventListener('click', onRightSidebarToggle);
   let renderedLayerSignature = '';
 
-  function selectAndFocus(agentId: string): void {
+  function selectAgent(agentId: string, framing: 'preserve' | 'reveal'): void {
     setSelectedAgentId(agentId);
-    worldView.focusAgent(agentId);
+    if (framing === 'reveal') worldView.revealAgent(agentId);
+    else worldView.followAgent(agentId);
   }
 
   function advance(ticks: number): void {
@@ -2591,7 +2592,7 @@ function createWorkbench(): HTMLElement {
       item.append(copy, context, signals);
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
-      item.addEventListener('click', () => selectAndFocus(agent.id));
+      item.addEventListener('click', () => selectAgent(agent.id, 'reveal'));
       return item;
     });
     rosterList.replaceChildren(...items);

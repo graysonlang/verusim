@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   agentIdAtScreenPoint,
+  cameraRevealingPoint,
   cameraForGesture,
   CSS_PIXELS_PER_METER_AT_100_PERCENT,
   scaleBarForZoom,
@@ -23,6 +24,18 @@ describe('world view selection', () => {
 
   it('returns no selection for a click on the canvas background', () => {
     assert.equal(agentIdAtScreenPoint(agents, camera, viewport, { x: 50, y: 50 }), null);
+  });
+
+  it('preserves camera framing when the selected character is visible', () => {
+    assert.equal(cameraRevealingPoint(camera, viewport, { x: 109, y: 100 }), camera);
+  });
+
+  it('centers an off-screen character without changing zoom', () => {
+    assert.deepEqual(cameraRevealingPoint(camera, viewport, { x: 111, y: 120 }), {
+      x: 111,
+      y: 120,
+      zoom: 1,
+    });
   });
 });
 
