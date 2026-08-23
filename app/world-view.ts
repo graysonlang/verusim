@@ -623,19 +623,25 @@ function drawExteriorCover(
   context.restore();
 }
 
-function drawMutedInterior(
+function drawContextInterior(
   context: CanvasRenderingContext2D,
   area: EnvironmentArea,
   screenPixelsPerMeter: number,
 ): void {
-  context.save();
-  context.globalAlpha = 0.16;
   context.fillStyle = '#9b8d74';
   context.fillRect(area.x, area.y, area.width, area.height);
   context.strokeStyle = '#d8c9aa';
   context.lineWidth = 1.5 / screenPixelsPerMeter;
   context.strokeRect(area.x, area.y, area.width, area.height);
-  context.restore();
+}
+
+function drawCutawayContextScrim(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+): void {
+  context.fillStyle = 'rgb(13 20 17 / 70%)';
+  context.fillRect(0, 0, width, height);
 }
 
 function drawLevelMarker(
@@ -715,13 +721,10 @@ function drawWorld(
   )[0];
   for (const area of state.environment.areas) {
     if (area.layerId !== groundLayer?.id || area.enclosure === 'interior') continue;
-    context.save();
-    if (projection.kind === 'layer') context.globalAlpha = 0.27;
     context.fillStyle = AREA_COLORS[area.kind];
     context.fillRect(area.x, area.y, area.width, area.height);
     drawAreaTexture(context, area, screenPixelsPerMeter);
-    drawAreaLabel(context, area, screenPixelsPerMeter, projection.kind === 'layer' ? 0.32 : 0.62);
-    context.restore();
+    drawAreaLabel(context, area, screenPixelsPerMeter);
     if (projection.kind === 'exterior') drawExteriorCover(context, area, screenPixelsPerMeter);
   }
 
@@ -739,8 +742,9 @@ function drawWorld(
   } else {
     for (const area of state.environment.areas) {
       if (area.enclosure !== 'interior' || area.layerId === projection.layerId) continue;
-      drawMutedInterior(context, area, screenPixelsPerMeter);
+      drawContextInterior(context, area, screenPixelsPerMeter);
     }
+    drawCutawayContextScrim(context, state.environment.width, state.environment.height);
     for (const area of state.environment.areas) {
       if (area.enclosure !== 'interior' || area.layerId !== projection.layerId) continue;
       drawInteriorFloor(context, area, screenPixelsPerMeter);

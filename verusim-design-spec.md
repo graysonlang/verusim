@@ -699,6 +699,7 @@ Sight and hearing consume their own authored lateral occlusion channels; overhea
 
 The workbench defaults to a roof-on Exterior projection and offers authored layers beneath it in descending elevation order.
 Selecting a layer is a cutaway: roofs peel away from active interiors, while muted ground, inactive structures, and dimmed off-layer character markers preserve relative plan position.
+The ground and inactive structures render beneath one uniform semi-transparent scrim so overlapping contextual footprints do not compound their dimming, while the active layer renders above that scrim.
 Exterior keeps outdoor characters prominent and dims enclosed characters with a relative-level marker.
 These projections are observer presentation over the one objective topology and never alter proximity, perception, access, or simulation state.
 The workbench may switch from Exterior to the containing layer when an inspector focuses an enclosed character.

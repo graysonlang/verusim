@@ -92,6 +92,7 @@ The same area geometry supplies spatial context to rendering and perception; lat
 The workbench defaults to a roof-on Exterior projection followed by cutaway layers ordered from highest to lowest elevation.
 Exterior renders structure roofs and dims enclosed characters with relative-level markers.
 A cutaway renders active interiors as floors and walls while retaining muted ground, inactive structures, and dimmed off-layer interior characters as plan context.
+Ground and inactive structure geometry render opaquely below one environment-sized scrim; the active layer renders afterward so contextual footprints cannot accumulate transparency where they overlap.
 Changing that projection or following a character between floors does not mutate authoritative state.
 
 Current movement speed is a derived observation rather than additional mutable state.
