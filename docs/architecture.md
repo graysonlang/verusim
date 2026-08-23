@@ -59,6 +59,11 @@ A snapshot wraps those references with current agents, dyads, exposure items, wo
 Simulation time is an integer number of minutes from the beginning of day one.
 A scenario chooses the number of minutes advanced by one tick.
 Calendar formatting and playback speed are observer concerns.
+The built-in scenarios use one-minute ticks so movement, deadlines, recovery, and short interactions do not collapse into five-minute jumps.
+
+Workbench pause state and time scale are orthogonal controls.
+Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
+Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
 
 World coordinates are meters in an unbounded two-dimensional plane.
 An environment provides a designed extent for framing and authored areas for observation; the camera is not clamped to that extent.

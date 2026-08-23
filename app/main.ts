@@ -39,6 +39,13 @@ import {
   type IndicatorSettings,
   type IndicatorVerbosity,
 } from './indicators.js';
+import {
+  DEFAULT_PLAYBACK_RATE_ID,
+  PLAYBACK_RATES,
+  accumulatePlayback,
+  playbackRateForId,
+  type PlaybackRateId,
+} from './playback.js';
 import { createWorldView } from './world-view.js';
 
 const characterLibrary = {
@@ -84,6 +91,49 @@ function hamburgerIcon(): SVGSVGElement {
   path.setAttribute('stroke', 'currentColor');
   path.setAttribute('stroke-linecap', 'round');
   path.setAttribute('stroke-width', '1.5');
+  icon.append(path);
+  return icon;
+}
+
+function controlIcon(kind: 'chevron' | 'pause' | 'play' | 'reset' | 'step'): SVGSVGElement {
+  const namespace = 'http://www.w3.org/2000/svg';
+  const icon = document.createElementNS(namespace, 'svg');
+  icon.classList.add('control-icon');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.setAttribute('height', '16');
+  icon.setAttribute('viewBox', '0 0 16 16');
+  icon.setAttribute('width', '16');
+  if (kind === 'pause') {
+    for (const x of ['4', '9']) {
+      const rect = document.createElementNS(namespace, 'rect');
+      rect.setAttribute('fill', 'currentColor');
+      rect.setAttribute('height', '10');
+      rect.setAttribute('rx', '0.75');
+      rect.setAttribute('width', '3');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', '3');
+      icon.append(rect);
+    }
+    return icon;
+  }
+  const path = document.createElementNS(namespace, 'path');
+  if (kind === 'play') {
+    path.setAttribute('d', 'M4.5 2.75 13 8l-8.5 5.25z');
+    path.setAttribute('fill', 'currentColor');
+  } else if (kind === 'step') {
+    path.setAttribute('d', 'M3.25 2.75 10.5 8l-7.25 5.25zM11.5 2.75H13v10.5h-1.5z');
+    path.setAttribute('fill', 'currentColor');
+  } else {
+    path.setAttribute(
+      'd',
+      kind === 'reset' ? 'M13 5V2.5l-1.65 1.65A5.25 5.25 0 1 0 13.2 10' : 'm4.5 6 3.5 3.5L11.5 6',
+    );
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('stroke-width', '1.5');
+  }
   icon.append(path);
   return icon;
 }
@@ -702,7 +752,9 @@ function createWorkbench(): HTMLElement {
     initial.agents[0]?.id ?? null,
   );
   const [search, setSearch] = createSignal('');
-  const [speed, setSpeed] = createSignal(0);
+  const [playing, setPlaying] = createSignal(false);
+  const [playbackRateId, setPlaybackRateId] =
+    createSignal<PlaybackRateId>(DEFAULT_PLAYBACK_RATE_ID);
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
 
@@ -717,10 +769,13 @@ function createWorkbench(): HTMLElement {
   const signalControls = element('section', 'header-signals');
   const signalLabel = element('strong');
   const transport = element('div', 'transport');
-  const step = button('Step', 'button transport-button');
-  const play = button('Play', 'button transport-button primary');
-  const speedSelect = element('select');
-  const resetScenario = button('Reset', 'button subtle');
+  const resetScenario = button('', 'button transport-button');
+  const play = button('', 'button transport-button primary');
+  const step = button('', 'button transport-button');
+  const timeRateButton = button('', 'time-rate-button');
+  const timeRateValue = element('span', 'time-rate-value');
+  const timeRateDisclosure = element('span', 'time-rate-disclosure');
+  const timeRateMenu = element('section', 'time-rate-menu');
   const time = element('time', 'simulation-time');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
@@ -786,20 +841,42 @@ function createWorkbench(): HTMLElement {
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
   fileActions.append(menuButton, openScenario, saveScenario, fileInput);
+  resetScenario.dataset.testid = 'transport-reset';
+  resetScenario.setAttribute('aria-label', 'Reset loaded scenario');
+  resetScenario.append(controlIcon('reset'));
+  play.dataset.testid = 'transport-play';
+  step.dataset.testid = 'transport-step';
+  step.title = 'Step simulation';
+  step.setAttribute('aria-label', 'Step simulation');
+  step.append(controlIcon('step'));
 
-  for (const [value, label] of [
-    ['0', 'Paused'],
-    ['1', '1x'],
-    ['8', '8x'],
-    ['32', '32x'],
-  ] as const) {
-    const option = element('option');
-    option.value = value;
-    option.textContent = label;
-    speedSelect.append(option);
+  timeRateButton.dataset.testid = 'time-rate-button';
+  timeRateButton.setAttribute('aria-controls', 'time-rate-menu');
+  timeRateButton.setAttribute('aria-expanded', 'false');
+  timeRateDisclosure.append(controlIcon('chevron'));
+  timeRateButton.append(timeRateValue, timeRateDisclosure);
+  timeRateMenu.id = 'time-rate-menu';
+  timeRateMenu.dataset.testid = 'time-rate-menu';
+  timeRateMenu.hidden = true;
+  timeRateMenu.setAttribute('aria-label', 'Time scale');
+  timeRateMenu.setAttribute('role', 'menu');
+  for (const [index, rate] of PLAYBACK_RATES.entries()) {
+    const control = button('', `time-rate-menu-item${index === 5 ? ' group-start' : ''}`);
+    const label = element('span');
+    const multiplier = element('small');
+    label.textContent = rate.label;
+    multiplier.textContent =
+      rate.id === 'real-time' || rate.label.endsWith('m/s')
+        ? `${Math.round(rate.simulatedMinutesPerSecond * 60)}x`
+        : '';
+    control.dataset.rate = rate.id;
+    control.dataset.testid = `time-rate-${rate.id}`;
+    control.setAttribute('aria-checked', 'false');
+    control.setAttribute('role', 'menuitemradio');
+    control.append(label, multiplier);
+    timeRateMenu.append(control);
   }
-  speedSelect.setAttribute('aria-label', 'Playback speed');
-  transport.append(step, play, speedSelect, resetScenario, time);
+  transport.append(resetScenario, timeRateButton, play, step, time);
 
   scenarioName.textContent = initial.scenario.title;
   rosterTitle.textContent = 'Characters';
@@ -862,7 +939,16 @@ function createWorkbench(): HTMLElement {
   quickActionsOverlay.setAttribute('aria-hidden', 'true');
   quickActionsOverlay.inert = true;
   quickActionsOverlay.append(quickActionsPalette);
-  shell.append(appMenu, header, roster, stage, inspector, footer, quickActionsOverlay);
+  shell.append(
+    appMenu,
+    timeRateMenu,
+    header,
+    roster,
+    stage,
+    inspector,
+    footer,
+    quickActionsOverlay,
+  );
 
   const worldView = createWorldView({
     canvas,
@@ -882,11 +968,11 @@ function createWorkbench(): HTMLElement {
   }
 
   function togglePlayback(): void {
-    setSpeed(current => (current === 0 ? 1 : 0));
+    setPlaying(current => !current);
   }
 
   function resetLoadedScenario(): void {
-    setSpeed(0);
+    setPlaying(false);
     setState(loadedBaseline);
     setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
     setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
@@ -976,6 +1062,9 @@ function createWorkbench(): HTMLElement {
   const actionsById = new Map(actions.map(action => [action.id, action]));
   const menuButtons = Array.from(appMenu.querySelectorAll<HTMLButtonElement>('button'));
   const menuActionButtons = menuButtons.filter(control => control.dataset.action !== undefined);
+  const timeRateButtons = Array.from(
+    timeRateMenu.querySelectorAll<HTMLButtonElement>('button[data-rate]'),
+  );
   let filteredQuickActions: readonly QuickAction[] = actions;
   let quickActionFocus = 0;
 
@@ -986,7 +1075,26 @@ function createWorkbench(): HTMLElement {
     }
   }
 
+  function setTimeRateMenuOpen(open: boolean, restoreFocus = false): void {
+    if (open) {
+      const bounds = timeRateButton.getBoundingClientRect();
+      const menuWidth = 176;
+      timeRateMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, bounds.right - menuWidth))}px`;
+      timeRateMenu.style.top = `${bounds.bottom + 6}px`;
+      appMenu.hidden = true;
+      menuButton.setAttribute('aria-expanded', 'false');
+    }
+    timeRateMenu.hidden = !open;
+    timeRateButton.setAttribute('aria-expanded', String(open));
+    if (open) {
+      timeRateButtons.find(control => control.dataset.rate === playbackRateId())?.focus();
+    } else if (restoreFocus) {
+      timeRateButton.focus();
+    }
+  }
+
   function setMenuOpen(open: boolean, focusFirst = false): void {
+    if (open) setTimeRateMenuOpen(false);
     appMenu.hidden = !open;
     menuButton.setAttribute('aria-expanded', String(open));
     if (open && focusFirst) menuButtons.find(control => !control.disabled)?.focus();
@@ -1013,6 +1121,7 @@ function createWorkbench(): HTMLElement {
     if (!isActionEnabled(action)) return;
     closeQuickActions();
     setMenuOpen(false);
+    setTimeRateMenuOpen(false);
     try {
       void Promise.resolve(action.run()).catch(error => {
         setStatus(error instanceof Error ? error.message : String(error));
@@ -1059,6 +1168,7 @@ function createWorkbench(): HTMLElement {
 
   function openQuickActions(): void {
     setMenuOpen(false);
+    setTimeRateMenuOpen(false);
     quickActionsInput.value = '';
     renderQuickActions('');
     quickActionsOverlay.inert = false;
@@ -1081,12 +1191,36 @@ function createWorkbench(): HTMLElement {
   }
 
   createEffect(() => {
-    const playbackSpeed = speed();
-    play.textContent = playbackSpeed === 0 ? 'Play' : 'Pause';
-    play.setAttribute('aria-pressed', String(playbackSpeed !== 0));
-    speedSelect.value = String(playbackSpeed);
-    if (playbackSpeed === 0) return;
-    const timer = window.setInterval(() => advance(playbackSpeed), 320);
+    const isPlaying = playing();
+    const rate = playbackRateForId(playbackRateId());
+    play.replaceChildren(controlIcon(isPlaying ? 'pause' : 'play'));
+    play.title = isPlaying ? 'Pause simulation' : 'Play simulation';
+    play.setAttribute('aria-label', play.title);
+    play.setAttribute('aria-pressed', String(isPlaying));
+    timeRateValue.textContent = rate.label;
+    timeRateButton.title = `Time scale: ${rate.label}`;
+    timeRateButton.setAttribute('aria-label', `Time scale: ${rate.label}`);
+    for (const control of timeRateButtons) {
+      const selected = control.dataset.rate === rate.id;
+      control.classList.toggle('selected', selected);
+      control.setAttribute('aria-checked', String(selected));
+    }
+    if (!isPlaying) return;
+    let carriedMinutes = 0;
+    let previousTime = performance.now();
+    const timer = window.setInterval(() => {
+      const currentTime = performance.now();
+      const elapsedSeconds = Math.max(0, (currentTime - previousTime) / 1000);
+      previousTime = currentTime;
+      const result = accumulatePlayback(
+        carriedMinutes,
+        elapsedSeconds,
+        rate,
+        state().scenario.tickMinutes,
+      );
+      carriedMinutes = result.carriedMinutes;
+      if (result.ticks > 0) advance(result.ticks);
+    }, 100);
     onCleanup(() => window.clearInterval(timer));
   });
 
@@ -1169,7 +1303,35 @@ function createWorkbench(): HTMLElement {
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
   step.addEventListener('click', () => executeActionById('step'));
   play.addEventListener('click', () => executeActionById('play-pause'));
-  speedSelect.addEventListener('change', () => setSpeed(Number(speedSelect.value)));
+  timeRateButton.addEventListener('click', () => setTimeRateMenuOpen(timeRateMenu.hidden));
+  timeRateButton.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    setTimeRateMenuOpen(true);
+  });
+  timeRateMenu.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest<HTMLButtonElement>('button[data-rate]');
+    if (control === null || !timeRateMenu.contains(control)) return;
+    const rate = PLAYBACK_RATES.find(candidate => candidate.id === control.dataset.rate);
+    if (rate === undefined) return;
+    setPlaybackRateId(rate.id);
+    setTimeRateMenuOpen(false, true);
+  });
+  timeRateMenu.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setTimeRateMenuOpen(false, true);
+      return;
+    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const currentIndex = timeRateButtons.indexOf(document.activeElement as HTMLButtonElement);
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    const nextIndex = (currentIndex + direction + timeRateButtons.length) % timeRateButtons.length;
+    timeRateButtons[nextIndex]?.focus();
+  });
   indicatorSelect.addEventListener('change', () => {
     setIndicatorSettings(current => ({
       ...current,
@@ -1259,7 +1421,7 @@ function createWorkbench(): HTMLElement {
             })
           : createSimulation({ characterLibrary, environmentLibrary, scenario: contents });
       loadedBaseline = loaded;
-      setSpeed(0);
+      setPlaying(false);
       setState(loaded);
       setSelectedAgentId(loaded.agents[0]?.id ?? null);
       resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;
@@ -1275,6 +1437,17 @@ function createWorkbench(): HTMLElement {
     if (!appMenu.hidden && !appMenu.contains(event.target) && !menuButton.contains(event.target)) {
       setMenuOpen(false);
     }
+    if (
+      !timeRateMenu.hidden &&
+      !timeRateMenu.contains(event.target) &&
+      !timeRateButton.contains(event.target)
+    ) {
+      setTimeRateMenuOpen(false);
+    }
+  }
+
+  function onWindowResize(): void {
+    if (!timeRateMenu.hidden) setTimeRateMenuOpen(true);
   }
 
   function onKeyDown(event: KeyboardEvent): void {
@@ -1284,11 +1457,18 @@ function createWorkbench(): HTMLElement {
       else openQuickActions();
       return;
     }
-    if (event.key === 'Escape' && !appMenu.hidden) {
-      event.preventDefault();
-      setMenuOpen(false);
-      menuButton.focus();
-      return;
+    if (event.key === 'Escape') {
+      if (!appMenu.hidden) {
+        event.preventDefault();
+        setMenuOpen(false);
+        menuButton.focus();
+        return;
+      }
+      if (!timeRateMenu.hidden) {
+        event.preventDefault();
+        setTimeRateMenuOpen(false, true);
+        return;
+      }
     }
     if (quickActionsOverlay.classList.contains('open')) return;
     const target = event.target;
@@ -1323,9 +1503,11 @@ function createWorkbench(): HTMLElement {
   }
 
   document.addEventListener('pointerdown', onDocumentPointerDown);
+  window.addEventListener('resize', onWindowResize);
   window.addEventListener('keydown', onKeyDown);
   onCleanup(() => {
     document.removeEventListener('pointerdown', onDocumentPointerDown);
+    window.removeEventListener('resize', onWindowResize);
     window.removeEventListener('keydown', onKeyDown);
   });
   requestAnimationFrame(worldView.fit);

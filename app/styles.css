@@ -210,11 +210,21 @@ select:focus-visible {
 
 .transport {
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px;
+}
+
+.transport-button {
+  display: flex;
+  width: 31px;
+  min-width: 31px;
+  height: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
 .transport-button.primary {
-  min-width: 55px;
   border-color: var(--accent-deep);
   background: var(--accent);
   color: #2f250e;
@@ -223,6 +233,97 @@ select:focus-visible {
 
 .transport-button.primary:hover {
   background: #f5d67f;
+}
+
+.control-icon {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.time-rate-button {
+  display: grid;
+  min-width: 104px;
+  min-height: 30px;
+  grid-template-columns: minmax(78px, 1fr) 25px;
+  overflow: hidden;
+  padding: 0;
+  background: var(--panel-deep);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-align: left;
+}
+
+.time-rate-value,
+.time-rate-disclosure {
+  display: flex;
+  height: 28px;
+  align-items: center;
+}
+
+.time-rate-value {
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.time-rate-disclosure {
+  justify-content: center;
+  border-left: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.time-rate-menu {
+  position: fixed;
+  z-index: 40;
+  width: 176px;
+  padding: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--panel-raised);
+  box-shadow: 0 12px 34px var(--shadow);
+}
+
+.time-rate-menu[hidden] {
+  display: none;
+}
+
+.time-rate-menu-item {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font-size: 11px;
+  text-align: left;
+}
+
+.time-rate-menu-item.group-start {
+  margin-top: 5px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 4px 4px;
+}
+
+.time-rate-menu-item small {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.time-rate-menu-item.selected {
+  background: rgb(240 201 102 / 10%);
+  color: #fff2c7;
+}
+
+.time-rate-menu-item.selected small {
+  color: var(--accent);
 }
 
 select {
