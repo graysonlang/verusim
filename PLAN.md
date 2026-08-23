@@ -92,6 +92,39 @@ Exit probes:
 - the same low-stakes exchange settles identically whether observed or off screen
 - chunk loading and time acceleration do not alter deterministic results
 
+## Phase 8 — integrated content authoring workbench
+
+Refactor the browser workbench into a shared application shell with separate authoring and simulation workspaces after the content schemas, preparation boundary, behavioral model, and integration adapters have stabilized.
+Provide a persistent Build/Simulate mode switch rather than a modal editor: Build owns unsaved authored drafts, while Simulate owns runtime state produced from one explicitly prepared draft revision.
+Changing a draft never mutates a running simulation; applying valid changes starts a new simulation and reset baseline, while returning to Build preserves the draft, selection, editor camera, and undo history.
+
+Represent the authored project as an in-memory document graph keyed by scenario identity or semantic resource address rather than source path.
+Track each document's loaded baseline, current draft, dirty state, source provenance, incoming and outgoing references, diagnostics, and transactional undo/redo history.
+Run incremental field and document diagnostics for editing responsiveness, but keep the existing migration, validation, duplicate detection, reference resolution, dependency closure, and preparation path authoritative before simulation or export.
+
+Add specialized editors for character identities and their age or continuity profiles, layered environment layouts, atomic norms, social-contract composition, and scenario placement and initial conditions.
+Use a content explorer, central form or spatial canvas, property and reference inspector, and shared problems panel rather than exposing the JSON representation as the primary interface.
+Keep raw JSON as an optional advanced view over the same draft, not a second document model.
+
+Keep persistence and file access outside the engine through a concise authoring-store port for document discovery, reads, and atomic change-set commits.
+Browser directory access, upload and download, IndexedDB, HTTP services, project databases, and embedding hosts may implement that port without changing authoring semantics or the existing exact-address `ContentSource` preparation contract.
+Let a downstream consumer supply documents in memory and receive validated change sets without implementing filesystem access.
+
+Add dependency-aware project export and packing only at this authoring boundary.
+A pack starts from selected scenario roots, walks the same explicit dependency closure used by preparation, locks exact semantic resources and digests, deduplicates shared content, and excludes unrelated documents without treating directory placement as identity.
+
+Exit probes:
+
+- one project authors a character profile, layered environment, norm, social contract, and scenario as separate documents, then prepares and runs that scenario without copied dependencies
+- an invalid draft blocks the Build-to-Simulate transition with an actionable document and authored path, while correcting it uses the same preparation path as direct in-memory content
+- editing a valid draft while simulation is active leaves the running state and reset baseline byte-equivalent until the user explicitly applies the revision and restarts
+- returning from Simulate restores the unsaved draft, selection, editor camera, dirty state, and undo history without folding interventions or snapshot state into authored content
+- undoing and redoing a multi-document reference or environment-geometry transaction restores byte-equivalent documents and dependency closure
+- two authoring-store adapters load and commit equivalent projects without changing semantic addresses, prepared content, or validation results
+- moving documents within an authoring tree changes provenance but not references, editor identity, or the prepared scenario
+- exporting one selected scenario includes every transitive character, environment, norm, and social-contract dependency exactly once and excludes unrelated resources
+- keyboard and pointer workflows can switch modes, navigate documents, edit representative fields, inspect diagnostics, and apply a valid revision without trapping focus or losing draft state
+
 ## Decisions that can wait
 
 Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, task-specific physical capability checks beyond the existing build contributions, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
