@@ -1,12 +1,13 @@
 # Agent Guidance
 
-How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is about *how to work*; what the project *is* belongs in [README.md](README.md), [PLAN.md](PLAN.md), and `docs/`.
+How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is about *how to work*; what the project *is* belongs in [README.md](README.md), [PLAN.md](PLAN.md), [COMPLETED.md](COMPLETED.md), and `docs/`.
 
 ## Project
 
-Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [verusim-design-spec.md](verusim-design-spec.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [PLAN.md](PLAN.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
+Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [verusim-design-spec.md](verusim-design-spec.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [PLAN.md](PLAN.md) before changing model scope. Consult [COMPLETED.md](COMPLETED.md) before changing behavior that may already satisfy a completed phase. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
 
 The design spec is authoritative for behavioral intent, architecture for implementation contracts, and the plan for sequencing.
+[COMPLETED.md](COMPLETED.md) is the durable record of achieved phase checkpoints and settled phase decisions.
 If they conflict, flag and reconcile the conflict rather than silently choosing one.
 
 ## Model invariants
@@ -49,6 +50,15 @@ No AI-attribution trailers of any kind: no `Co-Authored-By: Claude`, no "Generat
 Commit incremental, logically grouped changes as you go. The message is a concise one-liner.
 
 ## Working in this repo
+
+### Plan maintenance
+
+Active and future phase details live in [PLAN.md](PLAN.md).
+Completed phases, their exit probes, and settled phase decisions live in [COMPLETED.md](COMPLETED.md).
+When a phase is complete and the verification gate is green, move its complete section wholesale from the plan to the completed record in the same commit.
+Do not leave the same phase active in both files.
+If completed scope is reopened, move that phase back to the plan before changing it, then return it to the completed record only after its new exit probes and the full gate pass.
+Keep retrospective additions concise and update both files whenever phase scope or status changes.
 
 ### Behavioral changes
 

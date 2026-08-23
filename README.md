@@ -9,11 +9,11 @@ The repository contains two connected surfaces:
 - a browser workbench for loading scenarios, navigating a top-down environment, advancing time, inspecting characters, and intervening in live state
 
 The full behavioral model is specified in [verusim-design-spec.md](verusim-design-spec.md), with [verusim-otgw-acceptance-suite.md](verusim-otgw-acceptance-suite.md) serving as a long-range stress-test target.
-[docs/architecture.md](docs/architecture.md) describes the boundaries established by the first implementation slice, and [PLAN.md](PLAN.md) organizes the remaining work around behavioral outcomes and discriminating tests.
+[docs/architecture.md](docs/architecture.md) describes implementation boundaries, [PLAN.md](PLAN.md) organizes active and future work, and [COMPLETED.md](COMPLETED.md) records finished phases and their exit probes.
 
 ## Current slice
 
-The current implementation establishes the project substrate, the Phase 1 behavioral vertical slice, and the completed Phase 2A, Phase 2B, and Phase 2C observation foundations rather than claiming the full design is complete.
+The current implementation has completed Phase 0 through Phase 4; Phase 5 authoring and population generation is next.
 It includes:
 
 - versioned JSON character, environment, and scenario formats
@@ -25,6 +25,7 @@ It includes:
 - directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
 - authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
 - event-driven social observations, spatial perception gates, one-level directed mind models, accumulated prediction error and suspicion, evidence-gated correction, and the Endicott/Margueritte acceptance fixture
+- observer-relative local norms, relationship momentum and consolidation, accumulation and coping, and narrative-driven agency
 - immutable authored scenarios separated from versioned live snapshots with exact dyad, exposure, decision, and trace resume
 - a Solid-reactive, vanilla-DOM browser workbench with a bundled scenario catalog, scenario summaries, a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and independent distance and temperature settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, prediction inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
@@ -51,7 +52,8 @@ The dependency stack is intentionally small:
 
 - `verusim-design-spec.md` — complete behavioral model and scope
 - `verusim-otgw-acceptance-suite.md` — reference characters, falsifiers, and vignette sweeps
-- `PLAN.md` — implementation phases, sequencing, decisions, and exit probes
+- `PLAN.md` — active and future implementation phases, sequencing, decisions, and exit probes
+- `COMPLETED.md` — completed phases, achieved checkpoints, and settled phase decisions
 - `src/model/` — shared serializable types and model constants
 - `src/scenario/` — scenario parsing, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
