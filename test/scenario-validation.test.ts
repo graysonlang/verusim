@@ -153,6 +153,18 @@ describe('scenario validation', () => {
     assert.equal(parseSnapshot(snapshot).agents[0]?.schedule[0]?.recoveryMode, 'sleep');
   });
 
+  it('accepts only known optional initial time rates', () => {
+    const authored = structuredClone(scenario) as unknown as Record<string, unknown>;
+    authored.initialTimeRate = '10x';
+    assert.equal(parseScenario(authored).initialTimeRate, '10x');
+
+    authored.initialTimeRate = 'warp-speed';
+    assert.throws(
+      () => parseScenario(authored),
+      /scenario\.initialTimeRate: expected a known time rate identifier/,
+    );
+  });
+
   it('requires explicit gate events in the versioned causal trace', () => {
     const snapshot = serializeSnapshot(
       createSimulation({

@@ -372,6 +372,22 @@ export interface BehaviorOpportunity {
   targetId: string | null;
 }
 
+export const TIME_RATE_IDS = [
+  'real-time',
+  '2x',
+  '5x',
+  '10x',
+  '15x',
+  '1-minute-per-second',
+  '2-minutes-per-second',
+  '5-minutes-per-second',
+  '10-minutes-per-second',
+  '30-minutes-per-second',
+  '60-minutes-per-second',
+] as const;
+
+export type TimeRateId = (typeof TIME_RATE_IDS)[number];
+
 export interface ScenarioFile {
   agendaGoals: AgendaGoalSeed[];
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
@@ -382,6 +398,7 @@ export interface ScenarioFile {
   dyads: DyadSeed[];
   environmentId: string;
   id: string;
+  initialTimeRate?: TimeRateId;
   schemaVersion: 5;
   startMinute: number;
   summary: string;

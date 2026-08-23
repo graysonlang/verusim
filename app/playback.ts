@@ -1,5 +1,8 @@
+import type { TimeRateId } from '../src/model/types.js';
+import type { ClockFormat } from './preferences.js';
+
 export interface PlaybackRate {
-  id: string;
+  id: TimeRateId;
   label: string;
   simulatedMinutesPerSecond: number;
 }
@@ -18,20 +21,21 @@ export const PLAYBACK_RATES = [
   { id: '60-minutes-per-second', label: '60 m/s', simulatedMinutesPerSecond: 60 },
 ] as const satisfies readonly PlaybackRate[];
 
-export type PlaybackRateId = (typeof PLAYBACK_RATES)[number]['id'];
-
-export const DEFAULT_PLAYBACK_RATE_ID: PlaybackRateId = 'real-time';
+export type PlaybackRateId = TimeRateId;
 
 export interface PlaybackAdvance {
   carriedMinutes: number;
   ticks: number;
 }
 
-export function formatWorkbenchTime(minute: number): string {
+export function formatWorkbenchTime(minute: number, clockFormat: ClockFormat = '12-hour'): string {
   const day = Math.floor(minute / 1440) + 1;
   const minuteOfDay = ((minute % 1440) + 1440) % 1440;
   const hour = Math.floor(minuteOfDay / 60);
   const minutePart = minuteOfDay % 60;
+  if (clockFormat === '24-hour') {
+    return `Day ${day}, ${String(hour).padStart(2, '0')}:${String(minutePart).padStart(2, '0')}`;
+  }
   const period = hour < 12 ? 'am' : 'pm';
   const clockHour = hour % 12 || 12;
   return `Day ${day}, ${clockHour}:${String(minutePart).padStart(2, '0')} ${period}`;

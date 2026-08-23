@@ -1,6 +1,7 @@
 import {
   CAPABILITY_IDS,
   SOCIAL_FEATURE_IDS,
+  TIME_RATE_IDS,
   VALUE_IDS,
   type AreaKind,
   type CharacterLibraryFile,
@@ -23,6 +24,7 @@ const VALUE_ID_SET = new Set<string>(VALUE_IDS);
 const DYAD_MODES = new Set(['courteous', 'contesting', 'guarded', 'ruptured', 'warm']);
 const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'want']);
 const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
+const TIME_RATE_ID_SET = new Set<string>(TIME_RATE_IDS);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export class ScenarioValidationError extends Error {
@@ -441,6 +443,15 @@ export function parseScenario(value: unknown): ScenarioFile {
   identifierValue(file.environmentId, 'scenario.environmentId');
   integerValue(file.startMinute, 'scenario.startMinute', 0, Number.MAX_SAFE_INTEGER);
   integerValue(file.tickMinutes, 'scenario.tickMinutes', 1, 1440);
+  if (
+    file.initialTimeRate !== undefined &&
+    (typeof file.initialTimeRate !== 'string' || !TIME_RATE_ID_SET.has(file.initialTimeRate))
+  ) {
+    throw new ScenarioValidationError(
+      'scenario.initialTimeRate',
+      'expected a known time rate identifier',
+    );
+  }
 
   if (file.ambientTurnsPerHour !== undefined) {
     const turns = objectValue(file.ambientTurnsPerHour, 'scenario.ambientTurnsPerHour');

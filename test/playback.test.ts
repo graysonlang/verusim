@@ -14,6 +14,12 @@ describe('workbench playback', () => {
     assert.equal(formatWorkbenchTime(1445), 'Day 2, 12:05 am');
   });
 
+  it('formats the visible clock as 24-hour time when requested', () => {
+    assert.equal(formatWorkbenchTime(0, '24-hour'), 'Day 1, 00:00');
+    assert.equal(formatWorkbenchTime(960, '24-hour'), 'Day 1, 16:00');
+    assert.equal(formatWorkbenchTime(1445, '24-hour'), 'Day 2, 00:05');
+  });
+
   it('maps real-time and minute-per-second rates to simulated time', () => {
     assert.equal(playbackRateForId('real-time').simulatedMinutesPerSecond, 1 / 60);
     assert.equal(playbackRateForId('15x').simulatedMinutesPerSecond, 15 / 60);

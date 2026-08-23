@@ -16,7 +16,6 @@ import {
   evaluateEavesdropping,
   evaluateProximity,
   evaluateSpatialPerception,
-  formatSimulationTime,
   serializeSnapshot,
   setAgentResource,
   setAgentValueCharge,
@@ -41,14 +40,24 @@ import {
   type IndicatorVerbosity,
 } from './indicators.js';
 import {
-  DEFAULT_PLAYBACK_RATE_ID,
   PLAYBACK_RATES,
   accumulatePlayback,
   formatWorkbenchTime,
   playbackRateForId,
   type PlaybackRateId,
 } from './playback.js';
+import {
+  isClockFormat,
+  isDistanceUnit,
+  isTimeRateId,
+  initialTimeRateForScenario,
+  loadPreferences,
+  savePreferences,
+  type ApplicationPreferences,
+  type DistanceUnit,
+} from './preferences.js';
 import { workbenchActionForShortcut } from './shortcuts.js';
+import { formatDistance, formatMovementRate, formatMovementSpeed } from './units.js';
 import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.js';
 
 const characterLibrary = {
@@ -98,7 +107,9 @@ function hamburgerIcon(): SVGSVGElement {
   return icon;
 }
 
-function controlIcon(kind: 'chevron' | 'pause' | 'play' | 'reset' | 'step'): SVGSVGElement {
+function controlIcon(
+  kind: 'chevron' | 'close' | 'pause' | 'play' | 'reset' | 'step',
+): SVGSVGElement {
   const namespace = 'http://www.w3.org/2000/svg';
   const icon = document.createElementNS(namespace, 'svg');
   icon.classList.add('control-icon');
@@ -127,10 +138,13 @@ function controlIcon(kind: 'chevron' | 'pause' | 'play' | 'reset' | 'step'): SVG
     path.setAttribute('d', 'M3.25 2.75 10.5 8l-7.25 5.25zM11.5 2.75H13v10.5h-1.5z');
     path.setAttribute('fill', 'currentColor');
   } else {
-    path.setAttribute(
-      'd',
-      kind === 'reset' ? 'M13 5V2.5l-1.65 1.65A5.25 5.25 0 1 0 13.2 10' : 'm4.5 6 3.5 3.5L11.5 6',
-    );
+    const pathData =
+      kind === 'reset'
+        ? 'M13 5V2.5l-1.65 1.65A5.25 5.25 0 1 0 13.2 10'
+        : kind === 'close'
+          ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
+          : 'm4.5 6 3.5 3.5L11.5 6';
+    path.setAttribute('d', pathData);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', 'currentColor');
     path.setAttribute('stroke-linecap', 'round');
@@ -214,7 +228,11 @@ function locationBadge(state: SimulationState, agent: SimulationAgent): HTMLElem
   return badge;
 }
 
-function movementBadge(agent: SimulationAgent, compact = false): HTMLElement {
+function movementBadge(
+  agent: SimulationAgent,
+  distanceUnit: DistanceUnit,
+  compact = false,
+): HTMLElement {
   const observation = describeAgent(agent);
   const badge = element(
     'span',
@@ -222,14 +240,17 @@ function movementBadge(agent: SimulationAgent, compact = false): HTMLElement {
   );
   const label = element('span', 'movement-label');
   const pace = element('strong');
-  const speed = Number(observation.movementMetersPerMinute.toFixed(1));
+  const speed = observation.movementMetersPerMinute;
   const speedClass = MOVEMENT_SPEED_LABELS[observation.movementSpeedClass];
   label.textContent = 'Pace';
-  pace.textContent = compact || speed === 0 ? speedClass : `${speedClass} / ${speed} m/min`;
+  pace.textContent =
+    compact || speed === 0
+      ? speedClass
+      : `${speedClass} / ${formatMovementRate(speed, distanceUnit)}`;
   badge.title =
     speed === 0
       ? 'Current movement: still'
-      : `Current movement: ${speedClass.toLowerCase()} at ${speed} m/min (${(speed / 60).toFixed(2)} m/s)`;
+      : `Current movement: ${speedClass.toLowerCase()} at ${formatMovementRate(speed, distanceUnit)} (${formatMovementSpeed(speed, distanceUnit)})`;
   badge.setAttribute('aria-label', badge.title);
   badge.append(label, pace);
   return badge;
@@ -341,6 +362,7 @@ function renderInspector(
   state: SimulationState,
   agent: SimulationAgent,
   indicatorSettings: IndicatorSettings,
+  preferences: ApplicationPreferences,
   setState: (next: SimulationState) => void,
 ): void {
   const observation = describeAgent(agent);
@@ -357,7 +379,12 @@ function renderInspector(
   );
   name.textContent = agent.profile.name;
   summary.textContent = agent.profile.summary;
-  cardMeta.append(roleBadge(agent), locationBadge(state, agent), movementBadge(agent), signals);
+  cardMeta.append(
+    roleBadge(agent),
+    locationBadge(state, agent),
+    movementBadge(agent, preferences.distanceUnit),
+    signals,
+  );
   hero.append(name, summary, cardMeta);
 
   const mind = makeSection('State of mind', observation.stateOfMind);
@@ -392,9 +419,9 @@ function renderInspector(
     const name = element('strong');
     const summary = element('span');
     const detail = element('small');
-    distance.textContent = `${entry.proximity.distanceMeters.toFixed(1)} m`;
+    distance.textContent = formatDistance(entry.proximity.distanceMeters, preferences.distanceUnit);
     name.textContent = entry.agent.profile.name;
-    summary.textContent = `${entry.proximity.band} / comfort ${entry.proximity.comfortableDistanceMeters.toFixed(1)} m / discomfort ${Math.round(entry.proximity.discomfort * 100)}%`;
+    summary.textContent = `${entry.proximity.band} / comfort ${formatDistance(entry.proximity.comfortableDistanceMeters, preferences.distanceUnit)} / discomfort ${Math.round(entry.proximity.discomfort * 100)}%`;
     detail.textContent = `see ${entry.perception.sight.available ? 'yes' : 'no'} ${entry.perception.sight.strength.toFixed(2)} / hear ${entry.perception.hearing.available ? 'yes' : 'no'} ${entry.perception.hearing.strength.toFixed(2)} / cover ${entry.eavesdropping.concealment.toFixed(2)} / listening ${entry.eavesdropping.reason}`;
     copy.append(name, summary, detail);
     item.append(distance, copy);
@@ -512,7 +539,7 @@ function renderInspector(
     const summary = element('p', 'agenda-summary');
     const planPath = element('small', 'agenda-path');
     summary.textContent = `${intention.phase} / ${task?.label ?? intention.taskId} / ${intention.remainingMinutes} minutes remaining`;
-    planPath.textContent = `plan ${activePlan.taskIds.join(' -> ')} / score ${activePlan.score.toFixed(3)} / estimated ${formatSimulationTime(activePlan.estimatedCompletionMinute)}`;
+    planPath.textContent = `plan ${activePlan.taskIds.join(' -> ')} / score ${activePlan.score.toFixed(3)} / estimated ${formatWorkbenchTime(activePlan.estimatedCompletionMinute, preferences.clockFormat)}`;
     agenda.body.append(summary, planPath);
   }
   const agentGoals = state.agendaGoals.filter(goal => goal.actorId === agent.id);
@@ -535,7 +562,7 @@ function renderInspector(
         .join(' / ');
       status.textContent = goal.status;
       copy.textContent = goal.label;
-      terms.textContent = `${goal.source} / commitment ${goal.commitment.toFixed(2)} / ${goal.deadlineMinute === null ? 'no deadline' : `due ${formatSimulationTime(goal.deadlineMinute)}`} / ${progress}`;
+      terms.textContent = `${goal.source} / commitment ${goal.commitment.toFixed(2)} / ${goal.deadlineMinute === null ? 'no deadline' : `due ${formatWorkbenchTime(goal.deadlineMinute, preferences.clockFormat)}`} / ${progress}`;
       item.append(status, copy, terms);
       goalList.append(item);
     }
@@ -559,7 +586,7 @@ function renderInspector(
       const terms = element('small');
       label.textContent = candidate.taskIds.join(' -> ');
       score.textContent = candidate.score.toFixed(3);
-      terms.textContent = `goal ${candidate.goalUtility.toFixed(3)} x commitment and urgency ${candidate.urgency.toFixed(2)} / task ${candidate.taskUtility.toFixed(3)} / resources -${candidate.resourceCost.toFixed(3)} / complete ${formatSimulationTime(candidate.estimatedCompletionMinute)}`;
+      terms.textContent = `goal ${candidate.goalUtility.toFixed(3)} x commitment and urgency ${candidate.urgency.toFixed(2)} / task ${candidate.taskUtility.toFixed(3)} / resources -${candidate.resourceCost.toFixed(3)} / complete ${formatWorkbenchTime(candidate.estimatedCompletionMinute, preferences.clockFormat)}`;
       heading.append(label, score);
       item.append(heading, terms);
       candidateList.append(item);
@@ -712,7 +739,9 @@ function renderInspector(
     const time = element('span', 'event-time');
     const copy = element('span');
     time.textContent =
-      memory.type === 'formative' ? 'History' : formatSimulationTime(memory.minute);
+      memory.type === 'formative'
+        ? 'History'
+        : formatWorkbenchTime(memory.minute, preferences.clockFormat);
     copy.textContent = memory.summary;
     item.append(time, copy);
     memoryList.append(item);
@@ -726,7 +755,7 @@ function renderInspector(
     const time = element('span', 'event-time');
     const copy = element('span');
     const causes = element('small');
-    time.textContent = formatSimulationTime(entry.minute);
+    time.textContent = formatWorkbenchTime(entry.minute, preferences.clockFormat);
     copy.textContent = entry.summary;
     const terms = entry.terms.map(term => `${term.id}:${traceValue(term.value)}`);
     if (entry.selection !== null) {
@@ -770,6 +799,7 @@ function downloadSnapshot(state: SimulationState): void {
 
 function createWorkbench(): HTMLElement {
   const initial = createStarterSimulation();
+  const storedPreferences = loadPreferences(localStorage);
   let loadedBaseline = initial;
   const [state, setState] = createSignal(initial);
   const [selectedAgentId, setSelectedAgentId] = createSignal<string | null>(
@@ -777,8 +807,10 @@ function createWorkbench(): HTMLElement {
   );
   const [search, setSearch] = createSignal('');
   const [playing, setPlaying] = createSignal(false);
-  const [playbackRateId, setPlaybackRateId] =
-    createSignal<PlaybackRateId>(DEFAULT_PLAYBACK_RATE_ID);
+  const [playbackRateId, setPlaybackRateId] = createSignal<PlaybackRateId>(
+    initialTimeRateForScenario(initial.scenario, storedPreferences),
+  );
+  const [preferences, setPreferences] = createSignal<ApplicationPreferences>(storedPreferences);
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
   const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
@@ -840,6 +872,15 @@ function createWorkbench(): HTMLElement {
   const quickActionsTitle = element('h2', 'visually-hidden');
   const quickActionsInput = element('input');
   const quickActionsResults = element('div', 'quick-actions-results');
+  const settingsOverlay = element('div', 'settings-overlay');
+  const settingsPanel = element('section', 'settings-panel');
+  const settingsHeading = element('header', 'settings-heading');
+  const settingsTitle = element('h2');
+  const settingsCloseButton = button('', 'settings-close-button');
+  const settingsBody = element('div', 'settings-body');
+  const defaultTimeRateSelect = element('select');
+  const clockFormatInputs: HTMLInputElement[] = [];
+  const distanceUnitInputs: HTMLInputElement[] = [];
   const primaryShortcut = (key: string): string =>
     `${/Mac|iPhone|iPad|iPod/i.test(navigator.platform) ? 'Command' : 'Ctrl'}+${key}`;
 
@@ -855,6 +896,7 @@ function createWorkbench(): HTMLElement {
   menuSeparatorOne.setAttribute('aria-hidden', 'true');
   const menuSeparatorTwo = element('div', 'menu-separator');
   menuSeparatorTwo.setAttribute('aria-hidden', 'true');
+  const settingsButton = menuAction('Settings...', 'settings', primaryShortcut(','));
   const quickActionsButton = menuAction('Quick actions...', undefined, primaryShortcut('/'));
   appMenu.append(
     menuAction('Open file...', 'open-file', 'Shift+O'),
@@ -864,6 +906,7 @@ function createWorkbench(): HTMLElement {
     menuAction('Step simulation', 'step', 'ArrowRight'),
     menuAction('Play / pause', 'play-pause', 'Space'),
     menuSeparatorTwo,
+    settingsButton,
     quickActionsButton,
   );
 
@@ -996,6 +1039,81 @@ function createWorkbench(): HTMLElement {
   quickActionsOverlay.setAttribute('aria-hidden', 'true');
   quickActionsOverlay.inert = true;
   quickActionsOverlay.append(quickActionsPalette);
+
+  settingsTitle.id = 'settings-title';
+  settingsTitle.textContent = 'Settings';
+  settingsCloseButton.setAttribute('aria-label', 'Close settings');
+  settingsCloseButton.title = 'Close settings';
+  settingsCloseButton.append(controlIcon('close'));
+  settingsHeading.append(settingsTitle, settingsCloseButton);
+
+  const simulationSettings = element('fieldset', 'settings-group');
+  const simulationLegend = element('legend');
+  const defaultTimeRateLabel = element('label', 'settings-field');
+  const defaultTimeRateCopy = element('span');
+  const defaultTimeRateNote = element('p', 'settings-note');
+  simulationLegend.textContent = 'Simulation';
+  defaultTimeRateCopy.textContent = 'Default time scale';
+  defaultTimeRateSelect.id = 'settings-default-time-rate';
+  defaultTimeRateSelect.setAttribute('aria-label', 'Default time scale');
+  for (const rate of PLAYBACK_RATES) {
+    const option = element('option');
+    option.value = rate.id;
+    option.textContent = rate.label;
+    defaultTimeRateSelect.append(option);
+  }
+  defaultTimeRateLabel.append(defaultTimeRateCopy, defaultTimeRateSelect);
+  defaultTimeRateNote.textContent =
+    'Applied now and used when a loaded scenario does not specify an initial time rate.';
+  simulationSettings.append(simulationLegend, defaultTimeRateLabel, defaultTimeRateNote);
+
+  const clockSettings = element('fieldset', 'settings-group');
+  const clockLegend = element('legend');
+  clockLegend.textContent = 'Clock format';
+  for (const [value, label] of [
+    ['12-hour', '12-hour (4:00 pm)'],
+    ['24-hour', '24-hour (16:00)'],
+  ] as const) {
+    const row = element('label', 'settings-row');
+    const input = element('input');
+    const copy = element('span');
+    input.type = 'radio';
+    input.name = 'settings-clock-format';
+    input.value = value;
+    copy.textContent = label;
+    row.append(input, copy);
+    clockFormatInputs.push(input);
+    clockSettings.append(row);
+  }
+  clockSettings.prepend(clockLegend);
+
+  const unitSettings = element('fieldset', 'settings-group');
+  const unitLegend = element('legend');
+  unitLegend.textContent = 'Distance units';
+  for (const [value, label] of [
+    ['meters', 'Meters'],
+    ['feet', 'Feet'],
+  ] as const) {
+    const row = element('label', 'settings-row');
+    const input = element('input');
+    const copy = element('span');
+    input.type = 'radio';
+    input.name = 'settings-distance-unit';
+    input.value = value;
+    copy.textContent = label;
+    row.append(input, copy);
+    distanceUnitInputs.push(input);
+    unitSettings.append(row);
+  }
+  unitSettings.prepend(unitLegend);
+  settingsBody.append(simulationSettings, clockSettings, unitSettings);
+  settingsPanel.setAttribute('aria-labelledby', settingsTitle.id);
+  settingsPanel.setAttribute('aria-modal', 'true');
+  settingsPanel.setAttribute('role', 'dialog');
+  settingsPanel.append(settingsHeading, settingsBody);
+  settingsOverlay.setAttribute('aria-hidden', 'true');
+  settingsOverlay.inert = true;
+  settingsOverlay.append(settingsPanel);
   shell.append(
     appMenu,
     timeRateMenu,
@@ -1006,6 +1124,7 @@ function createWorkbench(): HTMLElement {
     inspector,
     footer,
     quickActionsOverlay,
+    settingsOverlay,
   );
 
   const worldView = createWorldView({
@@ -1052,6 +1171,13 @@ function createWorkbench(): HTMLElement {
       label: 'Save snapshot',
       run: () => downloadSnapshot(state()),
       shortcut: 'Shift+S',
+    },
+    {
+      id: 'settings',
+      keywords: ['preferences', 'clock', 'units', 'time scale'],
+      label: 'Settings...',
+      run: () => openSettings(),
+      shortcut: primaryShortcut(','),
     },
     {
       id: 'reset-scenario',
@@ -1215,9 +1341,37 @@ function createWorkbench(): HTMLElement {
     if (restoreFocus) menuButton.focus();
   }
 
+  function syncSettingsControls(): void {
+    const current = preferences();
+    defaultTimeRateSelect.value = current.defaultTimeRate;
+    for (const input of clockFormatInputs) input.checked = input.value === current.clockFormat;
+    for (const input of distanceUnitInputs) input.checked = input.value === current.distanceUnit;
+  }
+
+  function closeSettings(restoreFocus = false): void {
+    if (!settingsOverlay.classList.contains('open')) return;
+    settingsOverlay.classList.remove('open');
+    settingsOverlay.setAttribute('aria-hidden', 'true');
+    settingsOverlay.inert = true;
+    if (restoreFocus) menuButton.focus();
+  }
+
+  function openSettings(): void {
+    closeQuickActions();
+    setMenuOpen(false);
+    setTimeRateMenuOpen(false);
+    setZoomMenuOpen(false);
+    syncSettingsControls();
+    settingsOverlay.inert = false;
+    settingsOverlay.setAttribute('aria-hidden', 'false');
+    settingsOverlay.classList.add('open');
+    requestAnimationFrame(() => defaultTimeRateSelect.focus());
+  }
+
   function executeAction(action: QuickAction): void {
     if (!isActionEnabled(action)) return;
     closeQuickActions();
+    closeSettings();
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
     setZoomMenuOpen(false);
@@ -1266,6 +1420,7 @@ function createWorkbench(): HTMLElement {
   }
 
   function openQuickActions(): void {
+    closeSettings();
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
     setZoomMenuOpen(false);
@@ -1326,9 +1481,16 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
+    const currentPreferences = preferences();
     scenarioName.textContent = current.scenario.title;
-    time.textContent = formatWorkbenchTime(current.minute);
+    time.textContent = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
     simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} characters / ${current.trace.entries.length} trace entries`;
+  });
+
+  createEffect(() => {
+    const current = preferences();
+    savePreferences(localStorage, current);
+    syncSettingsControls();
   });
 
   createEffect(() => {
@@ -1356,7 +1518,7 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
-    const scale = scaleBarForZoom(worldView.camera().zoom);
+    const scale = scaleBarForZoom(worldView.camera().zoom, preferences().distanceUnit);
     worldScaleLabel.textContent = scale.label;
     worldScaleRule.style.width = `${scale.pixels}px`;
     worldScale.setAttribute('aria-label', `Map scale: ${scale.label}`);
@@ -1364,6 +1526,7 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
+    const currentPreferences = preferences();
     const query = search().trim().toLowerCase();
     const selected = selectedAgentId();
     const filtered = current.agents.filter(agent =>
@@ -1390,7 +1553,7 @@ function createWorkbench(): HTMLElement {
       location.textContent = locationName(current, agent);
       heading.append(name, roleBadge(agent));
       copy.append(heading, activity);
-      context.append(location, movementBadge(agent, true));
+      context.append(location, movementBadge(agent, currentPreferences.distanceUnit, true));
       item.append(copy, context, signals);
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
@@ -1402,6 +1565,7 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
+    const currentPreferences = preferences();
     const selected = selectedAgentId();
     const agent =
       selected === null ? undefined : current.agents.find(candidate => candidate.id === selected);
@@ -1415,12 +1579,20 @@ function createWorkbench(): HTMLElement {
       inspectorContent.replaceChildren(empty);
       return;
     }
-    renderInspector(inspectorContent, current, agent, indicatorSettings(), setState);
+    renderInspector(
+      inspectorContent,
+      current,
+      agent,
+      indicatorSettings(),
+      currentPreferences,
+      setState,
+    );
   });
 
   createEffect(() => {
     const hover = worldHover();
     const current = state();
+    const currentPreferences = preferences();
     const agent =
       hover === null ? undefined : current.agents.find(candidate => candidate.id === hover.agentId);
     if (hover === null || agent === undefined) {
@@ -1436,7 +1608,11 @@ function createWorkbench(): HTMLElement {
     const mind = element('p', 'hover-card-mind');
     const signals = indicatorStrip(current, agent, indicatorSettings(), 'hover-card-signals', true);
     name.textContent = agent.profile.name;
-    meta.append(roleBadge(agent), locationBadge(current, agent), movementBadge(agent));
+    meta.append(
+      roleBadge(agent),
+      locationBadge(current, agent),
+      movementBadge(agent, currentPreferences.distanceUnit),
+    );
     activity.textContent = agent.currentActivity;
     mind.textContent = `${observation.mood} mood. ${observation.stateOfMind}.`;
     characterHoverCard.replaceChildren(name, meta, activity, mind, signals);
@@ -1581,6 +1757,27 @@ function createWorkbench(): HTMLElement {
   quickActionsOverlay.addEventListener('pointerdown', event => {
     if (event.target === quickActionsOverlay) closeQuickActions(true);
   });
+  settingsCloseButton.addEventListener('click', () => closeSettings(true));
+  settingsOverlay.addEventListener('pointerdown', event => {
+    if (event.target === settingsOverlay) closeSettings(true);
+  });
+  settingsOverlay.addEventListener('change', event => {
+    const control = event.target;
+    if (control === defaultTimeRateSelect && isTimeRateId(defaultTimeRateSelect.value)) {
+      const defaultTimeRate = defaultTimeRateSelect.value;
+      setPreferences(current => ({ ...current, defaultTimeRate }));
+      setPlaybackRateId(defaultTimeRate);
+      return;
+    }
+    if (!(control instanceof HTMLInputElement) || !control.checked) return;
+    if (control.name === 'settings-clock-format' && isClockFormat(control.value)) {
+      const clockFormat = control.value;
+      setPreferences(current => ({ ...current, clockFormat }));
+    } else if (control.name === 'settings-distance-unit' && isDistanceUnit(control.value)) {
+      const distanceUnit = control.value;
+      setPreferences(current => ({ ...current, distanceUnit }));
+    }
+  });
 
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
@@ -1602,6 +1799,7 @@ function createWorkbench(): HTMLElement {
       loadedBaseline = loaded;
       setPlaying(false);
       setState(loaded);
+      setPlaybackRateId(initialTimeRateForScenario(loaded.scenario, preferences()));
       setSelectedAgentId(loaded.agents[0]?.id ?? null);
       resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;
       setStatus(`Loaded ${file.name}`);
@@ -1638,6 +1836,18 @@ function createWorkbench(): HTMLElement {
   }
 
   function onKeyDown(event: KeyboardEvent): void {
+    if (settingsOverlay.classList.contains('open')) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeSettings(true);
+      }
+      return;
+    }
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key === ',') {
+      event.preventDefault();
+      openSettings();
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key === '/') {
       event.preventDefault();
       if (quickActionsOverlay.classList.contains('open')) closeQuickActions(true);

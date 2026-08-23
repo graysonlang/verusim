@@ -12,6 +12,8 @@ import {
   type IndicatorKind,
   type IndicatorSettings,
 } from './indicators.js';
+import type { DistanceUnit } from './preferences.js';
+import { distanceFromMeters, metersFromDistance } from './units.js';
 
 export interface Camera {
   x: number;
@@ -90,22 +92,31 @@ export function cameraForGesture(
   };
 }
 
-export function scaleBarForZoom(zoom: number, targetPixels = 96): WorldScale {
+export function scaleBarForZoom(
+  zoom: number,
+  distanceUnit: DistanceUnit = 'meters',
+  targetPixels = 96,
+): WorldScale {
   const safeZoom = clamp(zoom, 0.12, 5);
-  const targetMeters = Math.max(1, targetPixels) / safeZoom;
-  const magnitude = 10 ** Math.floor(Math.log10(targetMeters));
-  const candidates = [1, 2, 5, 10].map(multiplier => multiplier * magnitude);
-  let meters = candidates[0] ?? magnitude;
-  let difference = Math.abs(Math.log(meters / targetMeters));
+  const targetDistance = distanceFromMeters(Math.max(1, targetPixels) / safeZoom, distanceUnit);
+  const magnitude = 10 ** Math.floor(Math.log10(targetDistance));
+  const candidates = [1, 2, 3, 5, 10].map(multiplier => multiplier * magnitude);
+  let distance = candidates[0] ?? magnitude;
+  let difference = Math.abs(Math.log(distance / targetDistance));
   for (const candidate of candidates.slice(1)) {
-    const candidateDifference = Math.abs(Math.log(candidate / targetMeters));
+    const candidateDifference = Math.abs(Math.log(candidate / targetDistance));
     if (candidateDifference < difference) {
-      meters = candidate;
+      distance = candidate;
       difference = candidateDifference;
     }
   }
+  const meters = metersFromDistance(distance, distanceUnit);
   const label =
-    meters >= 1000 ? `${Number((meters / 1000).toFixed(1))} km` : `${Number(meters.toFixed(1))} m`;
+    distanceUnit === 'feet'
+      ? `${Number(distance.toFixed(1))} ft`
+      : meters >= 1000
+        ? `${Number((meters / 1000).toFixed(1))} km`
+        : `${Number(meters.toFixed(1))} m`;
   return { label, meters, pixels: meters * safeZoom };
 }
 

@@ -49,4 +49,11 @@ describe('world view scale', () => {
     assert.deepEqual(scaleBarForZoom(5), { label: '20 m', meters: 20, pixels: 100 });
     assert.deepEqual(scaleBarForZoom(0.12), { label: '1 km', meters: 1000, pixels: 120 });
   });
+
+  it('chooses scale intervals in feet while retaining meter world coordinates', () => {
+    const scale = scaleBarForZoom(1, 'feet');
+    assert.equal(scale.label, '300 ft');
+    assert.ok(Math.abs(scale.meters - 91.44) < 0.01);
+    assert.ok(Math.abs(scale.pixels - 91.44) < 0.01);
+  });
 });
