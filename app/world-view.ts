@@ -230,12 +230,6 @@ function drawAreaIndicators(
   const hasNegative = indicators.some(indicator => indicator.tone === 'negative');
   const hasPositive = indicators.some(indicator => indicator.tone === 'positive');
   context.save();
-  context.fillStyle = hasNegative
-    ? hasPositive
-      ? 'rgb(128 103 143 / 8%)'
-      : 'rgb(180 92 72 / 7%)'
-    : 'rgb(89 154 133 / 7%)';
-  context.fillRect(0, 0, state.environment.width, state.environment.height);
   context.setLineDash([10 / camera.zoom, 8 / camera.zoom]);
   context.strokeStyle = hasNegative
     ? hasPositive

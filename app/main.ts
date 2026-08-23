@@ -27,6 +27,7 @@ import {
   type ValueId,
 } from '../src/index.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
+import { activityFeed } from './activity.js';
 import indexPath from './index.html';
 import './styles.css';
 import {
@@ -54,6 +55,7 @@ import {
   loadPreferences,
   savePreferences,
   type ApplicationPreferences,
+  type ClockFormat,
   type DistanceUnit,
 } from './preferences.js';
 import { workbenchActionForShortcut } from './shortcuts.js';
@@ -805,6 +807,88 @@ function downloadSnapshot(state: SimulationState): void {
   URL.revokeObjectURL(url);
 }
 
+interface ActivityInspector {
+  render: (state: SimulationState, clockFormat: ClockFormat) => void;
+  section: HTMLElement;
+}
+
+function createActivityInspector(): ActivityInspector {
+  const section = element('section', 'activity-browser');
+  const header = element('header', 'activity-browser-header');
+  const heading = element('div', 'activity-browser-heading');
+  const title = element('h2');
+  const count = element('output', 'activity-count');
+  const filter = element('input');
+  const list = element('ol', 'activity-list');
+  let currentState: SimulationState | null = null;
+  let currentClockFormat: ClockFormat = '12-hour';
+
+  title.textContent = 'Activity';
+  count.dataset.testid = 'activity-count';
+  count.setAttribute('aria-live', 'polite');
+  filter.type = 'search';
+  filter.placeholder = 'Filter activity';
+  filter.autocomplete = 'off';
+  filter.spellcheck = false;
+  filter.dataset.testid = 'activity-filter';
+  filter.setAttribute('aria-label', 'Filter activity');
+  list.dataset.testid = 'activity-list';
+  list.setAttribute('aria-label', 'Activity trace');
+  heading.append(title, count);
+  header.append(heading, filter);
+  section.append(header, list);
+
+  function refresh(): void {
+    if (currentState === null) return;
+    const characterNames = new Map(
+      currentState.agents.map(agent => [agent.id, agent.profile.name] as const),
+    );
+    const feed = activityFeed(currentState.trace.entries, characterNames, filter.value);
+    count.textContent = `${feed.visibleEntries.length} visible / ${feed.totalCount} total`;
+    count.title =
+      feed.matchingCount === feed.totalCount
+        ? `${feed.totalCount} trace entries`
+        : `${feed.matchingCount} trace entries match the current filter`;
+    if (feed.visibleEntries.length === 0) {
+      const empty = element('li', 'activity-empty');
+      empty.textContent =
+        feed.totalCount === 0
+          ? 'No activity has been recorded.'
+          : 'No activity matches this filter.';
+      list.replaceChildren(empty);
+      return;
+    }
+    const rows = feed.visibleEntries.map(entry => {
+      const item = element('li', 'activity-entry');
+      const meta = element('div', 'activity-entry-meta');
+      const time = element('time', 'activity-time');
+      const kind = element('span', 'activity-kind');
+      const character = element('strong');
+      const summary = element('p');
+      time.textContent = formatWorkbenchTime(entry.minute, currentClockFormat);
+      kind.textContent = entry.kind.replaceAll('-', ' ');
+      character.textContent =
+        entry.agentId === null ? 'System' : (characterNames.get(entry.agentId) ?? entry.agentId);
+      summary.textContent = entry.summary;
+      meta.append(time, kind, character);
+      item.append(meta, summary);
+      return item;
+    });
+    list.replaceChildren(...rows);
+  }
+
+  filter.addEventListener('input', refresh);
+
+  return {
+    render: (state, clockFormat) => {
+      currentState = state;
+      currentClockFormat = clockFormat;
+      refresh();
+    },
+    section,
+  };
+}
+
 function createWorkbench(): HTMLElement {
   const initial = createStarterSimulation();
   const storedPreferences = loadPreferences(localStorage);
@@ -859,6 +943,7 @@ function createWorkbench(): HTMLElement {
   const timeRateDisclosure = element('span', 'time-rate-disclosure');
   const timeRateMenu = element('section', 'time-rate-menu');
   const time = element('time', 'simulation-time');
+  const tickCount = element('span', 'simulation-tick');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
   const scenarioName = element('h1', 'scenario-title');
@@ -875,9 +960,9 @@ function createWorkbench(): HTMLElement {
   const worldScaleRule = element('span', 'world-scale-rule');
   const inspector = element('aside', 'inspector');
   const inspectorContent = element('div', 'inspector-content');
+  const activityInspector = createActivityInspector();
   const footer = element('footer', 'status-bar');
   const statusText = element('span');
-  const simulationStats = element('span');
   const quickActionsOverlay = element('div', 'quick-actions-overlay');
   const quickActionsPalette = element('section', 'quick-actions-palette');
   const quickActionsTitle = element('h2', 'visually-hidden');
@@ -961,7 +1046,7 @@ function createWorkbench(): HTMLElement {
     control.append(label, multiplier);
     timeRateMenu.append(control);
   }
-  transport.append(resetScenario, play, step, timeRateButton, time);
+  transport.append(resetScenario, play, step, timeRateButton, time, tickCount);
 
   zoomLevelButton.dataset.testid = 'zoom-level-button';
   zoomLevelButton.setAttribute('aria-controls', 'zoom-menu');
@@ -1057,7 +1142,7 @@ function createWorkbench(): HTMLElement {
   stage.append(canvas, characterHoverCard, worldScale);
 
   inspector.append(inspectorContent);
-  footer.append(statusText, simulationStats);
+  footer.append(statusText);
   quickActionsTitle.id = 'quick-actions-title';
   quickActionsTitle.textContent = 'Quick actions';
   quickActionsInput.id = 'quick-actions-input';
@@ -1546,7 +1631,7 @@ function createWorkbench(): HTMLElement {
     const currentPreferences = preferences();
     scenarioName.textContent = current.scenario.title;
     time.textContent = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
-    simulationStats.textContent = `Tick ${current.tick} / ${current.agents.length} characters / ${current.trace.entries.length} trace entries`;
+    tickCount.textContent = `Tick ${current.tick}`;
   });
 
   createEffect(() => {
@@ -1562,7 +1647,7 @@ function createWorkbench(): HTMLElement {
   createEffect(() => {
     const settings = indicatorSettings();
     const verbosityLabel = INDICATOR_VERBOSITY_LABELS[settings.verbosity];
-    signalMenuValue.textContent = `Signals: ${verbosityLabel}`;
+    signalMenuValue.textContent = verbosityLabel;
     signalMenuButton.title = `Signal display: ${verbosityLabel}`;
     signalMenuButton.setAttribute('aria-label', `Signal display: ${verbosityLabel}`);
     signalMenuButton.classList.toggle('is-off', settings.verbosity === 'off');
@@ -1642,13 +1727,10 @@ function createWorkbench(): HTMLElement {
     const agent =
       selected === null ? undefined : current.agents.find(candidate => candidate.id === selected);
     if (agent === undefined) {
-      const empty = element('section', 'inspector-empty');
-      const title = element('strong');
-      const copy = element('p');
-      title.textContent = 'No character selected';
-      copy.textContent = 'Select a character to inspect and adjust their state.';
-      empty.append(title, copy);
-      inspectorContent.replaceChildren(empty);
+      activityInspector.render(current, currentPreferences.clockFormat);
+      if (inspectorContent.firstElementChild !== activityInspector.section) {
+        inspectorContent.replaceChildren(activityInspector.section);
+      }
       return;
     }
     renderInspector(
