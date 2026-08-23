@@ -183,6 +183,7 @@ function validateReferences(content: ScenarioContent): void {
   }
   const locationIds = new Set(environment.locations.map(location => location.id));
   const instanceIds = new Set(content.scenario.characters.map(placement => placement.instanceId));
+  const localNormIds = new Set(content.scenario.localNorms.map(norm => norm.id));
   content.scenario.characters.forEach((placement, index) => {
     if (!characters.has(placement.characterId)) {
       throw new ScenarioValidationError(
@@ -195,6 +196,14 @@ function validateReferences(content: ScenarioContent): void {
         throw new ScenarioValidationError(
           `scenario.characters[${index}].schedule[${blockIndex}].locationId`,
           `unknown location "${block.locationId}"`,
+        );
+      }
+    });
+    placement.normPerspectives.forEach((perspective, perspectiveIndex) => {
+      if (!localNormIds.has(perspective.normId)) {
+        throw new ScenarioValidationError(
+          `scenario.characters[${index}].normPerspectives[${perspectiveIndex}].normId`,
+          `unknown local norm "${perspective.normId}"`,
         );
       }
     });
@@ -265,6 +274,9 @@ function validateReferences(content: ScenarioContent): void {
     if (!instanceIds.has(event.subjectId)) {
       throw new ScenarioValidationError(`${path}.subjectId`, `unknown agent "${event.subjectId}"`);
     }
+    if (event.eventType === 'norm' && !localNormIds.has(event.normId)) {
+      throw new ScenarioValidationError(`${path}.normId`, `unknown local norm "${event.normId}"`);
+    }
     event.observerIds.forEach((observerId, observerIndex) => {
       if (!instanceIds.has(observerId)) {
         throw new ScenarioValidationError(
@@ -276,6 +288,17 @@ function validateReferences(content: ScenarioContent): void {
         throw new ScenarioValidationError(
           `${path}.observerIds[${observerIndex}]`,
           'an agent cannot observe its own social signal',
+        );
+      }
+      if (
+        event.eventType === 'norm' &&
+        !content.scenario.characters
+          .find(placement => placement.instanceId === observerId)
+          ?.normPerspectives.some(perspective => perspective.normId === event.normId)
+      ) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          `agent "${observerId}" lacks a perspective on local norm "${event.normId}"`,
         );
       }
     });
@@ -541,16 +564,26 @@ export function createSimulationFromSnapshot(input: {
       );
     }
   });
-  const observationEventIds = new Set(snapshot.scenario.observationEvents.map(event => event.id));
+  const observationEvents = new Map(
+    snapshot.scenario.observationEvents.map(event => [event.id, event]),
+  );
+  const observationEventIds = new Set(observationEvents.keys());
   snapshot.observations.forEach((observation, index) => {
+    const event = observationEvents.get(observation.eventId);
     if (
       !agentIds.has(observation.observerId) ||
       !agentIds.has(observation.subjectId) ||
-      !observationEventIds.has(observation.eventId)
+      event === undefined
     ) {
       throw new ScenarioValidationError(
         `snapshot.observations[${index}]`,
         'observation must reference snapshot agents and an authored event',
+      );
+    }
+    if (event.eventType !== observation.eventType) {
+      throw new ScenarioValidationError(
+        `snapshot.observations[${index}].eventType`,
+        'must match the authored observation event type',
       );
     }
   });

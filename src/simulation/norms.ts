@@ -1,0 +1,321 @@
+import {
+  VALUE_IDS,
+  type LocalNorm,
+  type NormObservationEvent,
+  type NormObservationRecord,
+  type NormPerspective,
+  type SensoryAssessment,
+  type SimulationAgent,
+  type SimulationState,
+  type TraceEntry,
+  type ValueMap,
+  type ValueState,
+} from '../model/types.js';
+import { resolveAgentCapabilityCheck } from './capability.js';
+import { effectiveValueWeights } from './salience.js';
+import { evaluateSpatialPerception } from './spatial.js';
+import { appendTrace, traceTerm } from './trace.js';
+
+const MAX_OBSERVATIONS = 120;
+const MAX_TRACE_ENTRIES = 240;
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function appendBounded<Item>(items: Item[], item: Item, maximum: number): Item[] {
+  const next = [...items, item];
+  return next.length <= maximum ? next : next.slice(next.length - maximum);
+}
+
+function agentFor(state: SimulationState, agentId: string): SimulationAgent {
+  const agent = state.agents.find(candidate => candidate.id === agentId);
+  if (agent === undefined) throw new RangeError(`Unknown norm observer "${agentId}"`);
+  return agent;
+}
+
+function normFor(state: SimulationState, normId: string): LocalNorm {
+  const norm = state.scenario.localNorms.find(candidate => candidate.id === normId);
+  if (norm === undefined) throw new RangeError(`Unknown local norm "${normId}"`);
+  return norm;
+}
+
+function perspectiveFor(
+  state: SimulationState,
+  observerId: string,
+  normId: string,
+): NormPerspective {
+  const placement = state.scenario.characters.find(
+    candidate => candidate.instanceId === observerId,
+  );
+  const perspective = placement?.normPerspectives.find(candidate => candidate.normId === normId);
+  if (perspective === undefined) {
+    throw new RangeError(`Missing local norm perspective for "${observerId}" and "${normId}"`);
+  }
+  return perspective;
+}
+
+function sensoryFor(event: NormObservationEvent, state: SimulationState, observerId: string) {
+  const perception = evaluateSpatialPerception(state, observerId, event.subjectId, {
+    audibleRadiusMeters: event.audibleRadiusMeters,
+    visualProminence: event.visualProminence,
+  });
+  const sensory: SensoryAssessment =
+    event.channel === 'hearing' ? perception.hearing : perception.sight;
+  return { perception, sensory };
+}
+
+function subjectiveTurns(
+  event: NormObservationEvent,
+  norm: LocalNorm,
+  member: boolean,
+): {
+  compatibilityTurns: Partial<ValueMap<number>>;
+  subjectiveTurns: Partial<ValueMap<number>>;
+} {
+  const compatibilityTurns: Partial<ValueMap<number>> = {};
+  const resolvedTurns: Partial<ValueMap<number>> = {};
+  for (const valueId of VALUE_IDS) {
+    const baseline = event.baselineTurns[valueId] ?? 0;
+    const compatibilityTurn = member
+      ? (norm.compatibilityTurns[valueId] ?? 0) * event.compatibility
+      : 0;
+    const subjectiveTurn = clamp(baseline + compatibilityTurn, -1, 1);
+    if (compatibilityTurn !== 0) compatibilityTurns[valueId] = compatibilityTurn;
+    if (subjectiveTurn !== 0) resolvedTurns[valueId] = subjectiveTurn;
+  }
+  return { compatibilityTurns, subjectiveTurns: resolvedTurns };
+}
+
+function weightedTurn(agent: SimulationAgent, turns: Partial<ValueMap<number>>): number {
+  const weights = effectiveValueWeights(agent);
+  return VALUE_IDS.reduce((total, valueId) => total + weights[valueId] * (turns[valueId] ?? 0), 0);
+}
+
+function applyTurns(agent: SimulationAgent, turns: Partial<ValueMap<number>>): SimulationAgent {
+  const values = {} as ValueMap<ValueState>;
+  for (const valueId of VALUE_IDS) {
+    values[valueId] = {
+      ...agent.values[valueId],
+      charge: clamp(agent.values[valueId].charge + (turns[valueId] ?? 0), -1, 1),
+    };
+  }
+  return { ...agent, values };
+}
+
+function observationTrace(
+  state: SimulationState,
+  event: NormObservationEvent,
+  observer: SimulationAgent,
+  sensory: SensoryAssessment,
+  perceptionTerms: TraceEntry['terms'],
+): TraceEntry {
+  const perceived = sensory.available;
+  return {
+    agentId: observer.id,
+    id: `${state.tick}:${event.id}:${observer.id}:observation`,
+    kind: 'observation',
+    minute: state.minute,
+    selection: null,
+    summary: perceived
+      ? `${observer.profile.name} observed ${event.summary.toLowerCase()}`
+      : `${observer.profile.name} missed ${event.summary.toLowerCase()}`,
+    terms: [
+      traceTerm('event', event.id, `scenario.observationEvents.${event.id}`),
+      traceTerm('event-type', event.eventType, `scenario.observationEvents.${event.id}.eventType`),
+      traceTerm('norm', event.normId, `scenario.observationEvents.${event.id}.normId`),
+      traceTerm('channel', event.channel, `scenario.observationEvents.${event.id}.channel`),
+      ...perceptionTerms,
+      traceTerm('perception-strength', sensory.strength, `simulation.spatial.${event.channel}`),
+      traceTerm('perceived', perceived, `simulation.spatial.${event.channel}.available`),
+    ],
+    tick: state.tick,
+  };
+}
+
+function missedRecord(
+  state: SimulationState,
+  event: NormObservationEvent,
+  observerId: string,
+  perspective: NormPerspective,
+  perceptionStrength: number,
+): NormObservationRecord {
+  return {
+    baselineTurns: { ...event.baselineTurns },
+    channel: event.channel,
+    compatibilityTurns: {},
+    eventId: event.id,
+    eventType: 'norm',
+    id: `${state.tick}:${event.id}:${observerId}`,
+    legibility: perspective.legibility,
+    legibilityBand: null,
+    legibilityMargin: null,
+    member: perspective.member,
+    minute: state.minute,
+    normId: event.normId,
+    observerId,
+    outcome: 'missed',
+    perceptionStrength,
+    subjectId: event.subjectId,
+    subjectiveTurn: null,
+    subjectiveTurns: {},
+    tick: state.tick,
+  };
+}
+
+function appraisalTrace(
+  state: SimulationState,
+  event: NormObservationEvent,
+  record: NormObservationRecord,
+  capabilityTerms: TraceEntry['terms'],
+): TraceEntry {
+  const observer = agentFor(state, record.observerId);
+  const direction =
+    record.subjectiveTurn === null || Math.abs(record.subjectiveTurn) < 0.0001
+      ? 'neutral'
+      : record.subjectiveTurn > 0
+        ? 'positive'
+        : 'negative';
+  const perspectiveSource = `scenario.characters.${record.observerId}.normPerspectives.${event.normId}`;
+  return {
+    agentId: record.observerId,
+    id: `${state.tick}:${event.id}:${record.observerId}:norm-appraisal`,
+    kind: 'norm-appraisal',
+    minute: state.minute,
+    selection: null,
+    summary: `${observer.profile.name} derived a ${direction} turn from ${event.summary.toLowerCase()}`,
+    terms: [
+      traceTerm('norm', event.normId, `scenario.localNorms.${event.normId}`),
+      traceTerm('member', record.member, `${perspectiveSource}.member`),
+      traceTerm('legibility', record.legibility, `${perspectiveSource}.legibility`),
+      ...capabilityTerms,
+      traceTerm('legibility-band', record.legibilityBand, `observations.${record.id}`),
+      traceTerm(
+        'event-compatibility',
+        event.compatibility,
+        `scenario.observationEvents.${event.id}`,
+      ),
+      ...VALUE_IDS.flatMap(valueId => {
+        const terms = [];
+        const baseline = record.baselineTurns[valueId] ?? 0;
+        const compatibility = record.compatibilityTurns[valueId] ?? 0;
+        const subjective = record.subjectiveTurns[valueId] ?? 0;
+        if (baseline !== 0) {
+          terms.push(
+            traceTerm(
+              `baseline:${valueId}`,
+              baseline,
+              `scenario.observationEvents.${event.id}.baselineTurns.${valueId}`,
+            ),
+          );
+        }
+        if (compatibility !== 0) {
+          terms.push(
+            traceTerm(
+              `compatibility:${valueId}`,
+              compatibility,
+              `scenario.localNorms.${event.normId}.compatibilityTurns.${valueId}`,
+              `${perspectiveSource}.member`,
+            ),
+          );
+        }
+        if (subjective !== 0) {
+          terms.push(traceTerm(`subjective:${valueId}`, subjective, `observations.${record.id}`));
+        }
+        return terms;
+      }),
+      traceTerm('subjective-turn', record.subjectiveTurn, `observations.${record.id}`),
+    ],
+    tick: state.tick,
+  };
+}
+
+function resolveForObserver(
+  state: SimulationState,
+  event: NormObservationEvent,
+  observerId: string,
+): SimulationState {
+  const observer = agentFor(state, observerId);
+  const perspective = perspectiveFor(state, observerId, event.normId);
+  const { perception, sensory } = sensoryFor(event, state, observerId);
+  let trace = appendTrace(
+    state.trace,
+    observationTrace(state, event, observer, sensory, perception.terms),
+    MAX_TRACE_ENTRIES,
+  );
+  if (!sensory.available) {
+    return {
+      ...state,
+      observations: appendBounded(
+        state.observations,
+        missedRecord(state, event, observerId, perspective, sensory.strength),
+        MAX_OBSERVATIONS,
+      ),
+      trace,
+    };
+  }
+
+  const norm = normFor(state, event.normId);
+  const legibility = resolveAgentCapabilityCheck(observer, {
+    applicable: true,
+    capabilityId: 'evidenceCalibration',
+    difficulty: event.interpretationDifficulty,
+    difficultySource: `scenario.observationEvents.${event.id}.interpretationDifficulty`,
+    known: perspective.legibility > 0,
+    modifiers: [
+      {
+        id: 'local-norm-legibility',
+        source: `scenario.characters.${observerId}.normPerspectives.${event.normId}.legibility`,
+        value: perspective.legibility * 0.6,
+      },
+    ],
+  });
+  const turns = subjectiveTurns(event, norm, perspective.member);
+  const subjectiveTurn = weightedTurn(observer, turns.subjectiveTurns);
+  const record: NormObservationRecord = {
+    baselineTurns: { ...event.baselineTurns },
+    channel: event.channel,
+    compatibilityTurns: turns.compatibilityTurns,
+    eventId: event.id,
+    eventType: 'norm',
+    id: `${state.tick}:${event.id}:${observerId}`,
+    legibility: perspective.legibility,
+    legibilityBand: legibility.band,
+    legibilityMargin: legibility.margin,
+    member: perspective.member,
+    minute: state.minute,
+    normId: event.normId,
+    observerId,
+    outcome: 'appraised',
+    perceptionStrength: sensory.strength,
+    subjectId: event.subjectId,
+    subjectiveTurn,
+    subjectiveTurns: turns.subjectiveTurns,
+    tick: state.tick,
+  };
+  trace = appendTrace(
+    trace,
+    appraisalTrace(state, event, record, legibility.terms),
+    MAX_TRACE_ENTRIES,
+  );
+  return {
+    ...state,
+    agents: state.agents.map(candidate =>
+      candidate.id === observerId ? applyTurns(candidate, turns.subjectiveTurns) : candidate,
+    ),
+    observations: appendBounded(state.observations, record, MAX_OBSERVATIONS),
+    trace,
+  };
+}
+
+export function resolveNormObservationEvent(
+  state: SimulationState,
+  event: NormObservationEvent,
+): SimulationState {
+  let next = state;
+  for (const observerId of event.observerIds) next = resolveForObserver(next, event, observerId);
+  return {
+    ...next,
+    resolvedObservationEventIds: [...next.resolvedObservationEventIds, event.id],
+  };
+}

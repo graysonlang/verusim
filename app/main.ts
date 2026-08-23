@@ -4,6 +4,7 @@ import environments from '../library/environments.json';
 import highwaymanCharacters from '../library/highwayman-characters.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
 import mindModelCharacters from '../library/mind-model-characters.json';
+import normCharacters from '../library/norm-characters.json';
 import {
   CAPABILITY_IDS,
   DAY_PERIOD_LABELS,
@@ -83,6 +84,7 @@ const characterLibrary = {
     ...characters.characters,
     ...highwaymanCharacters.characters,
     ...mindModelCharacters.characters,
+    ...normCharacters.characters,
   ],
   schemaVersion: 5,
 };
@@ -833,12 +835,12 @@ function renderInspector(
     observation => observation.observerId === agent.id,
   );
   const observationSection = makeSection(
-    'Observed predictions',
+    'Observed interpretations',
     `${agentObservations.length} retained`,
   );
   if (agentObservations.length === 0) {
     const empty = element('p', 'empty-copy');
-    empty.textContent = "No social observation has tested this character's mind models.";
+    empty.textContent = 'No social observation has tested this character yet.';
     observationSection.body.append(empty);
   } else {
     const observationList = element('ol', 'event-list trace-list');
@@ -848,17 +850,36 @@ function renderInspector(
       const copy = element('span');
       const terms = element('small');
       const subject = state.agents.find(candidate => candidate.id === observation.subjectId);
-      const predicted =
-        observation.predictedValue === null
-          ? 'not perceived'
-          : observation.predictedValue.toFixed(3);
-      const estimate =
-        observation.newEstimate === null ? 'unchanged' : observation.newEstimate.toFixed(3);
-      const gate =
-        observation.gateThreshold === null ? 'n/a' : observation.gateThreshold.toFixed(3);
       outcome.textContent = observation.outcome;
-      copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${observation.dimension}`;
-      terms.textContent = `predicted ${predicted} / observed ${observation.observedValue.toFixed(3)} / estimate ${estimate} / evidence ${observation.effectiveEvidence.toFixed(3)} / gate ${gate} / calibration ${observation.calibrationBand ?? 'n/a'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+      if (observation.eventType === 'norm') {
+        const norm = state.scenario.localNorms.find(
+          candidate => candidate.id === observation.normId,
+        );
+        const turnDetails = VALUE_IDS.flatMap(valueId => {
+          const baseline = observation.baselineTurns[valueId] ?? 0;
+          const compatibility = observation.compatibilityTurns[valueId] ?? 0;
+          const subjective = observation.subjectiveTurns[valueId] ?? 0;
+          return baseline === 0 && compatibility === 0 && subjective === 0
+            ? []
+            : [
+                `${valueId} ${baseline.toFixed(2)} baseline ${compatibility >= 0 ? '+' : ''}${compatibility.toFixed(2)} local = ${subjective.toFixed(2)}`,
+              ];
+        }).join(' / ');
+        copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${norm?.label ?? observation.normId}`;
+        terms.textContent = `${observation.member ? 'member' : 'nonmember'} / legibility ${observation.legibility.toFixed(2)} (${observation.legibilityBand ?? 'n/a'}) / felt ${observation.subjectiveTurn?.toFixed(3) ?? 'not perceived'} / ${turnDetails || 'no value turn'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+      } else {
+        const predicted =
+          observation.predictedValue === null
+            ? 'not perceived'
+            : observation.predictedValue.toFixed(3);
+        const estimate =
+          observation.newEstimate === null ? 'unchanged' : observation.newEstimate.toFixed(3);
+        const gate =
+          observation.gateThreshold === null ? 'n/a' : observation.gateThreshold.toFixed(3);
+        copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${observation.dimension}`;
+        terms.textContent = `predicted ${predicted} / observed ${observation.observedValue.toFixed(3)} / estimate ${estimate} / evidence ${observation.effectiveEvidence.toFixed(3)} / gate ${gate} / calibration ${observation.calibrationBand ?? 'n/a'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+      }
+      terms.title = terms.textContent;
       item.append(outcome, copy, terms);
       observationList.append(item);
     }

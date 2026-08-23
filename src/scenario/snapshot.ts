@@ -23,6 +23,7 @@ const TRACE_KINDS = new Set([
   'goal',
   'intervention',
   'intention',
+  'norm-appraisal',
   'observation',
   'prediction',
   'relationship',
@@ -52,6 +53,7 @@ const CAPABILITY_BANDS = new Set([
 const OBSERVATION_CHANNELS = new Set(['hearing', 'sight']);
 const OBSERVATION_DIMENSIONS = new Set(['disclosure', 'empathy']);
 const OBSERVATION_OUTCOMES = new Set(['confirmed', 'corrected', 'missed', 'suspected']);
+const NORM_OBSERVATION_OUTCOMES = new Set(['appraised', 'missed']);
 
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
@@ -370,6 +372,16 @@ function nullableNumber(value: unknown, path: string, minimum = 0, maximum = 1):
   if (value !== null) numberValue(value, path, minimum, maximum);
 }
 
+function validateValueTurns(value: unknown, path: string): void {
+  const turns = objectValue(value, path);
+  for (const [valueId, turn] of Object.entries(turns)) {
+    if (!(VALUE_IDS as readonly string[]).includes(valueId)) {
+      throw new ScenarioValidationError(`${path}.${valueId}`, 'expected a known value identifier');
+    }
+    numberValue(turn, `${path}.${valueId}`, -1, 1);
+  }
+}
+
 function validateObservationHistory(value: unknown, path: string): void {
   arrayValue(value, path).forEach((entryValue, index) => {
     const entryPath = `${path}[${index}]`;
@@ -382,6 +394,35 @@ function validateObservationHistory(value: unknown, path: string): void {
     integerValue(entry.tick, `${entryPath}.tick`);
     if (typeof entry.channel !== 'string' || !OBSERVATION_CHANNELS.has(entry.channel)) {
       throw new ScenarioValidationError(`${entryPath}.channel`, 'expected hearing or sight');
+    }
+    if (entry.eventType === 'norm') {
+      stringValue(entry.normId, `${entryPath}.normId`);
+      if (typeof entry.member !== 'boolean') {
+        throw new ScenarioValidationError(`${entryPath}.member`, 'expected a boolean');
+      }
+      numberValue(entry.legibility, `${entryPath}.legibility`, 0, 1);
+      numberValue(entry.perceptionStrength, `${entryPath}.perceptionStrength`, 0, 1);
+      if (typeof entry.outcome !== 'string' || !NORM_OBSERVATION_OUTCOMES.has(entry.outcome)) {
+        throw new ScenarioValidationError(`${entryPath}.outcome`, 'expected appraised or missed');
+      }
+      validateValueTurns(entry.baselineTurns, `${entryPath}.baselineTurns`);
+      validateValueTurns(entry.compatibilityTurns, `${entryPath}.compatibilityTurns`);
+      validateValueTurns(entry.subjectiveTurns, `${entryPath}.subjectiveTurns`);
+      nullableNumber(entry.subjectiveTurn, `${entryPath}.subjectiveTurn`, -100, 100);
+      nullableNumber(entry.legibilityMargin, `${entryPath}.legibilityMargin`, -1, 1);
+      if (
+        entry.legibilityBand !== null &&
+        (typeof entry.legibilityBand !== 'string' || !CAPABILITY_BANDS.has(entry.legibilityBand))
+      ) {
+        throw new ScenarioValidationError(
+          `${entryPath}.legibilityBand`,
+          'expected a known capability band or null',
+        );
+      }
+      return;
+    }
+    if (entry.eventType !== 'mind-model') {
+      throw new ScenarioValidationError(`${entryPath}.eventType`, 'expected mind-model or norm');
     }
     if (typeof entry.dimension !== 'string' || !OBSERVATION_DIMENSIONS.has(entry.dimension)) {
       throw new ScenarioValidationError(`${entryPath}.dimension`, 'expected disclosure or empathy');
@@ -584,11 +625,13 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
-    file.schemaVersion !== 4
+    file.schemaVersion !== 4 &&
+    file.schemaVersion !== 5
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
-  if (file.schemaVersion === 1) {
+  const sourceVersion = file.schemaVersion as number;
+  if (sourceVersion === 1) {
     const scenario = parseScenario(file.scenario);
     file.scenario = scenario;
     file.agendaDecisions = [];
@@ -598,7 +641,7 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.worldFacts = scenario.worldFacts;
     file.worldRevision = 0;
   }
-  if (file.schemaVersion === 1 || file.schemaVersion === 2) {
+  if (sourceVersion === 1 || sourceVersion === 2) {
     file.trace = {
       entries: arrayValue(file.trace, 'snapshot.trace').map((entryValue, entryIndex) => {
         const entry = clone(objectValue(entryValue, `snapshot.trace[${entryIndex}]`));
@@ -624,7 +667,7 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       }
     }
   }
-  if (file.schemaVersion !== 4) {
+  if (sourceVersion < 4) {
     for (const dyadValue of arrayValue(file.dyads, 'snapshot.dyads')) {
       const dyad = objectValue(dyadValue, 'snapshot.dyads');
       dyad.suspicion = 0;
@@ -632,7 +675,13 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.observations = [];
     file.resolvedObservationEventIds = [];
   }
-  file.schemaVersion = 4;
+  if (sourceVersion < 5) {
+    for (const observationValue of arrayValue(file.observations, 'snapshot.observations')) {
+      const observation = objectValue(observationValue, 'snapshot.observations');
+      observation.eventType = 'mind-model';
+    }
+  }
+  file.schemaVersion = 5;
   return file;
 }
 
@@ -641,7 +690,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 4) {
+  if (file.schemaVersion !== 5) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);

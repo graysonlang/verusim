@@ -219,6 +219,21 @@ The dyad stores the observer's estimates of the subject, not a recursive represe
 If an observed pair has no authored dyad, the observer projects a neutral directed record from its own empathy and disclosure shape; only encountered pairs are materialized.
 Observation records and resolved event identifiers are bounded, snapshot-persisted runtime state so replay does not repeat an event or lose the reason a correction occurred.
 
+## Local norm appraisal
+
+Local norm events are a discriminated extension of the event-driven observation contract.
+They share the same authored timing, subject position, observer list, sight or hearing channel, interpretation difficulty, and resolved-event ledger as mind-model observations.
+An observer must perceive the objective event before any normative appraisal occurs.
+
+Scenario-local norm definitions supply compatibility value turns, while each character placement supplies an explicit perspective containing independent `member` and `legibility` fields.
+Missing perspectives fail at the authored observer path rather than silently becoming outsider defaults.
+Membership decides whether the norm's compatibility turns modify the event's common baseline turns.
+Legibility supplies domain support to an evidence-calibration check and records Pass when the observer has no knowledge of the rationale; it does not gate an internalized member appraisal or alter a nonmember's baseline turn.
+
+The resolved subjective turns update the observer's own value charge and remain separate by value in the observation record and causal trace.
+The trace also preserves membership, legibility, the capability result, the common baseline, the local compatibility contribution, and the weighted felt total.
+Norm appraisal does not read dyad stance, estimated empathy, suspicion, social features, or perceived threat, so norm opacity cannot become hostility or social distance by accident.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.
@@ -260,10 +275,10 @@ Social battery below `0.50` contributes up to `0.38` negative valence and physic
 
 Character-library schema version 5 adds descriptive physical profiles and coarse build effects to the version 4 epistemic capability format.
 Explicit migrations preserve versions 1 through 4, using neutral capability defaults where versions 1 through 3 expressed no distinction and an unspecified, average physical profile where older libraries expressed no physical data.
-Scenario schema version 7 adds event-driven social observations and explicit dyad suspicion to the version 6 atmosphere format.
-Explicit migrations preserve version 1 through 6 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, and supplying empty observation inputs plus neutral suspicion where version 7 data was absent.
-Snapshot schema version 4 persists mind-model observations and resolved observation-event identifiers in addition to agenda state and causal-trace schema version 1, and validates plan, intention, goal, fact, dyad, observation, trace, and agent references before runtime restoration.
-Explicit snapshot migrations preserve versions 1 through 3, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Scenario schema version 8 adds local norm definitions, per-instance norm perspectives, and discriminated norm observation events to the version 7 observation format.
+Explicit migrations preserve version 1 through 7 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, and marking version 7 observation events as mind-model events while supplying empty norm content.
+Snapshot schema version 5 persists discriminated mind-model and norm observations plus resolved observation-event identifiers in addition to agenda state and causal-trace schema version 1, and validates plan, intention, goal, fact, dyad, observation, trace, and agent references before runtime restoration.
+Explicit snapshot migrations preserve versions 1 through 4, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

@@ -7,6 +7,7 @@ export {
   HEIGHT_CLASSES,
   MIND_MODEL_DIMENSIONS,
   OBSERVATION_CHANNELS,
+  OBSERVATION_EVENT_TYPES,
   SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
@@ -55,6 +56,7 @@ export type { MovementSpeedClass } from './simulation/observe.js';
 export { applyBuildToWalkingPace, deriveBuildEffects } from './simulation/physical.js';
 export type { BuildEffects } from './simulation/physical.js';
 export { resolveObservationEvent } from './simulation/prediction.js';
+export { resolveNormObservationEvent } from './simulation/norms.js';
 export {
   DAY_PERIOD_IDS,
   DAY_PERIOD_LABELS,

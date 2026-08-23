@@ -3,9 +3,12 @@ import { describe, it } from 'node:test';
 import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import mindModelCharacters from '../library/mind-model-characters.json';
+import normCharacters from '../library/norm-characters.json';
 import scenario from '../scenarios/market-morning.json';
 import mindModelScenario from '../scenarios/endicott-margueritte.json';
+import normScenario from '../scenarios/pottsfield.json';
 import {
+  advanceSimulation,
   createSimulation,
   parseCharacterLibrary,
   parseScenario,
@@ -34,13 +37,15 @@ describe('scenario validation', () => {
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 7);
+    assert.equal(migrated.schemaVersion, 8);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
     assert.deepEqual(migrated.disclosureOpportunities, []);
     assert.deepEqual(migrated.dyads, []);
     assert.deepEqual(migrated.observationEvents, []);
+    assert.deepEqual(migrated.localNorms, []);
+    assert.deepEqual(migrated.characters[0]?.normPerspectives, []);
     assert.deepEqual(migrated.taskOperators, []);
     assert.deepEqual(migrated.worldFacts, []);
     assert.deepEqual(migrated.environmentConditions, {
@@ -96,7 +101,7 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 7);
+    assert.equal(migratedScenario.schemaVersion, 8);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
     assert.equal(migratedScenario.dyads[0]?.suspicion, 0);
@@ -110,7 +115,7 @@ describe('scenario validation', () => {
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 7);
+    assert.equal(migratedScenario.schemaVersion, 8);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -130,7 +135,7 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 4);
+    assert.equal(migratedSnapshot.schemaVersion, 5);
     assert.equal(migratedSnapshot.trace.schemaVersion, 1);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
@@ -148,7 +153,7 @@ describe('scenario validation', () => {
     replaceWithLegacyTrace(agendaSnapshot);
     agendaSnapshot.schemaVersion = 2;
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
-    assert.equal(migratedAgendaSnapshot.schemaVersion, 4);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 5);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
   });
 
@@ -162,7 +167,7 @@ describe('scenario validation', () => {
     }
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 7);
+    assert.equal(migrated.schemaVersion, 8);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
 
@@ -188,7 +193,7 @@ describe('scenario validation', () => {
     assert.equal(schedule[0]?.recoveryMode, 'sleep');
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 7);
+    assert.equal(migrated.schemaVersion, 8);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.deepEqual(migrated.environmentConditions, {
       season: 'spring',
@@ -204,10 +209,38 @@ describe('scenario validation', () => {
     for (const dyad of prior.dyads as Array<Record<string, unknown>>) delete dyad.suspicion;
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 7);
+    assert.equal(migrated.schemaVersion, 8);
     assert.deepEqual(migrated.observationEvents, []);
     assert.equal(migrated.dyads[0]?.suspicion, 0);
     assert.deepEqual(migrated.environmentConditions, mindModelScenario.environmentConditions);
+  });
+
+  it('adds local norm state without rewriting version 7 observations', () => {
+    const prior = structuredClone(mindModelScenario) as unknown as Record<string, unknown>;
+    const migrated = parseScenario(prior);
+
+    assert.equal(migrated.schemaVersion, 8);
+    assert.deepEqual(migrated.localNorms, []);
+    assert.ok(migrated.characters.every(placement => placement.normPerspectives.length === 0));
+    assert.ok(migrated.observationEvents.every(event => event.eventType === 'mind-model'));
+
+    const observed = advanceSimulation(
+      createSimulation({
+        characterLibrary: mindModelCharacters,
+        environmentLibrary: environments,
+        scenario: mindModelScenario,
+      }),
+      2,
+    );
+    const snapshot = serializeSnapshot(observed) as unknown as Record<string, unknown>;
+    snapshot.schemaVersion = 4;
+    const migratedSnapshot = parseSnapshot(snapshot);
+    assert.equal(migratedSnapshot.schemaVersion, 5);
+    assert.ok(migratedSnapshot.observations.length > 0);
+    assert.ok(migratedSnapshot.observations.every(event => event.eventType === 'mind-model'));
+    assert.ok(
+      migratedSnapshot.scenario.observationEvents.every(event => event.eventType === 'mind-model'),
+    );
   });
 
   it('accepts only known optional initial time rates', () => {
@@ -258,6 +291,36 @@ describe('scenario validation', () => {
           scenario: malformed,
         }),
       /unknown agent "missing-observer"/,
+    );
+  });
+
+  it('validates local norm references at their authored paths', () => {
+    const malformed = structuredClone(normScenario);
+    const perspective = malformed.characters[1]?.normPerspectives[0];
+    const event = malformed.observationEvents[0];
+    assert.ok(perspective);
+    assert.ok(event);
+    perspective.normId = 'missing-norm';
+    assert.throws(
+      () =>
+        createSimulation({
+          characterLibrary: normCharacters,
+          environmentLibrary: environments,
+          scenario: malformed,
+        }),
+      /scenario\.characters\[1\]\.normPerspectives\[0\]\.normId: unknown local norm "missing-norm"/,
+    );
+
+    perspective.normId = 'harvest-observance';
+    event.normId = 'missing-norm';
+    assert.throws(
+      () =>
+        createSimulation({
+          characterLibrary: normCharacters,
+          environmentLibrary: environments,
+          scenario: malformed,
+        }),
+      /scenario\.observationEvents\[0\]\.normId: unknown local norm "missing-norm"/,
     );
   });
 

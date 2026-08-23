@@ -222,6 +222,14 @@ function validateValueTurns(value: unknown, path: string): void {
   }
 }
 
+function validateNonzeroValueTurns(value: unknown, path: string): void {
+  validateValueTurns(value, path);
+  const turns = objectValue(value, path);
+  if (!Object.values(turns).some(turn => turn !== 0)) {
+    throw new ScenarioValidationError(path, 'expected at least one non-zero value turn');
+  }
+}
+
 function validateResourceCosts(value: unknown, path: string): void {
   const resources = objectValue(value, path);
   for (const [resourceId, cost] of Object.entries(resources)) {
@@ -335,18 +343,19 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 7) return file;
+  if (file.schemaVersion === 8) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
     file.schemaVersion !== 4 &&
     file.schemaVersion !== 5 &&
-    file.schemaVersion !== 6
+    file.schemaVersion !== 6 &&
+    file.schemaVersion !== 7
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
-  const sourceVersion = file.schemaVersion;
+  const sourceVersion = file.schemaVersion as number;
   if (sourceVersion === 1 || sourceVersion === 2) {
     if (sourceVersion === 1) {
       file.behaviorOpportunities = [];
@@ -367,12 +376,12 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.disclosureItems = [];
     file.disclosureOpportunities = [];
   }
-  if (sourceVersion !== 4 && sourceVersion !== 5 && sourceVersion !== 6) {
+  if (sourceVersion < 4) {
     file.agendaGoals = [];
     file.taskOperators = [];
     file.worldFacts = [];
   }
-  if (sourceVersion !== 5 && sourceVersion !== 6) {
+  if (sourceVersion < 5) {
     for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
       const task = objectValue(taskValue, 'scenario.taskOperators');
       task.recoveryMode = 'none';
@@ -385,19 +394,30 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       }
     }
   }
-  if (sourceVersion !== 6) {
+  if (sourceVersion < 6) {
     file.environmentConditions = {
       season: 'spring',
       temperatureCelsius: 15,
       weather: 'clear',
     };
   }
-  for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
-    const dyad = objectValue(dyadValue, 'scenario.dyads');
-    dyad.suspicion = 0;
+  if (sourceVersion < 7) {
+    for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
+      const dyad = objectValue(dyadValue, 'scenario.dyads');
+      dyad.suspicion = 0;
+    }
+    file.observationEvents = [];
   }
-  file.observationEvents = [];
-  file.schemaVersion = 7;
+  file.localNorms = [];
+  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+    const placement = objectValue(placementValue, 'scenario.characters');
+    placement.normPerspectives = [];
+  }
+  for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
+    const event = objectValue(eventValue, 'scenario.observationEvents');
+    event.eventType = 'mind-model';
+  }
+  file.schemaVersion = 8;
   return file;
 }
 
@@ -512,7 +532,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 7);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 8);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -569,6 +589,16 @@ export function parseScenario(value: unknown): ScenarioFile {
       numberValue(turn, `scenario.ambientTurnsPerHour.${valueId}`, -1, 1);
     }
   }
+
+  const localNorms = arrayValue(file.localNorms, 'scenario.localNorms').map((entry, index) => {
+    const path = `scenario.localNorms[${index}]`;
+    const norm = objectValue(entry, path);
+    identifierValue(norm.id, `${path}.id`);
+    stringValue(norm.label, `${path}.label`);
+    validateNonzeroValueTurns(norm.compatibilityTurns, `${path}.compatibilityTurns`);
+    return norm;
+  });
+  uniqueIds(localNorms, 'scenario.localNorms');
 
   const worldFacts = arrayValue(file.worldFacts, 'scenario.worldFacts').map((entry, index) => {
     const path = `scenario.worldFacts[${index}]`;
@@ -730,6 +760,20 @@ export function parseScenario(value: unknown): ScenarioFile {
       }
     }
 
+    const normPerspectives = arrayValue(placement.normPerspectives, `${path}.normPerspectives`).map(
+      (entry, perspectiveIndex) => {
+        const perspectivePath = `${path}.normPerspectives[${perspectiveIndex}]`;
+        const perspective = objectValue(entry, perspectivePath);
+        identifierValue(perspective.normId, `${perspectivePath}.normId`);
+        if (typeof perspective.member !== 'boolean') {
+          throw new ScenarioValidationError(`${perspectivePath}.member`, 'expected a boolean');
+        }
+        numberValue(perspective.legibility, `${perspectivePath}.legibility`, 0, 1);
+        return { ...perspective, id: perspective.normId };
+      },
+    );
+    uniqueIds(normPerspectives, `${path}.normPerspectives`);
+
     const schedule = arrayValue(placement.schedule, `${path}.schedule`).map(
       (entry, scheduleIndex) => {
         const schedulePath = `${path}.schedule[${scheduleIndex}]`;
@@ -840,17 +884,30 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.subjectId, `${path}.subjectId`);
       integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      if (event.eventType !== 'mind-model' && event.eventType !== 'norm') {
+        throw new ScenarioValidationError(`${path}.eventType`, 'expected mind-model or norm');
+      }
       if (typeof event.channel !== 'string' || !OBSERVATION_CHANNEL_SET.has(event.channel)) {
         throw new ScenarioValidationError(`${path}.channel`, 'expected hearing or sight');
-      }
-      if (typeof event.dimension !== 'string' || !MIND_MODEL_DIMENSION_SET.has(event.dimension)) {
-        throw new ScenarioValidationError(`${path}.dimension`, 'expected disclosure or empathy');
       }
       numberValue(event.audibleRadiusMeters, `${path}.audibleRadiusMeters`, 0, 10_000);
       numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
       numberValue(event.interpretationDifficulty, `${path}.interpretationDifficulty`, 0, 1);
-      numberValue(event.diagnosticity, `${path}.diagnosticity`, 0, 1);
-      numberValue(event.observedValue, `${path}.observedValue`, 0, 1);
+      if (event.eventType === 'mind-model') {
+        if (typeof event.dimension !== 'string' || !MIND_MODEL_DIMENSION_SET.has(event.dimension)) {
+          throw new ScenarioValidationError(`${path}.dimension`, 'expected disclosure or empathy');
+        }
+        numberValue(event.diagnosticity, `${path}.diagnosticity`, 0, 1);
+        numberValue(event.observedValue, `${path}.observedValue`, 0, 1);
+      } else {
+        identifierValue(event.normId, `${path}.normId`);
+        stringValue(event.summary, `${path}.summary`);
+        validateValueTurns(event.baselineTurns, `${path}.baselineTurns`);
+        const compatibility = numberValue(event.compatibility, `${path}.compatibility`, -1, 1);
+        if (compatibility === 0) {
+          throw new ScenarioValidationError(`${path}.compatibility`, 'expected a non-zero value');
+        }
+      }
       const observerIds = arrayValue(event.observerIds, `${path}.observerIds`);
       if (observerIds.length === 0) {
         throw new ScenarioValidationError(`${path}.observerIds`, 'expected at least one observer');

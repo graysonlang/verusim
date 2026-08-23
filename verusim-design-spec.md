@@ -673,6 +673,37 @@ The scenario owns the current season, temperature, and weather condition. Time o
 
 The initial conditions are static authored context. Dynamic weather later requires an explicit deterministic timeline or event with snapshot state; renderer-side random weather would violate replay. Temperature and weather do not directly compel mood or behavior. Heat, cold, precipitation, or darkness must first change a concrete resource, discomfort, perception, availability, or task-feasibility term with causal provenance.
 
+### 12.9 Local norms and observer-relative interpretation
+
+An objective event supplies the same perceivable facts to every eligible observer, but it does not supply one privileged interpretation.
+After perception, each observer combines the event's common baseline value-turn signature with any compatibility term contributed by a local norm they hold:
+
+```text
+subjective_turns(observer, event)
+  = baseline_turns(event)
+  + membership(observer, norm)
+    × event_compatibility
+    × norm_compatibility_turns
+```
+
+The initial `membership` term is Boolean and the result is clamped per value.
+This is a bounded Phase 2C authoring surface analogous to the atomic opportunity boundary: it lets deterministic fixtures supply a direct common turn signature before Phase 6 incidents derive observer turns from root-impact signatures.
+It must not be mistaken for objective moral truth.
+
+**Membership and legibility are independent.** Membership determines whether the local compatibility term participates in appraisal.
+Legibility records whether the observer has enough local knowledge to identify the basis of the norm and runs through evidence calibration as explicit domain support.
+A nonmember may understand a rule and reject it; a member may follow an internalized rule without being able to explain it.
+No knowledge produces Pass rather than a strong negative result.
+Legibility changes causal understanding, not the value turn already implied by membership.
+
+Neither term is hostility, empathy, kinship, familiarity, stance, or threat.
+Opaque norms do not make residents hostile to visitors, and hostile visitors do not become members by recognizing a rule.
+Physical perception remains the first gate: an observer who misses the objective event derives no turn at all.
+
+**Discriminating probe:** one visible event in Pottsfield supplies the same negative baseline fairness turn to a resident and a visitor.
+The resident's membership contributes a larger positive local compatibility term, producing a positive net turn; the visitor retains the negative turn and records Pass on the opaque rationale.
+Sweeping dyad stance, suspicion, empathy estimates, and social features must not change either appraisal.
+
 ---
 
 ## 13. Mind models and narrative

@@ -278,9 +278,16 @@ export interface CharacterPlacement {
   initialResources?: Partial<ResourceState>;
   initialValues?: Partial<ValueMap<Partial<ValueState>>>;
   instanceId: string;
+  normPerspectives: NormPerspective[];
   position: Point;
   schedule: ScheduleBlock[];
   walkingMetersPerMinute?: number;
+}
+
+export interface NormPerspective {
+  legibility: number;
+  member: boolean;
+  normId: string;
 }
 
 export type DyadMode = 'courteous' | 'contesting' | 'guarded' | 'ruptured' | 'warm';
@@ -328,18 +335,42 @@ export const OBSERVATION_CHANNELS = ['hearing', 'sight'] as const;
 
 export type ObservationChannel = (typeof OBSERVATION_CHANNELS)[number];
 
-export interface ObservationEvent {
+export const OBSERVATION_EVENT_TYPES = ['mind-model', 'norm'] as const;
+
+export type ObservationEventType = (typeof OBSERVATION_EVENT_TYPES)[number];
+
+export interface ObservationEventBase {
   atMinute: number;
   audibleRadiusMeters: number;
   channel: ObservationChannel;
-  diagnosticity: number;
-  dimension: MindModelDimension;
   id: string;
   interpretationDifficulty: number;
-  observedValue: number;
   observerIds: string[];
   subjectId: string;
   visualProminence: number;
+}
+
+export interface MindModelObservationEvent extends ObservationEventBase {
+  diagnosticity: number;
+  dimension: MindModelDimension;
+  eventType: 'mind-model';
+  observedValue: number;
+}
+
+export interface NormObservationEvent extends ObservationEventBase {
+  baselineTurns: Partial<ValueMap<number>>;
+  compatibility: number;
+  eventType: 'norm';
+  normId: string;
+  summary: string;
+}
+
+export type ObservationEvent = MindModelObservationEvent | NormObservationEvent;
+
+export interface LocalNorm {
+  compatibilityTurns: Partial<ValueMap<number>>;
+  id: string;
+  label: string;
 }
 
 export interface WorldFact {
@@ -462,8 +493,9 @@ export interface ScenarioFile {
   environmentConditions: EnvironmentConditions;
   id: string;
   initialTimeRate?: TimeRateId;
+  localNorms: LocalNorm[];
   observationEvents: ObservationEvent[];
-  schemaVersion: 7;
+  schemaVersion: 8;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -508,6 +540,7 @@ export type TraceKind =
   | 'goal'
   | 'intervention'
   | 'intention'
+  | 'norm-appraisal'
   | 'observation'
   | 'prediction'
   | 'relationship'
@@ -562,7 +595,7 @@ export interface SimulationState {
   environment: EnvironmentDefinition;
   intentions: TaskIntention[];
   minute: number;
-  observations: MindModelObservationRecord[];
+  observations: ObservationRecord[];
   plans: AgendaPlan[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
@@ -690,6 +723,7 @@ export interface MindModelObservationRecord {
   effectiveEvidence: number;
   evidenceStrength: number;
   eventId: string;
+  eventType: 'mind-model';
   gateThreshold: number | null;
   id: string;
   minute: number;
@@ -710,6 +744,32 @@ export interface MindModelObservationRecord {
   subjectId: string;
   tick: number;
 }
+
+export type NormObservationOutcome = 'appraised' | 'missed';
+
+export interface NormObservationRecord {
+  baselineTurns: Partial<ValueMap<number>>;
+  channel: ObservationChannel;
+  compatibilityTurns: Partial<ValueMap<number>>;
+  eventId: string;
+  eventType: 'norm';
+  id: string;
+  legibility: number;
+  legibilityBand: CapabilityResolutionBand | null;
+  legibilityMargin: number | null;
+  member: boolean;
+  minute: number;
+  normId: string;
+  observerId: string;
+  outcome: NormObservationOutcome;
+  perceptionStrength: number;
+  subjectId: string;
+  subjectiveTurn: number | null;
+  subjectiveTurns: Partial<ValueMap<number>>;
+  tick: number;
+}
+
+export type ObservationRecord = MindModelObservationRecord | NormObservationRecord;
 
 export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | 'pending';
 
@@ -792,13 +852,13 @@ export interface SimulationSnapshotFile {
   environmentId: string;
   intentions: TaskIntention[];
   minute: number;
-  observations: MindModelObservationRecord[];
+  observations: ObservationRecord[];
   plans: AgendaPlan[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 4;
+  schemaVersion: 5;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

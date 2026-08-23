@@ -39,7 +39,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     resolvedObservationEventIds: state.resolvedObservationEventIds,
     resolvedOpportunityIds: state.resolvedOpportunityIds,
     scenario: state.scenario,
-    schemaVersion: 4,
+    schemaVersion: 5,
     tick: state.tick,
     trace: state.trace,
     type: 'verusim-snapshot',

@@ -1,5 +1,6 @@
 import type {
   DyadState,
+  MindModelObservationEvent,
   MindModelDimension,
   MindModelObservationRecord,
   ObservationEvent,
@@ -12,6 +13,7 @@ import type {
 import { resolveAgentCapabilityCheck } from './capability.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { resolveNormObservationEvent } from './norms.js';
 
 const CONFIRMATION_ERROR = 0.08;
 const MAX_OBSERVATIONS = 120;
@@ -73,7 +75,7 @@ function withEstimate(dyad: DyadState, dimension: MindModelDimension, estimate: 
     : { ...dyad, estimatedDisclosure: estimate };
 }
 
-function sensoryFor(event: ObservationEvent, state: SimulationState, observerId: string) {
+function sensoryFor(event: MindModelObservationEvent, state: SimulationState, observerId: string) {
   const perception = evaluateSpatialPerception(state, observerId, event.subjectId, {
     audibleRadiusMeters: event.audibleRadiusMeters,
     visualProminence: event.visualProminence,
@@ -85,7 +87,7 @@ function sensoryFor(event: ObservationEvent, state: SimulationState, observerId:
 
 function observationTrace(
   state: SimulationState,
-  event: ObservationEvent,
+  event: MindModelObservationEvent,
   observer: SimulationAgent,
   sensory: SensoryAssessment,
   perceptionTerms: TraceEntry['terms'],
@@ -124,7 +126,7 @@ function observationTrace(
 
 function missedRecord(
   state: SimulationState,
-  event: ObservationEvent,
+  event: MindModelObservationEvent,
   observerId: string,
   perceptionStrength: number,
 ): MindModelObservationRecord {
@@ -137,6 +139,7 @@ function missedRecord(
     effectiveEvidence: 0,
     evidenceStrength: 0,
     eventId: event.id,
+    eventType: 'mind-model',
     gateThreshold: null,
     id: `${state.tick}:${event.id}:${observerId}`,
     minute: state.minute,
@@ -161,7 +164,7 @@ function missedRecord(
 
 function predictionTrace(
   state: SimulationState,
-  event: ObservationEvent,
+  event: MindModelObservationEvent,
   record: MindModelObservationRecord,
   capabilityTerms: TraceEntry['terms'],
 ): TraceEntry {
@@ -244,7 +247,7 @@ function predictionTrace(
 
 function resolveForObserver(
   state: SimulationState,
-  event: ObservationEvent,
+  event: MindModelObservationEvent,
   observerId: string,
 ): SimulationState {
   const observer = agentFor(state, observerId);
@@ -340,6 +343,7 @@ function resolveForObserver(
     effectiveEvidence,
     evidenceStrength,
     eventId: event.id,
+    eventType: 'mind-model',
     gateThreshold,
     id: `${state.tick}:${event.id}:${observerId}`,
     minute: state.minute,
@@ -380,9 +384,9 @@ function resolveForObserver(
   };
 }
 
-export function resolveObservationEvent(
+function resolveMindModelObservationEvent(
   state: SimulationState,
-  event: ObservationEvent,
+  event: MindModelObservationEvent,
 ): SimulationState {
   let next = state;
   for (const observerId of event.observerIds) {
@@ -392,4 +396,13 @@ export function resolveObservationEvent(
     ...next,
     resolvedObservationEventIds: [...next.resolvedObservationEventIds, event.id],
   };
+}
+
+export function resolveObservationEvent(
+  state: SimulationState,
+  event: ObservationEvent,
+): SimulationState {
+  return event.eventType === 'norm'
+    ? resolveNormObservationEvent(state, event)
+    : resolveMindModelObservationEvent(state, event);
 }

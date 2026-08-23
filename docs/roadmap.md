@@ -78,7 +78,7 @@ The initial planning bounds and urgency scale are explicit safety and calibratio
 
 ### Phase 2C — prediction and local norms
 
-Status: in progress.
+Status: complete.
 
 #### Phase 2C.1 — capability, spatial, resource, and atmosphere foundations
 
@@ -101,10 +101,12 @@ The acceptance target is Endicott/Margueritte.
 
 #### Phase 2C.3 — local norms
 
-Status: planned.
+Status: complete.
 
 Implement local norm appraisal as an observer-relative interpretation of objective events, with norm membership and norm legibility kept separate from hostility and social distance.
 The acceptance target is Pottsfield.
+The completed slice extends event-driven observation with a common baseline value-turn signature, a membership-gated local compatibility modifier, and a separate evidence-calibrated legibility result.
+Resolved appraisals update observer value charge, persist in snapshots, and expose their full terms in the causal trace and workbench inspector.
 
 Exit probes:
 
