@@ -30,6 +30,11 @@ import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { advanceCoping, resolveAppraisalEvent } from './coping.js';
+import {
+  createNarrativeState,
+  prepareNarrativeAgency,
+  resolveNarrativeEvent,
+} from './narrative.js';
 import { applyBuildToWalkingPace } from './physical.js';
 import { resolveObservationEvent } from './prediction.js';
 import {
@@ -155,7 +160,7 @@ function initializeAgent(
   const block = activeScheduleBlock(placement.schedule, minute);
   const destination = locationCenter(findLocation(environment, block.locationId));
   const arrived = distance(placement.position, destination) < 0.01;
-  return {
+  const agent: SimulationAgent = {
     cascade: 'none',
     cascadeDwellUntilMinute: minute,
     cascadeLoad: 0,
@@ -168,6 +173,7 @@ function initializeAgent(
     destination,
     id: placement.instanceId,
     memories: initialMemories(profile),
+    narrative: null,
     outletHistory: [],
     position: { ...placement.position },
     profile,
@@ -178,6 +184,18 @@ function initializeAgent(
       placement.walkingMetersPerMinute ?? 16,
       profile.physical.build,
     ),
+  };
+  if (placement.agency === 'responder') return agent;
+  const narrative = createNarrativeState(agent, minute);
+  return {
+    ...agent,
+    narrative: {
+      ...narrative,
+      claims: narrative.claims.map(claim => {
+        const override = placement.narrativeOverrides.find(item => item.claimId === claim.id);
+        return override === undefined ? claim : { ...claim, ...override };
+      }),
+    },
   };
 }
 
@@ -196,6 +214,14 @@ function validateReferences(content: ScenarioContent): void {
   }
   const locationIds = new Set(environment.locations.map(location => location.id));
   const instanceIds = new Set(content.scenario.characters.map(placement => placement.instanceId));
+  const profileByInstance = new Map(
+    content.scenario.characters.map(placement => [
+      placement.instanceId,
+      characters.get(placement.characterId),
+    ]),
+  );
+  const claimIdsFor = (instanceId: string) =>
+    new Set(profileByInstance.get(instanceId)?.narrativeClaims.map(claim => claim.id) ?? []);
   const localNormIds = new Set(content.scenario.localNorms.map(norm => norm.id));
   content.scenario.characters.forEach((placement, index) => {
     if (!characters.has(placement.characterId)) {
@@ -204,6 +230,17 @@ function validateReferences(content: ScenarioContent): void {
         `unknown character "${placement.characterId}"`,
       );
     }
+    const profileClaimIds = new Set(
+      characters.get(placement.characterId)?.narrativeClaims.map(claim => claim.id) ?? [],
+    );
+    placement.narrativeOverrides.forEach((override, overrideIndex) => {
+      if (!profileClaimIds.has(override.claimId)) {
+        throw new ScenarioValidationError(
+          `scenario.characters[${index}].narrativeOverrides[${overrideIndex}].claimId`,
+          `unknown narrative claim "${override.claimId}"`,
+        );
+      }
+    });
     placement.schedule.forEach((block, blockIndex) => {
       if (!locationIds.has(block.locationId)) {
         throw new ScenarioValidationError(
@@ -234,6 +271,14 @@ function validateReferences(content: ScenarioContent): void {
         `unknown agent "${dyad.subjectId}"`,
       );
     }
+    dyad.validatorClaimIds.forEach((claimId, claimIndex) => {
+      if (!claimIdsFor(dyad.observerId).has(claimId)) {
+        throw new ScenarioValidationError(
+          `scenario.dyads[${index}].validatorClaimIds[${claimIndex}]`,
+          `unknown narrative claim "${claimId}" for observer "${dyad.observerId}"`,
+        );
+      }
+    });
   });
   const disclosureItemIds = new Set(content.scenario.disclosureItems.map(item => item.id));
   content.scenario.disclosureItems.forEach((item, index) => {
@@ -373,6 +418,14 @@ function validateReferences(content: ScenarioContent): void {
     if (!instanceIds.has(goal.actorId)) {
       throw new ScenarioValidationError(`${path}.actorId`, `unknown agent "${goal.actorId}"`);
     }
+    goal.claimExpressions.forEach((expression, expressionIndex) => {
+      if (!claimIdsFor(goal.actorId).has(expression.claimId)) {
+        throw new ScenarioValidationError(
+          `${path}.claimExpressions[${expressionIndex}].claimId`,
+          `unknown narrative claim "${expression.claimId}" for actor "${goal.actorId}"`,
+        );
+      }
+    });
     goal.desired.forEach((condition, conditionIndex) => {
       if (!factIds.has(condition.factId)) {
         throw new ScenarioValidationError(
@@ -397,6 +450,14 @@ function validateReferences(content: ScenarioContent): void {
           `unknown agent "${actorId}"`,
         );
       }
+      task.claimExpressions.forEach((expression, expressionIndex) => {
+        if (!claimIdsFor(actorId).has(expression.claimId)) {
+          throw new ScenarioValidationError(
+            `${path}.claimExpressions[${expressionIndex}].claimId`,
+            `unknown narrative claim "${expression.claimId}" for actor "${actorId}"`,
+          );
+        }
+      });
     });
     task.preconditions.forEach((condition, conditionIndex) => {
       if (!factIds.has(condition.factId)) {
@@ -438,6 +499,14 @@ function validateReferences(content: ScenarioContent): void {
       }
     });
     opportunity.candidates.forEach((candidate, candidateIndex) => {
+      candidate.claimExpressions.forEach((expression, expressionIndex) => {
+        if (!claimIdsFor(opportunity.actorId).has(expression.claimId)) {
+          throw new ScenarioValidationError(
+            `${path}.candidates[${candidateIndex}].claimExpressions[${expressionIndex}].claimId`,
+            `unknown narrative claim "${expression.claimId}" for actor "${opportunity.actorId}"`,
+          );
+        }
+      });
       candidate.impacts.forEach((impact, impactIndex) => {
         if (!instanceIds.has(impact.subjectId)) {
           throw new ScenarioValidationError(
@@ -448,12 +517,99 @@ function validateReferences(content: ScenarioContent): void {
       });
     });
   });
+  const groupIds = new Set(content.scenario.reputationGroups.map(group => group.id));
+  content.scenario.reputationGroups.forEach((group, index) => {
+    group.memberIds.forEach((memberId, memberIndex) => {
+      if (!instanceIds.has(memberId)) {
+        throw new ScenarioValidationError(
+          `scenario.reputationGroups[${index}].memberIds[${memberIndex}]`,
+          `unknown agent "${memberId}"`,
+        );
+      }
+    });
+  });
+  content.scenario.aspirationOpportunities.forEach((opportunity, index) => {
+    const path = `scenario.aspirationOpportunities[${index}]`;
+    if (!instanceIds.has(opportunity.actorId)) {
+      throw new ScenarioValidationError(
+        `${path}.actorId`,
+        `unknown agent "${opportunity.actorId}"`,
+      );
+    }
+    if (!claimIdsFor(opportunity.actorId).has(opportunity.claimId)) {
+      throw new ScenarioValidationError(
+        `${path}.claimId`,
+        `unknown narrative claim "${opportunity.claimId}"`,
+      );
+    }
+    opportunity.desired.forEach((condition, conditionIndex) => {
+      if (!factIds.has(condition.factId)) {
+        throw new ScenarioValidationError(
+          `${path}.desired[${conditionIndex}].factId`,
+          `unknown world fact "${condition.factId}"`,
+        );
+      }
+    });
+  });
+  const disclosureItemIdsForNarrative = new Set(
+    content.scenario.disclosureItems.map(item => item.id),
+  );
+  content.scenario.narrativeEvents.forEach((event, index) => {
+    const path = `scenario.narrativeEvents[${index}]`;
+    if (event.eventType === 'attribution') {
+      for (const [field, agentId] of [
+        ['sourceId', event.sourceId],
+        ['subjectId', event.subjectId],
+      ] as const) {
+        if (!instanceIds.has(agentId)) {
+          throw new ScenarioValidationError(`${path}.${field}`, `unknown agent "${agentId}"`);
+        }
+      }
+      if (
+        (event.audienceType === 'agent' && !instanceIds.has(event.audienceId)) ||
+        (event.audienceType === 'group' && !groupIds.has(event.audienceId))
+      ) {
+        throw new ScenarioValidationError(
+          `${path}.audienceId`,
+          `unknown ${event.audienceType} audience "${event.audienceId}"`,
+        );
+      }
+      if (!claimIdsFor(event.subjectId).has(event.selfClaimId)) {
+        throw new ScenarioValidationError(`${path}.selfClaimId`, 'unknown subject narrative claim');
+      }
+    } else {
+      if (!instanceIds.has(event.actorId)) {
+        throw new ScenarioValidationError(`${path}.actorId`, `unknown agent "${event.actorId}"`);
+      }
+      if (!claimIdsFor(event.actorId).has(event.claimId)) {
+        throw new ScenarioValidationError(`${path}.claimId`, 'unknown actor narrative claim');
+      }
+      if (event.eventType === 'self-deprecation-agreement') {
+        if (!instanceIds.has(event.responderId)) {
+          throw new ScenarioValidationError(
+            `${path}.responderId`,
+            `unknown agent "${event.responderId}"`,
+          );
+        }
+        if (
+          event.disclosureItemId !== null &&
+          !disclosureItemIdsForNarrative.has(event.disclosureItemId)
+        ) {
+          throw new ScenarioValidationError(
+            `${path}.disclosureItemId`,
+            `unknown disclosure item "${event.disclosureItemId}"`,
+          );
+        }
+      }
+    }
+  });
 }
 
 function goalSeedSignature(goal: AgendaGoalSeed): string {
   return JSON.stringify({
     activationMinute: goal.activationMinute,
     actorId: goal.actorId,
+    claimExpressions: goal.claimExpressions,
     commitment: goal.commitment,
     deadlineMinute: goal.deadlineMinute,
     desired: goal.desired,
@@ -512,17 +668,22 @@ export function createSimulation(input: {
     dyads: content.scenario.dyads.map(dyad => ({
       ...dyad,
       features: { ...dyad.features },
+      validatorClaimIds: [...dyad.validatorClaimIds],
     })),
     environment,
     intentions: [],
     minute: content.scenario.startMinute,
+    narrativeRecords: [],
     observations: [],
     plans: [],
     relationshipDecisions: [],
+    reputations: [],
     resolvedDisclosureOpportunityIds: [],
     resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
     resolvedAppraisalEventIds: [],
+    resolvedAspirationOpportunityIds: [],
+    resolvedNarrativeEventIds: [],
     resolvedRelationshipEventIds: [],
     resolvedRelationshipRequestIds: [],
     scenario: content.scenario,
@@ -555,7 +716,7 @@ export function createSimulation(input: {
     ...initial,
     dyads: initial.dyads.map(dyad => repriceExposureDebt(initial, dyad)),
   };
-  return prepareAgenda(initial);
+  return prepareAgenda(prepareNarrativeAgency(initial));
 }
 
 export function createSimulationFromSnapshot(input: {
@@ -622,6 +783,13 @@ export function createSimulationFromSnapshot(input: {
       destination: { ...saved.destination },
       id: saved.id,
       memories: saved.memories.map(memory => ({ ...memory })),
+      narrative:
+        saved.narrative === null
+          ? null
+          : {
+              ...saved.narrative,
+              claims: saved.narrative.claims.map(claim => ({ ...claim })),
+            },
       outletHistory: saved.outletHistory.map(use => ({ ...use })),
       position: { ...saved.position },
       profile: agent.profile,
@@ -650,6 +818,20 @@ export function createSimulationFromSnapshot(input: {
         `snapshot.agents[${index}].currentOutlet.affordanceId`,
         `unknown outlet affordance "${saved.currentOutlet.affordanceId}"`,
       );
+    }
+    if (saved.narrative !== null) {
+      const profileClaimIds = new Set(
+        agents[index]?.profile.narrativeClaims.map(claim => claim.id),
+      );
+      if (
+        saved.narrative.claims.length !== profileClaimIds.size ||
+        saved.narrative.claims.some(claim => !profileClaimIds.has(claim.id))
+      ) {
+        throw new ScenarioValidationError(
+          `snapshot.agents[${index}].narrative.claims`,
+          'must contain exactly the character narrative claims',
+        );
+      }
     }
   });
   snapshot.dyads.forEach((dyad, index) => {
@@ -736,6 +918,48 @@ export function createSimulationFromSnapshot(input: {
       );
     }
   });
+  const narrativeEventIds = new Set(snapshot.scenario.narrativeEvents.map(event => event.id));
+  snapshot.resolvedNarrativeEventIds.forEach((eventId, index) => {
+    if (!narrativeEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedNarrativeEventIds[${index}]`,
+        `unknown narrative event "${eventId}"`,
+      );
+    }
+  });
+  snapshot.narrativeRecords.forEach((record, index) => {
+    if (!agentIds.has(record.actorId) || !narrativeEventIds.has(record.eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.narrativeRecords[${index}]`,
+        'narrative record must reference a snapshot agent and authored event',
+      );
+    }
+  });
+  const reputationGroupIds = new Set(snapshot.scenario.reputationGroups.map(group => group.id));
+  snapshot.reputations.forEach((reputation, index) => {
+    if (
+      !agentIds.has(reputation.subjectId) ||
+      reputation.sourceIds.some(sourceId => !agentIds.has(sourceId)) ||
+      (reputation.audienceType === 'agent' && !agentIds.has(reputation.audienceId)) ||
+      (reputation.audienceType === 'group' && !reputationGroupIds.has(reputation.audienceId))
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.reputations[${index}]`,
+        'reputation must reference snapshot agents and an authored audience',
+      );
+    }
+  });
+  const aspirationOpportunityIds = new Set(
+    snapshot.scenario.aspirationOpportunities.map(opportunity => opportunity.id),
+  );
+  snapshot.resolvedAspirationOpportunityIds.forEach((opportunityId, index) => {
+    if (!aspirationOpportunityIds.has(opportunityId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedAspirationOpportunityIds[${index}]`,
+        `unknown aspiration opportunity "${opportunityId}"`,
+      );
+    }
+  });
   snapshot.disclosureItems.forEach((item, index) => {
     if (!agentIds.has(item.ownerId) || item.knownByIds.some(id => !agentIds.has(id))) {
       throw new ScenarioValidationError(
@@ -745,18 +969,40 @@ export function createSimulationFromSnapshot(input: {
     }
   });
   const scenarioGoals = new Map(snapshot.scenario.agendaGoals.map(goal => [goal.id, goal]));
-  if (snapshot.agendaGoals.length !== snapshot.scenario.agendaGoals.length) {
+  const aspirationGoals = new Map(
+    snapshot.scenario.aspirationOpportunities
+      .filter(opportunity => snapshot.resolvedAspirationOpportunityIds.includes(opportunity.id))
+      .map(opportunity => [opportunity.id, opportunity]),
+  );
+  if (snapshot.agendaGoals.length !== scenarioGoals.size + aspirationGoals.size) {
     throw new ScenarioValidationError(
       'snapshot.agendaGoals',
-      'must contain exactly the scenario goals',
+      'must contain exactly the authored and generated aspiration goals',
     );
   }
   snapshot.agendaGoals.forEach((goal, index) => {
     const scenarioGoal = scenarioGoals.get(goal.id);
-    if (scenarioGoal === undefined || goalSeedSignature(goal) !== goalSeedSignature(scenarioGoal)) {
+    const aspiration = aspirationGoals.get(goal.id);
+    const aspirationMatches =
+      aspiration !== undefined &&
+      goal.source === 'aspiration' &&
+      goal.actorId === aspiration.actorId &&
+      goal.activationMinute >= aspiration.atMinute &&
+      goal.commitment === aspiration.commitment &&
+      goal.deadlineMinute === aspiration.deadlineMinute &&
+      JSON.stringify(goal.claimExpressions) === JSON.stringify(aspiration.claimExpressions) &&
+      JSON.stringify(goal.desired) === JSON.stringify(aspiration.desired) &&
+      JSON.stringify(goal.failureTurns) === JSON.stringify(aspiration.failureTurns) &&
+      goal.label === aspiration.label &&
+      JSON.stringify(goal.successTurns) === JSON.stringify(aspiration.successTurns) &&
+      goal.urgencyHorizonMinutes === aspiration.urgencyHorizonMinutes;
+    if (
+      (scenarioGoal === undefined || goalSeedSignature(goal) !== goalSeedSignature(scenarioGoal)) &&
+      !aspirationMatches
+    ) {
       throw new ScenarioValidationError(
         `snapshot.agendaGoals[${index}]`,
-        'goal seed must match the authored scenario',
+        'goal seed must match authored scenario or resolved aspiration opportunity',
       );
     }
     const resolved = goal.status === 'completed' || goal.status === 'failed';
@@ -857,13 +1103,17 @@ export function createSimulationFromSnapshot(input: {
     dyads: snapshot.dyads,
     intentions: snapshot.intentions,
     minute: snapshot.minute,
+    narrativeRecords: snapshot.narrativeRecords,
     observations: snapshot.observations,
     plans: snapshot.plans,
     relationshipDecisions: snapshot.relationshipDecisions,
+    reputations: snapshot.reputations,
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
     resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
     resolvedAppraisalEventIds: snapshot.resolvedAppraisalEventIds,
+    resolvedAspirationOpportunityIds: snapshot.resolvedAspirationOpportunityIds,
+    resolvedNarrativeEventIds: snapshot.resolvedNarrativeEventIds,
     resolvedRelationshipEventIds: snapshot.resolvedRelationshipEventIds,
     resolvedRelationshipRequestIds: snapshot.resolvedRelationshipRequestIds,
     tick: snapshot.tick,
@@ -1132,7 +1382,7 @@ function advanceAgent(
 }
 
 function advanceOneTick(state: SimulationState): SimulationState {
-  const prepared = prepareAgenda(state);
+  const prepared = prepareAgenda(prepareNarrativeAgency(state));
   const nextTick = prepared.tick + 1;
   const nextMinute = prepared.minute + prepared.scenario.tickMinutes;
   const results = prepared.agents.map(agent => advanceAgent(prepared, agent, nextMinute, nextTick));
@@ -1192,6 +1442,13 @@ function advanceOneTick(state: SimulationState): SimulationState {
       !prepared.resolvedAppraisalEventIds.includes(event.id),
   );
   for (const event of dueAppraisalEvents) next = resolveAppraisalEvent(next, event);
+  const dueNarrativeEvents = prepared.scenario.narrativeEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedNarrativeEventIds.includes(event.id),
+  );
+  for (const event of dueNarrativeEvents) next = resolveNarrativeEvent(next, event);
   next = consolidateRelationshipMemories(
     next,
     results.filter(result => result.sleeping).map(result => result.agent.id),

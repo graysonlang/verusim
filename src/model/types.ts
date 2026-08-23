@@ -175,6 +175,16 @@ export interface IdentityMarker {
   marker: string;
 }
 
+export type NarrativeClaimKind = 'affirm' | 'deny' | 'deserve';
+
+export interface NarrativeClaimSeed {
+  commitment: number;
+  confidence: number;
+  id: string;
+  kind: NarrativeClaimKind;
+  statement: string;
+}
+
 export interface FormativeEvent {
   age: number;
   attribution: string | null;
@@ -212,7 +222,7 @@ export interface CharacterDefinition {
   id: string;
   identity: IdentityMarker[];
   name: string;
-  narrativeClaims: string[];
+  narrativeClaims: NarrativeClaimSeed[];
   outletPreferences: OutletPreference[];
   physical: PhysicalProfile;
   role: string;
@@ -223,7 +233,7 @@ export interface CharacterDefinition {
 
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
-  schemaVersion: 6;
+  schemaVersion: 7;
 }
 
 export const OUTLET_OPERATIONS = [
@@ -329,14 +339,24 @@ export interface ResourceState {
 }
 
 export interface CharacterPlacement {
+  agency: AgencyMode;
   characterId: string;
   initialResources?: Partial<ResourceState>;
   initialValues?: Partial<ValueMap<Partial<ValueState>>>;
   instanceId: string;
+  narrativeOverrides: NarrativeClaimOverride[];
   normPerspectives: NormPerspective[];
   position: Point;
   schedule: ScheduleBlock[];
   walkingMetersPerMinute?: number;
+}
+
+export type AgencyMode = 'invoker' | 'responder';
+
+export interface NarrativeClaimOverride {
+  claimId: string;
+  commitment?: number;
+  confidence?: number;
 }
 
 export interface NormPerspective {
@@ -361,6 +381,7 @@ export interface DyadSeed {
   stance: number;
   subjectId: string;
   suspicion: number;
+  validatorClaimIds: string[];
 }
 
 export type DyadState = DyadSeed;
@@ -468,6 +489,7 @@ export interface AgendaGoalSeed {
   activationMinute: number;
   actorId: string;
   commitment: number;
+  claimExpressions: ClaimExpression[];
   deadlineMinute: number | null;
   desired: FactCondition[];
   failureTurns: Partial<ValueMap<number>>;
@@ -483,6 +505,7 @@ export interface TaskOperator {
   availableFromMinute: number | null;
   availableUntilMinute: number | null;
   contractViolation: number;
+  claimExpressions: ClaimExpression[];
   durationMinutes: number;
   effects: FactEffect[];
   id: string;
@@ -502,14 +525,79 @@ export interface ActionImpact {
 }
 
 export interface ActionCandidate {
+  claimExpressions: ClaimExpression[];
   contractViolation: number;
   id: string;
   impacts: ActionImpact[];
   label: string;
-  narrativeExpression: number;
   operation: string;
   repercussionSeverity: number;
 }
+
+export interface ClaimExpression {
+  claimId: string;
+  strength: number;
+  valueId: ValueId;
+}
+
+export interface AspirationOpportunity {
+  atMinute: number;
+  actorId: string;
+  claimExpressions: ClaimExpression[];
+  claimId: string;
+  commitment: number;
+  deadlineMinute: number | null;
+  desired: FactCondition[];
+  failureTurns: Partial<ValueMap<number>>;
+  id: string;
+  label: string;
+  successTurns: Partial<ValueMap<number>>;
+  urgencyHorizonMinutes: number;
+}
+
+export interface ReputationGroup {
+  id: string;
+  label: string;
+  memberIds: string[];
+}
+
+export interface ClaimEvidenceEvent {
+  actorId: string;
+  alignment: number;
+  atMinute: number;
+  claimId: string;
+  eventType: 'claim-evidence';
+  id: string;
+  summary: string;
+}
+
+export interface SelfDeprecationAgreementEvent {
+  actorId: string;
+  atMinute: number;
+  claimId: string;
+  disclosureItemId: string | null;
+  eventType: 'self-deprecation-agreement';
+  id: string;
+  responderId: string;
+  summary: string;
+}
+
+export interface AttributionEvent {
+  atMinute: number;
+  audienceId: string;
+  audienceType: 'agent' | 'group';
+  claim: string;
+  compatibility: number;
+  confidence: number;
+  eventType: 'attribution';
+  id: string;
+  selfClaimId: string;
+  sourceId: string;
+  subjectId: string;
+  summary: string;
+}
+
+export type NarrativeEvent = AttributionEvent | ClaimEvidenceEvent | SelfDeprecationAgreementEvent;
 
 export interface DecisionContext {
   enforcementPresence: number;
@@ -561,6 +649,7 @@ export interface ScenarioFile {
   agendaGoals: AgendaGoalSeed[];
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
   appraisalEvents: AppraisalEvent[];
+  aspirationOpportunities: AspirationOpportunity[];
   behaviorOpportunities: BehaviorOpportunity[];
   characters: CharacterPlacement[];
   disclosureItems: DisclosureItemSeed[];
@@ -571,10 +660,12 @@ export interface ScenarioFile {
   id: string;
   initialTimeRate?: TimeRateId;
   localNorms: LocalNorm[];
+  narrativeEvents: NarrativeEvent[];
   observationEvents: ObservationEvent[];
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
-  schemaVersion: 10;
+  reputationGroups: ReputationGroup[];
+  schemaVersion: 11;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -596,6 +687,7 @@ export interface RuntimeMemory {
     | 'formative'
     | 'goal'
     | 'intervention'
+    | 'narrative'
     | 'relationship'
     | 'task';
 }
@@ -627,6 +719,7 @@ export interface SimulationAgent {
   destination: Point;
   id: string;
   memories: RuntimeMemory[];
+  narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
   position: Point;
   profile: CharacterDefinition;
@@ -650,9 +743,11 @@ export type TraceKind =
   | 'intervention'
   | 'intention'
   | 'norm-appraisal'
+  | 'narrative'
   | 'observation'
   | 'outlet'
   | 'prediction'
+  | 'reputation'
   | 'relationship'
   | 'resource'
   | 'scenario'
@@ -706,13 +801,17 @@ export interface SimulationState {
   environment: EnvironmentDefinition;
   intentions: TaskIntention[];
   minute: number;
+  narrativeRecords: NarrativeRecord[];
   observations: ObservationRecord[];
   plans: AgendaPlan[];
   relationshipDecisions: RelationshipDecisionRecord[];
+  reputations: AttributedNarrative[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
   resolvedAppraisalEventIds: string[];
+  resolvedAspirationOpportunityIds: string[];
+  resolvedNarrativeEventIds: string[];
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
@@ -997,6 +1096,7 @@ export interface SimulationAgentSnapshot {
   destination: Point;
   id: string;
   memories: RuntimeMemory[];
+  narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
   position: Point;
   profileId: string;
@@ -1018,20 +1118,72 @@ export interface SimulationSnapshotFile {
   environmentId: string;
   intentions: TaskIntention[];
   minute: number;
+  narrativeRecords: NarrativeRecord[];
   observations: ObservationRecord[];
   plans: AgendaPlan[];
   relationshipDecisions: RelationshipDecisionRecord[];
+  reputations: AttributedNarrative[];
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
+  resolvedNarrativeEventIds: string[];
   resolvedAppraisalEventIds: string[];
+  resolvedAspirationOpportunityIds: string[];
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 7;
+  schemaVersion: 8;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';
   worldFacts: WorldFact[];
   worldRevision: number;
+}
+
+export interface NarrativeClaimState extends NarrativeClaimSeed {
+  confirmations: number;
+  reinterpretations: number;
+  revisions: number;
+  wearIn: number;
+}
+
+export interface NarrativeState {
+  claims: NarrativeClaimState[];
+  promotedMinute: number;
+}
+
+export type NarrativeDisposition =
+  | 'accepted'
+  | 'confirmed'
+  | 'fishing'
+  | 'genuine'
+  | 'preemptive-shame'
+  | 'reinterpreted'
+  | 'resisted'
+  | 'revised'
+  | 'status-lowering'
+  | 'wore-in';
+
+export interface NarrativeRecord {
+  actorId: string;
+  claimId: string;
+  disposition: NarrativeDisposition;
+  eventId: string;
+  id: string;
+  minute: number;
+  regulationCost: number;
+  summary: string;
+  tick: number;
+}
+
+export interface AttributedNarrative {
+  audienceId: string;
+  audienceType: 'agent' | 'group';
+  claim: string;
+  confidence: number;
+  firstMinute: number;
+  lastMinute: number;
+  repetitions: number;
+  sourceIds: string[];
+  subjectId: string;
 }

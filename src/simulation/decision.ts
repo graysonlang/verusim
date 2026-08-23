@@ -14,6 +14,7 @@ import {
 } from '../model/types.js';
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
+import { claimExpressionPayoff } from './narrative.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
 
@@ -99,7 +100,7 @@ function evaluateCandidate(
       subjectId: impact.subjectId,
       turns: impact.turns,
     })),
-    narrativeExpression: candidate.narrativeExpression,
+    narrativeExpression: claimExpressionPayoff(actor, candidate.claimExpressions),
     repercussionCost: repercussion.cost,
     valueWeights: effectiveWeights,
   });
@@ -188,7 +189,8 @@ function appraisalTrace(
       traceTerm(
         'narrative-expression',
         appraisal.narrativeExpression,
-        `${candidateSource}.narrativeExpression`,
+        `${candidateSource}.claimExpressions`,
+        `${actorSource}.narrative`,
       ),
       traceTerm('utility', appraisal.utility, `decisions.${state.tick}:${opportunity.id}`),
       traceTerm('candidate', candidate.candidateId, candidateSource),

@@ -54,6 +54,7 @@ export interface AgentObservation {
   mood: string;
   movementMetersPerMinute: number;
   movementSpeedClass: MovementSpeedClass;
+  narrativeTell: string | null;
   outletTell: string | null;
   resourceStrain: number;
   stateOfMind: string;
@@ -116,9 +117,12 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
     agent.currentOutlet === null
       ? null
       : `${agent.currentOutlet.operation}: ${agent.currentOutlet.label}`;
+  const narrativeTell =
+    agent.memories.findLast(memory => memory.type === 'narrative')?.summary ?? null;
   const stateOfMind =
     cascadeTell ??
     outletTell ??
+    narrativeTell ??
     (dominantPressure < 0.08
       ? `Present with ${agent.currentActivity.toLowerCase()}`
       : `Protecting ${VALUE_LABELS[dominantValue]}`);
@@ -136,6 +140,7 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
     mood,
     movementMetersPerMinute,
     movementSpeedClass: classifyMovementSpeed(movementMetersPerMinute),
+    narrativeTell,
     outletTell,
     resourceStrain,
     stateOfMind,

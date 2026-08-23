@@ -39,6 +39,8 @@ const OBSERVATION_CHANNEL_SET = new Set<string>(OBSERVATION_CHANNELS);
 const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
 const REINFORCEMENT_SCHEDULES = new Set(['fixed', 'variable-ratio']);
 const SATISFIER_TYPES = new Set(['deficit', 'surplus']);
+const AGENCY_MODES = new Set(['invoker', 'responder']);
+const NARRATIVE_CLAIM_KINDS = new Set(['affirm', 'deny', 'deserve']);
 const SEASON_ID_SET = new Set<string>(SEASON_IDS);
 const SEX_ID_SET = new Set<string>(SEX_IDS);
 const WEATHER_ID_SET = new Set<string>(WEATHER_IDS);
@@ -226,6 +228,26 @@ function validateValueTurns(value: unknown, path: string): void {
   }
 }
 
+function validateClaimExpressions(value: unknown, path: string): void {
+  const claimIds = new Set<string>();
+  arrayValue(value, path).forEach((entry, index) => {
+    const expressionPath = `${path}[${index}]`;
+    const expression = objectValue(entry, expressionPath);
+    const claimId = identifierValue(expression.claimId, `${expressionPath}.claimId`);
+    if (claimIds.has(claimId)) {
+      throw new ScenarioValidationError(`${expressionPath}.claimId`, 'duplicate claim expression');
+    }
+    claimIds.add(claimId);
+    if (typeof expression.valueId !== 'string' || !VALUE_ID_SET.has(expression.valueId)) {
+      throw new ScenarioValidationError(
+        `${expressionPath}.valueId`,
+        'expected a known value identifier',
+      );
+    }
+    numberValue(expression.strength, `${expressionPath}.strength`, -1, 1);
+  });
+}
+
 function validateNonzeroValueTurns(value: unknown, path: string): void {
   validateValueTurns(value, path);
   const turns = objectValue(value, path);
@@ -289,13 +311,14 @@ function legacyRecoveryMode(activity: unknown): RecoveryMode {
 
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
-  if (file.schemaVersion === 6) return file;
+  if (file.schemaVersion === 7) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
     file.schemaVersion !== 4 &&
-    file.schemaVersion !== 5
+    file.schemaVersion !== 5 &&
+    file.schemaVersion !== 6
   ) {
     throw new ScenarioValidationError(
       'characterLibrary.schemaVersion',
@@ -366,8 +389,26 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
       rank: 1 - index * 0.1,
     }));
     character.satisfierPreferences ??= [];
+    character.narrativeClaims = arrayValue(
+      character.narrativeClaims,
+      'characterLibrary.characters.narrativeClaims',
+    ).map((claim, index) => {
+      if (typeof claim !== 'string') return claim;
+      const normalized = claim.toLowerCase();
+      return {
+        commitment: 0.7,
+        confidence: 0.65,
+        id: `claim-${index + 1}`,
+        kind: normalized.includes('deserve')
+          ? 'deserve'
+          : normalized.includes(' not ') || normalized.startsWith('not ')
+            ? 'deny'
+            : 'affirm',
+        statement: claim,
+      };
+    });
   }
-  file.schemaVersion = 6;
+  file.schemaVersion = 7;
   return file;
 }
 
@@ -390,7 +431,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 10) return file;
+  if (file.schemaVersion === 11) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -400,7 +441,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 6 &&
     file.schemaVersion !== 7 &&
     file.schemaVersion !== 8 &&
-    file.schemaVersion !== 9
+    file.schemaVersion !== 9 &&
+    file.schemaVersion !== 10
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -476,27 +518,61 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       dyad.exposureDebt = 0;
     }
   }
-  file.appraisalEvents = [];
-  for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-    const task = objectValue(taskValue, 'scenario.taskOperators');
-    task.maskingDemand = null;
-    task.resourceDrainsPerHour = {};
-  }
-  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-    const placement = objectValue(placementValue, 'scenario.characters');
-    for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
-      const block = objectValue(blockValue, 'scenario.characters.schedule');
-      block.maskingDemand = null;
-      block.resourceDrainsPerHour = {};
+  if (sourceVersion < 10) {
+    file.appraisalEvents = [];
+    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+      const task = objectValue(taskValue, 'scenario.taskOperators');
+      task.maskingDemand = null;
+      task.resourceDrainsPerHour = {};
+    }
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
+        const block = objectValue(blockValue, 'scenario.characters.schedule');
+        block.maskingDemand = null;
+        block.resourceDrainsPerHour = {};
+      }
     }
   }
-  file.schemaVersion = 10;
+  file.aspirationOpportunities = [];
+  file.narrativeEvents = [];
+  file.reputationGroups = [];
+  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+    const placement = objectValue(placementValue, 'scenario.characters');
+    placement.agency = 'responder';
+    placement.narrativeOverrides = [];
+  }
+  for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
+    const dyad = objectValue(dyadValue, 'scenario.dyads');
+    dyad.validatorClaimIds = [];
+  }
+  for (const goalValue of arrayValue(file.agendaGoals, 'scenario.agendaGoals')) {
+    objectValue(goalValue, 'scenario.agendaGoals').claimExpressions = [];
+  }
+  for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+    objectValue(taskValue, 'scenario.taskOperators').claimExpressions = [];
+  }
+  for (const opportunityValue of arrayValue(
+    file.behaviorOpportunities,
+    'scenario.behaviorOpportunities',
+  )) {
+    const opportunity = objectValue(opportunityValue, 'scenario.behaviorOpportunities');
+    for (const candidateValue of arrayValue(
+      opportunity.candidates,
+      'scenario.behaviorOpportunities.candidates',
+    )) {
+      const candidate = objectValue(candidateValue, 'scenario.behaviorOpportunities.candidates');
+      candidate.claimExpressions = [];
+      delete candidate.narrativeExpression;
+    }
+  }
+  file.schemaVersion = 11;
   return file;
 }
 
 export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
   const file = migrateCharacterLibrary(value);
-  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 6);
+  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 7);
   const characters = arrayValue(file.characters, 'characterLibrary.characters').map(
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
@@ -582,11 +658,24 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
         numberValue(marker.centrality, `${identityPath}.centrality`, 0, 1);
       });
 
-      arrayValue(character.narrativeClaims, `${path}.narrativeClaims`).forEach(
-        (claim, claimIndex) => {
-          stringValue(claim, `${path}.narrativeClaims[${claimIndex}]`);
+      const narrativeClaims = arrayValue(character.narrativeClaims, `${path}.narrativeClaims`).map(
+        (entry, claimIndex) => {
+          const claimPath = `${path}.narrativeClaims[${claimIndex}]`;
+          const claim = objectValue(entry, claimPath);
+          identifierValue(claim.id, `${claimPath}.id`);
+          stringValue(claim.statement, `${claimPath}.statement`);
+          if (typeof claim.kind !== 'string' || !NARRATIVE_CLAIM_KINDS.has(claim.kind)) {
+            throw new ScenarioValidationError(
+              `${claimPath}.kind`,
+              'expected affirm, deny, or deserve',
+            );
+          }
+          numberValue(claim.commitment, `${claimPath}.commitment`, 0, 1);
+          numberValue(claim.confidence, `${claimPath}.confidence`, 0, 1);
+          return claim;
         },
       );
+      uniqueIds(narrativeClaims, `${path}.narrativeClaims`);
 
       arrayValue(character.formativeEvents, `${path}.formativeEvents`).forEach(
         (entry, eventIndex) => {
@@ -715,7 +804,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 10);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 11);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -802,6 +891,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       throw new ScenarioValidationError(`${path}.source`, 'expected a known goal source');
     }
     numberValue(goal.commitment, `${path}.commitment`, 0, 1);
+    validateClaimExpressions(goal.claimExpressions, `${path}.claimExpressions`);
     const activationMinute = integerValue(
       goal.activationMinute,
       `${path}.activationMinute`,
@@ -839,6 +929,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(task.locationId, `${path}.locationId`);
       integerValue(task.durationMinutes, `${path}.durationMinutes`, 1, 100_000);
       numberValue(task.contractViolation, `${path}.contractViolation`, 0, 1);
+      validateClaimExpressions(task.claimExpressions, `${path}.claimExpressions`);
       if (task.availableFromMinute !== null) {
         integerValue(
           task.availableFromMinute,
@@ -916,6 +1007,29 @@ export function parseScenario(value: unknown): ScenarioFile {
     const placement = objectValue(item, path);
     identifierValue(placement.instanceId, `${path}.instanceId`);
     identifierValue(placement.characterId, `${path}.characterId`);
+    if (typeof placement.agency !== 'string' || !AGENCY_MODES.has(placement.agency)) {
+      throw new ScenarioValidationError(`${path}.agency`, 'expected invoker or responder');
+    }
+    const narrativeOverrides = arrayValue(
+      placement.narrativeOverrides,
+      `${path}.narrativeOverrides`,
+    );
+    const overrideClaimIds = new Set<string>();
+    narrativeOverrides.forEach((entry, overrideIndex) => {
+      const overridePath = `${path}.narrativeOverrides[${overrideIndex}]`;
+      const override = objectValue(entry, overridePath);
+      const claimId = identifierValue(override.claimId, `${overridePath}.claimId`);
+      if (overrideClaimIds.has(claimId)) {
+        throw new ScenarioValidationError(`${overridePath}.claimId`, 'duplicate claim override');
+      }
+      overrideClaimIds.add(claimId);
+      if (override.commitment !== undefined) {
+        numberValue(override.commitment, `${overridePath}.commitment`, 0, 1);
+      }
+      if (override.confidence !== undefined) {
+        numberValue(override.confidence, `${overridePath}.confidence`, 0, 1);
+      }
+    });
     validatePoint(placement.position, `${path}.position`);
     if (placement.walkingMetersPerMinute !== undefined) {
       numberValue(placement.walkingMetersPerMinute, `${path}.walkingMetersPerMinute`, 0.1, 500);
@@ -1016,6 +1130,13 @@ export function parseScenario(value: unknown): ScenarioFile {
     numberValue(dyad.exposureDebt, `${path}.exposureDebt`, 0, 1);
     numberValue(dyad.predictionError, `${path}.predictionError`, 0, 1);
     numberValue(dyad.suspicion, `${path}.suspicion`, 0, 1);
+    const validatorClaimIds = arrayValue(dyad.validatorClaimIds, `${path}.validatorClaimIds`);
+    validatorClaimIds.forEach((claimId, claimIndex) => {
+      identifierValue(claimId, `${path}.validatorClaimIds[${claimIndex}]`);
+    });
+    if (new Set(validatorClaimIds).size !== validatorClaimIds.length) {
+      throw new ScenarioValidationError(`${path}.validatorClaimIds`, 'duplicate claim identifier');
+    }
     if (typeof dyad.mode !== 'string' || !DYAD_MODES.has(dyad.mode)) {
       throw new ScenarioValidationError(`${path}.mode`, 'expected a known dyad mode');
     }
@@ -1123,6 +1244,102 @@ export function parseScenario(value: unknown): ScenarioFile {
   );
   uniqueIds(appraisalEvents, 'scenario.appraisalEvents');
 
+  const reputationGroups = arrayValue(file.reputationGroups, 'scenario.reputationGroups').map(
+    (entry, index) => {
+      const path = `scenario.reputationGroups[${index}]`;
+      const group = objectValue(entry, path);
+      identifierValue(group.id, `${path}.id`);
+      stringValue(group.label, `${path}.label`);
+      const memberIds = arrayValue(group.memberIds, `${path}.memberIds`);
+      memberIds.forEach((memberId, memberIndex) => {
+        identifierValue(memberId, `${path}.memberIds[${memberIndex}]`);
+      });
+      if (new Set(memberIds).size !== memberIds.length) {
+        throw new ScenarioValidationError(`${path}.memberIds`, 'duplicate agent identifier');
+      }
+      return group;
+    },
+  );
+  uniqueIds(reputationGroups, 'scenario.reputationGroups');
+
+  const aspirationOpportunities = arrayValue(
+    file.aspirationOpportunities,
+    'scenario.aspirationOpportunities',
+  ).map((entry, index) => {
+    const path = `scenario.aspirationOpportunities[${index}]`;
+    const opportunity = objectValue(entry, path);
+    identifierValue(opportunity.id, `${path}.id`);
+    identifierValue(opportunity.actorId, `${path}.actorId`);
+    identifierValue(opportunity.claimId, `${path}.claimId`);
+    stringValue(opportunity.label, `${path}.label`);
+    integerValue(opportunity.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    numberValue(opportunity.commitment, `${path}.commitment`, 0, 1);
+    if (opportunity.deadlineMinute !== null) {
+      const deadline = integerValue(
+        opportunity.deadlineMinute,
+        `${path}.deadlineMinute`,
+        0,
+        Number.MAX_SAFE_INTEGER,
+      );
+      if (deadline <= (opportunity.atMinute as number)) {
+        throw new ScenarioValidationError(
+          `${path}.deadlineMinute`,
+          'expected a deadline after availability',
+        );
+      }
+    }
+    integerValue(opportunity.urgencyHorizonMinutes, `${path}.urgencyHorizonMinutes`, 1, 100_000);
+    validateFactConditions(opportunity.desired, `${path}.desired`, true);
+    validateValueTurns(opportunity.successTurns, `${path}.successTurns`);
+    validateValueTurns(opportunity.failureTurns, `${path}.failureTurns`);
+    validateClaimExpressions(opportunity.claimExpressions, `${path}.claimExpressions`);
+    return opportunity;
+  });
+  uniqueIds(aspirationOpportunities, 'scenario.aspirationOpportunities');
+
+  const narrativeEvents = arrayValue(file.narrativeEvents, 'scenario.narrativeEvents').map(
+    (entry, index) => {
+      const path = `scenario.narrativeEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      stringValue(event.summary, `${path}.summary`);
+      if (event.eventType === 'claim-evidence') {
+        identifierValue(event.actorId, `${path}.actorId`);
+        identifierValue(event.claimId, `${path}.claimId`);
+        const alignment = numberValue(event.alignment, `${path}.alignment`, -1, 1);
+        if (alignment === 0) {
+          throw new ScenarioValidationError(`${path}.alignment`, 'expected a non-zero alignment');
+        }
+      } else if (event.eventType === 'self-deprecation-agreement') {
+        identifierValue(event.actorId, `${path}.actorId`);
+        identifierValue(event.responderId, `${path}.responderId`);
+        identifierValue(event.claimId, `${path}.claimId`);
+        if (event.disclosureItemId !== null) {
+          identifierValue(event.disclosureItemId, `${path}.disclosureItemId`);
+        }
+      } else if (event.eventType === 'attribution') {
+        identifierValue(event.sourceId, `${path}.sourceId`);
+        identifierValue(event.subjectId, `${path}.subjectId`);
+        identifierValue(event.audienceId, `${path}.audienceId`);
+        identifierValue(event.selfClaimId, `${path}.selfClaimId`);
+        stringValue(event.claim, `${path}.claim`);
+        if (event.audienceType !== 'agent' && event.audienceType !== 'group') {
+          throw new ScenarioValidationError(`${path}.audienceType`, 'expected agent or group');
+        }
+        numberValue(event.compatibility, `${path}.compatibility`, -1, 1);
+        numberValue(event.confidence, `${path}.confidence`, 0, 1);
+      } else {
+        throw new ScenarioValidationError(
+          `${path}.eventType`,
+          'expected attribution, claim-evidence, or self-deprecation-agreement',
+        );
+      }
+      return event;
+    },
+  );
+  uniqueIds(narrativeEvents, 'scenario.narrativeEvents');
+
   const observationEvents = arrayValue(file.observationEvents, 'scenario.observationEvents').map(
     (entry, index) => {
       const path = `scenario.observationEvents[${index}]`;
@@ -1199,7 +1416,7 @@ export function parseScenario(value: unknown): ScenarioFile {
         stringValue(candidate.label, `${candidatePath}.label`);
         identifierValue(candidate.operation, `${candidatePath}.operation`);
         numberValue(candidate.contractViolation, `${candidatePath}.contractViolation`, 0, 1);
-        numberValue(candidate.narrativeExpression, `${candidatePath}.narrativeExpression`, -2, 2);
+        validateClaimExpressions(candidate.claimExpressions, `${candidatePath}.claimExpressions`);
         numberValue(candidate.repercussionSeverity, `${candidatePath}.repercussionSeverity`, 0, 4);
         arrayValue(candidate.impacts, `${candidatePath}.impacts`).forEach(
           (impactEntry, impactIndex) => {

@@ -816,6 +816,27 @@ Entitlement is a major root of harm, **not the root**. Keep it separate from the
 
 **Entitlement + low narrative confidence.** Someone who feels owed *and* suspects they are a fraud — grievance with no floor of self-assurance beneath it. Reachable because `desert_claim` and marker confidence are independent (§13.2), and it is among the most dangerous configurations the model can generate. Include in the coverage suite.
 
+### 13.7 Implemented Phase 4 boundary
+
+The first narrative-driven slice stores structured claim seeds on reusable definitions and copies them into sparse per-instance runtime state only for invokers.
+Responders keep the same appraisal, cascade, expression, relationship, and agenda evaluators with no standing narrative motive; promotion populates the runtime narrative field without rewriting accumulated state.
+
+Available acts, tasks, goals, and aspiration opportunities declare which claim and value channel they express, not a payoff or selected behavior.
+Expression payoff is derived from claim commitment, confidence, alignment strength, and the current history-sensitive value weight, then enters the ordinary Verus utility.
+Aspiration opportunities become ordinary source-`aspiration` goals and use the existing bounded planner.
+
+Objective narrative events cover claim evidence, agreement with self-deprecation, and external attribution.
+The agreement probe distinguishes fishing, preemptive shame control, genuine low confidence, and threat-targeted status lowering from current narrative, value, disclosure, and cascade state.
+Contradiction defaults to reinterpretation; revision requires unusually low conviction and high plasticity.
+Validator claim identifiers live on directed dyads and contribute independently of stance or integrated history.
+
+Attributed claims accumulate on agent or authored-group audiences, never on a global subject score.
+Acceptance and resistance have different runtime costs and tells, while adult wear-in can change only per-instance claim confidence after at least one in-game year and at no more than `0.02` per elapsed year.
+This narrow override reconciles the Phase 4 wear-in probe with the §14.4 baseline rule; Phase 5 still owns general formative generation and the remaining baseline writers.
+
+Narrative state, event records, audience-scoped reputation, promotion, and generated aspiration identifiers persist in snapshot schema version 8.
+The acceptance target is Stories in the Square.
+
 ---
 
 ## 14. Dyad record and momentum

@@ -14,6 +14,7 @@ const MEMORY_TYPES = new Set([
   'formative',
   'goal',
   'intervention',
+  'narrative',
   'relationship',
   'task',
 ]);
@@ -31,9 +32,11 @@ const TRACE_KINDS = new Set([
   'intervention',
   'intention',
   'norm-appraisal',
+  'narrative',
   'observation',
   'outlet',
   'prediction',
+  'reputation',
   'relationship',
   'resource',
   'scenario',
@@ -63,6 +66,18 @@ const OBSERVATION_DIMENSIONS = new Set(['disclosure', 'empathy']);
 const OBSERVATION_OUTCOMES = new Set(['confirmed', 'corrected', 'missed', 'suspected']);
 const NORM_OBSERVATION_OUTCOMES = new Set(['appraised', 'missed']);
 const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
+const NARRATIVE_DISPOSITIONS = new Set([
+  'accepted',
+  'confirmed',
+  'fishing',
+  'genuine',
+  'preemptive-shame',
+  'reinterpreted',
+  'resisted',
+  'revised',
+  'status-lowering',
+  'wore-in',
+]);
 
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
@@ -192,6 +207,28 @@ function validateAgent(value: unknown, path: string): void {
     integerValue(outlet.remainingMinutes, `${path}.currentOutlet.remainingMinutes`, 1);
     integerValue(outlet.startedMinute, `${path}.currentOutlet.startedMinute`);
     numberValue(outlet.yield, `${path}.currentOutlet.yield`, 0, 1);
+  }
+  if (agent.narrative !== null) {
+    const narrative = objectValue(agent.narrative, `${path}.narrative`);
+    integerValue(narrative.promotedMinute, `${path}.narrative.promotedMinute`);
+    const claimIds = new Set<string>();
+    arrayValue(narrative.claims, `${path}.narrative.claims`).forEach((entry, index) => {
+      const claimPath = `${path}.narrative.claims[${index}]`;
+      const claim = objectValue(entry, claimPath);
+      const claimId = stringValue(claim.id, `${claimPath}.id`);
+      if (claimIds.has(claimId)) {
+        throw new ScenarioValidationError(`${claimPath}.id`, 'duplicate narrative claim');
+      }
+      claimIds.add(claimId);
+      stringValue(claim.statement, `${claimPath}.statement`);
+      stringValue(claim.kind, `${claimPath}.kind`);
+      for (const field of ['commitment', 'confidence', 'wearIn']) {
+        numberValue(claim[field], `${claimPath}.${field}`, 0, 1);
+      }
+      for (const field of ['confirmations', 'reinterpretations', 'revisions']) {
+        integerValue(claim[field], `${claimPath}.${field}`);
+      }
+    });
   }
   numberValue(agent.walkingMetersPerMinute, `${path}.walkingMetersPerMinute`, 0.1, 500);
 
@@ -758,6 +795,50 @@ function validateAgendaHistory(value: unknown, path: string): void {
   });
 }
 
+function validateNarrativeHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entry, index) => {
+    const recordPath = `${path}[${index}]`;
+    const record = objectValue(entry, recordPath);
+    for (const field of ['id', 'eventId', 'actorId', 'claimId', 'summary']) {
+      stringValue(record[field], `${recordPath}.${field}`);
+    }
+    if (typeof record.disposition !== 'string' || !NARRATIVE_DISPOSITIONS.has(record.disposition)) {
+      throw new ScenarioValidationError(
+        `${recordPath}.disposition`,
+        'expected a known narrative disposition',
+      );
+    }
+    integerValue(record.minute, `${recordPath}.minute`);
+    integerValue(record.tick, `${recordPath}.tick`);
+    numberValue(record.regulationCost, `${recordPath}.regulationCost`, 0, 1);
+  });
+}
+
+function validateReputations(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entry, index) => {
+    const reputationPath = `${path}[${index}]`;
+    const reputation = objectValue(entry, reputationPath);
+    for (const field of ['audienceId', 'claim', 'subjectId']) {
+      stringValue(reputation[field], `${reputationPath}.${field}`);
+    }
+    if (reputation.audienceType !== 'agent' && reputation.audienceType !== 'group') {
+      throw new ScenarioValidationError(
+        `${reputationPath}.audienceType`,
+        'expected agent or group',
+      );
+    }
+    numberValue(reputation.confidence, `${reputationPath}.confidence`, 0, 1);
+    integerValue(reputation.firstMinute, `${reputationPath}.firstMinute`);
+    integerValue(reputation.lastMinute, `${reputationPath}.lastMinute`);
+    integerValue(reputation.repetitions, `${reputationPath}.repetitions`, 1);
+    arrayValue(reputation.sourceIds, `${reputationPath}.sourceIds`).forEach(
+      (sourceId, sourceIndex) => {
+        stringValue(sourceId, `${reputationPath}.sourceIds[${sourceIndex}]`);
+      },
+    );
+  });
+}
+
 function migrateSnapshot(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'snapshot'));
   if (
@@ -767,7 +848,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 4 &&
     file.schemaVersion !== 5 &&
     file.schemaVersion !== 6 &&
-    file.schemaVersion !== 7
+    file.schemaVersion !== 7 &&
+    file.schemaVersion !== 8
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -845,7 +927,22 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.appraisalRecords = [];
     file.resolvedAppraisalEventIds = [];
   }
-  file.schemaVersion = 7;
+  if (sourceVersion < 8) {
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      objectValue(agentValue, 'snapshot.agents').narrative = null;
+    }
+    for (const dyadValue of arrayValue(file.dyads, 'snapshot.dyads')) {
+      objectValue(dyadValue, 'snapshot.dyads').validatorClaimIds = [];
+    }
+    for (const goalValue of arrayValue(file.agendaGoals, 'snapshot.agendaGoals')) {
+      objectValue(goalValue, 'snapshot.agendaGoals').claimExpressions = [];
+    }
+    file.narrativeRecords = [];
+    file.reputations = [];
+    file.resolvedAspirationOpportunityIds = [];
+    file.resolvedNarrativeEventIds = [];
+  }
+  file.schemaVersion = 8;
   return file;
 }
 
@@ -854,7 +951,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 7) {
+  if (file.schemaVersion !== 8) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -896,6 +993,8 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   validateObservationHistory(file.observations, 'snapshot.observations');
   validateRelationshipHistory(file.relationshipDecisions, 'snapshot.relationshipDecisions');
   validateAppraisalHistory(file.appraisalRecords, 'snapshot.appraisalRecords');
+  validateNarrativeHistory(file.narrativeRecords, 'snapshot.narrativeRecords');
+  validateReputations(file.reputations, 'snapshot.reputations');
   validateTrace(file.trace, 'snapshot.trace');
   validateIdentifierList(file.resolvedOpportunityIds, 'snapshot.resolvedOpportunityIds');
   validateIdentifierList(
@@ -912,6 +1011,11 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
     'snapshot.resolvedRelationshipRequestIds',
   );
   validateIdentifierList(file.resolvedAppraisalEventIds, 'snapshot.resolvedAppraisalEventIds');
+  validateIdentifierList(
+    file.resolvedAspirationOpportunityIds,
+    'snapshot.resolvedAspirationOpportunityIds',
+  );
+  validateIdentifierList(file.resolvedNarrativeEventIds, 'snapshot.resolvedNarrativeEventIds');
 
   return {
     ...(file as unknown as SimulationSnapshotFile),

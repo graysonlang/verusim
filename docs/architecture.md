@@ -49,7 +49,7 @@ Choosing a bundled entry or an external file still uses the same validated simul
 The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains, broad capabilities, and descriptive physical profiles live on reusable character definitions and are not changed by normal stepping.
-2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Runtime agents may read that seed directly while no tier-2 writer exists. Before Phase 5 introduces the rare §14.4 writes, each instance must gain a sparse, snapshot-persisted override so one instance can crystallize without mutating every agent that references the same definition.
+2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Phase 4 copies narrative claims into sparse, snapshot-persisted per-instance state before applying claim revision or years-gated wear-in, so one instance can move without mutating every agent that references the same definition. Phase 5 generalizes that override boundary to the remaining history-derived content before generation and the other rare §14.4 writers land.
 3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
 Authored scenarios and live snapshots are distinct formats.
@@ -265,6 +265,30 @@ Satisfier granularity remains a design target rather than an authored field unti
 Appraisal records, resolved event identifiers, cascade dwell and target state, current outlet use, and habituation history are bounded snapshot state.
 The observer projection exposes stable cascade and outlet tells, while the developer workbench separately exposes the numeric terms and causal trace.
 
+## Narrative-driven agency
+
+Character definitions seed a small set of structured affirm, deny, or deserve claims.
+Invoker placements copy those claims into runtime narrative state, while responder placements leave that state empty; promotion fills the same runtime field without replacing values, resources, dyads, memories, cascade state, or existing agenda state.
+Scenario placement overrides may adjust initial claim commitment or confidence at the per-instance boundary without mutating the reusable profile.
+
+Behavior candidates, agenda goals, task operators, and aspiration opportunities identify the claim and value channel they objectively express.
+The evaluator derives narrative payoff from that alignment, current claim commitment and confidence, and the agent's history-sensitive effective value weight.
+This keeps expression inside the ordinary Verus utility and shared planner rather than adding a narrative action selector.
+
+Narrative events are deterministic objective inputs.
+Claim evidence usually increments reinterpretation when it conflicts with a strongly held adult claim; sufficiently plastic low-conviction state can instead revise the claim at a regulation cost.
+Agreement with self-deprecation distinguishes respect-satisfier fishing, preemptive shame control, genuine low confidence, and threat-targeted status lowering from current state, not from an authored response label.
+Directed dyads list the self-claims for which their subject is a non-substitutable validator, and that support remains separate from stance and integrated interaction history.
+
+External attributions accumulate as audience-scoped records keyed by subject, claim, and either a directed agent audience or an authored group.
+Compatible or validator-supplied claims are accepted, conflicts consume regulation while resisted, and sustained failed resistance may reduce self-claim confidence only after an in-game year.
+Adult wear-in is capped at `0.02` confidence per elapsed year and writes only to per-instance narrative state.
+No global reputation score exists.
+
+Aspiration opportunities supply desired world facts, stakes, and claim alignment but no selected plan.
+Only invokers turn an eligible opportunity into a source-`aspiration` agenda goal, after which the Phase 2B bounded planner and intention machinery remain authoritative.
+Narrative records, distributed reputation, generated aspiration identifiers, claim overrides, and promotion state persist in snapshots and replay exactly.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.
@@ -304,13 +328,13 @@ Resource recovery is applied by the same deterministic tick transition used by t
 Derived affect keeps value valence and resource strain separate.
 Social battery below `0.50` contributes up to `0.38` negative valence and physical stamina below `0.30` contributes up to `0.16`; this can impair mood without mutating value charge or allostatic load.
 
-Character-library schema version 6 adds cascade priors, outlet rankings, and satisfier preferences to the version 5 physical and epistemic profile.
-Explicit migrations preserve versions 1 through 5, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, and neutral coping defaults where version 6 data was absent.
+Character-library schema version 7 replaces the version 6 narrative string seeds with structured claim identifiers, kinds, commitment, and confidence.
+Explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
 Environment-library schema version 2 adds outlet affordances to the original spatial environment format, with an empty affordance list supplied for version 1 content.
-Scenario schema version 10 adds appraisal events plus activity and masking drains to the version 9 relationship format.
-Explicit migrations preserve version 1 through 9 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, and supplying empty appraisal inputs plus neutral drain data where version 10 data was absent.
-Snapshot schema version 7 persists appraisal records, resolved appraisal events, cascade dwell and target state, active outlets, and habituation history in addition to the version 6 relationship state and causal-trace schema version 1.
-Explicit snapshot migrations preserve versions 1 through 6, and snapshot parsing supplies recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Scenario schema version 11 adds agency mode, sparse narrative overrides, validators, claim-expression alignment, narrative events, reputation groups, and aspiration opportunities to the version 10 coping format.
+Explicit migrations preserve version 1 through 10 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, and making older placements responders with neutral narrative collections where version 11 data was absent.
+Snapshot schema version 8 persists per-instance narrative claims, narrative records, distributed reputation, generated aspiration identifiers, and resolved narrative inputs in addition to the version 7 coping state and causal-trace schema version 1.
+Explicit snapshot migrations preserve versions 1 through 7, and snapshot parsing supplies recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

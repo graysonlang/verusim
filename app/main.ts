@@ -801,12 +801,33 @@ function renderInspector(
     markers.append(marker);
   }
   const claims = element('ul', 'claim-list');
-  for (const claim of agent.profile.narrativeClaims) {
+  for (const claim of agent.narrative?.claims ?? []) {
     const item = element('li');
-    item.textContent = `"${claim}"`;
+    item.textContent = `"${claim.statement}" - ${claim.kind}, commitment ${claim.commitment.toFixed(2)}, confidence ${claim.confidence.toFixed(2)}`;
+    claims.append(item);
+  }
+  if (agent.narrative === null) {
+    const item = element('li');
+    item.textContent = 'Responder: no standing narrative agenda';
     claims.append(item);
   }
   identity.body.append(markers, claims);
+
+  const narrative = makeSection('Narrative history');
+  const narrativeEntries = state.narrativeRecords.filter(item => item.actorId === agent.id);
+  if (narrativeEntries.length === 0) {
+    const empty = element('p', 'empty-copy');
+    empty.textContent = 'No narrative event has resolved for this character.';
+    narrative.body.append(empty);
+  } else {
+    const list = element('ol', 'decision-list');
+    for (const record of narrativeEntries.slice(-8).reverse()) {
+      const item = element('li', 'decision-candidate');
+      item.textContent = `${record.disposition}: ${record.summary}`;
+      list.append(item);
+    }
+    narrative.body.append(list);
+  }
 
   const decisionSection = makeSection('Latest Verus decision');
   const decision = state.decisions.filter(item => item.actorId === agent.id).at(-1);
@@ -1016,6 +1037,7 @@ function renderInspector(
     physical.section,
     evaluationShape.section,
     identity.section,
+    narrative.section,
     decisionSection.section,
     relationships.section,
     relationshipDecisionSection.section,

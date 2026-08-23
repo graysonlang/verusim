@@ -63,7 +63,9 @@ const EVENT_KINDS: ReadonlySet<TraceKind> = new Set([
   'decision',
   'goal',
   'intervention',
+  'narrative',
   'outlet',
+  'reputation',
   'task',
 ]);
 

@@ -65,6 +65,13 @@ export type { BuildEffects } from './simulation/physical.js';
 export { resolveObservationEvent } from './simulation/prediction.js';
 export { resolveNormObservationEvent } from './simulation/norms.js';
 export {
+  claimExpressionPayoff,
+  createNarrativeState,
+  prepareNarrativeAgency,
+  promoteToInvoker,
+  resolveNarrativeEvent,
+} from './simulation/narrative.js';
+export {
   evaluateRelationshipRequest,
   exposureDebtFor,
   resolveDyadMode,

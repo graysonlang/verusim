@@ -61,6 +61,7 @@ export function projectedDyad(observer: SimulationAgent, subjectId: string): Dya
     stance: 0,
     subjectId,
     suspicion: 0,
+    validatorClaimIds: [],
   };
 }
 
@@ -281,8 +282,9 @@ export function evaluateRelationshipRequest(
   const dyad =
     dyadFor(state, opportunity.responderId, opportunity.requesterId) ??
     projectedDyad(responder, opportunity.requesterId);
+  const validatorSupport = Math.min(0.3, dyad.validatorClaimIds.length * 0.2);
   const cooperationPosition = clamp(
-    (dyad.stance + 1) / 2 - dyad.exposureDebt * 0.25 - dyad.suspicion * 0.15,
+    (dyad.stance + 1) / 2 - dyad.exposureDebt * 0.25 - dyad.suspicion * 0.15 + validatorSupport,
     0,
     1,
   );
@@ -350,6 +352,11 @@ export function resolveRelationshipRequest(
         'cooperation-position',
         decision.cooperationPosition,
         `dyads.${opportunity.responderId}:${opportunity.requesterId}.stance`,
+      ),
+      traceTerm(
+        'validator-support',
+        Math.min(0.3, existing.validatorClaimIds.length * 0.2),
+        `dyads.${opportunity.responderId}:${opportunity.requesterId}.validatorClaimIds`,
       ),
       traceTerm(
         'previous-stance',

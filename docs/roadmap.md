@@ -164,6 +164,8 @@ Snapshot replay persists appraisal, cascade, habituation, and active-outlet stat
 
 ## Phase 4 — narrative-driven agency
 
+Status: complete.
+
 Implement narrative claims, expression payoff, validators, rationalization, attributed narratives, reputation, aspiration-derived goal generation, and the responder/invoker scheduling boundary over the shared agenda.
 Narrative and identity supply new goal sources rather than a second planner.
 External claims live on dyads or groups rather than in one global reputation score; acceptance, resistance, and years-gated wear-in share narrative and plasticity machinery.
@@ -177,6 +179,11 @@ Exit probes:
 - repeated external attribution is accepted, resisted at a regulation cost, or wears into a self-claim only at the §14.4 rate cap
 - two audiences can hold incompatible reputations for one agent without either becoming privileged global truth
 - promoting a responder to an invoker preserves all accumulated state while enabling proactive goals
+
+The completed slice stores committed claims as runtime-owned narrative state, derives expression payoff from claim commitment, confidence, and the history-sensitive value channel of an available act, and routes aspiration opportunities into the existing agenda.
+Objective narrative events resolve claim evidence, agreement with self-deprecation, and external attribution without authoring the subjective disposition.
+Distributed reputation remains scoped to an agent or authored group audience; incompatible stocks coexist, while resistance spends regulation and adult wear-in is capped on an in-game-years gate.
+The acceptance target is Stories in the Square.
 
 ## Phase 5 — authoring and population generation
 

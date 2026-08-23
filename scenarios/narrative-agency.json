@@ -1,0 +1,333 @@
+{
+  "schemaVersion": 11,
+  "id": "narrative-agency",
+  "title": "Stories in the Square",
+  "summary": "Agreement, contradiction, reputation, validators, and aspiration expose distinct consequences of the stories characters keep about themselves.",
+  "environmentId": "alders-edge",
+  "startMinute": 0,
+  "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "spring",
+    "temperatureCelsius": 15,
+    "weather": "clear"
+  },
+  "ambientTurnsPerHour": {},
+  "localNorms": [],
+  "dyads": [
+    {
+      "observerId": "lowering",
+      "subjectId": "dominant",
+      "features": {
+        "category": 0,
+        "familiarity": 0.4,
+        "kinship": 0,
+        "reciprocity": 0.1,
+        "similarity": 0.2
+      },
+      "stance": -0.55,
+      "integratedHistory": -0.6,
+      "behaviorVariance": 0.4,
+      "estimatedEmpathy": 0.2,
+      "estimatedDisclosure": 0.2,
+      "estimateConfidence": 0.7,
+      "exposureDebt": 0,
+      "predictionError": 0.2,
+      "suspicion": 0.4,
+      "mode": "contesting",
+      "validatorClaimIds": []
+    }
+  ],
+  "disclosureItems": [
+    {
+      "id": "shame-item",
+      "ownerId": "preemptive",
+      "summary": "A mistake Tomas names before anyone else can expose it.",
+      "shameCharge": 0.7,
+      "knownByIds": []
+    }
+  ],
+  "disclosureOpportunities": [],
+  "observationEvents": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [
+    {
+      "id": "dominance-threat",
+      "agentId": "lowering",
+      "atMinute": 1,
+      "summary": "The dominant listener made disagreement feel unsafe.",
+      "threat": 1,
+      "copingPotential": 0.35,
+      "localized": true,
+      "believedLeverage": false,
+      "exitAvailable": false,
+      "socialTargetId": "dominant",
+      "turns": { "safety": -0.3 }
+    }
+  ],
+  "reputationGroups": [
+    { "id": "guild", "label": "Market Guild", "memberIds": ["fishing", "preemptive"] },
+    { "id": "neighbors", "label": "Near Neighbors", "memberIds": ["genuine", "lowering"] }
+  ],
+  "narrativeEvents": [
+    {
+      "id": "agree-fishing",
+      "eventType": "self-deprecation-agreement",
+      "actorId": "fishing",
+      "responderId": "dominant",
+      "claimId": "claim-1",
+      "disclosureItemId": null,
+      "atMinute": 1,
+      "summary": "Someone agreed when Mara diminished herself."
+    },
+    {
+      "id": "agree-preemptive",
+      "eventType": "self-deprecation-agreement",
+      "actorId": "preemptive",
+      "responderId": "dominant",
+      "claimId": "claim-1",
+      "disclosureItemId": "shame-item",
+      "atMinute": 1,
+      "summary": "Someone agreed after Tomas named his own mistake first."
+    },
+    {
+      "id": "agree-genuine",
+      "eventType": "self-deprecation-agreement",
+      "actorId": "genuine",
+      "responderId": "dominant",
+      "claimId": "claim-1",
+      "disclosureItemId": null,
+      "atMinute": 1,
+      "summary": "Someone agreed with Nessa's low-confidence account."
+    },
+    {
+      "id": "agree-lowering",
+      "eventType": "self-deprecation-agreement",
+      "actorId": "lowering",
+      "responderId": "dominant",
+      "claimId": "claim-1",
+      "disclosureItemId": null,
+      "atMinute": 1,
+      "summary": "The dominant listener agreed with Elian's status-lowering claim."
+    },
+    {
+      "id": "contradict-invoker",
+      "eventType": "claim-evidence",
+      "actorId": "invoker",
+      "claimId": "claim-1",
+      "alignment": -0.7,
+      "atMinute": 1,
+      "summary": "The invoker acted against a committed self-claim."
+    },
+    {
+      "id": "guild-reliable",
+      "eventType": "attribution",
+      "sourceId": "dominant",
+      "subjectId": "invoker",
+      "audienceType": "group",
+      "audienceId": "guild",
+      "claim": "Reliable under pressure",
+      "selfClaimId": "claim-1",
+      "compatibility": 0.8,
+      "confidence": 0.7,
+      "atMinute": 1,
+      "summary": "The guild called the invoker reliable."
+    },
+    {
+      "id": "neighbors-unreliable",
+      "eventType": "attribution",
+      "sourceId": "dominant",
+      "subjectId": "invoker",
+      "audienceType": "group",
+      "audienceId": "neighbors",
+      "claim": "Unreliable under pressure",
+      "selfClaimId": "claim-1",
+      "compatibility": -0.8,
+      "confidence": 0.7,
+      "atMinute": 1,
+      "summary": "The neighbors called the invoker unreliable."
+    }
+  ],
+  "worldFacts": [{ "id": "square-helped", "amount": 0 }],
+  "agendaGoals": [],
+  "aspirationOpportunities": [
+    {
+      "id": "invoker-help-square",
+      "actorId": "invoker",
+      "claimId": "claim-1",
+      "atMinute": 0,
+      "label": "Help in the square",
+      "commitment": 0.8,
+      "deadlineMinute": null,
+      "urgencyHorizonMinutes": 120,
+      "desired": [{ "factId": "square-helped", "minimum": 1 }],
+      "successTurns": { "belonging": 0.2, "competence": 0.2 },
+      "failureTurns": { "respect": -0.1 },
+      "claimExpressions": [{ "claimId": "claim-1", "valueId": "belonging", "strength": 0.8 }]
+    },
+    {
+      "id": "responder-help-square",
+      "actorId": "responder",
+      "claimId": "claim-1",
+      "atMinute": 0,
+      "label": "Help in the square",
+      "commitment": 0.8,
+      "deadlineMinute": null,
+      "urgencyHorizonMinutes": 120,
+      "desired": [{ "factId": "square-helped", "minimum": 1 }],
+      "successTurns": { "belonging": 0.2, "competence": 0.2 },
+      "failureTurns": { "respect": -0.1 },
+      "claimExpressions": [{ "claimId": "claim-1", "valueId": "belonging", "strength": 0.8 }]
+    }
+  ],
+  "taskOperators": [
+    {
+      "id": "offer-square-help",
+      "label": "Offer help in the square",
+      "actorIds": ["invoker", "responder"],
+      "preconditions": [],
+      "effects": [{ "factId": "square-helped", "delta": 1 }],
+      "durationMinutes": 10,
+      "locationId": "market-square",
+      "resourceCosts": { "executiveBudget": 0.05 },
+      "resourceDrainsPerHour": {},
+      "maskingDemand": null,
+      "recoveryMode": "none",
+      "valueTurns": {},
+      "contractViolation": 0,
+      "availableFromMinute": null,
+      "availableUntilMinute": null,
+      "claimExpressions": [{ "claimId": "claim-1", "valueId": "competence", "strength": 0.7 }]
+    }
+  ],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "fishing",
+      "characterId": "mara-vale",
+      "agency": "invoker",
+      "narrativeOverrides": [],
+      "position": { "x": 100, "y": 70 },
+      "initialValues": { "respect": { "charge": -0.4, "deficitIntegral": 0.75, "variance": 0.2 } },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Talking",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    },
+    {
+      "instanceId": "preemptive",
+      "characterId": "tomas-reed",
+      "agency": "invoker",
+      "narrativeOverrides": [],
+      "position": { "x": 102, "y": 70 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Talking",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    },
+    {
+      "instanceId": "genuine",
+      "characterId": "nessa-arden",
+      "agency": "invoker",
+      "narrativeOverrides": [{ "claimId": "claim-1", "confidence": 0.2 }],
+      "position": { "x": 104, "y": 70 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Talking",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    },
+    {
+      "instanceId": "lowering",
+      "characterId": "elian-voss",
+      "agency": "invoker",
+      "narrativeOverrides": [],
+      "position": { "x": 106, "y": 70 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Talking",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    },
+    {
+      "instanceId": "dominant",
+      "characterId": "sera-dane",
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "position": { "x": 108, "y": 70 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Listening",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    },
+    {
+      "instanceId": "invoker",
+      "characterId": "nessa-arden",
+      "agency": "invoker",
+      "narrativeOverrides": [],
+      "position": { "x": 110, "y": 70 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Watching for work",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    },
+    {
+      "instanceId": "responder",
+      "characterId": "nessa-arden",
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "position": { "x": 112, "y": 70 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Waiting",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ],
+      "normPerspectives": []
+    }
+  ]
+}

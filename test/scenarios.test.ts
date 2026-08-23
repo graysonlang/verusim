@@ -43,12 +43,13 @@ describe('built-in scenario catalog', () => {
         'relationship-momentum',
         'innkeeper-coping',
         'cascade-room',
+        'narrative-agency',
         'highwayman-road',
         'highwayman-square',
       ],
     );
     assert.equal(DEFAULT_BUILT_IN_SCENARIO.id, 'market-morning');
-    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 10);
+    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 11);
   });
 
   it('loads every included asset through the regular simulation path', () => {

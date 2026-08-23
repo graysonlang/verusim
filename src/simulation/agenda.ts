@@ -19,6 +19,7 @@ import {
 } from '../model/types.js';
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
+import { claimExpressionPayoff } from './narrative.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
 
@@ -269,23 +270,25 @@ function planCandidates(
   const goalAppraisal = appraiseAction({
     contractViolationCost: 0,
     impacts: [{ empathy: selfEmpathy, subjectId: agent.id, turns: goalTurns }],
-    narrativeExpression: 0,
+    narrativeExpression: claimExpressionPayoff(agent, goal.claimExpressions),
     repercussionCost: 0,
     valueWeights: weights,
   });
 
   return nodes.map(node => {
     let taskTurns: Partial<ValueMap<number>> = {};
+    let taskExpressions = [] as TaskOperator['claimExpressions'];
     let contractViolation = 0;
     for (const taskId of node.taskIds) {
       const task = findTask(state, taskId);
       taskTurns = addTurns(taskTurns, task.valueTurns);
+      taskExpressions = [...taskExpressions, ...task.claimExpressions];
       contractViolation += task.contractViolation;
     }
     const taskAppraisal = appraiseAction({
       contractViolationCost: agent.profile.contractAdherence * contractViolation,
       impacts: [{ empathy: selfEmpathy, subjectId: agent.id, turns: taskTurns }],
-      narrativeExpression: 0,
+      narrativeExpression: claimExpressionPayoff(agent, taskExpressions),
       repercussionCost: 0,
       valueWeights: weights,
     });
@@ -293,7 +296,10 @@ function planCandidates(
     const appraisal = appraiseAction({
       contractViolationCost: agent.profile.contractAdherence * contractViolation,
       impacts: [{ empathy: selfEmpathy, subjectId: agent.id, turns: combinedTurns }],
-      narrativeExpression: 0,
+      narrativeExpression: claimExpressionPayoff(agent, [
+        ...goal.claimExpressions,
+        ...taskExpressions,
+      ]),
       repercussionCost: 0,
       valueWeights: weights,
     });
@@ -520,6 +526,13 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
           'task-utility',
           candidate.taskUtility,
           ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.valueTurns`),
+        ),
+        traceTerm(
+          'narrative-expression',
+          candidate.appraisal.narrativeExpression,
+          `agendaGoals.${candidate.goalId}.claimExpressions`,
+          ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.claimExpressions`),
+          `agents.${actorId}.narrative`,
         ),
         traceTerm(
           'resource-cost',
