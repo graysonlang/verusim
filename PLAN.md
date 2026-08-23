@@ -18,22 +18,21 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5A: resource identity and scenario preparation.
-Split reusable character and environment definitions into independently validated documents, introduce stable semantic references for character profiles and environment layouts, generate an immutable repository catalog, and make every loading path converge on one prepared-scenario boundary before simulation begins.
-The source-backed and direct in-memory paths must resolve equivalent content, preserve actionable authored provenance, reject duplicate semantic addresses deterministically, and produce an explicit dependency closure suitable for later packing.
+The active slice is Phase 5B: reusable norms and social contracts.
+Promote atomic norm definitions and coherent social-contract bundles into independently validated resource documents using the Phase 5A catalog and preparation boundary.
+Let scenarios place contracts into explicit location, institution, group, or event scopes independently of the selected environment layout, with dependency closure walking contract-to-norm references exactly once.
 
-This slice closes the Phase 5 file-relocation, preparation-equivalence, no-post-preparation-read, and initial dependency-closure probes for characters and environments.
-It must preserve existing scenario and snapshot migrations while leaving room for norm and social-contract resources to use the same catalog in the next Phase 5 slice.
+This slice closes the Phase 5 sharing and placement probes for norms and social contracts.
+The same contract must be reusable without copying its norms, the same physical layout must accept different social-context placements, and multiple contracts must be able to coexist without selecting a winner.
 
 ### Current-focus non-goals
 
 - no population or formative-event generation
 - no role bundles, cohort stratification, pre-contact relationship generation, or environment generation
 - no Phase 6 changes to normative interpretation, affiliation, internalization, enforcement, shame, or behavior
-- no runtime filesystem, network, asynchronous resource access, or mutable global registry
-- no package manager, remote dependency resolver, or implicit `latest` resource selection
-- no arbitrary profile inheritance or JSON patch chains
-- no archive format, authoring UI, or pack writer beyond a deterministic dependency-closure report
+- no conversion of Pottsfield's bounded common-turn fixture into incident truth
+- no contract priority, winning-culture selection, or implicit scope precedence
+- no package manager, remote dependency resolver, archive format, authoring UI, or pack writer
 
 ## Phase 5 — authoring and population generation
 

@@ -178,6 +178,30 @@ Objective narrative events resolve claim evidence, agreement with self-deprecati
 Distributed reputation remains scoped to an agent or authored group audience; incompatible stocks coexist, while resistance spends regulation and adult wear-in is capped on an in-game-years gate.
 The acceptance target is Stories in the Square.
 
+## Phase 5A — resource identity and scenario preparation
+
+Status: complete.
+
+Split reusable character profiles and environment layouts into independently validated resource documents, introduce stable semantic addresses, generate an immutable repository catalog, and make source-backed and direct in-memory loading converge on one prepared-scenario boundary before simulation begins.
+Character identity is distinct from immutable profile identity and scenario instance identity, while environment identity is distinct from layout identity.
+The legacy aggregate-library call shape remains a compatibility adapter and delegates to the same preparation implementation.
+
+Exit probes:
+
+- moving a resource document within the authoring tree leaves prepared content and its semantic address unchanged
+- duplicate semantic addresses fail deterministically with both authored sources
+- generated-catalog and exact-address source preparation produce equivalent resolved content
+- creating, stepping, serializing, and resuming simulation after preparation performs no resource reads
+- dependency closure includes every referenced character profile and environment layout once while excluding unrelated resources
+- two scenarios select different profiles of one stable character identity without copying character content
+- snapshot resume verifies the exact prepared resource lock
+
+The repository contains 21 one-resource character-profile and environment-layout documents plus a checked-in generated catalog whose stable traversal is verified by tests and builds.
+The discriminating resource-preparation fixtures cover relocation, duplicate provenance, source equivalence, read isolation, closure, and alternate-age profile selection.
+Scenario schema version 12 introduces structured semantic addresses and preserves migrations from versions 1 through 11.
+Snapshot schema version 9 persists the exact resource lock and preserves migrations from versions 1 through 8 while verifying legacy identifiers.
+The browser workbench now consumes prepared built-in scenarios from the generated catalog; this loading-only change does not alter presentation.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

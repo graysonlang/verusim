@@ -12,7 +12,7 @@ NPC state remains authoritative when unobserved, but the system does not need to
 ## Dependency direction
 
 ```text
-library JSON + scenario JSON
+resource JSON + scenario JSON
             |
             v
     scenario validation
@@ -31,7 +31,7 @@ library JSON + scenario JSON
 `src/model` contains JSON-safe shared vocabulary.
 It cannot depend on a renderer, Solid, or browser APIs.
 
-`src/scenario` validates authored content, resolves character and environment references, and keeps immutable scenario serialization separate from resumable snapshot serialization.
+`src/scenario` validates authored resources and scenarios, prepares resolved content, and keeps immutable scenario serialization separate from resumable snapshot serialization.
 Validation errors include the failing path so authoring failures are actionable.
 
 `src/simulation` owns time, agent state, transitions, interventions, derived observations, and causal traces.
@@ -359,10 +359,11 @@ const prepared = await prepareScenarioFromSource({ scenario, source });
 const state = createSimulation(prepared);
 ```
 
-A consumer that already owns resource objects bypasses acquisition entirely:
+A consumer that already owns resource objects builds an immutable catalog and bypasses acquisition entirely:
 
 ```ts
-const prepared = prepareScenario({ scenario, characters, environment });
+const catalog = createResourceCatalog(resources);
+const prepared = prepareScenario({ scenario, catalog });
 const state = createSimulation(prepared);
 ```
 
@@ -372,7 +373,8 @@ Snapshot resume receives the same prepared content and verifies its resource loc
 
 ### Discovery and packing
 
-The repository adapter discovers source documents by traversing configured content roots in a stable sorted order and generates an immutable catalog.
+The repository generator discovers documents below `content/resources/` in code-unit-sorted order and emits the checked-in immutable import catalog at `content/catalog.generated.ts`.
+Tests and builds reject a stale generated catalog.
 Traversal is an authoring and build concern only; deployed consumers are never required to expose a filesystem or reproduce the repository tree.
 
 A future packer starts from selected scenario addresses and walks their explicit resource dependency graph.
@@ -383,7 +385,8 @@ The workbench may bundle a catalog containing every authored resource, while a d
 ## Storage contracts
 
 Files use strict, versioned JSON and stable string identifiers.
-Scenarios reference library records rather than copying character or environment definitions.
+Character-profile and environment-layout resource files use schema version 1 and carry a structured package, kind, and resource identifier address independent of their source path.
+Scenarios reference those semantic addresses rather than copying character or environment definitions.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
 Schedule blocks and task operators carry an explicit `recoveryMode` of `none`, `break`, `rest`, or `sleep`.
@@ -400,13 +403,13 @@ Resource recovery is applied by the same deterministic tick transition used by t
 Derived affect keeps value valence and resource strain separate.
 Social battery below `0.50` contributes up to `0.38` negative valence and physical stamina below `0.30` contributes up to `0.16`; this can impair mood without mutating value charge or allostatic load.
 
-Character-library schema version 7 replaces the version 6 narrative string seeds with structured claim identifiers, kinds, commitment, and confidence.
-Explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
-Environment-library schema version 2 adds outlet affordances to the original spatial environment format, with an empty affordance list supplied for version 1 content.
-Scenario schema version 11 adds agency mode, sparse narrative overrides, validators, claim-expression alignment, narrative events, reputation groups, and aspiration opportunities to the version 10 coping format.
-Explicit migrations preserve version 1 through 10 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, and making older placements responders with neutral narrative collections where version 11 data was absent.
-Snapshot schema version 8 persists per-instance narrative claims, narrative records, distributed reputation, generated aspiration identifiers, and resolved narrative inputs in addition to the version 7 coping state and causal-trace schema version 1.
-Explicit snapshot migrations preserve versions 1 through 7, and snapshot parsing supplies recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+The legacy character-library schema version 7 compatibility adapter replaces version 6 narrative string seeds with structured claim identifiers, kinds, commitment, and confidence.
+Its explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
+The legacy environment-library schema version 2 compatibility adapter adds outlet affordances to the original spatial environment format, with an empty affordance list supplied for version 1 content.
+Scenario schema version 12 replaces path-era character and environment identifiers with structured character-profile and environment-layout addresses after version 11 added agency mode, sparse narrative overrides, validators, claim-expression alignment, narrative events, reputation groups, and aspiration opportunities.
+Explicit migrations preserve version 1 through 11 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, and mapping legacy references into the default `verusim` package.
+Snapshot schema version 9 adds structured resource addresses and the exact prepared resource lock after version 8 added narrative state.
+Explicit snapshot migrations preserve versions 1 through 8, verify legacy character and environment identifiers while constructing the lock, and supply recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

@@ -13,11 +13,11 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation has completed Phase 0 through Phase 4; Phase 5 authoring and population generation is next.
+The current implementation has completed Phase 0 through Phase 4 and the Phase 5A resource-preparation slice; reusable norm and social-contract resources are next.
 It includes:
 
-- versioned JSON character, environment, and scenario formats
-- references from scenario placements to reusable character and environment libraries
+- independently versioned JSON character-profile and environment-layout resources plus versioned scenarios
+- structured semantic resource addresses, a generated immutable repository catalog, deterministic dependency closures, and an acquisition-neutral prepared-scenario boundary
 - deterministic simulation stepping, schedule-based movement, ambient value turns, and bounded trace history
 - environment-authored behavioral opportunities with character-dependent action selection
 - nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
@@ -26,7 +26,7 @@ It includes:
 - authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
 - event-driven social observations, spatial perception gates, one-level directed mind models, accumulated prediction error and suspicion, evidence-gated correction, and the Endicott/Margueritte acceptance fixture
 - observer-relative local norms, relationship momentum and consolidation, accumulation and coping, and narrative-driven agency
-- immutable authored scenarios separated from versioned live snapshots with exact dyad, exposure, decision, and trace resume
+- immutable authored scenarios separated from resource-locked versioned live snapshots with exact dyad, exposure, decision, and trace resume
 - a Solid-reactive, vanilla-DOM browser workbench with a bundled scenario catalog, scenario summaries, a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and independent distance and temperature settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, prediction inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
 
@@ -55,10 +55,11 @@ The dependency stack is intentionally small:
 - `PLAN.md` — active and future implementation phases, sequencing, decisions, and exit probes
 - `COMPLETED.md` — completed phases, achieved checkpoints, and settled phase decisions
 - `src/model/` — shared serializable types and model constants
-- `src/scenario/` — scenario parsing, reference validation, and serialization
+- `src/scenario/` — resource and scenario parsing, preparation, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
-- `library/` — reusable character and environment definitions
-- `scenarios/` — scenario files that reference the libraries
+- `content/resources/` — independently validated reusable character-profile and environment-layout documents
+- `content/catalog.generated.ts` — deterministic repository catalog generated from the authoring tree
+- `scenarios/` — scenario files that reference resources by semantic address
 - `app/` — the browser workbench
 - `test/` — regression tests over the headless runtime
 - `docs/` — architecture decisions and implementation boundaries
