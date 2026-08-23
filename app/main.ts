@@ -73,6 +73,18 @@ import {
   type SidebarLayout,
 } from './sidebar-layout.js';
 import {
+  DEFAULT_NARROW_PANEL_STATE,
+  closeNarrowPanel,
+  cycleHandsetSheetExtent,
+  effectivePanelVisibility,
+  narrowPanelAfterRosterSelection,
+  toggleNarrowPanel,
+  toggleNarrowPanelPair,
+  workbenchLayoutMode,
+  type NarrowPanelId,
+  type WorkbenchLayoutMode,
+} from './responsive-layout.js';
+import {
   BUILT_IN_SCENARIOS,
   BUILT_IN_RESOURCE_CATALOG,
   DEFAULT_BUILT_IN_SCENARIO,
@@ -1176,6 +1188,13 @@ function createWorkbench(): HTMLElement {
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
   const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
   const [rosterHoverAgentId, setRosterHoverAgentId] = createSignal<string | null>(null);
+  const [layoutMode, setLayoutMode] = createSignal<WorkbenchLayoutMode>(
+    workbenchLayoutMode(window.innerWidth),
+  );
+  const [narrowPanelState, setNarrowPanelState] = createSignal({
+    ...DEFAULT_NARROW_PANEL_STATE,
+  });
+  const [handsetLayerMenuOpen, setHandsetLayerMenuOpen] = createSignal(false);
   const [loadedBuiltInScenarioId, setLoadedBuiltInScenarioId] = createSignal<string | null>(
     DEFAULT_BUILT_IN_SCENARIO.id,
   );
@@ -1251,6 +1270,8 @@ function createWorkbench(): HTMLElement {
   const rosterTitleWrap = element('div');
   const rosterTitle = element('h2');
   const rosterCount = element('span', 'count');
+  const rosterTitleControls = element('span', 'panel-title-controls');
+  const rosterSheetToggle = button('', 'narrow-sheet-toggle');
   const searchInput = element('input');
   const rosterList = element('div', 'roster-list');
   const stage = element('section', 'stage');
@@ -1262,6 +1283,9 @@ function createWorkbench(): HTMLElement {
   const worldScaleRule = element('span', 'world-scale-rule');
   const inspector = element('aside', 'inspector');
   const rightSidebarResize = element('div', 'sidebar-resize-handle right-sidebar-resize');
+  const inspectorNarrowHeader = element('header', 'inspector-narrow-header');
+  const inspectorNarrowTitle = element('h2');
+  const inspectorSheetToggle = button('', 'narrow-sheet-toggle');
   const inspectorContent = element('div', 'inspector-content');
   const activityInspector = createActivityInspector();
   const footer = element('footer', 'status-bar');
@@ -1475,7 +1499,10 @@ function createWorkbench(): HTMLElement {
 
   rosterTitle.textContent = 'Characters';
   roster.id = 'character-roster';
-  rosterTitleWrap.append(rosterTitle, rosterCount);
+  rosterSheetToggle.dataset.testid = 'roster-sheet-toggle';
+  rosterSheetToggle.append(controlIcon('chevron'));
+  rosterTitleControls.append(rosterCount, rosterSheetToggle);
+  rosterTitleWrap.append(rosterTitle, rosterTitleControls);
   searchInput.type = 'search';
   searchInput.placeholder = 'Find a character';
   searchInput.setAttribute('aria-label', 'Find a character');
@@ -1542,7 +1569,11 @@ function createWorkbench(): HTMLElement {
   stage.append(canvas, layerSwitcher, characterHoverCard, worldScale);
 
   inspector.id = 'character-inspector';
-  inspector.append(inspectorContent);
+  inspectorNarrowTitle.textContent = 'Inspector';
+  inspectorSheetToggle.dataset.testid = 'inspector-sheet-toggle';
+  inspectorSheetToggle.append(controlIcon('chevron'));
+  inspectorNarrowHeader.append(inspectorNarrowTitle, inspectorSheetToggle);
+  inspector.append(inspectorNarrowHeader, inspectorContent);
   leftSidebarResize.dataset.testid = 'left-sidebar-resize';
   leftSidebarResize.tabIndex = 0;
   leftSidebarResize.setAttribute('aria-controls', roster.id);
@@ -1753,13 +1784,24 @@ function createWorkbench(): HTMLElement {
     read: rightSidebarLayout,
     viewportWidth: () => window.innerWidth,
   });
+  const toggleResponsivePanel = (panel: NarrowPanelId): void => {
+    setRosterHoverAgentId(null);
+    setNarrowPanelState(current => toggleNarrowPanel(current, panel));
+  };
   const onLeftSidebarToggle = (): void => {
-    commitLeftSidebarLayout(toggleSidebar(leftSidebarLayout()));
+    if (layoutMode() === 'wide') commitLeftSidebarLayout(toggleSidebar(leftSidebarLayout()));
+    else toggleResponsivePanel('roster');
   };
   const onRightSidebarToggle = (): void => {
-    commitRightSidebarLayout(toggleSidebar(rightSidebarLayout()));
+    if (layoutMode() === 'wide') commitRightSidebarLayout(toggleSidebar(rightSidebarLayout()));
+    else toggleResponsivePanel('inspector');
   };
   const toggleBothSidebarVisibility = (): void => {
+    if (layoutMode() !== 'wide') {
+      setRosterHoverAgentId(null);
+      setNarrowPanelState(toggleNarrowPanelPair);
+      return;
+    }
     const next = toggleSidebarPair(leftSidebarLayout(), rightSidebarLayout());
     setLeftSidebarLayout(next.left);
     setRightSidebarLayout(next.right);
@@ -1773,12 +1815,23 @@ function createWorkbench(): HTMLElement {
   };
   leftSidebarToggle.addEventListener('click', onLeftSidebarToggle);
   rightSidebarToggle.addEventListener('click', onRightSidebarToggle);
+  rosterSheetToggle.addEventListener('click', () => setNarrowPanelState(cycleHandsetSheetExtent));
+  inspectorSheetToggle.addEventListener('click', () =>
+    setNarrowPanelState(cycleHandsetSheetExtent),
+  );
   let renderedLayerSignature = '';
 
-  function selectAgent(agentId: string, framing: 'preserve' | 'reveal'): void {
+  function selectAgent(
+    agentId: string,
+    framing: 'preserve' | 'reveal',
+    source: 'canvas' | 'roster' = 'canvas',
+  ): void {
     setSelectedAgentId(agentId);
     if (framing === 'reveal') worldView.revealAgent(agentId);
     else worldView.followAgent(agentId);
+    if (source === 'roster') {
+      setNarrowPanelState(current => narrowPanelAfterRosterSelection(layoutMode(), current));
+    }
   }
 
   function advance(ticks: number): void {
@@ -2361,7 +2414,18 @@ function createWorkbench(): HTMLElement {
             control.dataset.layerId === activeProjection.layerId;
       control.classList.toggle('selected', selected);
       control.setAttribute('aria-pressed', String(selected));
+      if (layoutMode() === 'handset' && selected) {
+        control.setAttribute('aria-expanded', String(handsetLayerMenuOpen()));
+        control.setAttribute('aria-haspopup', 'menu');
+      } else {
+        control.removeAttribute('aria-expanded');
+        control.removeAttribute('aria-haspopup');
+      }
     }
+    layerSwitcher.classList.toggle(
+      'expanded',
+      layoutMode() === 'handset' && handsetLayerMenuOpen(),
+    );
     canvas.setAttribute(
       'aria-label',
       activeProjection.kind === 'exterior'
@@ -2465,57 +2529,83 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
-    const layout = leftSidebarLayout();
-    const width = layout.visible ? layout.width : 0;
-    const maximum = Math.max(layout.width, sidebarMaximumWidth(window.innerWidth));
-    shell.style.setProperty('--left-sidebar-width', `${width}px`);
-    roster.hidden = !layout.visible;
-    leftSidebarToggle.classList.toggle('active', layout.visible);
-    leftSidebarToggle.setAttribute('aria-pressed', String(layout.visible));
+    const mode = layoutMode();
+    const leftLayout = leftSidebarLayout();
+    const rightLayout = rightSidebarLayout();
+    const narrow = narrowPanelState();
+    const visibility = effectivePanelVisibility(
+      mode,
+      { inspector: rightLayout.visible, roster: leftLayout.visible },
+      narrow,
+    );
+    const leftWidth = mode === 'wide' && leftLayout.visible ? leftLayout.width : 0;
+    const rightWidth = mode === 'wide' && rightLayout.visible ? rightLayout.width : 0;
+    const leftMaximum = Math.max(leftLayout.width, sidebarMaximumWidth(window.innerWidth));
+    const rightMaximum = Math.max(rightLayout.width, sidebarMaximumWidth(window.innerWidth));
+    const sheetAction = narrow.extent === 'full' ? 'Reduce' : 'Expand';
+
+    shell.dataset.layoutMode = mode;
+    shell.dataset.narrowPanel = narrow.activePanel ?? 'none';
+    shell.dataset.sheetExtent = narrow.extent;
+    shell.style.setProperty('--left-sidebar-width', `${leftWidth}px`);
+    shell.style.setProperty('--right-sidebar-width', `${rightWidth}px`);
+    roster.hidden = !visibility.roster;
+    inspector.hidden = !visibility.inspector;
+    leftSidebarResize.hidden = !visibility.resizable;
+    rightSidebarResize.hidden = !visibility.resizable;
+    leftSidebarResize.tabIndex = visibility.resizable ? 0 : -1;
+    rightSidebarResize.tabIndex = visibility.resizable ? 0 : -1;
+    rosterSheetToggle.hidden = mode !== 'handset';
+    inspectorSheetToggle.hidden = mode !== 'handset';
+    rosterSheetToggle.classList.toggle('expanded', narrow.extent === 'full');
+    inspectorSheetToggle.classList.toggle('expanded', narrow.extent === 'full');
+    rosterSheetToggle.setAttribute('aria-label', `${sheetAction} character roster`);
+    inspectorSheetToggle.setAttribute('aria-label', `${sheetAction} character inspector`);
+    rosterSheetToggle.title = `${sheetAction} character roster`;
+    inspectorSheetToggle.title = `${sheetAction} character inspector`;
+
+    leftSidebarToggle.classList.toggle('active', visibility.roster);
+    leftSidebarToggle.setAttribute('aria-pressed', String(visibility.roster));
     leftSidebarToggle.setAttribute(
       'aria-label',
-      layout.visible ? 'Hide character roster' : 'Show character roster',
+      visibility.roster ? 'Hide character roster' : 'Show character roster',
     );
-    leftSidebarToggle.title = layout.visible ? 'Hide character roster' : 'Show character roster';
-    leftSidebarResize.setAttribute('aria-valuemax', String(maximum));
-    leftSidebarResize.setAttribute('aria-valuenow', String(width));
+    leftSidebarToggle.title = visibility.roster ? 'Hide character roster' : 'Show character roster';
+    leftSidebarResize.setAttribute('aria-valuemax', String(leftMaximum));
+    leftSidebarResize.setAttribute('aria-valuenow', String(leftWidth));
     leftSidebarResize.setAttribute(
       'aria-valuetext',
-      layout.visible ? `${layout.width} pixels` : 'Closed',
+      leftLayout.visible ? `${leftLayout.width} pixels` : 'Closed',
     );
-    leftSidebarResize.title = !layout.visible
+    leftSidebarResize.title = !leftLayout.visible
       ? 'Drag or double-click to open the character roster'
-      : layout.width === LEFT_SIDEBAR_DEFAULT_WIDTH
+      : leftLayout.width === LEFT_SIDEBAR_DEFAULT_WIDTH
         ? 'Drag to resize or double-click to close the character roster'
         : 'Drag to resize or double-click to reset the character roster';
-  });
 
-  createEffect(() => {
-    const layout = rightSidebarLayout();
-    const width = layout.visible ? layout.width : 0;
-    const maximum = Math.max(layout.width, sidebarMaximumWidth(window.innerWidth));
-    shell.style.setProperty('--right-sidebar-width', `${width}px`);
-    inspector.hidden = !layout.visible;
-    rightSidebarToggle.classList.toggle('active', layout.visible);
-    rightSidebarToggle.setAttribute('aria-pressed', String(layout.visible));
+    rightSidebarToggle.classList.toggle('active', visibility.inspector);
+    rightSidebarToggle.setAttribute('aria-pressed', String(visibility.inspector));
     rightSidebarToggle.setAttribute(
       'aria-label',
-      layout.visible ? 'Hide character inspector' : 'Show character inspector',
+      visibility.inspector ? 'Hide character inspector' : 'Show character inspector',
     );
-    rightSidebarToggle.title = layout.visible
+    rightSidebarToggle.title = visibility.inspector
       ? 'Hide character inspector'
       : 'Show character inspector';
-    rightSidebarResize.setAttribute('aria-valuemax', String(maximum));
-    rightSidebarResize.setAttribute('aria-valuenow', String(width));
+    rightSidebarResize.setAttribute('aria-valuemax', String(rightMaximum));
+    rightSidebarResize.setAttribute('aria-valuenow', String(rightWidth));
     rightSidebarResize.setAttribute(
       'aria-valuetext',
-      layout.visible ? `${layout.width} pixels` : 'Closed',
+      rightLayout.visible ? `${rightLayout.width} pixels` : 'Closed',
     );
-    rightSidebarResize.title = !layout.visible
+    rightSidebarResize.title = !rightLayout.visible
       ? 'Drag or double-click to open the character inspector'
-      : layout.width === RIGHT_SIDEBAR_DEFAULT_WIDTH
+      : rightLayout.width === RIGHT_SIDEBAR_DEFAULT_WIDTH
         ? 'Drag to resize or double-click to close the character inspector'
         : 'Drag to resize or double-click to reset the character inspector';
+
+    if (!visibility.roster) setRosterHoverAgentId(null);
+    if (mode !== 'handset' && handsetLayerMenuOpen()) setHandsetLayerMenuOpen(false);
   });
 
   createEffect(() => {
@@ -2599,7 +2689,7 @@ function createWorkbench(): HTMLElement {
       item.dataset.testid = `roster-agent-${agent.id}`;
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
-      item.addEventListener('click', () => selectAgent(agent.id, 'reveal'));
+      item.addEventListener('click', () => selectAgent(agent.id, 'reveal', 'roster'));
       item.addEventListener('pointerenter', () => setRosterHoverAgentId(agent.id));
       item.addEventListener('pointerleave', () =>
         setRosterHoverAgentId(current => (current === agent.id ? null : current)),
@@ -2733,12 +2823,18 @@ function createWorkbench(): HTMLElement {
     if (!(event.target instanceof Element)) return;
     const control = event.target.closest<HTMLButtonElement>('button[data-projection]');
     if (control === null || !layerSwitcher.contains(control)) return;
+    if (layoutMode() === 'handset' && !handsetLayerMenuOpen()) {
+      setHandsetLayerMenuOpen(true);
+      return;
+    }
     if (control.dataset.projection === 'exterior') {
       worldView.setProjection(EXTERIOR_PROJECTION);
+      setHandsetLayerMenuOpen(false);
       return;
     }
     const layerId = control.dataset.layerId;
     if (layerId !== undefined) worldView.setProjection({ kind: 'layer', layerId });
+    setHandsetLayerMenuOpen(false);
   });
   step.addEventListener('click', () => executeActionById('step'));
   play.addEventListener('click', () => executeActionById('play-pause'));
@@ -2983,6 +3079,9 @@ function createWorkbench(): HTMLElement {
     ) {
       setSignalMenuOpen(false);
     }
+    if (handsetLayerMenuOpen() && !layerSwitcher.contains(event.target)) {
+      setHandsetLayerMenuOpen(false);
+    }
   }
 
   function onWindowResize(): void {
@@ -3051,13 +3150,21 @@ function createWorkbench(): HTMLElement {
         closeQuickActions(true);
         return;
       }
+      if (handsetLayerMenuOpen()) {
+        event.preventDefault();
+        setHandsetLayerMenuOpen(false);
+        return;
+      }
       event.preventDefault();
       const escapeAction = workbenchEscapeAction({
-        hasOpenNarrowPanel: false,
+        hasOpenNarrowPanel: layoutMode() !== 'wide' && narrowPanelState().activePanel !== null,
         hasSelection: selectedAgentId() !== null,
         isExterior: worldView.activeProjection().kind === 'exterior',
       });
-      if (escapeAction === 'clear-selection') {
+      if (escapeAction === 'close-narrow-panel') {
+        setRosterHoverAgentId(null);
+        setNarrowPanelState(closeNarrowPanel);
+      } else if (escapeAction === 'clear-selection') {
         setSelectedAgentId(null);
       } else if (escapeAction === 'projection-exterior') {
         worldView.setProjection(EXTERIOR_PROJECTION);
@@ -3107,6 +3214,11 @@ function createWorkbench(): HTMLElement {
   document.addEventListener('pointerdown', onDocumentPointerDown);
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('keydown', onKeyDown);
+  const shellResizeObserver = new ResizeObserver(entries => {
+    const width = entries[0]?.contentRect.width ?? shell.clientWidth;
+    setLayoutMode(workbenchLayoutMode(width));
+  });
+  shellResizeObserver.observe(shell);
   onCleanup(() => {
     unbindLeftSidebarResize();
     unbindRightSidebarResize();
@@ -3115,6 +3227,7 @@ function createWorkbench(): HTMLElement {
     document.removeEventListener('pointerdown', onDocumentPointerDown);
     window.removeEventListener('resize', onWindowResize);
     window.removeEventListener('keydown', onKeyDown);
+    shellResizeObserver.disconnect();
   });
   requestAnimationFrame(worldView.fit);
   return shell;

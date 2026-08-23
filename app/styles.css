@@ -39,12 +39,12 @@ html,
 body,
 #app {
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   margin: 0;
 }
 
 body {
-  min-width: 780px;
+  min-width: 0;
   overflow: hidden;
   background: var(--background);
   color: var(--text);
@@ -94,18 +94,26 @@ select:focus-visible {
   --left-sidebar-width: 250px;
   --right-sidebar-width: 350px;
   --status-bar-height: 0px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --header-height: 58px;
+  --narrow-panel-height: 0px;
+  position: relative;
   display: grid;
   grid-template:
-    "header header header header header" 58px
+    "header header header header header" var(--header-height)
     "roster left-resize stage right-resize inspector" minmax(0, 1fr)
     "footer footer footer footer footer" var(--status-bar-height) /
     var(--left-sidebar-width) 1px minmax(380px, 1fr) 1px var(--right-sidebar-width);
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 .app-shell.status-bar-visible {
-  --status-bar-height: 28px;
+  --status-bar-height: calc(28px + var(--safe-area-bottom));
 }
 
 .app-header {
@@ -1074,6 +1082,38 @@ select {
   justify-content: space-between;
 }
 
+.panel-title-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.narrow-sheet-toggle {
+  display: flex;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.narrow-sheet-toggle[hidden] {
+  display: none;
+}
+
+.narrow-sheet-toggle .control-icon {
+  transition: transform 140ms ease;
+}
+
+.narrow-sheet-toggle.expanded .control-icon {
+  transform: rotate(180deg);
+}
+
 .panel-header h2 {
   margin: 0;
   font-size: 11px;
@@ -1555,6 +1595,10 @@ input[type="search"]::placeholder {
   min-height: 0;
   overflow-y: auto;
   background: var(--panel);
+}
+
+.inspector-narrow-header {
+  display: none;
 }
 
 .inspector-content {
@@ -2347,6 +2391,10 @@ input[type="search"]::placeholder {
   font-size: 8px;
 }
 
+.status-bar-visible .status-bar {
+  padding-bottom: var(--safe-area-bottom);
+}
+
 .status-bar[hidden] {
   display: none;
 }
@@ -2366,14 +2414,250 @@ input[type="search"]::placeholder {
   background-clip: padding-box;
 }
 
-@media (max-width: 1080px) {
-  .app-header {
-    grid-template-columns: minmax(240px, 1.2fr) max-content minmax(130px, 0.8fr);
+.app-shell[data-layout-mode="compact"],
+.app-shell[data-layout-mode="handset"] {
+  grid-template:
+    "header" var(--header-height)
+    "stage" minmax(0, 1fr)
+    "footer" var(--status-bar-height) /
+    minmax(0, 1fr);
+}
+
+.app-shell[data-layout-mode="compact"] .app-header {
+  grid-template-columns: minmax(240px, 1.2fr) max-content minmax(130px, 0.8fr);
+}
+
+.app-shell[data-layout-mode="compact"] .condition-season,
+.app-shell[data-layout-mode="compact"] .condition-weather,
+.app-shell[data-layout-mode="compact"] .condition-separator {
+  display: none;
+}
+
+.app-shell[data-layout-mode="compact"] .roster,
+.app-shell[data-layout-mode="compact"] .inspector,
+.app-shell[data-layout-mode="handset"] .roster,
+.app-shell[data-layout-mode="handset"] .inspector {
+  position: absolute;
+  z-index: 12;
+  top: var(--header-height);
+  bottom: var(--status-bar-height);
+  overflow: hidden;
+  border-color: var(--line-strong);
+  box-shadow: 0 12px 36px rgb(0 0 0 / 52%);
+}
+
+.app-shell[data-layout-mode="compact"] .roster,
+.app-shell[data-layout-mode="compact"] .inspector {
+  width: min(360px, calc(100% - 72px));
+}
+
+.app-shell[data-layout-mode="compact"] .roster {
+  left: 0;
+  border-right: 1px solid var(--line-strong);
+}
+
+.app-shell[data-layout-mode="compact"] .inspector {
+  right: 0;
+  border-left: 1px solid var(--line-strong);
+}
+
+.app-shell[data-layout-mode="compact"] .inspector-content,
+.app-shell[data-layout-mode="handset"] .inspector-content {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.app-shell[data-layout-mode="handset"] {
+  --header-height: calc(100px + var(--safe-area-top));
+}
+
+.app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] {
+  --narrow-panel-height: 58px;
+}
+
+.app-shell[data-layout-mode="handset"][data-sheet-extent="half"] {
+  --narrow-panel-height: min(54%, 480px);
+}
+
+.app-shell[data-layout-mode="handset"][data-sheet-extent="full"] {
+  --narrow-panel-height: calc(100% - var(--header-height) - var(--status-bar-height));
+}
+
+.app-shell[data-layout-mode="handset"] .app-header {
+  grid-template:
+    "files signals" 50px
+    "transport transport" 50px /
+    minmax(0, 1fr) max-content;
+  padding-top: var(--safe-area-top);
+}
+
+.app-shell[data-layout-mode="handset"] .file-actions {
+  grid-area: files;
+  gap: 2px;
+  padding-right: 2px;
+  padding-left: max(4px, var(--safe-area-left));
+}
+
+.app-shell[data-layout-mode="handset"] .header-signals {
+  grid-area: signals;
+  padding-right: max(4px, var(--safe-area-right));
+}
+
+.app-shell[data-layout-mode="handset"] .transport {
+  grid-area: transport;
+  min-width: 0;
+  gap: 3px;
+  padding: 0 max(4px, var(--safe-area-right)) 0 max(4px, var(--safe-area-left));
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
+.app-shell[data-layout-mode="handset"] .scenario-info-button,
+.app-shell[data-layout-mode="handset"] .transport-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+
+.app-shell[data-layout-mode="handset"] .scenario-selector {
+  width: auto;
+  max-width: none;
+  flex: 1;
+}
+
+.app-shell[data-layout-mode="handset"] .scenario-menu-button {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+}
+
+.app-shell[data-layout-mode="handset"] .signal-menu-button,
+.app-shell[data-layout-mode="handset"] .zoom-level-button,
+.app-shell[data-layout-mode="handset"] .time-of-day,
+.app-shell[data-layout-mode="handset"] .environment-conditions {
+  display: none;
+}
+
+.app-shell[data-layout-mode="handset"] .time-rate-button,
+.app-shell[data-layout-mode="handset"] .simulation-time {
+  min-height: 44px;
+}
+
+.app-shell[data-layout-mode="handset"] .time-rate-button {
+  min-width: 76px;
+}
+
+.app-shell[data-layout-mode="handset"] .time-context {
+  margin-left: 0;
+}
+
+.app-shell[data-layout-mode="handset"] .roster,
+.app-shell[data-layout-mode="handset"] .inspector {
+  top: auto;
+  right: 0;
+  left: 0;
+  width: 100%;
+  height: var(--narrow-panel-height);
+  border-top: 1px solid var(--line-strong);
+  border-radius: 10px 10px 0 0;
+}
+
+.app-shell[data-layout-mode="handset"] .inspector-narrow-header {
+  display: flex;
+  height: 58px;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel-deep);
+}
+
+.app-shell[data-layout-mode="handset"] .inspector-narrow-header h2 {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.app-shell[data-layout-mode="handset"] .inspector-content {
+  height: calc(100% - 58px);
+}
+
+.app-shell[data-layout-mode="handset"] .panel-header {
+  padding-top: 7px;
+  padding-right: 8px;
+}
+
+.app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .panel-header {
+  height: 58px;
+  padding: 0 8px 0 12px;
+}
+
+.app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .panel-header > div {
+  width: 100%;
+}
+
+.app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .panel-header > input,
+.app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .roster-list,
+.app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .inspector-content {
+  display: none;
+}
+
+.app-shell[data-layout-mode="handset"] .layer-switcher {
+  top: max(10px, var(--safe-area-top));
+  right: max(10px, var(--safe-area-right));
+}
+
+.app-shell[data-layout-mode="handset"] .layer-switcher:not(.expanded) .layer-button:not(.selected) {
+  display: none;
+}
+
+.app-shell[data-layout-mode="handset"] .layer-button {
+  min-width: 116px;
+  min-height: 44px;
+}
+
+.app-shell[data-layout-mode="handset"] .world-scale {
+  right: max(12px, var(--safe-area-right));
+  bottom: max(12px, var(--safe-area-bottom));
+}
+
+.app-shell[data-layout-mode="handset"]:not([data-narrow-panel="none"]) .world-scale {
+  bottom: calc(var(--narrow-panel-height) + 12px);
+}
+
+.app-shell[data-layout-mode="handset"] .scenario-menu-item,
+.app-shell[data-layout-mode="handset"] .menu-item,
+.app-shell[data-layout-mode="handset"] .quick-action,
+.app-shell[data-layout-mode="handset"] .signal-menu-item,
+.app-shell[data-layout-mode="handset"] .time-rate-menu-item,
+.app-shell[data-layout-mode="handset"] .zoom-menu-item {
+  min-height: 44px;
+}
+
+.app-shell[data-layout-mode="compact"] .scenario-menu,
+.app-shell[data-layout-mode="handset"] .scenario-menu,
+.app-shell[data-layout-mode="compact"] .app-menu,
+.app-shell[data-layout-mode="handset"] .app-menu,
+.app-shell[data-layout-mode="compact"] .time-rate-menu,
+.app-shell[data-layout-mode="handset"] .time-rate-menu,
+.app-shell[data-layout-mode="compact"] .signal-menu,
+.app-shell[data-layout-mode="handset"] .signal-menu,
+.app-shell[data-layout-mode="compact"] .zoom-menu,
+.app-shell[data-layout-mode="handset"] .zoom-menu {
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+}
+
+@media (max-width: 480px) {
+  .settings-field {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
   }
 
-  .condition-season,
-  .condition-weather,
-  .condition-separator {
-    display: none;
+  .settings-field select {
+    width: 100%;
   }
 }
