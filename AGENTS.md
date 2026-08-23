@@ -1,12 +1,12 @@
 # Agent Guidance
 
-How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is about *how to work*; what the project *is* belongs in [README.md](README.md) and `docs/`.
+How AI coding assistants (Claude, Codex, etc.) work in this repo. This file is about *how to work*; what the project *is* belongs in [README.md](README.md), [PLAN.md](PLAN.md), and `docs/`.
 
 ## Project
 
-Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [verusim-design-spec.md](verusim-design-spec.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [docs/roadmap.md](docs/roadmap.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
+Verusim is a deterministic behavioral simulation substrate for NPCs whose choices are explicable in hindsight without being scripted in advance. Read [verusim-design-spec.md](verusim-design-spec.md) for the behavioral model, [docs/architecture.md](docs/architecture.md) for implementation boundaries, and [PLAN.md](PLAN.md) before changing model scope. The browser workbench uses Solid's reactive core with ordinary DOM and Canvas APIs; it deliberately has no JSX toolchain.
 
-The design spec is authoritative for behavioral intent, architecture for implementation contracts, and the roadmap for sequencing.
+The design spec is authoritative for behavioral intent, architecture for implementation contracts, and the plan for sequencing.
 If they conflict, flag and reconcile the conflict rather than silently choosing one.
 
 ## Model invariants

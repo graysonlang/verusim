@@ -9,7 +9,7 @@ The repository contains two connected surfaces:
 - a browser workbench for loading scenarios, navigating a top-down environment, advancing time, inspecting characters, and intervening in live state
 
 The full behavioral model is specified in [verusim-design-spec.md](verusim-design-spec.md), with [verusim-otgw-acceptance-suite.md](verusim-otgw-acceptance-suite.md) serving as a long-range stress-test target.
-[docs/architecture.md](docs/architecture.md) describes the boundaries established by the first implementation slice, and [docs/roadmap.md](docs/roadmap.md) organizes the remaining work around behavioral outcomes and discriminating tests.
+[docs/architecture.md](docs/architecture.md) describes the boundaries established by the first implementation slice, and [PLAN.md](PLAN.md) organizes the remaining work around behavioral outcomes and discriminating tests.
 
 ## Current slice
 
@@ -51,6 +51,7 @@ The dependency stack is intentionally small:
 
 - `verusim-design-spec.md` — complete behavioral model and scope
 - `verusim-otgw-acceptance-suite.md` — reference characters, falsifiers, and vignette sweeps
+- `PLAN.md` — implementation phases, sequencing, decisions, and exit probes
 - `src/model/` — shared serializable types and model constants
 - `src/scenario/` — scenario parsing, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
@@ -58,7 +59,7 @@ The dependency stack is intentionally small:
 - `scenarios/` — scenario files that reference the libraries
 - `app/` — the browser workbench
 - `test/` — regression tests over the headless runtime
-- `docs/` — architecture decisions and phased plan
+- `docs/` — architecture decisions and implementation boundaries
 
 ## Working on the model
 

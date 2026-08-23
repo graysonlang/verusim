@@ -1,4 +1,4 @@
-# Behavioral roadmap
+# Plan
 
 ## Planning principle
 
