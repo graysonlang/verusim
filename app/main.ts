@@ -1709,7 +1709,10 @@ function createWorkbench(): HTMLElement {
     canvas,
     indicatorSettings,
     onHover: setWorldHover,
-    onSelect: setSelectedAgentId,
+    onSelect: agentId => {
+      if (agentId === null) setSelectedAgentId(null);
+      else selectAndFocus(agentId);
+    },
     selectedAgentId,
     state,
   });
