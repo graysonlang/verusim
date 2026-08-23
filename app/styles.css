@@ -549,8 +549,21 @@ input[type="search"]::placeholder {
   white-space: nowrap;
 }
 
+.roster-context {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.roster-context .roster-location {
+  min-width: 0;
+}
+
 .role-badge,
-.location-badge {
+.location-badge,
+.movement-badge {
   display: inline-flex;
   min-width: 0;
   min-height: 20px;
@@ -566,7 +579,8 @@ input[type="search"]::placeholder {
 }
 
 .role-label,
-.location-label {
+.location-label,
+.movement-label {
   padding: 0 4px;
   border-right: 1px solid rgb(240 201 102 / 20%);
   background: rgb(240 201 102 / 9%);
@@ -579,7 +593,8 @@ input[type="search"]::placeholder {
 }
 
 .role-badge strong,
-.location-badge strong {
+.location-badge strong,
+.movement-badge strong {
   overflow: hidden;
   padding: 0 5px;
   font-size: 8px;
@@ -597,6 +612,33 @@ input[type="search"]::placeholder {
   border-right-color: rgb(135 178 166 / 20%);
   background: rgb(135 178 166 / 9%);
   color: #9fc8bb;
+}
+
+.movement-badge {
+  border-color: rgb(139 164 205 / 28%);
+  background: rgb(139 164 205 / 8%);
+  color: #c8d5eb;
+}
+
+.movement-label {
+  border-right-color: rgb(139 164 205 / 20%);
+  background: rgb(139 164 205 / 9%);
+  color: #aebfe0;
+}
+
+.movement-badge.compact {
+  min-height: 17px;
+  flex: 0 0 auto;
+  line-height: 15px;
+}
+
+.movement-badge.compact .movement-label {
+  display: none;
+}
+
+.movement-badge.compact strong {
+  padding: 0 4px;
+  font-size: 7px;
 }
 
 .roster-location {
@@ -803,6 +845,31 @@ input[type="search"]::placeholder {
   pointer-events: none;
 }
 
+.world-scale {
+  position: absolute;
+  z-index: 5;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  justify-items: end;
+  color: rgb(241 237 223 / 78%);
+  font-family: var(--mono);
+  font-size: 9px;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 85%);
+}
+
+.world-scale-rule {
+  display: block;
+  height: 8px;
+  margin-top: 3px;
+  border-color: rgb(241 237 223 / 72%);
+  border-style: solid;
+  border-width: 0 1px 2px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 80%));
+}
+
 .character-hover-card[hidden] {
   display: none;
 }
@@ -905,13 +972,15 @@ input[type="search"]::placeholder {
 }
 
 .character-card-meta > .role-badge,
-.character-card-meta > .location-badge {
+.character-card-meta > .location-badge,
+.character-card-meta > .movement-badge {
   min-height: 22px;
   line-height: 20px;
 }
 
 .character-card-meta > .role-badge strong,
-.character-card-meta > .location-badge strong {
+.character-card-meta > .location-badge strong,
+.character-card-meta > .movement-badge strong {
   padding-right: 7px;
   padding-left: 7px;
   font-size: 9px;

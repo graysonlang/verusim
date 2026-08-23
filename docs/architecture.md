@@ -69,6 +69,10 @@ World coordinates are meters in an unbounded two-dimensional plane.
 An environment provides a designed extent for framing and authored areas for observation; the camera is not clamped to that extent.
 This permits village-scale views now and chunked or generated environments later without changing the camera contract.
 
+Current movement speed is a derived observation rather than additional mutable state.
+An agent at their destination is still; an agent in transit exposes their authored meters-per-minute pace and an observer-facing speed class from crawling through sprinting.
+This keeps snapshots minimal while making questionable environment scale or travel rates visible in the workbench.
+
 Schedule blocks remain authored environmental obligations and default activity.
 An active intention supersedes schedule locomotion and activity until its task completes or becomes invalid.
 This lets schedules make ordinary routine visible without making them the hidden source of goal-directed behavior.

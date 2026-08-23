@@ -6,6 +6,7 @@ import highwaymanEnvironments from '../library/highwayman-environments.json';
 import scenario from '../scenarios/market-morning.json';
 import {
   CAPABILITY_IDS,
+  MOVEMENT_SPEED_LABELS,
   VALUE_IDS,
   advanceSimulation,
   capabilityAvailability,
@@ -48,7 +49,7 @@ import {
   type PlaybackRateId,
 } from './playback.js';
 import { workbenchActionForShortcut } from './shortcuts.js';
-import { createWorldView, type WorldHover } from './world-view.js';
+import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.js';
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
@@ -213,6 +214,27 @@ function locationBadge(state: SimulationState, agent: SimulationAgent): HTMLElem
   return badge;
 }
 
+function movementBadge(agent: SimulationAgent, compact = false): HTMLElement {
+  const observation = describeAgent(agent);
+  const badge = element(
+    'span',
+    `movement-badge movement-${observation.movementSpeedClass}${compact ? ' compact' : ''}`,
+  );
+  const label = element('span', 'movement-label');
+  const pace = element('strong');
+  const speed = Number(observation.movementMetersPerMinute.toFixed(1));
+  const speedClass = MOVEMENT_SPEED_LABELS[observation.movementSpeedClass];
+  label.textContent = 'Pace';
+  pace.textContent = compact || speed === 0 ? speedClass : `${speedClass} / ${speed} m/min`;
+  badge.title =
+    speed === 0
+      ? 'Current movement: still'
+      : `Current movement: ${speedClass.toLowerCase()} at ${speed} m/min (${(speed / 60).toFixed(2)} m/s)`;
+  badge.setAttribute('aria-label', badge.title);
+  badge.append(label, pace);
+  return badge;
+}
+
 function createStarterSimulation(): SimulationState {
   return createSimulation({
     characterLibrary,
@@ -335,7 +357,7 @@ function renderInspector(
   );
   name.textContent = agent.profile.name;
   summary.textContent = agent.profile.summary;
-  cardMeta.append(roleBadge(agent), locationBadge(state, agent), signals);
+  cardMeta.append(roleBadge(agent), locationBadge(state, agent), movementBadge(agent), signals);
   hero.append(name, summary, cardMeta);
 
   const mind = makeSection('State of mind', observation.stateOfMind);
@@ -802,6 +824,9 @@ function createWorkbench(): HTMLElement {
   const stage = element('section', 'stage');
   const canvas = element('canvas', 'world-canvas');
   const characterHoverCard = element('section', 'character-hover-card');
+  const worldScale = element('div', 'world-scale');
+  const worldScaleLabel = element('span', 'world-scale-label');
+  const worldScaleRule = element('span', 'world-scale-rule');
   const indicatorSelect = element('select', 'indicator-verbosity');
   const indicatorToggles = element('div', 'indicator-toggles');
   const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
@@ -925,6 +950,9 @@ function createWorkbench(): HTMLElement {
   characterHoverCard.hidden = true;
   characterHoverCard.setAttribute('aria-hidden', 'true');
   characterHoverCard.setAttribute('role', 'tooltip');
+  worldScale.dataset.testid = 'world-scale';
+  worldScale.setAttribute('role', 'img');
+  worldScale.append(worldScaleLabel, worldScaleRule);
   signalLabel.textContent = 'Signals';
   for (const [value, label] of [
     ['off', 'Off'],
@@ -949,7 +977,7 @@ function createWorkbench(): HTMLElement {
   signalControls.setAttribute('aria-label', 'Field signals');
   signalControls.append(signalLabel, indicatorSelect, indicatorToggles, zoomLevelButton);
   header.append(fileActions, transport, signalControls);
-  stage.append(canvas, characterHoverCard);
+  stage.append(canvas, characterHoverCard, worldScale);
 
   inspector.append(inspectorContent);
   footer.append(statusText, simulationStats);
@@ -1328,6 +1356,13 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
+    const scale = scaleBarForZoom(worldView.camera().zoom);
+    worldScaleLabel.textContent = scale.label;
+    worldScaleRule.style.width = `${scale.pixels}px`;
+    worldScale.setAttribute('aria-label', `Map scale: ${scale.label}`);
+  });
+
+  createEffect(() => {
     const current = state();
     const query = search().trim().toLowerCase();
     const selected = selectedAgentId();
@@ -1341,6 +1376,7 @@ function createWorkbench(): HTMLElement {
       const heading = element('span', 'roster-heading');
       const name = element('strong');
       const activity = element('span');
+      const context = element('span', 'roster-context');
       const location = element('span', 'roster-location');
       const signals = indicatorStrip(
         current,
@@ -1354,7 +1390,8 @@ function createWorkbench(): HTMLElement {
       location.textContent = locationName(current, agent);
       heading.append(name, roleBadge(agent));
       copy.append(heading, activity);
-      item.append(copy, location, signals);
+      context.append(location, movementBadge(agent, true));
+      item.append(copy, context, signals);
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
       item.addEventListener('click', () => selectAndFocus(agent.id));
@@ -1399,7 +1436,7 @@ function createWorkbench(): HTMLElement {
     const mind = element('p', 'hover-card-mind');
     const signals = indicatorStrip(current, agent, indicatorSettings(), 'hover-card-signals', true);
     name.textContent = agent.profile.name;
-    meta.append(roleBadge(agent), locationBadge(current, agent));
+    meta.append(roleBadge(agent), locationBadge(current, agent), movementBadge(agent));
     activity.textContent = agent.currentActivity;
     mind.textContent = `${observation.mood} mood. ${observation.stateOfMind}.`;
     characterHoverCard.replaceChildren(name, meta, activity, mind, signals);

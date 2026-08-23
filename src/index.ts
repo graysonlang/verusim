@@ -33,7 +33,13 @@ export {
   setAgentResource,
   setAgentValueCharge,
 } from './simulation/runtime.js';
-export { describeAgent, formatSimulationTime } from './simulation/observe.js';
+export {
+  MOVEMENT_SPEED_LABELS,
+  classifyMovementSpeed,
+  describeAgent,
+  formatSimulationTime,
+} from './simulation/observe.js';
+export type { MovementSpeedClass } from './simulation/observe.js';
 export { effectiveValueWeights } from './simulation/salience.js';
 export {
   evaluateEavesdropping,

@@ -19,6 +19,12 @@ export interface Camera {
   zoom: number;
 }
 
+export interface WorldScale {
+  label: string;
+  meters: number;
+  pixels: number;
+}
+
 interface WorldViewOptions {
   canvas: HTMLCanvasElement;
   indicatorSettings: Accessor<IndicatorSettings>;
@@ -82,6 +88,25 @@ export function cameraForGesture(
     y: worldAnchor.y - (currentCentroid.y - viewport.height / 2) / zoom,
     zoom,
   };
+}
+
+export function scaleBarForZoom(zoom: number, targetPixels = 96): WorldScale {
+  const safeZoom = clamp(zoom, 0.12, 5);
+  const targetMeters = Math.max(1, targetPixels) / safeZoom;
+  const magnitude = 10 ** Math.floor(Math.log10(targetMeters));
+  const candidates = [1, 2, 5, 10].map(multiplier => multiplier * magnitude);
+  let meters = candidates[0] ?? magnitude;
+  let difference = Math.abs(Math.log(meters / targetMeters));
+  for (const candidate of candidates.slice(1)) {
+    const candidateDifference = Math.abs(Math.log(candidate / targetMeters));
+    if (candidateDifference < difference) {
+      meters = candidate;
+      difference = candidateDifference;
+    }
+  }
+  const label =
+    meters >= 1000 ? `${Number((meters / 1000).toFixed(1))} km` : `${Number(meters.toFixed(1))} m`;
+  return { label, meters, pixels: meters * safeZoom };
 }
 
 function screenPoint(canvas: HTMLCanvasElement, event: PointerEvent | WheelEvent): Point {

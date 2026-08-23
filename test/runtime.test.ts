@@ -6,6 +6,7 @@ import scenario from '../scenarios/market-morning.json';
 import {
   VALUE_IDS,
   advanceSimulation,
+  classifyMovementSpeed,
   createSimulation,
   createSimulationFromSnapshot,
   describeAgent,
@@ -95,6 +96,31 @@ describe('simulation runtime', () => {
     const observation = describeAgent(tomas);
     assert.equal(observation.dominantValue, 'respect');
     assert.equal(observation.stateOfMind, 'Protecting respect');
+  });
+
+  it('classifies current movement independently from authored maximum walking pace', () => {
+    assert.deepEqual([0, 8, 20, 45, 84, 150, 240, 360].map(classifyMovementSpeed), [
+      'still',
+      'crawling',
+      'plodding',
+      'strolling',
+      'walking',
+      'jogging',
+      'running',
+      'sprinting',
+    ]);
+
+    const mara = starterSimulation().agents.find(agent => agent.id === 'mara');
+    assert.ok(mara);
+    const moving = describeAgent({
+      ...mara,
+      destination: { x: mara.position.x + 100, y: mara.position.y },
+    });
+    const arrived = describeAgent({ ...mara, destination: { ...mara.position } });
+    assert.equal(moving.movementMetersPerMinute, mara.walkingMetersPerMinute);
+    assert.equal(moving.movementSpeedClass, 'plodding');
+    assert.equal(arrived.movementMetersPerMinute, 0);
+    assert.equal(arrived.movementSpeedClass, 'still');
   });
 
   it('lets depleted social battery impair otherwise neutral mood', () => {

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { cameraForGesture } from '../app/world-view.js';
+import { cameraForGesture, scaleBarForZoom } from '../app/world-view.js';
 
 describe('world view gestures', () => {
   it('pans by following the two-pointer centroid', () => {
@@ -40,5 +40,13 @@ describe('world view gestures', () => {
       ).zoom,
       5,
     );
+  });
+});
+
+describe('world view scale', () => {
+  it('chooses stable metric intervals near the target display width', () => {
+    assert.deepEqual(scaleBarForZoom(1), { label: '100 m', meters: 100, pixels: 100 });
+    assert.deepEqual(scaleBarForZoom(5), { label: '20 m', meters: 20, pixels: 100 });
+    assert.deepEqual(scaleBarForZoom(0.12), { label: '1 km', meters: 1000, pixels: 120 });
   });
 });

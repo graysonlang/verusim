@@ -13,11 +13,45 @@ function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
 }
 
+export type MovementSpeedClass =
+  | 'still'
+  | 'crawling'
+  | 'plodding'
+  | 'strolling'
+  | 'walking'
+  | 'jogging'
+  | 'running'
+  | 'sprinting';
+
+export const MOVEMENT_SPEED_LABELS: Record<MovementSpeedClass, string> = {
+  crawling: 'Crawling',
+  jogging: 'Jogging',
+  plodding: 'Plodding',
+  running: 'Running',
+  sprinting: 'Sprinting',
+  still: 'Still',
+  strolling: 'Strolling / ambling',
+  walking: 'Walking',
+};
+
+export function classifyMovementSpeed(metersPerMinute: number): MovementSpeedClass {
+  if (metersPerMinute < 0.5) return 'still';
+  if (metersPerMinute < 12) return 'crawling';
+  if (metersPerMinute < 30) return 'plodding';
+  if (metersPerMinute < 60) return 'strolling';
+  if (metersPerMinute < 110) return 'walking';
+  if (metersPerMinute < 180) return 'jogging';
+  if (metersPerMinute < 300) return 'running';
+  return 'sprinting';
+}
+
 export interface AgentObservation {
   allostaticLoad: number;
   arousal: number;
   dominantValue: ValueId;
   mood: string;
+  movementMetersPerMinute: number;
+  movementSpeedClass: MovementSpeedClass;
   resourceStrain: number;
   stateOfMind: string;
   valence: number;
@@ -69,12 +103,19 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
     dominantPressure < 0.08
       ? `Present with ${agent.currentActivity.toLowerCase()}`
       : `Protecting ${VALUE_LABELS[dominantValue]}`;
+  const remainingDistance = Math.hypot(
+    agent.destination.x - agent.position.x,
+    agent.destination.y - agent.position.y,
+  );
+  const movementMetersPerMinute = remainingDistance < 0.01 ? 0 : agent.walkingMetersPerMinute;
 
   return {
     allostaticLoad,
     arousal,
     dominantValue,
     mood,
+    movementMetersPerMinute,
+    movementSpeedClass: classifyMovementSpeed(movementMetersPerMinute),
     resourceStrain,
     stateOfMind,
     valence,
