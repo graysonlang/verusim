@@ -49,6 +49,9 @@ No AI-attribution trailers of any kind: no `Co-Authored-By: Claude`, no "Generat
 
 Commit incremental, logically grouped changes as you go. The message is a concise one-liner.
 
+Before handing off completed work, push every commit created for the task to the current branch's configured upstream.
+If the branch has no upstream or the push is rejected, do not invent a remote, force-push, or bypass branch protection; report the blocker clearly.
+
 ## Working in this repo
 
 ### Plan maintenance
