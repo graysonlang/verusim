@@ -69,10 +69,18 @@ const INDICATOR_COLORS: Record<Exclude<IndicatorKind, 'area'>, string> = {
   thought: '#80aaa5',
 };
 
-const LOCATION_LABEL_MIN_ZOOM = 3.6;
+export const CSS_PIXELS_PER_METER_AT_100_PERCENT = 10;
+
+const LOCATION_LABEL_MIN_PIXELS_PER_METER = 3.6;
+const MIN_ZOOM = 0.12;
+const MAX_ZOOM = 5;
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
+}
+
+function pixelsPerMeter(zoom: number): number {
+  return zoom * CSS_PIXELS_PER_METER_AT_100_PERCENT;
 }
 
 export function cameraForGesture(
@@ -82,14 +90,16 @@ export function cameraForGesture(
   currentCentroid: Point,
   scale: number,
 ): Camera {
-  const zoom = clamp(startCamera.zoom * scale, 0.12, 5);
+  const zoom = clamp(startCamera.zoom * scale, MIN_ZOOM, MAX_ZOOM);
+  const startPixelsPerMeter = pixelsPerMeter(startCamera.zoom);
+  const currentPixelsPerMeter = pixelsPerMeter(zoom);
   const worldAnchor = {
-    x: startCamera.x + (startCentroid.x - viewport.width / 2) / startCamera.zoom,
-    y: startCamera.y + (startCentroid.y - viewport.height / 2) / startCamera.zoom,
+    x: startCamera.x + (startCentroid.x - viewport.width / 2) / startPixelsPerMeter,
+    y: startCamera.y + (startCentroid.y - viewport.height / 2) / startPixelsPerMeter,
   };
   return {
-    x: worldAnchor.x - (currentCentroid.x - viewport.width / 2) / zoom,
-    y: worldAnchor.y - (currentCentroid.y - viewport.height / 2) / zoom,
+    x: worldAnchor.x - (currentCentroid.x - viewport.width / 2) / currentPixelsPerMeter,
+    y: worldAnchor.y - (currentCentroid.y - viewport.height / 2) / currentPixelsPerMeter,
     zoom,
   };
 }
@@ -99,8 +109,12 @@ export function scaleBarForZoom(
   distanceUnit: DistanceUnit = 'meters',
   targetPixels = 96,
 ): WorldScale {
-  const safeZoom = clamp(zoom, 0.12, 5);
-  const targetDistance = distanceFromMeters(Math.max(1, targetPixels) / safeZoom, distanceUnit);
+  const safeZoom = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+  const screenPixelsPerMeter = pixelsPerMeter(safeZoom);
+  const targetDistance = distanceFromMeters(
+    Math.max(1, targetPixels) / screenPixelsPerMeter,
+    distanceUnit,
+  );
   const magnitude = 10 ** Math.floor(Math.log10(targetDistance));
   const candidates = [1, 2, 3, 5, 10].map(multiplier => multiplier * magnitude);
   let distance = candidates[0] ?? magnitude;
@@ -119,7 +133,7 @@ export function scaleBarForZoom(
       : meters >= 1000
         ? `${Number((meters / 1000).toFixed(1))} km`
         : `${Number(meters.toFixed(1))} m`;
-  return { label, meters, pixels: meters * safeZoom };
+  return { label, meters, pixels: meters * screenPixelsPerMeter };
 }
 
 function screenPoint(canvas: HTMLCanvasElement, event: PointerEvent | WheelEvent): Point {
@@ -128,9 +142,10 @@ function screenPoint(canvas: HTMLCanvasElement, event: PointerEvent | WheelEvent
 }
 
 function worldPoint(canvas: HTMLCanvasElement, camera: Camera, screen: Point): Point {
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   return {
-    x: camera.x + (screen.x - canvas.clientWidth / 2) / camera.zoom,
-    y: camera.y + (screen.y - canvas.clientHeight / 2) / camera.zoom,
+    x: camera.x + (screen.x - canvas.clientWidth / 2) / screenPixelsPerMeter,
+    y: camera.y + (screen.y - canvas.clientHeight / 2) / screenPixelsPerMeter,
   };
 }
 
@@ -141,11 +156,12 @@ export function agentIdAtScreenPoint(
   screen: Point,
   hitRadius = 18,
 ): string | null {
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   let nearest: { agentId: string; distance: number } | null = null;
   for (const agent of agents) {
     const point = {
-      x: viewport.width / 2 + (agent.position.x - camera.x) * camera.zoom,
-      y: viewport.height / 2 + (agent.position.y - camera.y) * camera.zoom,
+      x: viewport.width / 2 + (agent.position.x - camera.x) * screenPixelsPerMeter,
+      y: viewport.height / 2 + (agent.position.y - camera.y) * screenPixelsPerMeter,
     };
     const candidateDistance = Math.hypot(screen.x - point.x, screen.y - point.y);
     if (
@@ -164,10 +180,11 @@ function drawInfiniteGrid(
   height: number,
   camera: Camera,
 ): void {
-  const worldSpacing = camera.zoom >= 1.2 ? 25 : camera.zoom >= 0.55 ? 50 : 100;
-  const spacing = worldSpacing * camera.zoom;
-  const originX = width / 2 - camera.x * camera.zoom;
-  const originY = height / 2 - camera.y * camera.zoom;
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
+  const worldSpacing = screenPixelsPerMeter >= 8 ? 10 : screenPixelsPerMeter >= 3 ? 25 : 50;
+  const spacing = worldSpacing * screenPixelsPerMeter;
+  const originX = width / 2 - camera.x * screenPixelsPerMeter;
+  const originY = height / 2 - camera.y * screenPixelsPerMeter;
   context.beginPath();
   for (let x = ((originX % spacing) + spacing) % spacing; x < width; x += spacing) {
     context.moveTo(x, 0);
@@ -185,7 +202,7 @@ function drawInfiniteGrid(
 function drawAreaTexture(
   context: CanvasRenderingContext2D,
   area: EnvironmentArea,
-  zoom: number,
+  screenPixelsPerMeter: number,
 ): void {
   if (area.kind === 'field') {
     context.beginPath();
@@ -194,7 +211,7 @@ function drawAreaTexture(
       context.lineTo(x, area.y + area.height - 1);
     }
     context.strokeStyle = 'rgb(81 61 29 / 23%)';
-    context.lineWidth = 1 / zoom;
+    context.lineWidth = 1 / screenPixelsPerMeter;
     context.stroke();
   } else if (area.kind === 'water') {
     context.beginPath();
@@ -210,7 +227,7 @@ function drawAreaTexture(
       );
     }
     context.strokeStyle = 'rgb(202 238 230 / 15%)';
-    context.lineWidth = 1.5 / zoom;
+    context.lineWidth = 1.5 / screenPixelsPerMeter;
     context.stroke();
   } else if (area.kind === 'forest') {
     context.fillStyle = 'rgb(11 43 30 / 58%)';
@@ -228,7 +245,7 @@ function drawAreaTexture(
     context.fillStyle = '#9d7650';
     context.fillRect(area.x, area.y, area.width, area.height);
     context.strokeStyle = '#5c422f';
-    context.lineWidth = 1.5 / zoom;
+    context.lineWidth = 1.5 / screenPixelsPerMeter;
     context.strokeRect(area.x, area.y, area.width, area.height);
     context.beginPath();
     context.moveTo(area.x + area.width / 2, area.y + 1);
@@ -248,29 +265,34 @@ function drawAreaIndicators(
   if (indicators.length === 0) return;
   const hasNegative = indicators.some(indicator => indicator.tone === 'negative');
   const hasPositive = indicators.some(indicator => indicator.tone === 'positive');
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   context.save();
-  context.setLineDash([10 / camera.zoom, 8 / camera.zoom]);
+  context.setLineDash([10 / screenPixelsPerMeter, 8 / screenPixelsPerMeter]);
   context.strokeStyle = hasNegative
     ? hasPositive
       ? 'rgb(194 157 211 / 58%)'
       : 'rgb(224 139 109 / 55%)'
     : 'rgb(126 193 168 / 55%)';
-  context.lineWidth = 2 / camera.zoom;
+  context.lineWidth = 2 / screenPixelsPerMeter;
   context.strokeRect(
-    7 / camera.zoom,
-    7 / camera.zoom,
-    state.environment.width - 14 / camera.zoom,
-    state.environment.height - 14 / camera.zoom,
+    7 / screenPixelsPerMeter,
+    7 / screenPixelsPerMeter,
+    state.environment.width - 14 / screenPixelsPerMeter,
+    state.environment.height - 14 / screenPixelsPerMeter,
   );
   context.setLineDash([]);
-  if (settings.verbosity !== 'minimal' && camera.zoom >= 0.32) {
+  if (settings.verbosity !== 'minimal' && screenPixelsPerMeter >= 0.32) {
     const copy = indicators
       .map(indicator => (settings.verbosity === 'detailed' ? indicator.detail : indicator.label))
       .join(' / ');
-    context.font = `600 ${10 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
+    context.font = `600 ${10 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
     context.textAlign = 'center';
     context.fillStyle = 'rgb(247 226 210 / 75%)';
-    context.fillText(`~ Area effect: ${copy}`, state.environment.width / 2, 25 / camera.zoom);
+    context.fillText(
+      `~ Area effect: ${copy}`,
+      state.environment.width / 2,
+      25 / screenPixelsPerMeter,
+    );
   }
   context.restore();
 }
@@ -388,9 +410,10 @@ function drawAgentIndicators(
   height: number,
 ): void {
   if (settings.verbosity === 'off') return;
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   for (const agent of state.agents) {
     const selected = agent.id === selectedAgentId;
-    if (camera.zoom < 0.3 && !selected) continue;
+    if (screenPixelsPerMeter < 0.3 && !selected) continue;
     const projected = indicatorsForAgent(state, agent, settings);
     const indicators = selected
       ? projected
@@ -399,8 +422,8 @@ function drawAgentIndicators(
           .slice(0, settings.verbosity === 'detailed' ? 5 : 3);
     if (indicators.length === 0) continue;
     const point = {
-      x: width / 2 + (agent.position.x - camera.x) * camera.zoom,
-      y: height / 2 + (agent.position.y - camera.y) * camera.zoom,
+      x: width / 2 + (agent.position.x - camera.x) * screenPixelsPerMeter,
+      y: height / 2 + (agent.position.y - camera.y) * screenPixelsPerMeter,
     };
     const showLabels = selected && settings.verbosity !== 'minimal';
     if (showLabels) {
@@ -434,28 +457,32 @@ function drawWorld(
   width: number,
   height: number,
 ): void {
+  const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   context.clearRect(0, 0, width, height);
   context.fillStyle = '#17231d';
   context.fillRect(0, 0, width, height);
   drawInfiniteGrid(context, width, height, camera);
 
   context.save();
-  context.translate(width / 2 - camera.x * camera.zoom, height / 2 - camera.y * camera.zoom);
-  context.scale(camera.zoom, camera.zoom);
+  context.translate(
+    width / 2 - camera.x * screenPixelsPerMeter,
+    height / 2 - camera.y * screenPixelsPerMeter,
+  );
+  context.scale(screenPixelsPerMeter, screenPixelsPerMeter);
 
   context.fillStyle = '#405f3d';
   context.fillRect(0, 0, state.environment.width, state.environment.height);
   context.strokeStyle = 'rgb(228 218 182 / 18%)';
-  context.lineWidth = 2 / camera.zoom;
+  context.lineWidth = 2 / screenPixelsPerMeter;
   context.strokeRect(0, 0, state.environment.width, state.environment.height);
 
   for (const area of state.environment.areas) {
     context.fillStyle = AREA_COLORS[area.kind];
     context.fillRect(area.x, area.y, area.width, area.height);
-    drawAreaTexture(context, area, camera.zoom);
-    if (area.label !== undefined && camera.zoom >= 0.42) {
+    drawAreaTexture(context, area, screenPixelsPerMeter);
+    if (area.label !== undefined && screenPixelsPerMeter >= 0.42) {
       context.fillStyle = 'rgb(245 237 213 / 62%)';
-      context.font = `${11 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
+      context.font = `${11 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
       context.textAlign = 'center';
       context.fillText(area.label, area.x + area.width / 2, area.y + area.height / 2);
     }
@@ -463,15 +490,15 @@ function drawWorld(
 
   drawAreaIndicators(context, state, camera, indicatorSettings);
 
-  if (camera.zoom >= LOCATION_LABEL_MIN_ZOOM) {
+  if (screenPixelsPerMeter >= LOCATION_LABEL_MIN_PIXELS_PER_METER) {
     for (const location of state.environment.locations) {
       context.fillStyle = 'rgb(255 250 226 / 72%)';
-      context.font = `600 ${10 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
+      context.font = `600 ${10 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
       context.textAlign = 'center';
       context.fillText(
         location.name,
         location.x + location.width / 2,
-        location.y - 8 / camera.zoom,
+        location.y - 8 / screenPixelsPerMeter,
       );
     }
   }
@@ -481,9 +508,9 @@ function drawWorld(
       context.beginPath();
       context.moveTo(agent.position.x, agent.position.y);
       context.lineTo(agent.destination.x, agent.destination.y);
-      context.setLineDash([5 / camera.zoom, 7 / camera.zoom]);
+      context.setLineDash([5 / screenPixelsPerMeter, 7 / screenPixelsPerMeter]);
       context.strokeStyle = 'rgb(255 244 208 / 30%)';
-      context.lineWidth = 1 / camera.zoom;
+      context.lineWidth = 1 / screenPixelsPerMeter;
       context.stroke();
       context.setLineDash([]);
     }
@@ -491,12 +518,12 @@ function drawWorld(
 
   for (const agent of state.agents) {
     const selected = agent.id === selectedAgentId;
-    const radius = (selected ? 10 : 8) / camera.zoom;
+    const radius = (selected ? 10 : 8) / screenPixelsPerMeter;
     if (selected) {
       context.beginPath();
-      context.arc(agent.position.x, agent.position.y, 15 / camera.zoom, 0, Math.PI * 2);
+      context.arc(agent.position.x, agent.position.y, 15 / screenPixelsPerMeter, 0, Math.PI * 2);
       context.strokeStyle = '#f5cc68';
-      context.lineWidth = 2 / camera.zoom;
+      context.lineWidth = 2 / screenPixelsPerMeter;
       context.stroke();
     }
     context.beginPath();
@@ -504,13 +531,17 @@ function drawWorld(
     context.fillStyle = selected ? '#f5cc68' : '#f4ede0';
     context.fill();
     context.strokeStyle = '#29362d';
-    context.lineWidth = 2 / camera.zoom;
+    context.lineWidth = 2 / screenPixelsPerMeter;
     context.stroke();
 
     context.fillStyle = selected ? '#fff3c4' : 'rgb(255 250 234 / 78%)';
-    context.font = `${selected ? 600 : 500} ${11 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
+    context.font = `${selected ? 600 : 500} ${11 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
     context.textAlign = 'center';
-    context.fillText(agent.profile.name, agent.position.x, agent.position.y - 15 / camera.zoom);
+    context.fillText(
+      agent.profile.name,
+      agent.position.x,
+      agent.position.y - 15 / screenPixelsPerMeter,
+    );
   }
   context.restore();
   drawAgentIndicators(context, state, camera, selectedAgentId, indicatorSettings, width, height);
@@ -518,7 +549,12 @@ function drawWorld(
 
 export function createWorldView(options: WorldViewOptions): WorldView {
   const { canvas } = options;
-  const [camera, setCamera] = createSignal<Camera>({ x: 700, y: 450, zoom: 0.7 });
+  const initialState = options.state();
+  const [camera, setCamera] = createSignal<Camera>({
+    x: initialState.environment.width / 2,
+    y: initialState.environment.height / 2,
+    zoom: 1,
+  });
   const [viewportRevision, setViewportRevision] = createSignal(0);
   const activePointers = new Map<number, Point>();
   let dragDistance = 0;
@@ -534,7 +570,10 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const width = Math.max(canvas.clientWidth, 1);
     const height = Math.max(canvas.clientHeight, 1);
     const zoom = clamp(
-      Math.min((width - 100) / state.environment.width, (height - 100) / state.environment.height),
+      Math.min(
+        (width - 100) / (state.environment.width * CSS_PIXELS_PER_METER_AT_100_PERCENT),
+        (height - 100) / (state.environment.height * CSS_PIXELS_PER_METER_AT_100_PERCENT),
+      ),
       0.15,
       3,
     );
@@ -554,7 +593,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
       ...current,
       x: agent.position.x,
       y: agent.position.y,
-      zoom: Math.max(LOCATION_LABEL_MIN_ZOOM, current.zoom),
+      zoom: Math.max(1, current.zoom),
     }));
   }
 
@@ -563,17 +602,18 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const current = camera();
     const anchor = screen ?? { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 };
     const worldAnchor = worldPoint(canvas, current, anchor);
-    const zoom = clamp(current.zoom * factor, 0.12, 5);
+    const zoom = clamp(current.zoom * factor, MIN_ZOOM, MAX_ZOOM);
+    const screenPixelsPerMeter = pixelsPerMeter(zoom);
     setCamera({
-      x: worldAnchor.x - (anchor.x - canvas.clientWidth / 2) / zoom,
-      y: worldAnchor.y - (anchor.y - canvas.clientHeight / 2) / zoom,
+      x: worldAnchor.x - (anchor.x - canvas.clientWidth / 2) / screenPixelsPerMeter,
+      y: worldAnchor.y - (anchor.y - canvas.clientHeight / 2) / screenPixelsPerMeter,
       zoom,
     });
   }
 
   function setZoomLevel(zoom: number): void {
     const current = camera();
-    zoomAt(clamp(zoom, 0.12, 5) / current.zoom);
+    zoomAt(clamp(zoom, MIN_ZOOM, MAX_ZOOM) / current.zoom);
   }
 
   function nearestAgentId(screen: Point): string | null {
@@ -661,10 +701,11 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const dx = point.x - pointerStart.x;
     const dy = point.y - pointerStart.y;
     dragDistance = Math.max(dragDistance, Math.hypot(dx, dy));
+    const screenPixelsPerMeter = pixelsPerMeter(cameraStart.zoom);
     setCamera({
       ...cameraStart,
-      x: cameraStart.x - dx / cameraStart.zoom,
-      y: cameraStart.y - dy / cameraStart.zoom,
+      x: cameraStart.x - dx / screenPixelsPerMeter,
+      y: cameraStart.y - dy / screenPixelsPerMeter,
     });
   }
 

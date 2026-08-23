@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { agentIdAtScreenPoint, cameraForGesture, scaleBarForZoom } from '../app/world-view.js';
+import {
+  agentIdAtScreenPoint,
+  cameraForGesture,
+  CSS_PIXELS_PER_METER_AT_100_PERCENT,
+  scaleBarForZoom,
+} from '../app/world-view.js';
 import environments from '../library/environments.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
 
@@ -31,7 +36,7 @@ describe('world view gestures', () => {
         { x: 120, y: 90 },
         1,
       ),
-      { x: 80, y: 110, zoom: 1 },
+      { x: 98, y: 101, zoom: 1 },
     );
   });
 
@@ -44,7 +49,7 @@ describe('world view gestures', () => {
         { x: 120, y: 100 },
         2,
       ),
-      { x: 90, y: 100, zoom: 2 },
+      { x: 99, y: 100, zoom: 2 },
     );
   });
 
@@ -63,16 +68,20 @@ describe('world view gestures', () => {
 });
 
 describe('world view scale', () => {
+  it('maps one CSS pixel to one decimeter at 100 percent', () => {
+    assert.equal(CSS_PIXELS_PER_METER_AT_100_PERCENT, 10);
+  });
+
   it('chooses stable metric intervals near the target display width', () => {
-    assert.deepEqual(scaleBarForZoom(1), { label: '100 m', meters: 100, pixels: 100 });
-    assert.deepEqual(scaleBarForZoom(5), { label: '20 m', meters: 20, pixels: 100 });
-    assert.deepEqual(scaleBarForZoom(0.12), { label: '1 km', meters: 1000, pixels: 120 });
+    assert.deepEqual(scaleBarForZoom(1), { label: '10 m', meters: 10, pixels: 100 });
+    assert.deepEqual(scaleBarForZoom(5), { label: '2 m', meters: 2, pixels: 100 });
+    assert.deepEqual(scaleBarForZoom(0.12), { label: '100 m', meters: 100, pixels: 120 });
   });
 
   it('chooses scale intervals in feet while retaining meter world coordinates', () => {
     const scale = scaleBarForZoom(1, 'feet');
-    assert.equal(scale.label, '300 ft');
-    assert.ok(Math.abs(scale.meters - 91.44) < 0.01);
+    assert.equal(scale.label, '30 ft');
+    assert.ok(Math.abs(scale.meters - 9.144) < 0.01);
     assert.ok(Math.abs(scale.pixels - 91.44) < 0.01);
   });
 

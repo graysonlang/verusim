@@ -71,6 +71,8 @@ Clock format and display units do not belong to scenario content.
 World coordinates are meters in an unbounded two-dimensional plane.
 An environment provides a designed extent for framing and authored areas for observation; the camera is not clamped to that extent.
 This permits village-scale views now and chunked or generated environments later without changing the camera contract.
+At 100% workbench zoom, one meter spans ten CSS pixels, so one CSS pixel represents one decimeter before device-pixel scaling.
+Zoom percentages describe display magnification only; simulation positions, distances, and movement remain meter-based.
 
 Current movement speed is a derived observation rather than additional mutable state.
 An agent at their destination is still; an agent in transit exposes their authored meters-per-minute pace and an observer-facing speed class from crawling through sprinting.
