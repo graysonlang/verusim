@@ -96,7 +96,7 @@ Ground and inactive structure geometry render opaquely below one environment-siz
 Changing that projection or following a character between floors does not mutate authoritative state.
 
 Current movement speed is a derived observation rather than additional mutable state.
-An agent at their destination is still; an agent in transit exposes their authored meters-per-minute pace and an observer-facing speed class from crawling through sprinting.
+An agent at their destination is still; an agent in transit exposes an observer-facing speed class from crawling through sprinting and presents the authored meters-per-simulation-minute pace as configured distance per second.
 This keeps snapshots minimal while making questionable environment scale or travel rates visible in the workbench.
 
 Schedule blocks remain authored environmental obligations and default activity.

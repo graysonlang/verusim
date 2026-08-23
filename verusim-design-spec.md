@@ -705,6 +705,7 @@ These projections are observer presentation over the one objective topology and 
 The workbench may switch from Exterior to the containing layer when an inspector focuses an enclosed character.
 That selection is an observer concern and never changes simulation state.
 `environmentId` continues to identify the place, while `layoutId` distinguishes a materially expanded or otherwise different realization of that place.
+Locomotion remains authored and simulated in meters per simulation minute, while observer-facing character pace converts that value to the configured distance unit per second.
 
 ### 12.8 Time of day and environmental conditions
 

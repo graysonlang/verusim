@@ -70,12 +70,7 @@ import {
   type BuiltInScenario,
 } from './scenarios.js';
 import { workbenchActionForShortcut } from './shortcuts.js';
-import {
-  formatDistance,
-  formatMovementRate,
-  formatMovementSpeed,
-  formatTemperature,
-} from './units.js';
+import { formatDistance, formatMovementSpeed, formatTemperature } from './units.js';
 import {
   EXTERIOR_PROJECTION,
   createWorldView,
@@ -332,17 +327,17 @@ function movementBadge(
   );
   const label = element('span', 'movement-label');
   const pace = element('strong');
-  const speed = observation.movementMetersPerMinute;
+  const metersPerMinute = observation.movementMetersPerMinute;
   const speedClass = MOVEMENT_SPEED_LABELS[observation.movementSpeedClass];
   label.textContent = 'Pace';
   pace.textContent =
-    compact || speed === 0
+    compact || metersPerMinute === 0
       ? speedClass
-      : `${speedClass} / ${formatMovementRate(speed, distanceUnit)}`;
+      : `${speedClass} / ${formatMovementSpeed(metersPerMinute, distanceUnit)}`;
   badge.title =
-    speed === 0
+    metersPerMinute === 0
       ? 'Current movement: still'
-      : `Current movement: ${speedClass.toLowerCase()} at ${formatMovementRate(speed, distanceUnit)} (${formatMovementSpeed(speed, distanceUnit)})`;
+      : `Current movement: ${speedClass.toLowerCase()} at ${formatMovementSpeed(metersPerMinute, distanceUnit)}`;
   badge.setAttribute('aria-label', badge.title);
   badge.append(label, pace);
   return badge;
