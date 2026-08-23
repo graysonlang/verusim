@@ -8,6 +8,7 @@ export interface ApplicationPreferences {
   clockFormat: ClockFormat;
   defaultTimeRate: TimeRateId;
   distanceUnit: DistanceUnit;
+  showStatusBar: boolean;
   temperatureUnit: TemperatureUnit;
 }
 
@@ -17,6 +18,7 @@ export const DEFAULT_APPLICATION_PREFERENCES: ApplicationPreferences = Object.fr
   clockFormat: '12-hour',
   defaultTimeRate: '1-minute-per-second',
   distanceUnit: 'feet',
+  showStatusBar: false,
   temperatureUnit: 'fahrenheit',
 });
 
@@ -64,6 +66,10 @@ export function parsePreferences(raw: unknown): ApplicationPreferences {
         ? record.defaultTimeRate
         : DEFAULT_APPLICATION_PREFERENCES.defaultTimeRate,
     distanceUnit,
+    showStatusBar:
+      typeof record.showStatusBar === 'boolean'
+        ? record.showStatusBar
+        : DEFAULT_APPLICATION_PREFERENCES.showStatusBar,
     temperatureUnit:
       typeof record.temperatureUnit === 'string' && isTemperatureUnit(record.temperatureUnit)
         ? record.temperatureUnit

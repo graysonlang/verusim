@@ -1256,6 +1256,11 @@ function createWorkbench(): HTMLElement {
   menuSeparatorOne.setAttribute('aria-hidden', 'true');
   const menuSeparatorTwo = element('div', 'menu-separator');
   menuSeparatorTwo.setAttribute('aria-hidden', 'true');
+  const menuSeparatorThree = element('div', 'menu-separator');
+  menuSeparatorThree.setAttribute('aria-hidden', 'true');
+  const statusBarButton = menuAction('Show status bar', 'toggle-status-bar');
+  statusBarButton.dataset.testid = 'status-bar-toggle';
+  statusBarButton.setAttribute('aria-pressed', String(storedPreferences.showStatusBar));
   const settingsButton = menuAction('Settings...', 'settings', primaryShortcut(','));
   const quickActionsButton = menuAction('Quick actions...', undefined, primaryShortcut('/'));
   appMenu.append(
@@ -1266,6 +1271,8 @@ function createWorkbench(): HTMLElement {
     menuAction('Step simulation', 'step', 'ArrowRight'),
     menuAction('Play / pause', 'play-pause', 'Space'),
     menuSeparatorTwo,
+    statusBarButton,
+    menuSeparatorThree,
     settingsButton,
     quickActionsButton,
   );
@@ -1479,6 +1486,9 @@ function createWorkbench(): HTMLElement {
   stage.append(canvas, layerSwitcher, characterHoverCard, worldScale);
 
   inspector.append(inspectorContent);
+  footer.dataset.testid = 'status-bar';
+  footer.hidden = !storedPreferences.showStatusBar;
+  shell.classList.toggle('status-bar-visible', storedPreferences.showStatusBar);
   footer.append(statusText);
   quickActionsTitle.id = 'quick-actions-title';
   quickActionsTitle.textContent = 'Quick actions';
@@ -1729,6 +1739,12 @@ function createWorkbench(): HTMLElement {
       label: 'Play / pause',
       run: togglePlayback,
       shortcut: 'Space',
+    },
+    {
+      id: 'toggle-status-bar',
+      keywords: ['footer', 'interface', 'status', 'visibility'],
+      label: 'Toggle status bar',
+      run: () => setPreferences(current => ({ ...current, showStatusBar: !current.showStatusBar })),
     },
     {
       enabled: () => selectedAgentId() !== null,
@@ -2252,6 +2268,15 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = preferences();
+    footer.hidden = !current.showStatusBar;
+    shell.classList.toggle('status-bar-visible', current.showStatusBar);
+    statusBarButton.setAttribute('aria-pressed', String(current.showStatusBar));
+    const statusBarButtonLabel = statusBarButton.firstElementChild;
+    if (statusBarButtonLabel !== null) {
+      statusBarButtonLabel.textContent = current.showStatusBar
+        ? 'Hide status bar'
+        : 'Show status bar';
+    }
     savePreferences(localStorage, current);
     syncSettingsControls();
   });

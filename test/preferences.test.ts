@@ -11,7 +11,7 @@ import {
 import { formatDistance, formatMovementSpeed, formatTemperature } from '../app/units.js';
 
 describe('application preferences', () => {
-  it('defaults to one simulated minute per second, 12-hour time, and US units', () => {
+  it('defaults to one simulated minute per second, 12-hour time, US units, and no status bar', () => {
     assert.deepEqual(parsePreferences(null), DEFAULT_APPLICATION_PREFERENCES);
     assert.deepEqual(parsePreferences({}), DEFAULT_APPLICATION_PREFERENCES);
   });
@@ -22,12 +22,14 @@ describe('application preferences', () => {
         clockFormat: '24-hour',
         defaultTimeRate: '10x',
         distanceUnit: 'feet',
+        showStatusBar: true,
         temperatureUnit: 'celsius',
       }),
       {
         clockFormat: '24-hour',
         defaultTimeRate: '10x',
         distanceUnit: 'feet',
+        showStatusBar: true,
         temperatureUnit: 'celsius',
       },
     );
@@ -36,6 +38,7 @@ describe('application preferences', () => {
         clockFormat: 'dial',
         defaultTimeRate: 'warp-speed',
         distanceUnit: 'yards',
+        showStatusBar: 'yes',
         temperatureUnit: 'kelvin',
       }),
       DEFAULT_APPLICATION_PREFERENCES,
@@ -90,13 +93,14 @@ describe('application preferences', () => {
         clockFormat: '24-hour',
         defaultTimeRate: '5x',
         distanceUnit: 'feet',
+        showStatusBar: true,
         temperatureUnit: 'celsius',
       },
     );
     assert.equal(savedKey, PREFERENCES_KEY);
     assert.equal(
       savedValue,
-      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","temperatureUnit":"celsius"}',
+      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","showStatusBar":true,"temperatureUnit":"celsius"}',
     );
   });
 });
