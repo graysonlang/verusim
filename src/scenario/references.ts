@@ -15,6 +15,7 @@ export function validateReferences(content: ScenarioContent): void {
     );
   }
   const locationIds = new Set(environment.locations.map(location => location.id));
+  const layerIds = new Set(environment.layers.map(layer => layer.id));
   const instanceIds = new Set(content.scenario.characters.map(placement => placement.instanceId));
   const profileByInstance = new Map(
     content.scenario.characters.map(placement => [
@@ -30,6 +31,12 @@ export function validateReferences(content: ScenarioContent): void {
       throw new ScenarioValidationError(
         `scenario.characters[${index}].profile`,
         `unknown character profile "${placement.profile.resourceId}"`,
+      );
+    }
+    if (!layerIds.has(placement.position.layerId)) {
+      throw new ScenarioValidationError(
+        `scenario.characters[${index}].position.layerId`,
+        `unknown layer "${placement.position.layerId}"`,
       );
     }
     const profileClaimIds = new Set(

@@ -113,7 +113,7 @@ describe('simulation runtime', () => {
     assert.ok(mara);
     const moving = describeAgent({
       ...mara,
-      destination: { x: mara.position.x + 100, y: mara.position.y },
+      destination: { ...mara.position, x: mara.position.x + 100 },
     });
     const arrived = describeAgent({ ...mara, destination: { ...mara.position } });
     assert.equal(moving.movementMetersPerMinute, mara.walkingMetersPerMinute);

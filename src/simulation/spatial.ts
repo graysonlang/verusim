@@ -3,6 +3,7 @@ import type {
   DyadMode,
   EnvironmentArea,
   EavesdroppingAssessment,
+  LayerPosition,
   Point,
   ProximityAssessment,
   ProximityBand,
@@ -12,6 +13,7 @@ import type {
   SpatialPerceptionAssessment,
 } from '../model/types.js';
 import { capabilityAvailability } from './capability.js';
+import { navigationDistance } from './navigation.js';
 import { traceTerm } from './trace.js';
 
 const DEFAULT_AUDIBLE_RADIUS_METERS = 12;
@@ -42,6 +44,16 @@ function agentFor(state: SimulationState, agentId: string): SimulationAgent {
 
 function distance(left: Point, right: Point): number {
   return Math.hypot(left.x - right.x, left.y - right.y);
+}
+
+function spatialDistance(
+  state: SimulationState,
+  left: LayerPosition,
+  right: LayerPosition,
+): number {
+  return left.layerId === right.layerId
+    ? distance(left, right)
+    : navigationDistance(state.environment, left, right);
 }
 
 function proximityBand(distanceMeters: number): ProximityBand {
@@ -85,12 +97,14 @@ function segmentIntersectsBounds(start: Point, end: Point, bounds: Bounds): bool
 
 function combinedOcclusion(
   state: SimulationState,
-  observer: Point,
-  subject: Point,
+  observer: LayerPosition,
+  subject: LayerPosition,
   sense: 'hearing' | 'sight',
 ): number {
+  if (observer.layerId !== subject.layerId) return 1;
   let remaining = 1;
   for (const area of state.environment.areas) {
+    if (area.layerId !== observer.layerId) continue;
     const attenuation = OCCLUSION[area.kind]?.[sense] ?? 0;
     if (attenuation === 0) continue;
     const observerInside = pointInBounds(observer, area);
@@ -131,7 +145,8 @@ export function evaluateProximity(
   if (observerId === subjectId) throw new RangeError('Proximity requires two distinct agents');
   const observer = agentFor(state, observerId);
   const subject = agentFor(state, subjectId);
-  const distanceMeters = distance(observer.position, subject.position);
+  const layerSeparated = observer.position.layerId !== subject.position.layerId;
+  const distanceMeters = spatialDistance(state, observer.position, subject.position);
   const relationship = relationshipCloseness(state, observerId, subjectId);
   const reservedness = (1 - observer.profile.constitution.socialValence) / 2;
   const socialDepletion = 1 - observer.resources.socialBattery;
@@ -144,11 +159,9 @@ export function evaluateProximity(
     0.35,
     2.75,
   );
-  const discomfort = clamp(
-    (comfortableDistanceMeters - distanceMeters) / comfortableDistanceMeters,
-    0,
-    1,
-  );
+  const discomfort = layerSeparated
+    ? 0
+    : clamp((comfortableDistanceMeters - distanceMeters) / comfortableDistanceMeters, 0, 1);
   const valueTurns =
     discomfort === 0
       ? {}
@@ -162,6 +175,12 @@ export function evaluateProximity(
       distanceMeters,
       `agents.${observerId}.position`,
       `agents.${subjectId}.position`,
+    ),
+    traceTerm(
+      'layer-separated',
+      layerSeparated,
+      `agents.${observerId}.position.layerId`,
+      `agents.${subjectId}.position.layerId`,
     ),
     traceTerm(
       'relationship-closeness',
@@ -238,7 +257,8 @@ export function evaluateSpatialPerception(
   if (!Number.isFinite(visualProminence) || visualProminence < 0 || visualProminence > 1) {
     throw new RangeError('visualProminence must be a finite number from 0 through 1');
   }
-  const distanceMeters = distance(observer.position, subject.position);
+  const layerSeparated = observer.position.layerId !== subject.position.layerId;
+  const distanceMeters = spatialDistance(state, observer.position, subject.position);
   const acuity = observer.profile.capabilities.acuity * capabilityAvailability(observer, 'acuity');
   const hearingOcclusion = combinedOcclusion(state, observer.position, subject.position, 'hearing');
   const sightOcclusion = combinedOcclusion(state, observer.position, subject.position, 'sight');
@@ -260,6 +280,13 @@ export function evaluateSpatialPerception(
       `agents.${subjectId}.position`,
     ),
     traceTerm(
+      'layer-separated',
+      layerSeparated,
+      `agents.${observerId}.position.layerId`,
+      `agents.${subjectId}.position.layerId`,
+      'environment.layers',
+    ),
+    traceTerm(
       'effective-acuity',
       acuity,
       `agents.${observerId}.profile.capabilities.acuity`,
@@ -270,12 +297,14 @@ export function evaluateSpatialPerception(
       'hearing-occlusion',
       hearingOcclusion,
       'environment.areas',
+      'environment.layers',
       'simulation.spatial.areaOcclusion',
     ),
     traceTerm(
       'sight-occlusion',
       sightOcclusion,
       'environment.areas',
+      'environment.layers',
       'simulation.spatial.areaOcclusion',
     ),
     traceTerm('hearing-strength', hearing.strength, 'simulation.spatial.hearingFalloff'),

@@ -4,8 +4,8 @@ import {
   type AgendaGoalState,
   type AgendaPlan,
   type FactCondition,
+  type LayerPosition,
   type PlanCandidateEvaluation,
-  type Point,
   type ResourceState,
   type RuntimeMemory,
   type SimulationAgent,
@@ -20,6 +20,7 @@ import {
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
 import { claimExpressionPayoff } from './narrative.js';
+import { locationCenter, navigationDistance, sameLayerPosition } from './navigation.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
 
@@ -33,7 +34,7 @@ const MAX_TRACE_ENTRIES = 240;
 interface SearchNode {
   facts: Map<string, number>;
   minute: number;
-  position: Point;
+  position: LayerPosition;
   resourceCosts: ResourceState;
   taskIds: string[];
 }
@@ -107,14 +108,10 @@ function applyTurns(agent: SimulationAgent, turns: Partial<ValueMap<number>>): S
   return { ...agent, values };
 }
 
-function locationCenter(state: SimulationState, locationId: string): Point {
+function taskLocationCenter(state: SimulationState, locationId: string): LayerPosition {
   const location = state.environment.locations.find(candidate => candidate.id === locationId);
   if (location === undefined) throw new RangeError(`Unknown task location "${locationId}"`);
-  return { x: location.x + location.width / 2, y: location.y + location.height / 2 };
-}
-
-function distance(left: Point, right: Point): number {
-  return Math.hypot(right.x - left.x, right.y - left.y);
+  return locationCenter(location);
 }
 
 function tickDuration(minutes: number, tickMinutes: number): number {
@@ -181,10 +178,10 @@ function completionForTask(
   agent: SimulationAgent,
   node: SearchNode,
   task: TaskOperator,
-): { minute: number; position: Point } | null {
-  const position = locationCenter(state, task.locationId);
+): { minute: number; position: LayerPosition } | null {
+  const position = taskLocationCenter(state, task.locationId);
   const travelMinutes = tickDuration(
-    distance(node.position, position) / agent.walkingMetersPerMinute,
+    navigationDistance(state.environment, node.position, position) / agent.walkingMetersPerMinute,
     state.scenario.tickMinutes,
   );
   const arrivalMinute = node.minute + travelMinutes;
@@ -443,7 +440,7 @@ function createIntention(
   task: TaskOperator,
 ): TaskIntention {
   const agent = findAgent(state, plan.actorId);
-  const atLocation = distance(agent.position, locationCenter(state, task.locationId)) < 0.01;
+  const atLocation = sameLayerPosition(agent.position, taskLocationCenter(state, task.locationId));
   const waiting =
     atLocation && task.availableFromMinute !== null && state.minute < task.availableFromMinute;
   return {

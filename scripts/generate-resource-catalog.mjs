@@ -30,7 +30,6 @@ function validateAddress(value, source) {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new Error(`${source}: expected a resource object`);
   }
-  if (value.schemaVersion !== 1) throw new Error(`${source}.schemaVersion: expected 1`);
   if (typeof address !== 'object' || address === null || Array.isArray(address)) {
     throw new Error(`${source}.address: expected an object`);
   }
@@ -41,6 +40,10 @@ function validateAddress(value, source) {
   }
   if (!RESOURCE_KINDS.has(address.kind)) {
     throw new Error(`${source}.address.kind: expected a known resource kind`);
+  }
+  const supportedVersions = address.kind === 'environment-layout' ? [1, 2] : [1];
+  if (!supportedVersions.includes(value.schemaVersion)) {
+    throw new Error(`${source}.schemaVersion: expected ${supportedVersions.join(' or ')}`);
   }
   return address;
 }

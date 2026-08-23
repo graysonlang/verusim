@@ -24,7 +24,10 @@ function withPositions(state: SimulationState, positions: Record<string, Point>)
     ...state,
     agents: state.agents.map(agent => ({
       ...agent,
-      position: positions[agent.id] ?? agent.position,
+      position:
+        positions[agent.id] === undefined
+          ? agent.position
+          : { ...agent.position, ...positions[agent.id] },
     })),
   };
 }

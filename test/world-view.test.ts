@@ -11,8 +11,8 @@ import { environments, highwaymanEnvironments } from './fixtures.js';
 
 describe('world view selection', () => {
   const agents = [
-    { id: 'mara', position: { x: 100, y: 100 } },
-    { id: 'tomas', position: { x: 120, y: 100 } },
+    { id: 'mara', position: { layerId: 'surface', x: 100, y: 100 } },
+    { id: 'tomas', position: { layerId: 'surface', x: 120, y: 100 } },
   ];
   const camera = { x: 100, y: 100, zoom: 1 };
   const viewport = { height: 200, width: 200 };
@@ -85,7 +85,7 @@ describe('world view scale', () => {
     assert.ok(Math.abs(scale.pixels - 91.44) < 0.01);
   });
 
-  it('keeps authored buildings within plausible house and workshop dimensions', () => {
+  it('keeps authored buildings and civic complexes at a compact story scale', () => {
     const authoredEnvironments = [
       ...environments.environments,
       ...highwaymanEnvironments.environments,
@@ -94,8 +94,8 @@ describe('world view scale', () => {
       const buildings = environment.areas.filter(area => area.kind === 'building');
       assert.ok(buildings.length > 0);
       for (const building of buildings) {
-        assert.ok(building.width <= 20, `${building.id} is ${building.width} meters wide`);
-        assert.ok(building.height <= 22, `${building.id} is ${building.height} meters deep`);
+        assert.ok(building.width <= 40, `${building.id} is ${building.width} meters wide`);
+        assert.ok(building.height <= 40, `${building.id} is ${building.height} meters deep`);
       }
     }
   });

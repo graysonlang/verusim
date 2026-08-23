@@ -1,0 +1,398 @@
+{
+  "schemaVersion": 13,
+  "id": "alders-edge-town",
+  "title": "Alder's Edge Town",
+  "summary": "A compact working town where homes sit above trades, stores and secrets sit below them, and civic, sacred, agricultural, and river life meet within one walkable layout.",
+  "startMinute": 470,
+  "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "spring",
+    "temperatureCelsius": 8,
+    "weather": "cloudy"
+  },
+  "ambientTurnsPerHour": {
+    "safety": -0.006,
+    "belonging": 0.004
+  },
+  "dyads": [],
+  "disclosureItems": [],
+  "disclosureOpportunities": [],
+  "observationEvents": [],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "mara",
+      "position": {
+        "layerId": "upper",
+        "x": 89.5,
+        "y": 77
+      },
+      "walkingMetersPerMinute": 18,
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "wayfarer-quarters",
+          "activity": "Sleeping above the inn",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 360,
+          "locationId": "wayfarer-cellar",
+          "activity": "Checking cellar stores",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 420,
+          "locationId": "wayfarer-common-room",
+          "activity": "Preparing the common room",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 480,
+          "locationId": "wayfarer-common-room",
+          "activity": "Opening the inn",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 720,
+          "locationId": "market-square",
+          "activity": "Buying provisions",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 780,
+          "locationId": "wayfarer-common-room",
+          "activity": "Serving travelers",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1320,
+          "locationId": "wayfarer-quarters",
+          "activity": "Sleeping above the inn",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        }
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "mara-vale"
+      }
+    },
+    {
+      "instanceId": "tomas",
+      "position": {
+        "layerId": "upper",
+        "x": 191,
+        "y": 99
+      },
+      "walkingMetersPerMinute": 17,
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "smith-residence",
+          "activity": "Sleeping over the smithy",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 390,
+          "locationId": "iron-yard",
+          "activity": "Sharpening tools",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 480,
+          "locationId": "iron-yard",
+          "activity": "Working the forge",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": { "physicalStamina": 0.04 }
+        },
+        {
+          "startMinute": 750,
+          "locationId": "market-square",
+          "activity": "Inspecting commissions",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 840,
+          "locationId": "iron-yard",
+          "activity": "Working the forge",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": { "physicalStamina": 0.04 }
+        },
+        {
+          "startMinute": 1140,
+          "locationId": "wayfarer-common-room",
+          "activity": "Eating alone",
+          "recoveryMode": "break",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1260,
+          "locationId": "smith-residence",
+          "activity": "Sleeping over the smithy",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        }
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "tomas-reed"
+      }
+    },
+    {
+      "instanceId": "nessa",
+      "position": {
+        "layerId": "upper",
+        "x": 163.5,
+        "y": 123.5
+      },
+      "walkingMetersPerMinute": 16,
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "healer-residence",
+          "activity": "Sleeping above the apothecary",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 420,
+          "locationId": "apothecary-shop",
+          "activity": "Sorting remedies",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 600,
+          "locationId": "market-square",
+          "activity": "Holding an open clinic",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 780,
+          "locationId": "apothecary-shop",
+          "activity": "Receiving patients",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1110,
+          "locationId": "churchyard",
+          "activity": "Gathering graveyard herbs",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1260,
+          "locationId": "healer-residence",
+          "activity": "Reading above the shop",
+          "recoveryMode": "rest",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        }
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "nessa-arden"
+      }
+    },
+    {
+      "instanceId": "elian",
+      "position": {
+        "layerId": "upper",
+        "x": 130,
+        "y": 32
+      },
+      "walkingMetersPerMinute": 20,
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "watch-loft",
+          "activity": "Sleeping in the gatehouse",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 360,
+          "locationId": "watch-house",
+          "activity": "Reading the night report",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 450,
+          "locationId": "north-gate",
+          "activity": "Watching arrivals",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 720,
+          "locationId": "market-square",
+          "activity": "Walking the market",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 810,
+          "locationId": "north-gate",
+          "activity": "Watching arrivals",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1080,
+          "locationId": "wayfarer-common-room",
+          "activity": "Meeting the late patrol",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1260,
+          "locationId": "watch-loft",
+          "activity": "Sleeping in the gatehouse",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        }
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "elian-voss"
+      }
+    },
+    {
+      "instanceId": "sera",
+      "position": {
+        "layerId": "upper",
+        "x": 41,
+        "y": 134
+      },
+      "walkingMetersPerMinute": 15,
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "mill-loft",
+          "activity": "Sleeping above the mill",
+          "recoveryMode": "sleep",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 330,
+          "locationId": "alder-mill",
+          "activity": "Checking the millrace",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 540,
+          "locationId": "market-square",
+          "activity": "Collecting grain accounts",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 630,
+          "locationId": "alder-mill",
+          "activity": "Milling grain",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": { "physicalStamina": 0.03 }
+        },
+        {
+          "startMinute": 1080,
+          "locationId": "granary",
+          "activity": "Inspecting the winter reserve",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        },
+        {
+          "startMinute": 1170,
+          "locationId": "mill-loft",
+          "activity": "Keeping her books",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        }
+      ],
+      "normPerspectives": [],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "sera-dane"
+      }
+    }
+  ],
+  "localNorms": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge-town"
+  }
+}

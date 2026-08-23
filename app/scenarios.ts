@@ -1,4 +1,5 @@
 import bakerDeadline from '../scenarios/baker-deadline.json';
+import aldersEdgeTown from '../scenarios/alders-edge-town.json';
 import cascadeRoom from '../scenarios/cascade-room.json';
 import disclosureAudience from '../scenarios/disclosure-audience.json';
 import endicottMargueritte from '../scenarios/endicott-margueritte.json';
@@ -42,6 +43,7 @@ function builtInScenario(value: unknown): BuiltInScenario {
 
 export const BUILT_IN_SCENARIOS: readonly BuiltInScenario[] = [
   marketMorning,
+  aldersEdgeTown,
   bakerDeadline,
   disclosureAudience,
   endicottMargueritte,

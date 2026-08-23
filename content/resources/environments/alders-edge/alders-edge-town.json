@@ -1,0 +1,995 @@
+{
+  "schemaVersion": 2,
+  "address": {
+    "packageId": "verusim",
+    "kind": "environment-layout",
+    "resourceId": "alders-edge-town"
+  },
+  "layout": {
+    "name": "Alder's Edge Town",
+    "width": 260,
+    "height": 180,
+    "layers": [
+      {
+        "id": "surface",
+        "name": "Street Level",
+        "elevationMeters": 0
+      },
+      {
+        "id": "upper",
+        "name": "Upper Floors",
+        "elevationMeters": 3.2
+      },
+      {
+        "id": "cellars",
+        "name": "Cellars",
+        "elevationMeters": -2.8
+      }
+    ],
+    "areas": [
+      {
+        "id": "town-ground",
+        "kind": "grass",
+        "layerId": "surface",
+        "x": 0,
+        "y": 0,
+        "width": 260,
+        "height": 180
+      },
+      {
+        "id": "alder-river",
+        "kind": "water",
+        "layerId": "surface",
+        "x": 0,
+        "y": 150,
+        "width": 260,
+        "height": 30,
+        "label": "River Alder"
+      },
+      {
+        "id": "millstream",
+        "kind": "water",
+        "layerId": "surface",
+        "x": 20,
+        "y": 122,
+        "width": 12,
+        "height": 30
+      },
+      {
+        "id": "north-orchard",
+        "kind": "forest",
+        "layerId": "surface",
+        "x": 8,
+        "y": 16,
+        "width": 48,
+        "height": 66,
+        "label": "Town Orchard"
+      },
+      {
+        "id": "west-common",
+        "kind": "field",
+        "layerId": "surface",
+        "x": 10,
+        "y": 88,
+        "width": 45,
+        "height": 34,
+        "label": "Common Pasture"
+      },
+      {
+        "id": "east-fields",
+        "kind": "field",
+        "layerId": "surface",
+        "x": 218,
+        "y": 18,
+        "width": 42,
+        "height": 90,
+        "label": "East Fields"
+      },
+      {
+        "id": "churchyard",
+        "kind": "grass",
+        "layerId": "surface",
+        "x": 198,
+        "y": 40,
+        "width": 36,
+        "height": 40,
+        "label": "Churchyard"
+      },
+      {
+        "id": "high-road",
+        "kind": "path",
+        "layerId": "surface",
+        "x": 54,
+        "y": 82,
+        "width": 177,
+        "height": 10
+      },
+      {
+        "id": "north-road",
+        "kind": "path",
+        "layerId": "surface",
+        "x": 121,
+        "y": 0,
+        "width": 12,
+        "height": 150
+      },
+      {
+        "id": "river-road",
+        "kind": "path",
+        "layerId": "surface",
+        "x": 61,
+        "y": 136,
+        "width": 145,
+        "height": 9
+      },
+      {
+        "id": "market-yard",
+        "kind": "market",
+        "layerId": "surface",
+        "x": 108,
+        "y": 70,
+        "width": 60,
+        "height": 42,
+        "label": "Market Square"
+      },
+      {
+        "id": "wayfarer-inn-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 84,
+        "y": 69,
+        "width": 22,
+        "height": 34,
+        "label": "Wayfarer Inn"
+      },
+      {
+        "id": "guildhall-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 130,
+        "y": 45,
+        "width": 30,
+        "height": 20,
+        "label": "Guildhall"
+      },
+      {
+        "id": "chapel-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 171,
+        "y": 43,
+        "width": 23,
+        "height": 34,
+        "label": "Chapel"
+      },
+      {
+        "id": "bakehouse-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 108,
+        "y": 114,
+        "width": 19,
+        "height": 19,
+        "label": "Bakehouse"
+      },
+      {
+        "id": "mercer-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 131,
+        "y": 114,
+        "width": 19,
+        "height": 19,
+        "label": "Mercer"
+      },
+      {
+        "id": "apothecary-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 154,
+        "y": 114,
+        "width": 19,
+        "height": 19,
+        "label": "Apothecary"
+      },
+      {
+        "id": "smithy-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 181,
+        "y": 91,
+        "width": 28,
+        "height": 23,
+        "label": "Iron Yard"
+      },
+      {
+        "id": "watch-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 116,
+        "y": 24,
+        "width": 28,
+        "height": 16,
+        "label": "North Gate"
+      },
+      {
+        "id": "manor-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 65,
+        "y": 38,
+        "width": 36,
+        "height": 27,
+        "label": "Manor Hall"
+      },
+      {
+        "id": "almshouse-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 47,
+        "y": 74,
+        "width": 26,
+        "height": 22,
+        "label": "Almshouse"
+      },
+      {
+        "id": "stable-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 73,
+        "y": 112,
+        "width": 28,
+        "height": 21,
+        "label": "Stables"
+      },
+      {
+        "id": "mill-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 30,
+        "y": 124,
+        "width": 22,
+        "height": 20,
+        "label": "Alder Mill"
+      },
+      {
+        "id": "granary-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 54,
+        "y": 124,
+        "width": 16,
+        "height": 20,
+        "label": "Granary"
+      },
+      {
+        "id": "tannery-building",
+        "kind": "building",
+        "layerId": "surface",
+        "x": 216,
+        "y": 119,
+        "width": 27,
+        "height": 23,
+        "label": "Tannery"
+      },
+      {
+        "id": "river-docks",
+        "kind": "market",
+        "layerId": "surface",
+        "x": 86,
+        "y": 143,
+        "width": 48,
+        "height": 7,
+        "label": "River Docks"
+      },
+      {
+        "id": "alder-bridge",
+        "kind": "path",
+        "layerId": "surface",
+        "x": 124,
+        "y": 145,
+        "width": 10,
+        "height": 35,
+        "label": "Alder Bridge"
+      },
+      {
+        "id": "public-well",
+        "kind": "water",
+        "layerId": "surface",
+        "x": 137,
+        "y": 87,
+        "width": 4,
+        "height": 4
+      },
+      {
+        "id": "wayfarer-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 84,
+        "y": 69,
+        "width": 22,
+        "height": 34,
+        "label": "Inn Rooms and Quarters"
+      },
+      {
+        "id": "guildhall-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 130,
+        "y": 45,
+        "width": 30,
+        "height": 20,
+        "label": "Council Chamber"
+      },
+      {
+        "id": "chapel-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 179,
+        "y": 43,
+        "width": 8,
+        "height": 12,
+        "label": "Bell Loft"
+      },
+      {
+        "id": "baker-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 108,
+        "y": 114,
+        "width": 19,
+        "height": 19,
+        "label": "Baker's Residence"
+      },
+      {
+        "id": "mercer-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 131,
+        "y": 114,
+        "width": 19,
+        "height": 19,
+        "label": "Mercer's Residence"
+      },
+      {
+        "id": "apothecary-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 154,
+        "y": 114,
+        "width": 19,
+        "height": 19,
+        "label": "Healer's Residence"
+      },
+      {
+        "id": "smithy-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 181,
+        "y": 91,
+        "width": 20,
+        "height": 16,
+        "label": "Smith's Residence"
+      },
+      {
+        "id": "watch-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 116,
+        "y": 24,
+        "width": 28,
+        "height": 16,
+        "label": "Gatehouse Loft"
+      },
+      {
+        "id": "manor-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 65,
+        "y": 38,
+        "width": 36,
+        "height": 27,
+        "label": "Manor Solar"
+      },
+      {
+        "id": "mill-upper",
+        "kind": "building",
+        "layerId": "upper",
+        "x": 30,
+        "y": 124,
+        "width": 22,
+        "height": 20,
+        "label": "Mill Loft"
+      },
+      {
+        "id": "wayfarer-cellar-area",
+        "kind": "building",
+        "layerId": "cellars",
+        "x": 84,
+        "y": 78,
+        "width": 16,
+        "height": 20,
+        "label": "Inn Cellar"
+      },
+      {
+        "id": "guildhall-cellar-area",
+        "kind": "building",
+        "layerId": "cellars",
+        "x": 134,
+        "y": 49,
+        "width": 22,
+        "height": 13,
+        "label": "Guild Undercroft"
+      },
+      {
+        "id": "chapel-crypt-area",
+        "kind": "building",
+        "layerId": "cellars",
+        "x": 174,
+        "y": 52,
+        "width": 17,
+        "height": 19,
+        "label": "Chapel Crypt"
+      },
+      {
+        "id": "mercer-cellar-area",
+        "kind": "building",
+        "layerId": "cellars",
+        "x": 133,
+        "y": 117,
+        "width": 15,
+        "height": 14,
+        "label": "Mercer's Cellar"
+      },
+      {
+        "id": "manor-cellar-area",
+        "kind": "building",
+        "layerId": "cellars",
+        "x": 71,
+        "y": 45,
+        "width": 23,
+        "height": 16,
+        "label": "Manor Store"
+      },
+      {
+        "id": "watch-cell-area",
+        "kind": "building",
+        "layerId": "cellars",
+        "x": 123,
+        "y": 28,
+        "width": 13,
+        "height": 9,
+        "label": "Watch Cell"
+      }
+    ],
+    "locations": [
+      {
+        "id": "market-square",
+        "kind": "public",
+        "layerId": "surface",
+        "name": "Market Square",
+        "x": 110,
+        "y": 72,
+        "width": 56,
+        "height": 38
+      },
+      {
+        "id": "north-gate",
+        "kind": "public",
+        "layerId": "surface",
+        "name": "North Gate",
+        "x": 119,
+        "y": 24,
+        "width": 22,
+        "height": 12
+      },
+      {
+        "id": "west-gate",
+        "kind": "public",
+        "layerId": "surface",
+        "name": "West Gate",
+        "x": 54,
+        "y": 82,
+        "width": 10,
+        "height": 10
+      },
+      {
+        "id": "alder-bridge",
+        "kind": "public",
+        "layerId": "surface",
+        "name": "Alder Bridge",
+        "x": 124,
+        "y": 145,
+        "width": 10,
+        "height": 35
+      },
+      {
+        "id": "public-well",
+        "kind": "public",
+        "layerId": "surface",
+        "name": "Market Well",
+        "x": 135,
+        "y": 85,
+        "width": 8,
+        "height": 8
+      },
+      {
+        "id": "wayfarer-common-room",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Wayfarer Common Room",
+        "x": 85,
+        "y": 70,
+        "width": 20,
+        "height": 25
+      },
+      {
+        "id": "guildhall",
+        "kind": "institution",
+        "layerId": "surface",
+        "name": "Guildhall",
+        "x": 131,
+        "y": 46,
+        "width": 28,
+        "height": 18
+      },
+      {
+        "id": "chapel-nave",
+        "kind": "institution",
+        "layerId": "surface",
+        "name": "Chapel Nave",
+        "x": 172,
+        "y": 44,
+        "width": 21,
+        "height": 31
+      },
+      {
+        "id": "bakehouse",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Bakehouse",
+        "x": 109,
+        "y": 115,
+        "width": 17,
+        "height": 17
+      },
+      {
+        "id": "mercer-shop",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Mercer's Shop",
+        "x": 132,
+        "y": 115,
+        "width": 17,
+        "height": 17
+      },
+      {
+        "id": "apothecary-shop",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Apothecary",
+        "x": 155,
+        "y": 115,
+        "width": 17,
+        "height": 17
+      },
+      {
+        "id": "iron-yard",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Iron Yard",
+        "x": 182,
+        "y": 92,
+        "width": 26,
+        "height": 21
+      },
+      {
+        "id": "watch-house",
+        "kind": "institution",
+        "layerId": "surface",
+        "name": "Watch House",
+        "x": 117,
+        "y": 25,
+        "width": 26,
+        "height": 14
+      },
+      {
+        "id": "manor-hall",
+        "kind": "institution",
+        "layerId": "surface",
+        "name": "Manor Hall",
+        "x": 66,
+        "y": 39,
+        "width": 34,
+        "height": 25
+      },
+      {
+        "id": "almshouse",
+        "kind": "institution",
+        "layerId": "surface",
+        "name": "Almshouse",
+        "x": 48,
+        "y": 75,
+        "width": 24,
+        "height": 20
+      },
+      {
+        "id": "stables",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Town Stables",
+        "x": 74,
+        "y": 113,
+        "width": 26,
+        "height": 19
+      },
+      {
+        "id": "alder-mill",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Alder Mill",
+        "x": 31,
+        "y": 125,
+        "width": 20,
+        "height": 18
+      },
+      {
+        "id": "granary",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Town Granary",
+        "x": 55,
+        "y": 125,
+        "width": 14,
+        "height": 18
+      },
+      {
+        "id": "tannery",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Tannery",
+        "x": 217,
+        "y": 120,
+        "width": 25,
+        "height": 21
+      },
+      {
+        "id": "river-docks",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "River Docks",
+        "x": 88,
+        "y": 143,
+        "width": 44,
+        "height": 7
+      },
+      {
+        "id": "town-orchard",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Town Orchard",
+        "x": 10,
+        "y": 18,
+        "width": 44,
+        "height": 62
+      },
+      {
+        "id": "common-pasture",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "Common Pasture",
+        "x": 12,
+        "y": 90,
+        "width": 41,
+        "height": 30
+      },
+      {
+        "id": "east-field",
+        "kind": "workplace",
+        "layerId": "surface",
+        "name": "East Fields",
+        "x": 220,
+        "y": 20,
+        "width": 38,
+        "height": 86
+      },
+      {
+        "id": "churchyard",
+        "kind": "public",
+        "layerId": "surface",
+        "name": "Churchyard",
+        "x": 200,
+        "y": 42,
+        "width": 32,
+        "height": 36
+      },
+      {
+        "id": "wayfarer-quarters",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Innkeeper's Quarters",
+        "x": 85,
+        "y": 70,
+        "width": 9,
+        "height": 14
+      },
+      {
+        "id": "wayfarer-guest-rooms",
+        "kind": "lodging",
+        "layerId": "upper",
+        "name": "Wayfarer Guest Rooms",
+        "x": 95,
+        "y": 70,
+        "width": 10,
+        "height": 30
+      },
+      {
+        "id": "guild-council-chamber",
+        "kind": "institution",
+        "layerId": "upper",
+        "name": "Guild Council Chamber",
+        "x": 131,
+        "y": 46,
+        "width": 28,
+        "height": 18
+      },
+      {
+        "id": "chapel-bell-loft",
+        "kind": "institution",
+        "layerId": "upper",
+        "name": "Chapel Bell Loft",
+        "x": 180,
+        "y": 44,
+        "width": 6,
+        "height": 10
+      },
+      {
+        "id": "baker-residence",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Baker's Residence",
+        "x": 109,
+        "y": 115,
+        "width": 17,
+        "height": 17
+      },
+      {
+        "id": "mercer-residence",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Mercer's Residence",
+        "x": 132,
+        "y": 115,
+        "width": 17,
+        "height": 17
+      },
+      {
+        "id": "healer-residence",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Healer's Residence",
+        "x": 155,
+        "y": 115,
+        "width": 17,
+        "height": 17
+      },
+      {
+        "id": "smith-residence",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Smith's Residence",
+        "x": 182,
+        "y": 92,
+        "width": 18,
+        "height": 14
+      },
+      {
+        "id": "watch-loft",
+        "kind": "workplace",
+        "layerId": "upper",
+        "name": "Gatehouse Loft",
+        "x": 117,
+        "y": 25,
+        "width": 26,
+        "height": 14
+      },
+      {
+        "id": "manor-solar",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Manor Solar",
+        "x": 66,
+        "y": 39,
+        "width": 34,
+        "height": 25
+      },
+      {
+        "id": "mill-loft",
+        "kind": "home",
+        "layerId": "upper",
+        "name": "Mill Loft",
+        "x": 31,
+        "y": 125,
+        "width": 20,
+        "height": 18
+      },
+      {
+        "id": "wayfarer-cellar",
+        "kind": "storage",
+        "layerId": "cellars",
+        "name": "Wayfarer Cellar",
+        "x": 85,
+        "y": 79,
+        "width": 14,
+        "height": 18
+      },
+      {
+        "id": "guild-archive",
+        "kind": "institution",
+        "layerId": "cellars",
+        "name": "Guild Archive",
+        "x": 135,
+        "y": 50,
+        "width": 20,
+        "height": 11
+      },
+      {
+        "id": "chapel-crypt",
+        "kind": "institution",
+        "layerId": "cellars",
+        "name": "Chapel Crypt",
+        "x": 175,
+        "y": 53,
+        "width": 15,
+        "height": 17
+      },
+      {
+        "id": "mercer-cellar",
+        "kind": "storage",
+        "layerId": "cellars",
+        "name": "Mercer's Cellar",
+        "x": 134,
+        "y": 118,
+        "width": 13,
+        "height": 12
+      },
+      {
+        "id": "manor-store",
+        "kind": "storage",
+        "layerId": "cellars",
+        "name": "Manor Store",
+        "x": 72,
+        "y": 46,
+        "width": 21,
+        "height": 14
+      },
+      {
+        "id": "watch-cell",
+        "kind": "institution",
+        "layerId": "cellars",
+        "name": "Watch Cell",
+        "x": 124,
+        "y": 29,
+        "width": 11,
+        "height": 7
+      }
+    ],
+    "connectors": [
+      {
+        "id": "wayfarer-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 101, "y": 96 },
+        "to": { "layerId": "upper", "x": 101, "y": 96 },
+        "traversalDistanceMeters": 4.5
+      },
+      {
+        "id": "wayfarer-cellar-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 89, "y": 94 },
+        "to": { "layerId": "cellars", "x": 89, "y": 94 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "guildhall-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 155, "y": 60 },
+        "to": { "layerId": "upper", "x": 155, "y": 60 },
+        "traversalDistanceMeters": 4.5
+      },
+      {
+        "id": "guildhall-undercroft-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 136, "y": 58 },
+        "to": { "layerId": "cellars", "x": 136, "y": 58 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "chapel-loft-ladder",
+        "kind": "ladder",
+        "from": { "layerId": "surface", "x": 183, "y": 49 },
+        "to": { "layerId": "upper", "x": 183, "y": 49 },
+        "traversalDistanceMeters": 5
+      },
+      {
+        "id": "chapel-crypt-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 178, "y": 68 },
+        "to": { "layerId": "cellars", "x": 178, "y": 68 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "baker-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 123, "y": 129 },
+        "to": { "layerId": "upper", "x": 123, "y": 129 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "mercer-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 146, "y": 129 },
+        "to": { "layerId": "upper", "x": 146, "y": 129 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "mercer-cellar-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 135, "y": 127 },
+        "to": { "layerId": "cellars", "x": 135, "y": 127 },
+        "traversalDistanceMeters": 3.5
+      },
+      {
+        "id": "apothecary-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 169, "y": 129 },
+        "to": { "layerId": "upper", "x": 169, "y": 129 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "smithy-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 198, "y": 104 },
+        "to": { "layerId": "upper", "x": 198, "y": 104 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "watch-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 139, "y": 35 },
+        "to": { "layerId": "upper", "x": 139, "y": 35 },
+        "traversalDistanceMeters": 4.5
+      },
+      {
+        "id": "watch-cell-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 126, "y": 35 },
+        "to": { "layerId": "cellars", "x": 126, "y": 35 },
+        "traversalDistanceMeters": 3.5
+      },
+      {
+        "id": "manor-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 96, "y": 59 },
+        "to": { "layerId": "upper", "x": 96, "y": 59 },
+        "traversalDistanceMeters": 4.5
+      },
+      {
+        "id": "manor-cellar-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 74, "y": 58 },
+        "to": { "layerId": "cellars", "x": 74, "y": 58 },
+        "traversalDistanceMeters": 4
+      },
+      {
+        "id": "mill-stairs",
+        "kind": "stairs",
+        "from": { "layerId": "surface", "x": 48, "y": 139 },
+        "to": { "layerId": "upper", "x": 48, "y": 139 },
+        "traversalDistanceMeters": 4
+      }
+    ],
+    "environmentId": "alders-edge",
+    "outletAffordances": [],
+    "layoutId": "alders-edge-town"
+  }
+}

@@ -91,7 +91,7 @@ export function createResourceCatalogFromLibraries(input: {
           resourceId: layout.layoutId,
         },
         layout,
-        schemaVersion: 1,
+        schemaVersion: 2,
       } satisfies EnvironmentLayoutResourceFile,
     })),
   ]);

@@ -18,6 +18,7 @@ import {
   type EnvironmentLayoutAddress,
   type EnvironmentLayoutResourceFile,
   type EnvironmentLibraryFile,
+  type EnvironmentConnectorKind,
   type RecoveryMode,
   type ResourceAddress,
   type ResourceFile,
@@ -38,6 +39,7 @@ const AREA_KINDS = new Set<AreaKind>([
   'path',
   'water',
 ]);
+const ENVIRONMENT_CONNECTOR_KINDS = new Set<EnvironmentConnectorKind>(['ladder', 'ramp', 'stairs']);
 const VALUE_ID_SET = new Set<string>(VALUE_IDS);
 const DYAD_MODES = new Set(['courteous', 'contesting', 'guarded', 'ruptured', 'warm']);
 const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'want']);
@@ -160,6 +162,13 @@ function validatePoint(value: unknown, path: string): void {
   const point = objectValue(value, path);
   numberValue(point.x, `${path}.x`);
   numberValue(point.y, `${path}.y`);
+}
+
+function validateLayerPosition(value: unknown, path: string): Record<string, unknown> {
+  const point = objectValue(value, path);
+  validatePoint(point, path);
+  identifierValue(point.layerId, `${path}.layerId`);
+  return point;
 }
 
 function validateBounds(value: unknown, path: string): Record<string, unknown> {
@@ -471,6 +480,21 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
       environment.layoutId ??= environment.id;
       environment.environmentId ??= environment.layoutId;
       delete environment.id;
+      environment.layers ??= [{ elevationMeters: 0, id: 'surface', name: 'Surface' }];
+      environment.connectors ??= [];
+      for (const areaValue of arrayValue(
+        environment.areas,
+        'environmentLibrary.environments.areas',
+      )) {
+        objectValue(areaValue, 'environmentLibrary.environments.areas').layerId ??= 'surface';
+      }
+      for (const locationValue of arrayValue(
+        environment.locations,
+        'environmentLibrary.environments.locations',
+      )) {
+        objectValue(locationValue, 'environmentLibrary.environments.locations').layerId ??=
+          'surface';
+      }
     }
     return file;
   }
@@ -486,6 +510,20 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
     environment.environmentId ??= environment.layoutId;
     delete environment.id;
     environment.outletAffordances ??= [];
+    environment.layers = [{ elevationMeters: 0, id: 'surface', name: 'Surface' }];
+    environment.connectors = [];
+    for (const areaValue of arrayValue(
+      environment.areas,
+      'environmentLibrary.environments.areas',
+    )) {
+      objectValue(areaValue, 'environmentLibrary.environments.areas').layerId = 'surface';
+    }
+    for (const locationValue of arrayValue(
+      environment.locations,
+      'environmentLibrary.environments.locations',
+    )) {
+      objectValue(locationValue, 'environmentLibrary.environments.locations').layerId = 'surface';
+    }
   }
   file.schemaVersion = 2;
   return file;
@@ -493,7 +531,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 12) return file;
+  if (file.schemaVersion === 13) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -505,7 +543,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 8 &&
     file.schemaVersion !== 9 &&
     file.schemaVersion !== 10 &&
-    file.schemaVersion !== 11
+    file.schemaVersion !== 11 &&
+    file.schemaVersion !== 12
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -631,22 +670,28 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       }
     }
   }
-  file.environment = {
-    kind: 'environment-layout',
-    packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-    resourceId: identifierValue(file.environmentId, 'scenario.environmentId'),
-  };
-  delete file.environmentId;
+  if (sourceVersion < 12) {
+    file.environment = {
+      kind: 'environment-layout',
+      packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+      resourceId: identifierValue(file.environmentId, 'scenario.environmentId'),
+    };
+    delete file.environmentId;
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      placement.profile = {
+        kind: 'character-profile',
+        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+        resourceId: identifierValue(placement.characterId, 'scenario.characters.characterId'),
+      };
+      delete placement.characterId;
+    }
+  }
   for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
     const placement = objectValue(placementValue, 'scenario.characters');
-    placement.profile = {
-      kind: 'character-profile',
-      packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-      resourceId: identifierValue(placement.characterId, 'scenario.characters.characterId'),
-    };
-    delete placement.characterId;
+    objectValue(placement.position, 'scenario.characters.position').layerId ??= 'surface';
   }
-  file.schemaVersion = 12;
+  file.schemaVersion = 13;
   return file;
 }
 
@@ -802,12 +847,30 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
       numberValue(environment.width, `${path}.width`, 1);
       numberValue(environment.height, `${path}.height`, 1);
 
+      const layers = arrayValue(environment.layers, `${path}.layers`).map((entry, layerIndex) => {
+        const layerPath = `${path}.layers[${layerIndex}]`;
+        const layer = objectValue(entry, layerPath);
+        identifierValue(layer.id, `${layerPath}.id`);
+        stringValue(layer.name, `${layerPath}.name`);
+        numberValue(layer.elevationMeters, `${layerPath}.elevationMeters`);
+        return layer;
+      });
+      if (layers.length === 0) {
+        throw new ScenarioValidationError(`${path}.layers`, 'expected at least one layer');
+      }
+      uniqueIds(layers, `${path}.layers`);
+      const layerIds = new Set(layers.map(layer => layer.id));
+
       const areas = arrayValue(environment.areas, `${path}.areas`).map((entry, areaIndex) => {
         const areaPath = `${path}.areas[${areaIndex}]`;
         const area = validateBounds(entry, areaPath);
         identifierValue(area.id, `${areaPath}.id`);
         if (typeof area.kind !== 'string' || !AREA_KINDS.has(area.kind as AreaKind)) {
           throw new ScenarioValidationError(`${areaPath}.kind`, 'expected a known area kind');
+        }
+        const layerId = identifierValue(area.layerId, `${areaPath}.layerId`);
+        if (!layerIds.has(layerId)) {
+          throw new ScenarioValidationError(`${areaPath}.layerId`, `unknown layer "${layerId}"`);
         }
         if (area.label !== undefined) stringValue(area.label, `${areaPath}.label`);
         return area;
@@ -821,10 +884,91 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
           identifierValue(location.id, `${locationPath}.id`);
           stringValue(location.kind, `${locationPath}.kind`);
           stringValue(location.name, `${locationPath}.name`);
+          const layerId = identifierValue(location.layerId, `${locationPath}.layerId`);
+          if (!layerIds.has(layerId)) {
+            throw new ScenarioValidationError(
+              `${locationPath}.layerId`,
+              `unknown layer "${layerId}"`,
+            );
+          }
           return location;
         },
       );
       uniqueIds(locations, `${path}.locations`);
+
+      const connectors = arrayValue(environment.connectors, `${path}.connectors`).map(
+        (entry, connectorIndex) => {
+          const connectorPath = `${path}.connectors[${connectorIndex}]`;
+          const connector = objectValue(entry, connectorPath);
+          identifierValue(connector.id, `${connectorPath}.id`);
+          if (
+            typeof connector.kind !== 'string' ||
+            !ENVIRONMENT_CONNECTOR_KINDS.has(connector.kind as EnvironmentConnectorKind)
+          ) {
+            throw new ScenarioValidationError(
+              `${connectorPath}.kind`,
+              'expected ladder, ramp, or stairs',
+            );
+          }
+          const from = validateLayerPosition(connector.from, `${connectorPath}.from`);
+          const to = validateLayerPosition(connector.to, `${connectorPath}.to`);
+          if (!layerIds.has(from.layerId as string)) {
+            throw new ScenarioValidationError(
+              `${connectorPath}.from.layerId`,
+              `unknown layer "${String(from.layerId)}"`,
+            );
+          }
+          if (!layerIds.has(to.layerId as string)) {
+            throw new ScenarioValidationError(
+              `${connectorPath}.to.layerId`,
+              `unknown layer "${String(to.layerId)}"`,
+            );
+          }
+          if (from.layerId === to.layerId) {
+            throw new ScenarioValidationError(
+              `${connectorPath}.to.layerId`,
+              'connector endpoints must use different layers',
+            );
+          }
+          numberValue(
+            connector.traversalDistanceMeters,
+            `${connectorPath}.traversalDistanceMeters`,
+            0,
+          );
+          return connector;
+        },
+      );
+      uniqueIds(connectors, `${path}.connectors`);
+      const reachableLayerIds = new Set<string>([layers[0]?.id as string]);
+      let addedLayer = true;
+      while (addedLayer) {
+        addedLayer = false;
+        for (const connector of connectors) {
+          const fromLayerId = objectValue(connector.from, `${path}.connectors.from`).layerId;
+          const toLayerId = objectValue(connector.to, `${path}.connectors.to`).layerId;
+          if (
+            reachableLayerIds.has(fromLayerId as string) &&
+            !reachableLayerIds.has(toLayerId as string)
+          ) {
+            reachableLayerIds.add(toLayerId as string);
+            addedLayer = true;
+          }
+          if (
+            reachableLayerIds.has(toLayerId as string) &&
+            !reachableLayerIds.has(fromLayerId as string)
+          ) {
+            reachableLayerIds.add(fromLayerId as string);
+            addedLayer = true;
+          }
+        }
+      }
+      const unreachableLayer = layers.find(layer => !reachableLayerIds.has(layer.id as string));
+      if (unreachableLayer !== undefined) {
+        throw new ScenarioValidationError(
+          `${path}.layers`,
+          `layer "${String(unreachableLayer.id)}" is not connected to "${String(layers[0]?.id)}"`,
+        );
+      }
 
       const outletAffordances = arrayValue(
         environment.outletAffordances,
@@ -886,9 +1030,9 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseResourceFile(value: unknown, path = 'resource'): ResourceFile {
   const file = objectValue(value, path);
-  schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
   const address = parseResourceAddress(file.address, `${path}.address`);
   if (address.kind === 'character-profile') {
+    schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
     let profile: CharacterLibraryFile['characters'][number] | undefined;
     try {
       profile = parseCharacterLibrary({ characters: [file.profile], schemaVersion: 7 })
@@ -912,6 +1056,9 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
       schemaVersion: 1,
     }) as CharacterProfileResourceFile;
   }
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+    throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
+  }
   let layout: EnvironmentLibraryFile['environments'][number] | undefined;
   try {
     layout = parseEnvironmentLibrary({ environments: [file.layout], schemaVersion: 2 })
@@ -932,13 +1079,13 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
   return clone({
     address: address as EnvironmentLayoutAddress,
     layout,
-    schemaVersion: 1,
+    schemaVersion: 2,
   }) as EnvironmentLayoutResourceFile;
 }
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 12);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 13);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -1164,7 +1311,7 @@ export function parseScenario(value: unknown): ScenarioFile {
         numberValue(override.confidence, `${overridePath}.confidence`, 0, 1);
       }
     });
-    validatePoint(placement.position, `${path}.position`);
+    validateLayerPosition(placement.position, `${path}.position`);
     if (placement.walkingMetersPerMinute !== undefined) {
       numberValue(placement.walkingMetersPerMinute, `${path}.walkingMetersPerMinute`, 0.1, 500);
     }

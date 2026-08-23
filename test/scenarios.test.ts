@@ -29,7 +29,7 @@ const environmentLibrary = {
     ...copingEnvironments.environments,
     ...highwaymanEnvironments.environments,
   ],
-  schemaVersion: 1,
+  schemaVersion: 2,
 };
 
 describe('built-in scenario catalog', () => {
@@ -38,6 +38,7 @@ describe('built-in scenario catalog', () => {
       BUILT_IN_SCENARIOS.map(entry => entry.id),
       [
         'market-morning',
+        'alders-edge-town',
         'baker-deadline',
         'disclosure-audience',
         'endicott-margueritte',
@@ -51,7 +52,7 @@ describe('built-in scenario catalog', () => {
       ],
     );
     assert.equal(DEFAULT_BUILT_IN_SCENARIO.id, 'market-morning');
-    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 11);
+    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 12);
   });
 
   it('loads every included asset through the regular simulation path', () => {

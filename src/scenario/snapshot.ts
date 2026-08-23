@@ -137,6 +137,12 @@ function validatePoint(value: unknown, path: string): void {
   numberValue(point.y, `${path}.y`);
 }
 
+function validateLayerPosition(value: unknown, path: string): void {
+  const point = objectValue(value, path);
+  validatePoint(point, path);
+  stringValue(point.layerId, `${path}.layerId`);
+}
+
 function validateValueState(value: unknown, path: string): void {
   const state = objectValue(value, path);
   numberValue(state.charge, `${path}.charge`, -1, 1);
@@ -173,8 +179,8 @@ function validateAgent(value: unknown, path: string): void {
   const agent = objectValue(value, path);
   stringValue(agent.id, `${path}.id`);
   parseResourceAddress(agent.profile, `${path}.profile`, 'character-profile');
-  validatePoint(agent.position, `${path}.position`);
-  validatePoint(agent.destination, `${path}.destination`);
+  validateLayerPosition(agent.position, `${path}.position`);
+  validateLayerPosition(agent.destination, `${path}.destination`);
   if (agent.currentLocationId !== null) {
     stringValue(agent.currentLocationId, `${path}.currentLocationId`);
   }
@@ -852,7 +858,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 6 &&
     file.schemaVersion !== 7 &&
     file.schemaVersion !== 8 &&
-    file.schemaVersion !== 9
+    file.schemaVersion !== 9 &&
+    file.schemaVersion !== 10
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -991,7 +998,14 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       }),
     };
   }
-  file.schemaVersion = 9;
+  if (sourceVersion < 10) {
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      const agent = objectValue(agentValue, 'snapshot.agents');
+      objectValue(agent.position, 'snapshot.agents.position').layerId = 'surface';
+      objectValue(agent.destination, 'snapshot.agents.destination').layerId = 'surface';
+    }
+  }
+  file.schemaVersion = 10;
   return file;
 }
 
@@ -1000,7 +1014,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 9) {
+  if (file.schemaVersion !== 10) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);

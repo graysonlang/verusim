@@ -1346,6 +1346,58 @@ input[type="search"]::placeholder {
   cursor: grabbing;
 }
 
+.layer-switcher {
+  position: absolute;
+  z-index: 5;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid rgb(245 236 208 / 15%);
+  border-radius: 6px;
+  background: rgb(13 21 16 / 82%);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 26%);
+  backdrop-filter: blur(8px);
+}
+
+.layer-switcher[hidden] {
+  display: none;
+}
+
+.layer-button {
+  display: grid;
+  min-width: 76px;
+  gap: 1px;
+  padding: 7px 10px;
+  border: 0;
+  border-right: 1px solid rgb(245 236 208 / 10%);
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.layer-button:last-child {
+  border-right: 0;
+}
+
+.layer-button small {
+  color: var(--faint);
+  font-size: 7px;
+}
+
+.layer-button:hover,
+.layer-button:focus-visible {
+  background: rgb(245 204 104 / 8%);
+  color: var(--text);
+}
+
+.layer-button.selected {
+  background: rgb(245 204 104 / 15%);
+  color: #f5d98f;
+}
+
 .character-hover-card {
   position: absolute;
   border: 1px solid rgb(245 236 208 / 12%);

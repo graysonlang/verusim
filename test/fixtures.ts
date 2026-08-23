@@ -51,7 +51,7 @@ export const normCharacters = {
 };
 
 export const environments = {
-  environments: layouts(['alders-edge']),
+  environments: layouts(['alders-edge', 'alders-edge-town']),
   schemaVersion: 1,
 };
 

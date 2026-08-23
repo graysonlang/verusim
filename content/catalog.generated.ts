@@ -14,11 +14,12 @@ import resource12 from './resources/characters/highwayman/petra-mere.json';
 import resource13 from './resources/characters/pottsfield/pottsfield-reeve.json';
 import resource14 from './resources/characters/pottsfield/pottsfield-resident.json';
 import resource15 from './resources/characters/pottsfield/pottsfield-visitor.json';
-import resource16 from './resources/environments/alders-edge/alders-edge.json';
-import resource17 from './resources/environments/coping/coping-inn.json';
-import resource18 from './resources/environments/coping/coping-storehouse.json';
-import resource19 from './resources/environments/coping/coping-yard.json';
-import resource20 from './resources/environments/highwayman/old-king-road.json';
+import resource16 from './resources/environments/alders-edge/alders-edge-town.json';
+import resource17 from './resources/environments/alders-edge/alders-edge.json';
+import resource18 from './resources/environments/coping/coping-inn.json';
+import resource19 from './resources/environments/coping/coping-storehouse.json';
+import resource20 from './resources/environments/coping/coping-yard.json';
+import resource21 from './resources/environments/highwayman/old-king-road.json';
 import type { AuthoredResource } from '../src/model/types.js';
 
 export const BUILT_IN_RESOURCES: readonly AuthoredResource[] = Object.freeze([
@@ -87,23 +88,27 @@ export const BUILT_IN_RESOURCES: readonly AuthoredResource[] = Object.freeze([
     value: resource15,
   }),
   Object.freeze({
-    source: 'content/resources/environments/alders-edge/alders-edge.json',
+    source: 'content/resources/environments/alders-edge/alders-edge-town.json',
     value: resource16,
   }),
   Object.freeze({
-    source: 'content/resources/environments/coping/coping-inn.json',
+    source: 'content/resources/environments/alders-edge/alders-edge.json',
     value: resource17,
   }),
   Object.freeze({
-    source: 'content/resources/environments/coping/coping-storehouse.json',
+    source: 'content/resources/environments/coping/coping-inn.json',
     value: resource18,
   }),
   Object.freeze({
-    source: 'content/resources/environments/coping/coping-yard.json',
+    source: 'content/resources/environments/coping/coping-storehouse.json',
     value: resource19,
   }),
   Object.freeze({
-    source: 'content/resources/environments/highwayman/old-king-road.json',
+    source: 'content/resources/environments/coping/coping-yard.json',
     value: resource20,
+  }),
+  Object.freeze({
+    source: 'content/resources/environments/highwayman/old-king-road.json',
+    value: resource21,
   }),
 ]);

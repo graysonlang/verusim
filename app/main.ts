@@ -1205,6 +1205,7 @@ function createWorkbench(): HTMLElement {
   const rosterList = element('div', 'roster-list');
   const stage = element('section', 'stage');
   const canvas = element('canvas', 'world-canvas');
+  const layerSwitcher = element('nav', 'layer-switcher');
   const characterHoverCard = element('section', 'character-hover-card');
   const worldScale = element('div', 'world-scale');
   const worldScaleLabel = element('span', 'world-scale-label');
@@ -1417,6 +1418,8 @@ function createWorkbench(): HTMLElement {
   roster.append(rosterHeader, rosterList);
 
   canvas.setAttribute('aria-label', 'Top-down scenario environment');
+  layerSwitcher.dataset.testid = 'layer-switcher';
+  layerSwitcher.setAttribute('aria-label', 'Environment layer');
   characterHoverCard.dataset.testid = 'character-hover-card';
   characterHoverCard.hidden = true;
   characterHoverCard.setAttribute('aria-hidden', 'true');
@@ -1471,7 +1474,7 @@ function createWorkbench(): HTMLElement {
   signalControls.setAttribute('aria-label', 'Field signals');
   signalControls.append(signalMenuButton, zoomLevelButton);
   header.append(fileActions, transport, signalControls);
-  stage.append(canvas, characterHoverCard, worldScale);
+  stage.append(canvas, layerSwitcher, characterHoverCard, worldScale);
 
   inspector.append(inspectorContent);
   footer.append(statusText);
@@ -1626,6 +1629,7 @@ function createWorkbench(): HTMLElement {
     selectedAgentId,
     state,
   });
+  let renderedLayerSignature = '';
 
   function selectAndFocus(agentId: string): void {
     setSelectedAgentId(agentId);
@@ -2113,6 +2117,39 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
+    const activeLayerId = worldView.activeLayerId();
+    const signature = `${current.environment.layoutId}:${current.environment.layers
+      .map(layer => `${layer.id}:${layer.name}:${layer.elevationMeters}`)
+      .join('|')}`;
+    if (signature !== renderedLayerSignature) {
+      renderedLayerSignature = signature;
+      layerSwitcher.replaceChildren(
+        ...current.environment.layers.map(layer => {
+          const control = button('', 'layer-button');
+          const name = element('span');
+          const elevation = element('small');
+          name.textContent = layer.name;
+          elevation.textContent = `${layer.elevationMeters >= 0 ? '+' : ''}${layer.elevationMeters} m`;
+          control.dataset.layerId = layer.id;
+          control.dataset.testid = `layer-${layer.id}`;
+          control.setAttribute('aria-pressed', 'false');
+          control.append(name, elevation);
+          return control;
+        }),
+      );
+    }
+    layerSwitcher.hidden = current.environment.layers.length <= 1;
+    for (const control of layerSwitcher.querySelectorAll<HTMLButtonElement>(
+      'button[data-layer-id]',
+    )) {
+      const selected = control.dataset.layerId === activeLayerId;
+      control.classList.toggle('selected', selected);
+      control.setAttribute('aria-pressed', String(selected));
+    }
+  });
+
+  createEffect(() => {
+    const current = state();
     const currentPreferences = preferences();
     const conditions = current.scenario.environmentConditions;
     const dayPeriod = dayPeriodAtMinute(current.minute, conditions.season);
@@ -2394,6 +2431,13 @@ function createWorkbench(): HTMLElement {
   });
   time.addEventListener('click', () => setShowTickNumber(current => !current));
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
+  layerSwitcher.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest<HTMLButtonElement>('button[data-layer-id]');
+    if (control === null || !layerSwitcher.contains(control)) return;
+    const layerId = control.dataset.layerId;
+    if (layerId !== undefined) worldView.setLayer(layerId);
+  });
   step.addEventListener('click', () => executeActionById('step'));
   play.addEventListener('click', () => executeActionById('play-pause'));
   timeRateButton.addEventListener('click', () => setTimeRateMenuOpen(timeRateMenu.hidden));

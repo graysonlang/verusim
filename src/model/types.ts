@@ -121,6 +121,10 @@ export interface Point {
   y: number;
 }
 
+export interface LayerPosition extends Point {
+  layerId: string;
+}
+
 export interface Bounds extends Point {
   height: number;
   width: number;
@@ -292,20 +296,40 @@ export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'p
 export interface EnvironmentArea extends Bounds {
   id: string;
   kind: AreaKind;
+  layerId: string;
   label?: string;
 }
 
 export interface LocationDefinition extends Bounds {
   id: string;
   kind: string;
+  layerId: string;
   name: string;
+}
+
+export interface EnvironmentLayer {
+  elevationMeters: number;
+  id: string;
+  name: string;
+}
+
+export type EnvironmentConnectorKind = 'ladder' | 'ramp' | 'stairs';
+
+export interface EnvironmentConnector {
+  from: LayerPosition;
+  id: string;
+  kind: EnvironmentConnectorKind;
+  to: LayerPosition;
+  traversalDistanceMeters: number;
 }
 
 export interface EnvironmentDefinition {
   areas: EnvironmentArea[];
+  connectors: EnvironmentConnector[];
   environmentId: string;
   height: number;
   layoutId: string;
+  layers: EnvironmentLayer[];
   locations: LocationDefinition[];
   name: string;
   outletAffordances: OutletAffordance[];
@@ -320,7 +344,7 @@ export interface EnvironmentLibraryFile {
 export interface EnvironmentLayoutResourceFile {
   address: EnvironmentLayoutAddress;
   layout: EnvironmentDefinition;
-  schemaVersion: 1;
+  schemaVersion: 2;
 }
 
 export type ResourceFile = CharacterProfileResourceFile | EnvironmentLayoutResourceFile;
@@ -403,7 +427,7 @@ export interface CharacterPlacement {
   instanceId: string;
   narrativeOverrides: NarrativeClaimOverride[];
   normPerspectives: NormPerspective[];
-  position: Point;
+  position: LayerPosition;
   schedule: ScheduleBlock[];
   walkingMetersPerMinute?: number;
 }
@@ -722,7 +746,7 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 12;
+  schemaVersion: 13;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -773,12 +797,12 @@ export interface SimulationAgent {
   currentOutlet: OutletSelection | null;
   currentActivity: string;
   currentLocationId: string | null;
-  destination: Point;
+  destination: LayerPosition;
   id: string;
   memories: RuntimeMemory[];
   narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
-  position: Point;
+  position: LayerPosition;
   profile: CharacterDefinition;
   resources: ResourceState;
   schedule: ScheduleBlock[];
@@ -1165,12 +1189,12 @@ export interface SimulationAgentSnapshot {
   currentOutlet: OutletSelection | null;
   currentActivity: string;
   currentLocationId: string | null;
-  destination: Point;
+  destination: LayerPosition;
   id: string;
   memories: RuntimeMemory[];
   narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
-  position: Point;
+  position: LayerPosition;
   profile: CharacterProfileAddress;
   resources: ResourceState;
   schedule: ScheduleBlock[];
@@ -1205,7 +1229,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 9;
+  schemaVersion: 10;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

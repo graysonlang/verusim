@@ -6,7 +6,6 @@ import {
   type EnvironmentDefinition,
   type LocationDefinition,
   type MaskingDemand,
-  type Point,
   type PreparedScenario,
   type RecoveryMode,
   type ResourceAddress,
@@ -32,6 +31,12 @@ import {
   resolveNarrativeEvent,
 } from './narrative.js';
 import { applyBuildToWalkingPace } from './physical.js';
+import {
+  advanceLayerPosition,
+  locationCenter,
+  navigationDistance,
+  sameLayerPosition,
+} from './navigation.js';
 import { resolveObservationEvent } from './prediction.js';
 import {
   consolidateRelationshipMemories,
@@ -109,17 +114,6 @@ function sameResourceLock(
   );
 }
 
-function locationCenter(location: LocationDefinition): Point {
-  return {
-    x: location.x + location.width / 2,
-    y: location.y + location.height / 2,
-  };
-}
-
-function distance(left: Point, right: Point): number {
-  return Math.hypot(right.x - left.x, right.y - left.y);
-}
-
 function findLocation(environment: EnvironmentDefinition, locationId: string): LocationDefinition {
   const location = environment.locations.find(candidate => candidate.id === locationId);
   if (location === undefined) {
@@ -176,7 +170,7 @@ function initializeAgent(
 ): SimulationAgent {
   const block = activeScheduleBlock(placement.schedule, minute);
   const destination = locationCenter(findLocation(environment, block.locationId));
-  const arrived = distance(placement.position, destination) < 0.01;
+  const arrived = sameLayerPosition(placement.position, destination);
   const agent: SimulationAgent = {
     cascade: 'none',
     cascadeDwellUntilMinute: minute,
@@ -339,6 +333,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     );
   }
   const locationIds = new Set(base.environment.locations.map(location => location.id));
+  const layerIds = new Set(base.environment.layers.map(layer => layer.id));
   const agents = snapshot.agents.map((saved, index) => {
     const agent = baseAgents.get(saved.id);
     if (agent === undefined) {
@@ -358,6 +353,18 @@ export function createSimulationFromPreparedSnapshot(input: {
       throw new ScenarioValidationError(
         `snapshot.agents[${index}].currentLocationId`,
         `unknown location "${saved.currentLocationId}"`,
+      );
+    }
+    if (!layerIds.has(saved.position.layerId)) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].position.layerId`,
+        `unknown layer "${saved.position.layerId}"`,
+      );
+    }
+    if (!layerIds.has(saved.destination.layerId)) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].destination.layerId`,
+        `unknown layer "${saved.destination.layerId}"`,
       );
     }
     saved.schedule.forEach((block, blockIndex) => {
@@ -811,16 +818,10 @@ function advanceAgent(
     throw new Error('An agent always has a task or schedule destination');
   const location = findLocation(state.environment, locationId);
   const destination = locationCenter(location);
-  const remaining = distance(agent.position, destination);
+  const remaining = navigationDistance(state.environment, agent.position, destination);
   const travel = agent.walkingMetersPerMinute * state.scenario.tickMinutes;
-  const position =
-    remaining <= travel || remaining === 0
-      ? destination
-      : {
-          x: agent.position.x + ((destination.x - agent.position.x) / remaining) * travel,
-          y: agent.position.y + ((destination.y - agent.position.y) / remaining) * travel,
-        };
-  const arrived = distance(position, destination) < 0.01;
+  const position = advanceLayerPosition(state.environment, agent.position, destination, travel);
+  const arrived = sameLayerPosition(position, destination);
   const currentActivity = arrived
     ? task === null
       ? (block?.activity ?? agent.currentActivity)

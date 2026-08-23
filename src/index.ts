@@ -109,6 +109,13 @@ export {
   evaluateProximity,
   evaluateSpatialPerception,
 } from './simulation/spatial.js';
+export {
+  advanceLayerPosition,
+  findNavigationRoute,
+  locationCenter,
+  navigationDistance,
+  sameLayerPosition,
+} from './simulation/navigation.js';
 
 export const buildInfo = Object.freeze({
   version: __APP_VERSION__,

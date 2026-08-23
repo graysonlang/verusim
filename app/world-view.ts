@@ -46,12 +46,21 @@ export interface WorldHover {
 }
 
 export interface WorldView {
+  activeLayerId: Accessor<string>;
   actualSize: () => void;
   camera: Accessor<Camera>;
   fit: () => void;
   focusAgent: (agentId: string) => void;
+  setLayer: (layerId: string) => void;
   setZoom: (zoom: number) => void;
   zoomBy: (factor: number) => void;
+}
+
+export function agentsOnLayer(
+  agents: readonly SimulationAgent[],
+  layerId: string,
+): readonly SimulationAgent[] {
+  return agents.filter(agent => agent.position.layerId === layerId);
 }
 
 const AREA_COLORS: Record<EnvironmentArea['kind'], string> = {
@@ -477,12 +486,14 @@ function drawAgentIndicators(
   camera: Camera,
   selectedAgentId: string | null,
   settings: IndicatorSettings,
+  activeLayerId: string,
   width: number,
   height: number,
 ): void {
   if (settings.verbosity === 'off') return;
   const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   for (const agent of state.agents) {
+    if (agent.position.layerId !== activeLayerId) continue;
     const selected = agent.id === selectedAgentId;
     if (screenPixelsPerMeter < 0.3 && !selected) continue;
     const projected = indicatorsForAgent(state, agent, settings);
@@ -525,6 +536,7 @@ function drawWorld(
   camera: Camera,
   selectedAgentId: string | null,
   indicatorSettings: IndicatorSettings,
+  activeLayerId: string,
   width: number,
   height: number,
 ): void {
@@ -547,13 +559,20 @@ function drawWorld(
   );
   context.scale(screenPixelsPerMeter, screenPixelsPerMeter);
 
-  context.fillStyle = '#405f3d';
+  const activeLayer = state.environment.layers.find(layer => layer.id === activeLayerId);
+  context.fillStyle =
+    (activeLayer?.elevationMeters ?? 0) < 0
+      ? '#302c27'
+      : (activeLayer?.elevationMeters ?? 0) > 0
+        ? '#344139'
+        : '#405f3d';
   context.fillRect(0, 0, state.environment.width, state.environment.height);
   context.strokeStyle = 'rgb(228 218 182 / 18%)';
   context.lineWidth = 2 / screenPixelsPerMeter;
   context.strokeRect(0, 0, state.environment.width, state.environment.height);
 
   for (const area of state.environment.areas) {
+    if (area.layerId !== activeLayerId) continue;
     context.fillStyle = AREA_COLORS[area.kind];
     context.fillRect(area.x, area.y, area.width, area.height);
     drawAreaTexture(context, area, screenPixelsPerMeter);
@@ -565,12 +584,38 @@ function drawWorld(
     }
   }
 
+  context.save();
+  for (const connector of state.environment.connectors) {
+    const endpoint =
+      connector.from.layerId === activeLayerId
+        ? connector.from
+        : connector.to.layerId === activeLayerId
+          ? connector.to
+          : null;
+    if (endpoint === null) continue;
+    const size = 8 / screenPixelsPerMeter;
+    context.fillStyle = 'rgb(37 31 24 / 82%)';
+    context.fillRect(endpoint.x - size / 2, endpoint.y - size / 2, size, size);
+    context.strokeStyle = 'rgb(245 217 143 / 72%)';
+    context.lineWidth = 1 / screenPixelsPerMeter;
+    context.strokeRect(endpoint.x - size / 2, endpoint.y - size / 2, size, size);
+    if (screenPixelsPerMeter >= 0.55) {
+      context.fillStyle = 'rgb(255 241 202 / 88%)';
+      context.font = `600 ${8 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
+      context.textAlign = 'center';
+      context.textBaseline = 'middle';
+      context.fillText(connector.kind.slice(0, 1).toUpperCase(), endpoint.x, endpoint.y);
+    }
+  }
+  context.restore();
+
   drawAtmosphere(context, state.environment.width, state.environment.height, palette);
 
   drawAreaIndicators(context, state, camera, indicatorSettings);
 
   if (screenPixelsPerMeter >= LOCATION_LABEL_MIN_PIXELS_PER_METER) {
     for (const location of state.environment.locations) {
+      if (location.layerId !== activeLayerId) continue;
       context.fillStyle = 'rgb(255 250 226 / 72%)';
       context.font = `600 ${10 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
       context.textAlign = 'center';
@@ -583,7 +628,9 @@ function drawWorld(
   }
 
   for (const agent of state.agents) {
+    if (agent.position.layerId !== activeLayerId) continue;
     if (agent.currentLocationId === null) {
+      if (agent.destination.layerId !== activeLayerId) continue;
       context.beginPath();
       context.moveTo(agent.position.x, agent.position.y);
       context.lineTo(agent.destination.x, agent.destination.y);
@@ -596,6 +643,7 @@ function drawWorld(
   }
 
   for (const agent of state.agents) {
+    if (agent.position.layerId !== activeLayerId) continue;
     const selected = agent.id === selectedAgentId;
     const radius = (selected ? 10 : 8) / screenPixelsPerMeter;
     if (selected) {
@@ -623,12 +671,24 @@ function drawWorld(
     );
   }
   context.restore();
-  drawAgentIndicators(context, state, camera, selectedAgentId, indicatorSettings, width, height);
+  drawAgentIndicators(
+    context,
+    state,
+    camera,
+    selectedAgentId,
+    indicatorSettings,
+    activeLayerId,
+    width,
+    height,
+  );
 }
 
 export function createWorldView(options: WorldViewOptions): WorldView {
   const { canvas } = options;
   const initialState = options.state();
+  const [activeLayerId, setActiveLayerId] = createSignal(
+    initialState.environment.layers[0]?.id ?? 'surface',
+  );
   const [camera, setCamera] = createSignal<Camera>({
     x: initialState.environment.width / 2,
     y: initialState.environment.height / 2,
@@ -667,6 +727,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   function focusAgent(agentId: string): void {
     const agent = options.state().agents.find(candidate => candidate.id === agentId);
     if (agent === undefined) return;
+    setActiveLayerId(agent.position.layerId);
     options.onHover(null);
     setCamera(current => ({
       ...current,
@@ -697,7 +758,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
 
   function nearestAgentId(screen: Point): string | null {
     return agentIdAtScreenPoint(
-      options.state().agents,
+      agentsOnLayer(options.state().agents, activeLayerId()),
       camera(),
       { height: canvas.clientHeight, width: canvas.clientWidth },
       screen,
@@ -837,6 +898,11 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const selectedAgentId = options.selectedAgentId();
     const indicatorSettings = options.indicatorSettings();
     const currentCamera = camera();
+    const currentLayerId = activeLayerId();
+    if (!state.environment.layers.some(layer => layer.id === currentLayerId)) {
+      setActiveLayerId(state.environment.layers[0]?.id ?? 'surface');
+      return;
+    }
     viewportRevision();
     const width = Math.max(canvas.clientWidth, 1);
     const height = Math.max(canvas.clientHeight, 1);
@@ -850,7 +916,16 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const context = canvas.getContext('2d');
     if (context === null) return;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    drawWorld(context, state, currentCamera, selectedAgentId, indicatorSettings, width, height);
+    drawWorld(
+      context,
+      state,
+      currentCamera,
+      selectedAgentId,
+      indicatorSettings,
+      currentLayerId,
+      width,
+      height,
+    );
   });
 
   onCleanup(() => {
@@ -863,5 +938,14 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     canvas.removeEventListener('wheel', onWheel);
   });
 
-  return { actualSize, camera, fit, focusAgent, setZoom: setZoomLevel, zoomBy: zoomAt };
+  return {
+    activeLayerId,
+    actualSize,
+    camera,
+    fit,
+    focusAgent,
+    setLayer: setActiveLayerId,
+    setZoom: setZoomLevel,
+    zoomBy: zoomAt,
+  };
 }
