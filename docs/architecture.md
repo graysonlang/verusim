@@ -41,6 +41,8 @@ If sampling is used for cohort or incident generation, its seed, sampler positio
 
 `app` owns Solid signals, ordinary DOM construction, Canvas rendering, pointer gestures, file access, and downloads.
 It may display or edit simulation state but may not invent behavioral state.
+The workbench bundles the repository's authored scenarios into a title-bar catalog and presents their existing scenario summaries as hover and dialog information.
+Choosing a bundled entry or an external file still uses the same validated simulation-loading path and establishes the reset baseline from that loaded state.
 
 ## State layers
 

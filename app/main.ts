@@ -3,7 +3,6 @@ import characters from '../library/characters.json';
 import environments from '../library/environments.json';
 import highwaymanCharacters from '../library/highwayman-characters.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
-import scenario from '../scenarios/market-morning.json';
 import {
   CAPABILITY_IDS,
   DAY_PERIOD_LABELS,
@@ -62,6 +61,11 @@ import {
   type ClockFormat,
   type DistanceUnit,
 } from './preferences.js';
+import {
+  BUILT_IN_SCENARIOS,
+  DEFAULT_BUILT_IN_SCENARIO,
+  type BuiltInScenario,
+} from './scenarios.js';
 import { workbenchActionForShortcut } from './shortcuts.js';
 import {
   formatDistance,
@@ -127,7 +131,7 @@ function hamburgerIcon(): SVGSVGElement {
 }
 
 function controlIcon(
-  kind: 'chevron' | 'close' | 'pause' | 'play' | 'reset' | 'step',
+  kind: 'chevron' | 'close' | 'info' | 'pause' | 'play' | 'reset' | 'step',
 ): SVGSVGElement {
   const namespace = 'http://www.w3.org/2000/svg';
   const icon = document.createElementNS(namespace, 'svg');
@@ -147,6 +151,23 @@ function controlIcon(
       rect.setAttribute('y', '3');
       icon.append(rect);
     }
+    return icon;
+  }
+  if (kind === 'info') {
+    const circle = document.createElementNS(namespace, 'circle');
+    const path = document.createElementNS(namespace, 'path');
+    circle.setAttribute('cx', '8');
+    circle.setAttribute('cy', '8');
+    circle.setAttribute('fill', 'none');
+    circle.setAttribute('r', '6');
+    circle.setAttribute('stroke', 'currentColor');
+    circle.setAttribute('stroke-width', '1.25');
+    path.setAttribute('d', 'M8 7v4M8 4.5v.25');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-width', '1.5');
+    icon.append(circle, path);
     return icon;
   }
   const path = document.createElementNS(namespace, 'path');
@@ -332,7 +353,7 @@ function createStarterSimulation(): SimulationState {
   return createSimulation({
     characterLibrary,
     environmentLibrary,
-    scenario,
+    scenario: DEFAULT_BUILT_IN_SCENARIO.scenario,
   });
 }
 
@@ -991,6 +1012,9 @@ function createWorkbench(): HTMLElement {
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
   const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
+  const [loadedBuiltInScenarioId, setLoadedBuiltInScenarioId] = createSignal<string | null>(
+    DEFAULT_BUILT_IN_SCENARIO.id,
+  );
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
@@ -998,6 +1022,19 @@ function createWorkbench(): HTMLElement {
   const appMenu = element('nav', 'app-menu');
   const fileActions = element('div', 'file-actions');
   const fileInput = element('input');
+  const scenarioSelector = element('div', 'scenario-selector');
+  const scenarioMenuButton = button('', 'scenario-menu-button');
+  const scenarioName = element('span', 'scenario-title');
+  const scenarioMenuDisclosure = element('span', 'scenario-menu-disclosure');
+  const scenarioInfoButton = button('', 'scenario-info-button');
+  const scenarioMenu = element('section', 'scenario-menu');
+  const scenarioOpenFileButton = button('', 'scenario-menu-item scenario-open-file');
+  const scenarioMenuButtons = new Map<string, HTMLButtonElement>();
+  const scenarioMenuStateLabels = new Map<string, HTMLElement>();
+  const scenarioInfoTooltip = element('section', 'scenario-info-tooltip');
+  const scenarioTooltipTitle = element('strong');
+  const scenarioTooltipSummary = element('p');
+  const scenarioTooltipMeta = element('small');
   const signalControls = element('section', 'header-signals');
   const signalMenuButton = button('', 'signal-menu-button');
   const signalMenuValue = element('span', 'signal-menu-value');
@@ -1043,7 +1080,6 @@ function createWorkbench(): HTMLElement {
   const tickCount = element('span', 'simulation-tick');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
-  const scenarioName = element('h1', 'scenario-title');
   const rosterTitleWrap = element('div');
   const rosterTitle = element('h2');
   const rosterCount = element('span', 'count');
@@ -1071,6 +1107,15 @@ function createWorkbench(): HTMLElement {
   const settingsTitle = element('h2');
   const settingsCloseButton = button('', 'settings-close-button');
   const settingsBody = element('div', 'settings-body');
+  const scenarioInfoOverlay = element('div', 'scenario-info-overlay');
+  const scenarioInfoPanel = element('section', 'scenario-info-panel');
+  const scenarioInfoHeading = element('header', 'scenario-info-heading');
+  const scenarioInfoEyebrow = element('span', 'scenario-info-eyebrow');
+  const scenarioInfoTitle = element('h2');
+  const scenarioInfoCloseButton = button('', 'scenario-info-close-button');
+  const scenarioInfoBody = element('div', 'scenario-info-body');
+  const scenarioInfoSummary = element('p', 'scenario-info-summary');
+  const scenarioInfoFacts = element('dl', 'scenario-info-facts');
   const defaultTimeRateSelect = element('select');
   const clockFormatInputs: HTMLInputElement[] = [];
   const distanceUnitInputs: HTMLInputElement[] = [];
@@ -1103,11 +1148,61 @@ function createWorkbench(): HTMLElement {
     quickActionsButton,
   );
 
+  scenarioName.textContent = initial.scenario.title;
+  scenarioMenuButton.dataset.testid = 'scenario-menu-button';
+  scenarioMenuButton.setAttribute('aria-controls', 'scenario-menu');
+  scenarioMenuButton.setAttribute('aria-expanded', 'false');
+  scenarioMenuButton.setAttribute('aria-haspopup', 'menu');
+  scenarioMenuDisclosure.append(controlIcon('chevron'));
+  scenarioMenuButton.append(scenarioName, scenarioMenuDisclosure);
+  scenarioInfoButton.dataset.testid = 'scenario-info-button';
+  scenarioInfoButton.setAttribute('aria-describedby', 'scenario-info-tooltip');
+  scenarioInfoButton.setAttribute('aria-label', 'Scenario information');
+  scenarioInfoButton.append(controlIcon('info'));
+  scenarioSelector.append(scenarioMenuButton, scenarioInfoButton);
+
+  scenarioMenu.id = 'scenario-menu';
+  scenarioMenu.dataset.testid = 'scenario-menu';
+  scenarioMenu.hidden = true;
+  scenarioMenu.setAttribute('aria-label', 'Included scenarios');
+  scenarioMenu.setAttribute('role', 'menu');
+  for (const entry of BUILT_IN_SCENARIOS) {
+    const control = button('', 'scenario-menu-item');
+    const copy = element('span', 'scenario-menu-copy');
+    const title = element('strong');
+    const summary = element('small');
+    const stateLabel = element('span', 'scenario-menu-state');
+    title.textContent = entry.title;
+    summary.textContent = entry.summary;
+    copy.append(title, summary);
+    control.dataset.scenarioId = entry.id;
+    control.dataset.testid = `scenario-${entry.id}`;
+    control.setAttribute('aria-checked', 'false');
+    control.setAttribute('role', 'menuitemradio');
+    control.append(copy, stateLabel);
+    scenarioMenuButtons.set(entry.id, control);
+    scenarioMenuStateLabels.set(entry.id, stateLabel);
+    scenarioMenu.append(control);
+  }
+  const scenarioMenuSeparator = element('div', 'menu-separator scenario-menu-separator');
+  scenarioMenuSeparator.setAttribute('role', 'separator');
+  scenarioOpenFileButton.dataset.openFile = 'true';
+  scenarioOpenFileButton.dataset.testid = 'scenario-open-file';
+  scenarioOpenFileButton.setAttribute('role', 'menuitem');
+  scenarioOpenFileButton.textContent = 'Open scenario or snapshot...';
+  scenarioMenu.append(scenarioMenuSeparator, scenarioOpenFileButton);
+
+  scenarioInfoTooltip.id = 'scenario-info-tooltip';
+  scenarioInfoTooltip.hidden = true;
+  scenarioInfoTooltip.setAttribute('aria-hidden', 'true');
+  scenarioInfoTooltip.setAttribute('role', 'tooltip');
+  scenarioInfoTooltip.append(scenarioTooltipTitle, scenarioTooltipSummary, scenarioTooltipMeta);
+
   fileInput.type = 'file';
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
-  fileActions.append(menuButton, fileInput);
+  fileActions.append(menuButton, scenarioSelector, fileInput);
   resetScenario.dataset.testid = 'transport-reset';
   resetScenario.setAttribute('aria-label', 'Reset loaded scenario');
   resetScenario.append(controlIcon('reset'));
@@ -1198,13 +1293,12 @@ function createWorkbench(): HTMLElement {
   zoomSelection.className = 'zoom-menu-item';
   zoomMenu.append(zoomForm, zoomActualSize, zoomFit, zoomSelection);
 
-  scenarioName.textContent = initial.scenario.title;
   rosterTitle.textContent = 'Characters';
   rosterTitleWrap.append(rosterTitle, rosterCount);
   searchInput.type = 'search';
   searchInput.placeholder = 'Find a character';
   searchInput.setAttribute('aria-label', 'Find a character');
-  rosterHeader.append(scenarioName, rosterTitleWrap, searchInput);
+  rosterHeader.append(rosterTitleWrap, searchInput);
   roster.append(rosterHeader, rosterList);
 
   canvas.setAttribute('aria-label', 'Top-down scenario environment');
@@ -1356,18 +1450,38 @@ function createWorkbench(): HTMLElement {
   settingsOverlay.setAttribute('aria-hidden', 'true');
   settingsOverlay.inert = true;
   settingsOverlay.append(settingsPanel);
+
+  const scenarioInfoHeadingCopy = element('div');
+  scenarioInfoEyebrow.textContent = 'Scenario';
+  scenarioInfoTitle.id = 'scenario-info-title';
+  scenarioInfoHeadingCopy.append(scenarioInfoEyebrow, scenarioInfoTitle);
+  scenarioInfoCloseButton.setAttribute('aria-label', 'Close scenario information');
+  scenarioInfoCloseButton.title = 'Close scenario information';
+  scenarioInfoCloseButton.append(controlIcon('close'));
+  scenarioInfoHeading.append(scenarioInfoHeadingCopy, scenarioInfoCloseButton);
+  scenarioInfoBody.append(scenarioInfoSummary, scenarioInfoFacts);
+  scenarioInfoPanel.setAttribute('aria-labelledby', scenarioInfoTitle.id);
+  scenarioInfoPanel.setAttribute('aria-modal', 'true');
+  scenarioInfoPanel.setAttribute('role', 'dialog');
+  scenarioInfoPanel.append(scenarioInfoHeading, scenarioInfoBody);
+  scenarioInfoOverlay.setAttribute('aria-hidden', 'true');
+  scenarioInfoOverlay.inert = true;
+  scenarioInfoOverlay.append(scenarioInfoPanel);
   shell.append(
     appMenu,
+    scenarioMenu,
     timeRateMenu,
     signalMenu,
     zoomMenu,
     header,
+    scenarioInfoTooltip,
     roster,
     stage,
     inspector,
     footer,
     quickActionsOverlay,
     settingsOverlay,
+    scenarioInfoOverlay,
   );
 
   const worldView = createWorldView({
@@ -1398,6 +1512,35 @@ function createWorkbench(): HTMLElement {
     setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
     setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
     requestAnimationFrame(worldView.fit);
+  }
+
+  function activateLoadedSimulation(
+    loaded: SimulationState,
+    statusMessage: string,
+    builtInScenarioId: string | null,
+  ): void {
+    loadedBaseline = loaded;
+    setPlaying(false);
+    setState(loaded);
+    setPlaybackRateId(initialTimeRateForScenario(loaded.scenario, preferences()));
+    setSelectedAgentId(loaded.agents[0]?.id ?? null);
+    setLoadedBuiltInScenarioId(builtInScenarioId);
+    resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;
+    setStatus(statusMessage);
+    requestAnimationFrame(worldView.fit);
+  }
+
+  function loadBuiltInScenario(entry: BuiltInScenario): void {
+    try {
+      const loaded = createSimulation({
+        characterLibrary,
+        environmentLibrary,
+        scenario: entry.scenario,
+      });
+      activateLoadedSimulation(loaded, `Loaded ${entry.title}`, entry.id);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : String(error));
+    }
   }
 
   const actions: readonly QuickAction[] = [
@@ -1506,6 +1649,9 @@ function createWorkbench(): HTMLElement {
     timeRateMenu.querySelectorAll<HTMLButtonElement>('button[data-rate]'),
   );
   const signalMenuButtons = Array.from(signalMenu.querySelectorAll<HTMLButtonElement>('button'));
+  const scenarioNavigationButtons = Array.from(
+    scenarioMenu.querySelectorAll<HTMLButtonElement>('button'),
+  );
   let filteredQuickActions: readonly QuickAction[] = actions;
   let quickActionFocus = 0;
 
@@ -1513,6 +1659,48 @@ function createWorkbench(): HTMLElement {
     for (const control of menuActionButtons) {
       const action = actionsById.get(control.dataset.action ?? '');
       control.disabled = action === undefined || !isActionEnabled(action);
+    }
+  }
+
+  function setScenarioTooltipVisible(visible: boolean): void {
+    const show = visible && !scenarioInfoOverlay.classList.contains('open');
+    scenarioInfoTooltip.hidden = !show;
+    scenarioInfoTooltip.setAttribute('aria-hidden', String(!show));
+    if (!show) return;
+    const bounds = scenarioInfoButton.getBoundingClientRect();
+    const tooltipWidth = 310;
+    scenarioInfoTooltip.style.left = `${Math.max(
+      8,
+      Math.min(window.innerWidth - tooltipWidth - 8, bounds.left),
+    )}px`;
+    scenarioInfoTooltip.style.top = `${bounds.bottom + 8}px`;
+  }
+
+  function setScenarioMenuOpen(open: boolean, restoreFocus = false): void {
+    if (open) {
+      const bounds = scenarioMenuButton.getBoundingClientRect();
+      const menuWidth = Math.min(460, window.innerWidth - 16);
+      scenarioMenu.style.width = `${menuWidth}px`;
+      scenarioMenu.style.left = `${Math.max(
+        8,
+        Math.min(window.innerWidth - menuWidth - 8, bounds.left),
+      )}px`;
+      scenarioMenu.style.top = `${bounds.bottom + 6}px`;
+      appMenu.hidden = true;
+      menuButton.setAttribute('aria-expanded', 'false');
+      setTimeRateMenuOpen(false);
+      setSignalMenuOpen(false);
+      setZoomMenuOpen(false);
+      setScenarioTooltipVisible(false);
+    }
+    scenarioMenu.hidden = !open;
+    scenarioMenuButton.setAttribute('aria-expanded', String(open));
+    if (open) {
+      const selected = loadedBuiltInScenarioId();
+      (selected === null ? undefined : scenarioMenuButtons.get(selected))?.focus();
+      if (selected === null) scenarioNavigationButtons[0]?.focus();
+    } else if (restoreFocus) {
+      scenarioMenuButton.focus();
     }
   }
 
@@ -1524,6 +1712,7 @@ function createWorkbench(): HTMLElement {
       zoomMenu.style.top = `${bounds.bottom + 6}px`;
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
+      setScenarioMenuOpen(false);
       setTimeRateMenuOpen(false);
       setSignalMenuOpen(false);
     }
@@ -1548,6 +1737,7 @@ function createWorkbench(): HTMLElement {
       timeRateMenu.style.top = `${bounds.bottom + 6}px`;
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
+      setScenarioMenuOpen(false);
       setZoomMenuOpen(false);
       setSignalMenuOpen(false);
     }
@@ -1568,6 +1758,7 @@ function createWorkbench(): HTMLElement {
       signalMenu.style.top = `${bounds.bottom + 6}px`;
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
+      setScenarioMenuOpen(false);
       setTimeRateMenuOpen(false);
       setZoomMenuOpen(false);
     }
@@ -1582,6 +1773,7 @@ function createWorkbench(): HTMLElement {
 
   function setMenuOpen(open: boolean, focusFirst = false): void {
     if (open) {
+      setScenarioMenuOpen(false);
       setTimeRateMenuOpen(false);
       setSignalMenuOpen(false);
       setZoomMenuOpen(false);
@@ -1623,9 +1815,34 @@ function createWorkbench(): HTMLElement {
     if (restoreFocus) menuButton.focus();
   }
 
+  function closeScenarioInfo(restoreFocus = false): void {
+    if (!scenarioInfoOverlay.classList.contains('open')) return;
+    scenarioInfoOverlay.classList.remove('open');
+    scenarioInfoOverlay.setAttribute('aria-hidden', 'true');
+    scenarioInfoOverlay.inert = true;
+    if (restoreFocus) scenarioInfoButton.focus();
+  }
+
+  function openScenarioInfo(): void {
+    closeQuickActions();
+    closeSettings();
+    setMenuOpen(false);
+    setScenarioMenuOpen(false);
+    setTimeRateMenuOpen(false);
+    setSignalMenuOpen(false);
+    setZoomMenuOpen(false);
+    setScenarioTooltipVisible(false);
+    scenarioInfoOverlay.inert = false;
+    scenarioInfoOverlay.setAttribute('aria-hidden', 'false');
+    scenarioInfoOverlay.classList.add('open');
+    requestAnimationFrame(() => scenarioInfoCloseButton.focus());
+  }
+
   function openSettings(): void {
     closeQuickActions();
+    closeScenarioInfo();
     setMenuOpen(false);
+    setScenarioMenuOpen(false);
     setTimeRateMenuOpen(false);
     setSignalMenuOpen(false);
     setZoomMenuOpen(false);
@@ -1640,7 +1857,9 @@ function createWorkbench(): HTMLElement {
     if (!isActionEnabled(action)) return;
     closeQuickActions();
     closeSettings();
+    closeScenarioInfo();
     setMenuOpen(false);
+    setScenarioMenuOpen(false);
     setTimeRateMenuOpen(false);
     setSignalMenuOpen(false);
     setZoomMenuOpen(false);
@@ -1690,7 +1909,9 @@ function createWorkbench(): HTMLElement {
 
   function openQuickActions(): void {
     closeSettings();
+    closeScenarioInfo();
     setMenuOpen(false);
+    setScenarioMenuOpen(false);
     setTimeRateMenuOpen(false);
     setSignalMenuOpen(false);
     setZoomMenuOpen(false);
@@ -1761,7 +1982,49 @@ function createWorkbench(): HTMLElement {
       conditions.temperatureCelsius,
       currentPreferences.distanceUnit,
     );
+    const builtInId = loadedBuiltInScenarioId();
+    const origin = builtInId === null ? 'Loaded file or snapshot' : 'Included with workbench';
+    const characterCount = current.agents.length;
+    const characterCountLabel = `${characterCount} character${characterCount === 1 ? '' : 's'}`;
+    const conditionSummary = `${seasonName}, ${temperature}, ${weatherName}`;
     scenarioName.textContent = current.scenario.title;
+    scenarioMenuButton.title = `Choose scenario: ${current.scenario.title}`;
+    scenarioTooltipTitle.textContent = current.scenario.title;
+    scenarioTooltipSummary.textContent = current.scenario.summary;
+    scenarioTooltipMeta.textContent = `${current.environment.name} / ${characterCountLabel} / ${origin}`;
+    scenarioInfoTitle.textContent = current.scenario.title;
+    scenarioInfoSummary.textContent = current.scenario.summary;
+    const scenarioFacts: readonly [string, string][] = [
+      ['Source', origin],
+      ['Environment', current.environment.name],
+      ['Characters', String(characterCount)],
+      [
+        'Start time',
+        formatWorkbenchTime(current.scenario.startMinute, currentPreferences.clockFormat),
+      ],
+      [
+        'Tick cadence',
+        `${current.scenario.tickMinutes} simulation minute${current.scenario.tickMinutes === 1 ? '' : 's'}`,
+      ],
+      ['Conditions', conditionSummary],
+    ];
+    const scenarioFactNodes: HTMLElement[] = [];
+    for (const [label, value] of scenarioFacts) {
+      const term = element('dt');
+      const description = element('dd');
+      term.textContent = label;
+      description.textContent = value;
+      scenarioFactNodes.push(term, description);
+    }
+    scenarioInfoFacts.replaceChildren(...scenarioFactNodes);
+    for (const entry of BUILT_IN_SCENARIOS) {
+      const selected = entry.id === builtInId;
+      const control = scenarioMenuButtons.get(entry.id);
+      control?.classList.toggle('selected', selected);
+      control?.setAttribute('aria-checked', String(selected));
+      const stateLabel = scenarioMenuStateLabels.get(entry.id);
+      if (stateLabel !== undefined) stateLabel.textContent = selected ? 'Loaded' : '';
+    }
     time.textContent = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
     dayPeriodLabel.textContent = dayPeriodName;
     celestialIndicator.dataset.dayPeriod = dayPeriod;
@@ -1933,6 +2196,53 @@ function createWorkbench(): HTMLElement {
     )}px`;
   });
 
+  scenarioMenuButton.addEventListener('click', () => setScenarioMenuOpen(scenarioMenu.hidden));
+  scenarioMenuButton.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    setScenarioMenuOpen(true);
+  });
+  scenarioMenu.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest<HTMLButtonElement>('button');
+    if (control === null || !scenarioMenu.contains(control)) return;
+    if (control.dataset.openFile === 'true') {
+      setScenarioMenuOpen(false);
+      fileInput.click();
+      return;
+    }
+    const entry = BUILT_IN_SCENARIOS.find(candidate => candidate.id === control.dataset.scenarioId);
+    if (entry === undefined) return;
+    setScenarioMenuOpen(false);
+    loadBuiltInScenario(entry);
+  });
+  scenarioMenu.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setScenarioMenuOpen(false, true);
+      return;
+    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const currentIndex = scenarioNavigationButtons.indexOf(
+      document.activeElement as HTMLButtonElement,
+    );
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    const nextIndex =
+      (currentIndex + direction + scenarioNavigationButtons.length) %
+      scenarioNavigationButtons.length;
+    scenarioNavigationButtons[nextIndex]?.focus();
+  });
+  scenarioInfoButton.addEventListener('pointerenter', () => setScenarioTooltipVisible(true));
+  scenarioInfoButton.addEventListener('pointerleave', () => setScenarioTooltipVisible(false));
+  scenarioInfoButton.addEventListener('focus', () => setScenarioTooltipVisible(true));
+  scenarioInfoButton.addEventListener('blur', () => setScenarioTooltipVisible(false));
+  scenarioInfoButton.addEventListener('click', openScenarioInfo);
+  scenarioInfoCloseButton.addEventListener('click', () => closeScenarioInfo(true));
+  scenarioInfoOverlay.addEventListener('pointerdown', event => {
+    if (event.target === scenarioInfoOverlay) closeScenarioInfo(true);
+  });
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
   step.addEventListener('click', () => executeActionById('step'));
   play.addEventListener('click', () => executeActionById('play-pause'));
@@ -2130,14 +2440,7 @@ function createWorkbench(): HTMLElement {
               snapshot: contents,
             })
           : createSimulation({ characterLibrary, environmentLibrary, scenario: contents });
-      loadedBaseline = loaded;
-      setPlaying(false);
-      setState(loaded);
-      setPlaybackRateId(initialTimeRateForScenario(loaded.scenario, preferences()));
-      setSelectedAgentId(loaded.agents[0]?.id ?? null);
-      resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;
-      setStatus(`Loaded ${file.name}`);
-      requestAnimationFrame(worldView.fit);
+      activateLoadedSimulation(loaded, `Loaded ${file.name}`, null);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     }
@@ -2147,6 +2450,13 @@ function createWorkbench(): HTMLElement {
     if (!(event.target instanceof Node)) return;
     if (!appMenu.hidden && !appMenu.contains(event.target) && !menuButton.contains(event.target)) {
       setMenuOpen(false);
+    }
+    if (
+      !scenarioMenu.hidden &&
+      !scenarioMenu.contains(event.target) &&
+      !scenarioMenuButton.contains(event.target)
+    ) {
+      setScenarioMenuOpen(false);
     }
     if (
       !timeRateMenu.hidden &&
@@ -2172,12 +2482,21 @@ function createWorkbench(): HTMLElement {
   }
 
   function onWindowResize(): void {
+    if (!scenarioMenu.hidden) setScenarioMenuOpen(true);
+    if (!scenarioInfoTooltip.hidden) setScenarioTooltipVisible(true);
     if (!timeRateMenu.hidden) setTimeRateMenuOpen(true);
     if (!signalMenu.hidden) setSignalMenuOpen(true);
     if (!zoomMenu.hidden) setZoomMenuOpen(true);
   }
 
   function onKeyDown(event: KeyboardEvent): void {
+    if (scenarioInfoOverlay.classList.contains('open')) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeScenarioInfo(true);
+      }
+      return;
+    }
     if (settingsOverlay.classList.contains('open')) {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -2201,6 +2520,11 @@ function createWorkbench(): HTMLElement {
         event.preventDefault();
         setMenuOpen(false);
         menuButton.focus();
+        return;
+      }
+      if (!scenarioMenu.hidden) {
+        event.preventDefault();
+        setScenarioMenuOpen(false, true);
         return;
       }
       if (!timeRateMenu.hidden) {

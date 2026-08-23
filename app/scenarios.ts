@@ -1,0 +1,33 @@
+import bakerDeadline from '../scenarios/baker-deadline.json';
+import disclosureAudience from '../scenarios/disclosure-audience.json';
+import highwaymanRoad from '../scenarios/highwayman-road.json';
+import highwaymanSquare from '../scenarios/highwayman-square.json';
+import marketMorning from '../scenarios/market-morning.json';
+import { parseScenario, type ScenarioFile } from '../src/index.js';
+
+export interface BuiltInScenario {
+  id: string;
+  scenario: ScenarioFile;
+  summary: string;
+  title: string;
+}
+
+function builtInScenario(value: unknown): BuiltInScenario {
+  const scenario = parseScenario(value);
+  return {
+    id: scenario.id,
+    scenario,
+    summary: scenario.summary,
+    title: scenario.title,
+  };
+}
+
+export const BUILT_IN_SCENARIOS: readonly BuiltInScenario[] = [
+  marketMorning,
+  bakerDeadline,
+  disclosureAudience,
+  highwaymanRoad,
+  highwaymanSquare,
+].map(builtInScenario);
+
+export const DEFAULT_BUILT_IN_SCENARIO = BUILT_IN_SCENARIOS[0] as BuiltInScenario;
