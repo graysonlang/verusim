@@ -413,6 +413,20 @@ export const TIME_RATE_IDS = [
 
 export type TimeRateId = (typeof TIME_RATE_IDS)[number];
 
+export const SEASON_IDS = ['spring', 'summer', 'autumn', 'winter'] as const;
+
+export type Season = (typeof SEASON_IDS)[number];
+
+export const WEATHER_IDS = ['clear', 'cloudy', 'fog', 'overcast', 'rain', 'storm', 'snow'] as const;
+
+export type WeatherCondition = (typeof WEATHER_IDS)[number];
+
+export interface EnvironmentConditions {
+  season: Season;
+  temperatureCelsius: number;
+  weather: WeatherCondition;
+}
+
 export interface ScenarioFile {
   agendaGoals: AgendaGoalSeed[];
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
@@ -422,9 +436,10 @@ export interface ScenarioFile {
   disclosureOpportunities: DisclosureOpportunity[];
   dyads: DyadSeed[];
   environmentId: string;
+  environmentConditions: EnvironmentConditions;
   id: string;
   initialTimeRate?: TimeRateId;
-  schemaVersion: 5;
+  schemaVersion: 6;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];

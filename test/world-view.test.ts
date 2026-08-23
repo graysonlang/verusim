@@ -5,6 +5,7 @@ import {
   cameraForGesture,
   CSS_PIXELS_PER_METER_AT_100_PERCENT,
   scaleBarForZoom,
+  worldPaletteFor,
 } from '../app/world-view.js';
 import environments from '../library/environments.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
@@ -98,5 +99,17 @@ describe('world view scale', () => {
         assert.ok(building.height <= 22, `${building.id} is ${building.height} meters deep`);
       }
     }
+  });
+});
+
+describe('world atmosphere palette', () => {
+  it('changes with day period, season, and weather without changing world data', () => {
+    const morning = worldPaletteFor('morning', 'spring', 'clear');
+    const night = worldPaletteFor('night', 'spring', 'clear');
+    const storm = worldPaletteFor('morning', 'winter', 'storm');
+    assert.notEqual(morning.background, night.background);
+    assert.notDeepEqual(morning.layers, night.layers);
+    assert.ok(storm.layers.length > morning.layers.length);
+    assert.equal(storm.layers.at(-1)?.color, '#283746');
   });
 });

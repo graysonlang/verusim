@@ -6,12 +6,14 @@ import highwaymanEnvironments from '../library/highwayman-environments.json';
 import scenario from '../scenarios/market-morning.json';
 import {
   CAPABILITY_IDS,
+  DAY_PERIOD_LABELS,
   MOVEMENT_SPEED_LABELS,
   VALUE_IDS,
   advanceSimulation,
   capabilityAvailability,
   createSimulation,
   createSimulationFromSnapshot,
+  dayPeriodAtMinute,
   describeAgent,
   deriveBuildEffects,
   evaluateEavesdropping,
@@ -36,6 +38,7 @@ import {
   INDICATOR_LABELS,
   defaultIndicatorSettings,
   indicatorsForAgent,
+  inspectionIndicatorSettings,
   type AgentIndicator,
   type IndicatorKind,
   type IndicatorSettings,
@@ -60,7 +63,12 @@ import {
   type DistanceUnit,
 } from './preferences.js';
 import { workbenchActionForShortcut } from './shortcuts.js';
-import { formatDistance, formatMovementRate, formatMovementSpeed } from './units.js';
+import {
+  formatDistance,
+  formatMovementRate,
+  formatMovementSpeed,
+  formatTemperature,
+} from './units.js';
 import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.js';
 
 const characterLibrary = {
@@ -425,7 +433,6 @@ function renderInspector(
   container: HTMLElement,
   state: SimulationState,
   agent: SimulationAgent,
-  indicatorSettings: IndicatorSettings,
   preferences: ApplicationPreferences,
   setState: (next: SimulationState) => void,
 ): void {
@@ -437,9 +444,9 @@ function renderInspector(
   const signals = indicatorStrip(
     state,
     agent,
-    indicatorSettings,
+    inspectionIndicatorSettings(),
     'character-signals',
-    indicatorSettings.verbosity !== 'minimal',
+    true,
   );
   name.textContent = agent.profile.name;
   summary.textContent = agent.profile.summary;
@@ -1020,7 +1027,19 @@ function createWorkbench(): HTMLElement {
   const timeRateValue = element('span', 'time-rate-value');
   const timeRateDisclosure = element('span', 'time-rate-disclosure');
   const timeRateMenu = element('section', 'time-rate-menu');
+  const timeContext = element('span', 'time-context');
+  const celestialIndicator = element('span', 'celestial-indicator');
+  const celestialOrb = element('span', 'celestial-orb');
+  const celestialHorizon = element('span', 'celestial-horizon');
   const time = element('time', 'simulation-time');
+  const dayPeriodLabel = element('span', 'day-period-label');
+  const environmentConditions = element('span', 'environment-conditions');
+  const weatherGraphic = element('span', 'weather-graphic');
+  const conditionSeason = element('span', 'condition-season');
+  const conditionSeparatorOne = element('span', 'condition-separator');
+  const conditionTemperature = element('span', 'condition-temperature');
+  const conditionSeparatorTwo = element('span', 'condition-separator');
+  const conditionWeather = element('span', 'condition-weather');
   const tickCount = element('span', 'simulation-tick');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
@@ -1124,7 +1143,33 @@ function createWorkbench(): HTMLElement {
     control.append(label, multiplier);
     timeRateMenu.append(control);
   }
-  transport.append(resetScenario, play, step, timeRateButton, time, tickCount);
+  celestialIndicator.dataset.testid = 'day-period-indicator';
+  celestialIndicator.setAttribute('role', 'img');
+  celestialIndicator.append(celestialOrb, celestialHorizon);
+  timeContext.append(celestialIndicator, time, dayPeriodLabel);
+  conditionSeparatorOne.textContent = '/';
+  conditionSeparatorTwo.textContent = '/';
+  conditionSeparatorOne.setAttribute('aria-hidden', 'true');
+  conditionSeparatorTwo.setAttribute('aria-hidden', 'true');
+  weatherGraphic.setAttribute('aria-hidden', 'true');
+  environmentConditions.dataset.testid = 'environment-conditions';
+  environmentConditions.append(
+    weatherGraphic,
+    conditionSeason,
+    conditionSeparatorOne,
+    conditionTemperature,
+    conditionSeparatorTwo,
+    conditionWeather,
+  );
+  transport.append(
+    resetScenario,
+    play,
+    step,
+    timeRateButton,
+    timeContext,
+    environmentConditions,
+    tickCount,
+  );
 
   zoomLevelButton.dataset.testid = 'zoom-level-button';
   zoomLevelButton.setAttribute('aria-controls', 'zoom-menu');
@@ -1707,8 +1752,29 @@ function createWorkbench(): HTMLElement {
   createEffect(() => {
     const current = state();
     const currentPreferences = preferences();
+    const conditions = current.scenario.environmentConditions;
+    const dayPeriod = dayPeriodAtMinute(current.minute, conditions.season);
+    const dayPeriodName = DAY_PERIOD_LABELS[dayPeriod];
+    const seasonName = classLabel(conditions.season);
+    const weatherName = classLabel(conditions.weather);
+    const temperature = formatTemperature(
+      conditions.temperatureCelsius,
+      currentPreferences.distanceUnit,
+    );
     scenarioName.textContent = current.scenario.title;
     time.textContent = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
+    dayPeriodLabel.textContent = dayPeriodName;
+    celestialIndicator.dataset.dayPeriod = dayPeriod;
+    celestialIndicator.setAttribute('aria-label', `Time of day: ${dayPeriodName}`);
+    conditionSeason.textContent = seasonName;
+    conditionTemperature.textContent = temperature;
+    conditionWeather.textContent = weatherName;
+    weatherGraphic.dataset.weather = conditions.weather;
+    environmentConditions.title = `${seasonName} / ${temperature} / ${weatherName}`;
+    environmentConditions.setAttribute(
+      'aria-label',
+      `Environment conditions: ${seasonName}, ${temperature}, ${weatherName}`,
+    );
     tickCount.textContent = `Tick ${current.tick}`;
   });
 
@@ -1816,14 +1882,7 @@ function createWorkbench(): HTMLElement {
       }
       return;
     }
-    renderInspector(
-      inspectorContent,
-      current,
-      agent,
-      indicatorSettings(),
-      currentPreferences,
-      setState,
-    );
+    renderInspector(inspectorContent, current, agent, currentPreferences, setState);
   });
 
   createEffect(() => {
@@ -1843,7 +1902,13 @@ function createWorkbench(): HTMLElement {
     const meta = element('div', 'hover-card-meta');
     const activity = element('p', 'hover-card-activity');
     const mind = element('p', 'hover-card-mind');
-    const signals = indicatorStrip(current, agent, indicatorSettings(), 'hover-card-signals', true);
+    const signals = indicatorStrip(
+      current,
+      agent,
+      inspectionIndicatorSettings(),
+      'hover-card-signals',
+      true,
+    );
     name.textContent = agent.profile.name;
     meta.append(
       roleBadge(agent),

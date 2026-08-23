@@ -4,6 +4,7 @@ import {
   areaIndicatorsForState,
   defaultIndicatorSettings,
   indicatorsForAgent,
+  inspectionIndicatorSettings,
 } from '../app/indicators.js';
 import characters from '../library/characters.json';
 import environments from '../library/environments.json';
@@ -109,5 +110,24 @@ describe('workbench indicators', () => {
     );
     assert.deepEqual(areaIndicatorsForState(state, settings), []);
     assert.deepEqual(indicatorsForAgent(state, agent, { ...settings, verbosity: 'off' }), []);
+  });
+
+  it('keeps inspection signals complete independently from field settings', () => {
+    const state = createState();
+    const agent = state.agents[0];
+    assert.ok(agent);
+    const field = defaultIndicatorSettings();
+    field.verbosity = 'off';
+    for (const kind of Object.keys(field.visible) as Array<keyof typeof field.visible>) {
+      field.visible[kind] = false;
+    }
+
+    assert.deepEqual(indicatorsForAgent(state, agent, field), []);
+    assert.deepEqual(
+      indicatorsForAgent(state, agent, inspectionIndicatorSettings()).map(
+        indicator => indicator.kind,
+      ),
+      ['mood', 'thought', 'action'],
+    );
   });
 });

@@ -1,11 +1,16 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "id": "disclosure-audience",
   "title": "Disclosure Under Mixed Audiences",
   "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
   "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "autumn",
+    "temperatureCelsius": 13,
+    "weather": "rain"
+  },
   "dyads": [
     {
       "observerId": "owner",

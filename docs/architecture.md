@@ -68,6 +68,12 @@ Device-local application preferences default to a one-simulated-minute-per-secon
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
 
+A scenario owns its initial season, Celsius temperature, and weather condition.
+The simulation derives dawn, sunrise, morning, midday, afternoon, evening, sunset, dusk, and night from the minute of day using season-specific sunrise and sunset boundaries.
+The workbench consumes that derived period and authored conditions for its clock context and Canvas palette; other adapters may project the same state as prose, lighting, or sound.
+The initial condition is static scenario truth.
+Dynamic weather must later become an explicit deterministic timeline or event with snapshot-persisted current state rather than renderer-side variation.
+
 World coordinates are meters in an unbounded two-dimensional plane.
 An environment provides a designed extent for framing and authored areas for observation; the camera is not clamped to that extent.
 This permits village-scale views now and chunked or generated environments later without changing the camera contract.
@@ -199,6 +205,8 @@ Player-facing integrations should show behavior and tells rather than raw meters
 The browser application is a developer workbench, so it deliberately exposes numeric state and permits direct intervention.
 That exception is useful for factorial sweeps and does not define a game UI contract.
 Workbench and player-facing copy calls simulated people **characters**; `agent` remains an internal model, API, and storage term only.
+Signal display settings are field-projection controls: they govern Canvas glyphs and compact roster summaries only.
+Selected-character properties and hover inspection always show the complete available mood, thought, action, speech, and recent-event projection so reducing field clutter cannot hide diagnostic state.
 
 Every chosen action must eventually produce both:
 
@@ -232,8 +240,8 @@ Social battery below `0.50` contributes up to `0.38` negative valence and physic
 
 Character-library schema version 5 adds descriptive physical profiles and coarse build effects to the version 4 epistemic capability format.
 Explicit migrations preserve versions 1 through 4, using neutral capability defaults where versions 1 through 3 expressed no distinction and an unspecified, average physical profile where older libraries expressed no physical data.
-Scenario schema version 5 adds explicit schedule and task recovery modes to the version 4 world-fact, goal, and task-operator format.
-Explicit migrations preserve version 1 through 4 scenarios by supplying missing behavioral collections, mapping legacy sleeping blocks to sleep recovery, and leaving other activities and tasks non-restorative.
+Scenario schema version 6 adds authored season, temperature, and weather conditions to the version 5 recovery format.
+Explicit migrations preserve version 1 through 5 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, and supplying neutral spring conditions where versions before 6 expressed no atmosphere.
 Snapshot schema version 3 persists agenda state and causal-trace schema version 1 separately from scenario versioning, and validates plan, intention, goal, fact, dyad, trace, and agent references before runtime restoration.
 Explicit snapshot migrations preserve versions 1 and 2, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.

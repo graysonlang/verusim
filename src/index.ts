@@ -5,10 +5,12 @@
 export {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
+  SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
   TIME_RATE_IDS,
   VALUE_IDS,
+  WEATHER_IDS,
   WEIGHT_CLASSES,
 } from './model/types.js';
 export type * from './model/types.js';
@@ -50,6 +52,13 @@ export {
 export type { MovementSpeedClass } from './simulation/observe.js';
 export { applyBuildToWalkingPace, deriveBuildEffects } from './simulation/physical.js';
 export type { BuildEffects } from './simulation/physical.js';
+export {
+  DAY_PERIOD_IDS,
+  DAY_PERIOD_LABELS,
+  daylightScheduleForSeason,
+  dayPeriodAtMinute,
+} from './simulation/atmosphere.js';
+export type { DayPeriod } from './simulation/atmosphere.js';
 export { effectiveValueWeights } from './simulation/salience.js';
 export {
   evaluateEavesdropping,

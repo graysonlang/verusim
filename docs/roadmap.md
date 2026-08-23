@@ -83,6 +83,7 @@ Status: in progress.
 Begin with generation-fixed acuity, evidence calibration, and expressive control; resource-derived current effectiveness; and one deterministic seven-band capability resolver with term provenance.
 Add a deterministic spatial-appraisal foundation that keeps physical proximity separate from relational distance, resolves directed personal-space discomfort, evaluates sight and hearing independently through semantic cover, and requires hearing without detection for covert eavesdropping.
 Add the first resource feedback loop by letting depleted social battery impair derived mood and by restoring the shared resource ledger through explicitly authored break, rest, and sleep modes on schedules and tasks.
+Add authored season, temperature, and weather context plus a deterministic season-aware day-period projection for adapters, without assigning behavioral effects before discomfort, perception, or task feasibility can consume them.
 Then implement one-level mind models, observation events, predicted responses, prediction-error gating, estimate confidence, and local norm appraisal.
 Capability checks determine what is perceived or learned and never act as a persuasion override.
 The acceptance targets are Endicott/Margueritte and Pottsfield.

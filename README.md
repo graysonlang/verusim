@@ -25,7 +25,7 @@ It includes:
 - directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
 - authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
 - immutable authored scenarios separated from versioned live snapshots with exact dyad, exposure, decision, and trace resume
-- a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable Canvas world, roster navigation, time controls, device-local clock and unit settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, and trace inspection
+- a Solid-reactive, vanilla-DOM browser workbench with a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and unit settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
 
 Schedules provide environmental obligations and visible activity, while behavioral opportunities advertise concrete acts that Verus may select.

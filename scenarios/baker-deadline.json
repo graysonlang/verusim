@@ -1,11 +1,16 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "id": "baker-deadline",
   "title": "Bread Before Market Close",
   "summary": "Mara must prepare market bread without flour while the common room also needs work.",
   "environmentId": "alders-edge",
   "startMinute": 600,
   "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "summer",
+    "temperatureCelsius": 24,
+    "weather": "clear"
+  },
   "dyads": [],
   "disclosureItems": [],
   "disclosureOpportunities": [],

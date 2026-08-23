@@ -1,11 +1,16 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "id": "highwayman-road",
   "title": "The Highwayman: Empty Road",
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
   "environmentId": "old-king-road",
   "startMinute": 600,
   "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "autumn",
+    "temperatureCelsius": 11,
+    "weather": "cloudy"
+  },
   "dyads": [
     {
       "observerId": "actor",

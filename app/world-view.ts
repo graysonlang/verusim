@@ -2,9 +2,12 @@ import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
 import type {
   EnvironmentArea,
   Point,
+  Season,
   SimulationAgent,
   SimulationState,
+  WeatherCondition,
 } from '../src/model/types.js';
+import { dayPeriodAtMinute, type DayPeriod } from '../src/simulation/atmosphere.js';
 import {
   areaIndicatorsForState,
   indicatorsForAgent,
@@ -68,6 +71,59 @@ const INDICATOR_COLORS: Record<Exclude<IndicatorKind, 'area'>, string> = {
   speech: '#eee6d2',
   thought: '#80aaa5',
 };
+
+interface PaletteLayer {
+  color: string;
+  opacity: number;
+}
+
+export interface WorldPalette {
+  background: string;
+  layers: PaletteLayer[];
+}
+
+const DAY_PERIOD_PALETTES: Record<DayPeriod, { background: string; layer: PaletteLayer }> = {
+  afternoon: { background: '#19231b', layer: { color: '#b5854e', opacity: 0.08 } },
+  dawn: { background: '#101622', layer: { color: '#6b5372', opacity: 0.36 } },
+  dusk: { background: '#0f1520', layer: { color: '#3f426b', opacity: 0.42 } },
+  evening: { background: '#171d1c', layer: { color: '#a96645', opacity: 0.17 } },
+  midday: { background: '#19251d', layer: { color: '#f5dca2', opacity: 0.06 } },
+  morning: { background: '#17231d', layer: { color: '#f5dca2', opacity: 0.03 } },
+  night: { background: '#081019', layer: { color: '#07142e', opacity: 0.6 } },
+  sunrise: { background: '#161b21', layer: { color: '#bc704e', opacity: 0.22 } },
+  sunset: { background: '#16171f', layer: { color: '#b54f43', opacity: 0.28 } },
+};
+
+const SEASON_LAYERS: Record<Season, PaletteLayer> = {
+  autumn: { color: '#9f6b3f', opacity: 0.09 },
+  spring: { color: '#7ea86f', opacity: 0.03 },
+  summer: { color: '#d0a34e', opacity: 0.05 },
+  winter: { color: '#8099a6', opacity: 0.12 },
+};
+
+const WEATHER_LAYERS: Record<WeatherCondition, PaletteLayer> = {
+  clear: { color: '#ffffff', opacity: 0 },
+  cloudy: { color: '#7e8987', opacity: 0.12 },
+  fog: { color: '#c7cbc0', opacity: 0.26 },
+  overcast: { color: '#5e6769', opacity: 0.22 },
+  rain: { color: '#405d69', opacity: 0.24 },
+  snow: { color: '#dbe2df', opacity: 0.25 },
+  storm: { color: '#283746', opacity: 0.36 },
+};
+
+export function worldPaletteFor(
+  dayPeriod: DayPeriod,
+  season: Season,
+  weather: WeatherCondition,
+): WorldPalette {
+  const period = DAY_PERIOD_PALETTES[dayPeriod];
+  return {
+    background: period.background,
+    layers: [period.layer, SEASON_LAYERS[season], WEATHER_LAYERS[weather]].filter(
+      layer => layer.opacity > 0,
+    ),
+  };
+}
 
 export const CSS_PIXELS_PER_METER_AT_100_PERCENT = 10;
 
@@ -252,6 +308,21 @@ function drawAreaTexture(
     context.lineTo(area.x + area.width / 2, area.y + area.height - 1);
     context.strokeStyle = 'rgb(69 46 31 / 42%)';
     context.stroke();
+  }
+}
+
+function drawAtmosphere(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  palette: WorldPalette,
+): void {
+  for (const layer of palette.layers) {
+    context.save();
+    context.globalAlpha = layer.opacity;
+    context.fillStyle = layer.color;
+    context.fillRect(0, 0, width, height);
+    context.restore();
   }
 }
 
@@ -458,8 +529,14 @@ function drawWorld(
   height: number,
 ): void {
   const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
+  const conditions = state.scenario.environmentConditions;
+  const palette = worldPaletteFor(
+    dayPeriodAtMinute(state.minute, conditions.season),
+    conditions.season,
+    conditions.weather,
+  );
   context.clearRect(0, 0, width, height);
-  context.fillStyle = '#17231d';
+  context.fillStyle = palette.background;
   context.fillRect(0, 0, width, height);
   drawInfiniteGrid(context, width, height, camera);
 
@@ -487,6 +564,8 @@ function drawWorld(
       context.fillText(area.label, area.x + area.width / 2, area.y + area.height / 2);
     }
   }
+
+  drawAtmosphere(context, state.environment.width, state.environment.height, palette);
 
   drawAreaIndicators(context, state, camera, indicatorSettings);
 

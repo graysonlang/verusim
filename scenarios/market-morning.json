@@ -1,11 +1,16 @@
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "id": "market-morning",
   "title": "Market Morning",
   "summary": "A cold morning after rumors of a failed eastern crop have reached Alder's Edge.",
   "environmentId": "alders-edge",
   "startMinute": 470,
   "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "spring",
+    "temperatureCelsius": 7,
+    "weather": "overcast"
+  },
   "ambientTurnsPerHour": {
     "safety": -0.012,
     "belonging": 0.003

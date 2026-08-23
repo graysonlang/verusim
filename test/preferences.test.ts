@@ -8,7 +8,12 @@ import {
   parsePreferences,
   savePreferences,
 } from '../app/preferences.js';
-import { formatDistance, formatMovementRate, formatMovementSpeed } from '../app/units.js';
+import {
+  formatDistance,
+  formatMovementRate,
+  formatMovementSpeed,
+  formatTemperature,
+} from '../app/units.js';
 
 describe('application preferences', () => {
   it('defaults to one simulated minute per second, 12-hour time, and meters', () => {
@@ -93,5 +98,7 @@ describe('display units', () => {
     assert.equal(formatMovementRate(72, 'meters'), '72 m/min');
     assert.equal(formatMovementRate(72, 'feet'), '236.2 ft/min');
     assert.equal(formatMovementSpeed(72, 'feet'), '3.94 ft/s');
+    assert.equal(formatTemperature(20, 'meters'), '20 C');
+    assert.equal(formatTemperature(20, 'feet'), '68 F');
   });
 });

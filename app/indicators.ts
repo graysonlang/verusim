@@ -79,6 +79,13 @@ export function defaultIndicatorSettings(): IndicatorSettings {
   };
 }
 
+export function inspectionIndicatorSettings(): IndicatorSettings {
+  return {
+    ...defaultIndicatorSettings(),
+    verbosity: 'detailed',
+  };
+}
+
 function moodGlyph(mood: string): string {
   if (mood === 'strained' || mood === 'low') return ':(';
   if (mood === 'bright' || mood === 'content') return ':)';

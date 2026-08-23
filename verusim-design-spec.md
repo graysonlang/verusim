@@ -667,6 +667,12 @@ The exposure ledger records who actually learned an item, including an undetecte
 The disclosure decision can price only audiences the owner believes are present.
 This permits a concealed eavesdropper to create exposure debt without granting the owner privileged knowledge that the eavesdropping occurred.
 
+### 12.8 Time of day and environmental conditions
+
+The scenario owns the current season, temperature, and weather condition. Time of day is derived from simulation minute and a season-specific daylight schedule into nine observer-facing periods: dawn, sunrise, morning, midday, afternoon, evening, sunset, dusk, and night. Adapters may use those facts for palette, lighting, prose, sound, or visibility, but they must consume the same derived period rather than maintain a separate presentation clock.
+
+The initial conditions are static authored context. Dynamic weather later requires an explicit deterministic timeline or event with snapshot state; renderer-side random weather would violate replay. Temperature and weather do not directly compel mood or behavior. Heat, cold, precipitation, or darkness must first change a concrete resource, discomfort, perception, availability, or task-feasibility term with causal provenance.
+
 ---
 
 ## 13. Mind models and narrative

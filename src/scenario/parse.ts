@@ -1,10 +1,12 @@
 import {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
+  SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
   TIME_RATE_IDS,
   VALUE_IDS,
+  WEATHER_IDS,
   WEIGHT_CLASSES,
   type AreaKind,
   type CharacterLibraryFile,
@@ -29,7 +31,9 @@ const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'w
 const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
 const TIME_RATE_ID_SET = new Set<string>(TIME_RATE_IDS);
 const HEIGHT_CLASS_SET = new Set<string>(HEIGHT_CLASSES);
+const SEASON_ID_SET = new Set<string>(SEASON_IDS);
 const SEX_ID_SET = new Set<string>(SEX_IDS);
+const WEATHER_ID_SET = new Set<string>(WEATHER_IDS);
 const WEIGHT_CLASS_SET = new Set<string>(WEIGHT_CLASSES);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -327,17 +331,19 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 5) return file;
+  if (file.schemaVersion === 6) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
-    file.schemaVersion !== 4
+    file.schemaVersion !== 4 &&
+    file.schemaVersion !== 5
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
-  if (file.schemaVersion === 1 || file.schemaVersion === 2) {
-    if (file.schemaVersion === 1) {
+  const sourceVersion = file.schemaVersion;
+  if (sourceVersion === 1 || sourceVersion === 2) {
+    if (sourceVersion === 1) {
       file.behaviorOpportunities = [];
       file.socialRelations = [];
     }
@@ -356,23 +362,30 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.disclosureItems = [];
     file.disclosureOpportunities = [];
   }
-  if (file.schemaVersion !== 4) {
+  if (sourceVersion !== 4 && sourceVersion !== 5) {
     file.agendaGoals = [];
     file.taskOperators = [];
     file.worldFacts = [];
   }
-  for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-    const task = objectValue(taskValue, 'scenario.taskOperators');
-    task.recoveryMode = 'none';
-  }
-  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-    const placement = objectValue(placementValue, 'scenario.characters');
-    for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
-      const block = objectValue(blockValue, 'scenario.characters.schedule');
-      block.recoveryMode = legacyRecoveryMode(block.activity);
+  if (sourceVersion !== 5) {
+    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+      const task = objectValue(taskValue, 'scenario.taskOperators');
+      task.recoveryMode = 'none';
+    }
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
+        const block = objectValue(blockValue, 'scenario.characters.schedule');
+        block.recoveryMode = legacyRecoveryMode(block.activity);
+      }
     }
   }
-  file.schemaVersion = 5;
+  file.environmentConditions = {
+    season: 'spring',
+    temperatureCelsius: 15,
+    weather: 'clear',
+  };
+  file.schemaVersion = 6;
   return file;
 }
 
@@ -487,11 +500,39 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 5);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 6);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
   identifierValue(file.environmentId, 'scenario.environmentId');
+  const environmentConditions = objectValue(
+    file.environmentConditions,
+    'scenario.environmentConditions',
+  );
+  if (
+    typeof environmentConditions.season !== 'string' ||
+    !SEASON_ID_SET.has(environmentConditions.season)
+  ) {
+    throw new ScenarioValidationError(
+      'scenario.environmentConditions.season',
+      'expected a known season identifier',
+    );
+  }
+  numberValue(
+    environmentConditions.temperatureCelsius,
+    'scenario.environmentConditions.temperatureCelsius',
+    -100,
+    70,
+  );
+  if (
+    typeof environmentConditions.weather !== 'string' ||
+    !WEATHER_ID_SET.has(environmentConditions.weather)
+  ) {
+    throw new ScenarioValidationError(
+      'scenario.environmentConditions.weather',
+      'expected a known weather identifier',
+    );
+  }
   integerValue(file.startMinute, 'scenario.startMinute', 0, Number.MAX_SAFE_INTEGER);
   integerValue(file.tickMinutes, 'scenario.tickMinutes', 1, 1440);
   if (

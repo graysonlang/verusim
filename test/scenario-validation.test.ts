@@ -32,7 +32,7 @@ describe('scenario validation', () => {
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 5);
+    assert.equal(migrated.schemaVersion, 6);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
@@ -40,6 +40,11 @@ describe('scenario validation', () => {
     assert.deepEqual(migrated.dyads, []);
     assert.deepEqual(migrated.taskOperators, []);
     assert.deepEqual(migrated.worldFacts, []);
+    assert.deepEqual(migrated.environmentConditions, {
+      season: 'spring',
+      temperatureCelsius: 15,
+      weather: 'clear',
+    });
   });
 
   it('migrates Phase 1 character and dyad content explicitly', () => {
@@ -88,7 +93,7 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 5);
+    assert.equal(migratedScenario.schemaVersion, 6);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
   });
@@ -100,7 +105,7 @@ describe('scenario validation', () => {
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 5);
+    assert.equal(migratedScenario.schemaVersion, 6);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -150,7 +155,7 @@ describe('scenario validation', () => {
     }
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 5);
+    assert.equal(migrated.schemaVersion, 6);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
 
@@ -167,6 +172,24 @@ describe('scenario validation', () => {
     assert.equal(parseSnapshot(snapshot).agents[0]?.schedule[0]?.recoveryMode, 'sleep');
   });
 
+  it('adds neutral atmosphere without rewriting version 5 recovery data', () => {
+    const prior = structuredClone(scenario) as unknown as Record<string, unknown>;
+    prior.schemaVersion = 5;
+    delete prior.environmentConditions;
+    const placements = prior.characters as Array<Record<string, unknown>>;
+    const schedule = placements[0]?.schedule as Array<Record<string, unknown>>;
+    assert.equal(schedule[0]?.recoveryMode, 'sleep');
+
+    const migrated = parseScenario(prior);
+    assert.equal(migrated.schemaVersion, 6);
+    assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
+    assert.deepEqual(migrated.environmentConditions, {
+      season: 'spring',
+      temperatureCelsius: 15,
+      weather: 'clear',
+    });
+  });
+
   it('accepts only known optional initial time rates', () => {
     const authored = structuredClone(scenario) as unknown as Record<string, unknown>;
     authored.initialTimeRate = '10x';
@@ -176,6 +199,22 @@ describe('scenario validation', () => {
     assert.throws(
       () => parseScenario(authored),
       /scenario\.initialTimeRate: expected a known time rate identifier/,
+    );
+  });
+
+  it('validates authored environment conditions', () => {
+    const malformed = structuredClone(scenario);
+    malformed.environmentConditions.weather = 'meteor-shower';
+    assert.throws(
+      () => parseScenario(malformed),
+      /scenario\.environmentConditions\.weather: expected a known weather identifier/,
+    );
+
+    malformed.environmentConditions.weather = 'clear';
+    malformed.environmentConditions.temperatureCelsius = 100;
+    assert.throws(
+      () => parseScenario(malformed),
+      /scenario\.environmentConditions\.temperatureCelsius/,
     );
   });
 

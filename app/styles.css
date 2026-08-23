@@ -206,6 +206,259 @@ select:focus-visible {
   gap: 4px;
 }
 
+.time-context {
+  display: grid;
+  min-width: 126px;
+  grid-template:
+    "celestial clock" auto
+    "celestial period" auto / 28px minmax(0, auto);
+  align-items: center;
+  column-gap: 5px;
+}
+
+.celestial-indicator {
+  --sky-color: #253849;
+  position: relative;
+  display: block;
+  grid-area: celestial;
+  width: 26px;
+  height: 28px;
+  overflow: hidden;
+  border: 1px solid rgb(238 225 190 / 14%);
+  border-radius: 5px;
+  background: linear-gradient(#142235, var(--sky-color));
+}
+
+.celestial-orb {
+  position: absolute;
+  top: 7px;
+  left: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f1cf70;
+  box-shadow: 0 0 6px rgb(241 207 112 / 45%);
+  transition:
+    top 140ms linear,
+    left 140ms linear;
+}
+
+.celestial-orb::after {
+  position: absolute;
+  display: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sky-color);
+  content: "";
+}
+
+.celestial-horizon {
+  position: absolute;
+  bottom: 5px;
+  left: 3px;
+  width: 20px;
+  height: 1px;
+  background: rgb(239 217 166 / 38%);
+}
+
+.celestial-indicator[data-day-period="dawn"] {
+  --sky-color: #66536f;
+}
+
+.celestial-indicator[data-day-period="dawn"] .celestial-orb {
+  top: 16px;
+  left: 4px;
+  background: #eab477;
+}
+
+.celestial-indicator[data-day-period="sunrise"] {
+  --sky-color: #9b6151;
+}
+
+.celestial-indicator[data-day-period="sunrise"] .celestial-orb {
+  top: 14px;
+  left: 6px;
+  background: #ffd278;
+}
+
+.celestial-indicator[data-day-period="midday"] {
+  --sky-color: #587a8a;
+}
+
+.celestial-indicator[data-day-period="midday"] .celestial-orb {
+  top: 2px;
+  left: 9px;
+}
+
+.celestial-indicator[data-day-period="afternoon"] .celestial-orb {
+  top: 7px;
+  left: 15px;
+}
+
+.celestial-indicator[data-day-period="evening"] {
+  --sky-color: #6e594c;
+}
+
+.celestial-indicator[data-day-period="evening"] .celestial-orb {
+  top: 11px;
+  left: 17px;
+  background: #efb96e;
+}
+
+.celestial-indicator[data-day-period="sunset"] {
+  --sky-color: #8a493f;
+}
+
+.celestial-indicator[data-day-period="sunset"] .celestial-orb {
+  top: 15px;
+  left: 18px;
+  background: #f08a58;
+}
+
+.celestial-indicator[data-day-period="dusk"] {
+  --sky-color: #42435f;
+}
+
+.celestial-indicator[data-day-period="dusk"] .celestial-orb {
+  top: 17px;
+  left: 18px;
+  background: #d6a36e;
+  opacity: 0.72;
+}
+
+.celestial-indicator[data-day-period="night"] {
+  --sky-color: #111d2b;
+}
+
+.celestial-indicator[data-day-period="night"] .celestial-orb {
+  top: 4px;
+  left: 9px;
+  background: #dce2df;
+  box-shadow: 0 0 5px rgb(220 226 223 / 28%);
+}
+
+.celestial-indicator[data-day-period="night"] .celestial-orb::after {
+  top: -2px;
+  left: 3px;
+  display: block;
+}
+
+.day-period-label {
+  grid-area: period;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 8px;
+  line-height: 1;
+}
+
+.environment-conditions {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--panel-deep);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
+.condition-temperature {
+  color: #e5dec9;
+  font-size: 9px;
+}
+
+.condition-separator {
+  color: var(--line-strong);
+}
+
+.weather-graphic {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  color: #aebdba;
+}
+
+.weather-graphic::before,
+.weather-graphic::after {
+  position: absolute;
+  content: "";
+}
+
+.weather-graphic[data-weather="clear"]::before {
+  top: 4px;
+  left: 5px;
+  width: 8px;
+  height: 8px;
+  border: 1px solid #e7c56e;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgb(231 197 110 / 32%);
+}
+
+.weather-graphic[data-weather="cloudy"]::before,
+.weather-graphic[data-weather="overcast"]::before,
+.weather-graphic[data-weather="rain"]::before,
+.weather-graphic[data-weather="storm"]::before {
+  top: 7px;
+  left: 3px;
+  width: 12px;
+  height: 6px;
+  border-radius: 5px;
+  background: currentColor;
+  box-shadow:
+    -2px 1px 0 -1px currentColor,
+    2px -2px 0 -1px currentColor;
+}
+
+.weather-graphic[data-weather="overcast"] {
+  color: #7f8c8b;
+}
+
+.weather-graphic[data-weather="fog"]::before {
+  inset: 4px 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    #aebdba 2px,
+    #aebdba 3px
+  );
+}
+
+.weather-graphic[data-weather="rain"]::after {
+  top: 11px;
+  left: 4px;
+  color: #7fa6b0;
+  content: "///";
+  font-family: var(--mono);
+  font-size: 6px;
+}
+
+.weather-graphic[data-weather="storm"]::after {
+  top: 11px;
+  left: 7px;
+  width: 5px;
+  height: 7px;
+  background: #d9bd66;
+  clip-path: polygon(45% 0, 100% 0, 65% 42%, 95% 42%, 15% 100%, 35% 55%, 0 55%);
+}
+
+.weather-graphic[data-weather="snow"]::after {
+  top: 3px;
+  left: 1px;
+  color: #d8e2df;
+  content: "***";
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
 .transport-button {
   display: flex;
   width: 31px;
@@ -499,11 +752,14 @@ select {
 }
 
 .simulation-time {
-  min-width: 128px;
+  min-width: 0;
+  grid-area: clock;
   color: #e5dec9;
   font-family: var(--mono);
-  font-size: 11px;
-  text-align: right;
+  font-size: 10px;
+  line-height: 1.15;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .simulation-tick {
@@ -1689,5 +1945,15 @@ input[type="search"]::placeholder {
 
   .app-header {
     grid-template-columns: 210px minmax(330px, 1fr) 310px;
+  }
+
+  .time-context {
+    min-width: 105px;
+  }
+
+  .condition-season,
+  .condition-weather,
+  .condition-separator {
+    display: none;
   }
 }
