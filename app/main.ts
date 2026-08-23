@@ -1,5 +1,7 @@
 import { createEffect, createRoot, createSignal, onCleanup } from 'solid-js';
 import characters from '../library/characters.json';
+import copingCharacters from '../library/coping-characters.json';
+import copingEnvironments from '../library/coping-environments.json';
 import environments from '../library/environments.json';
 import highwaymanCharacters from '../library/highwayman-characters.json';
 import highwaymanEnvironments from '../library/highwayman-environments.json';
@@ -82,6 +84,7 @@ import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.
 const characterLibrary = {
   characters: [
     ...characters.characters,
+    ...copingCharacters.characters,
     ...highwaymanCharacters.characters,
     ...mindModelCharacters.characters,
     ...normCharacters.characters,
@@ -89,7 +92,11 @@ const characterLibrary = {
   schemaVersion: 5,
 };
 const environmentLibrary = {
-  environments: [...environments.environments, ...highwaymanEnvironments.environments],
+  environments: [
+    ...environments.environments,
+    ...copingEnvironments.environments,
+    ...highwaymanEnvironments.environments,
+  ],
   schemaVersion: 1,
 };
 
@@ -494,8 +501,12 @@ function renderInspector(
     metricRow('Valence', observation.valence.toFixed(2), (observation.valence + 1) / 2),
     metricRow('Arousal', observation.arousal.toFixed(2), observation.arousal),
     metricRow('Allostatic load', observation.allostaticLoad.toFixed(2), observation.allostaticLoad),
+    metricRow('Cascade load', agent.cascadeLoad.toFixed(2), agent.cascadeLoad),
     metricRow('Resource strain', observation.resourceStrain.toFixed(2), observation.resourceStrain),
   );
+  const copingTell = element('p', 'agenda-summary');
+  copingTell.textContent = `${observation.cascadeTell ?? 'No active defense tell'} / ${observation.outletTell ?? 'no active outlet'}${agent.cascadeTargetId === null ? '' : ` / target ${state.agents.find(candidate => candidate.id === agent.cascadeTargetId)?.profile.name ?? agent.cascadeTargetId}`}`;
+  mind.body.append(copingTell);
 
   const physical = makeSection('Physical profile', 'Stable traits / derived build contributions');
   const physicalGrid = element('dl', 'definition-grid');
@@ -607,6 +618,34 @@ function renderInspector(
     });
     resources.body.append(field);
   }
+
+  const coping = makeSection('Coping', 'Cascade / outlet ranking / habituation');
+  const copingGrid = element('dl', 'definition-grid');
+  const copingDetails: Array<[string, string]> = [
+    ['Cascade position', agent.cascade],
+    ['Dwell until', formatWorkbenchTime(agent.cascadeDwellUntilMinute, preferences.clockFormat)],
+    ['Current outlet', agent.currentOutlet?.label ?? 'None'],
+    [
+      'Outlet operation',
+      agent.currentOutlet?.operation ?? agent.profile.outletPreferences[0]?.operation ?? 'None',
+    ],
+    [
+      'Outlet history',
+      agent.outletHistory.length === 0
+        ? 'No uses'
+        : agent.outletHistory
+            .map(use => `${use.affordanceId} ${use.uses}x / h ${use.habituation.toFixed(2)}`)
+            .join(' / '),
+    ],
+  ];
+  for (const [label, value] of copingDetails) {
+    const term = element('dt');
+    const definition = element('dd');
+    term.textContent = label;
+    definition.textContent = value;
+    copingGrid.append(term, definition);
+  }
+  coping.body.append(copingGrid);
 
   const constitution = makeSection('Constitution', 'Generation-fixed gains');
   const constitutionGrid = element('dl', 'definition-grid');
@@ -969,6 +1008,7 @@ function renderInspector(
     spatial.section,
     values.section,
     resources.section,
+    coping.section,
     agenda.section,
     facts.section,
     constitution.section,

@@ -1,0 +1,510 @@
+import {
+  VALUE_IDS,
+  type AppraisalEvent,
+  type AppraisalRecord,
+  type CascadePosition,
+  type EnvironmentDefinition,
+  type OutletAffordance,
+  type OutletSelection,
+  type OutletUseState,
+  type RuntimeMemory,
+  type SimulationAgent,
+  type SimulationState,
+  type TraceEntry,
+  type ValueId,
+  type ValueMap,
+  type ValueState,
+} from '../model/types.js';
+import { appendTrace, traceTerm } from './trace.js';
+
+const MAX_APPRAISAL_RECORDS = 120;
+const MAX_MEMORIES = 16;
+const MAX_TRACE_ENTRIES = 240;
+
+const CASCADE_DEPTH: Record<CascadePosition, number> = {
+  fawn: 3,
+  fight: 2,
+  flight: 2,
+  flop: 4,
+  freeze: 1,
+  none: 0,
+};
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function appendBounded<Item>(items: Item[], item: Item, maximum: number): Item[] {
+  const next = [...items, item];
+  return next.length <= maximum ? next : next.slice(next.length - maximum);
+}
+
+function agentFor(state: SimulationState, agentId: string): SimulationAgent {
+  const agent = state.agents.find(candidate => candidate.id === agentId);
+  if (agent === undefined) throw new RangeError(`Unknown appraisal agent "${agentId}"`);
+  return agent;
+}
+
+export function allostaticLoadFor(agent: SimulationAgent): number {
+  const pressure = VALUE_IDS.reduce(
+    (total, valueId) =>
+      total + Math.max(0, -agent.values[valueId].charge) + agent.values[valueId].deficitIntegral,
+    0,
+  );
+  return clamp(pressure / VALUE_IDS.length, 0, 1);
+}
+
+export function reactiveValueTurns(
+  agent: SimulationAgent,
+  turns: Partial<ValueMap<number>>,
+): Partial<ValueMap<number>> {
+  const result: Partial<ValueMap<number>> = {};
+  for (const valueId of VALUE_IDS) {
+    const turn = turns[valueId];
+    if (turn !== undefined) result[valueId] = turn * agent.profile.constitution.reactivity;
+  }
+  return result;
+}
+
+function applyTurns(
+  values: ValueMap<ValueState>,
+  turns: Partial<ValueMap<number>>,
+): ValueMap<ValueState> {
+  const next = {} as ValueMap<ValueState>;
+  for (const valueId of VALUE_IDS) {
+    next[valueId] = {
+      ...values[valueId],
+      charge: clamp(values[valueId].charge + (turns[valueId] ?? 0), -1, 1),
+    };
+  }
+  return next;
+}
+
+function mobilizedPosition(agent: SimulationAgent, event: AppraisalEvent): CascadePosition {
+  if (event.believedLeverage && event.exitAvailable) {
+    return agent.profile.cascadePriors.fight >= agent.profile.cascadePriors.flight
+      ? 'fight'
+      : 'flight';
+  }
+  if (event.believedLeverage) return 'fight';
+  if (event.exitAvailable) return 'flight';
+  return 'freeze';
+}
+
+function targetCascade(
+  agent: SimulationAgent,
+  event: AppraisalEvent,
+  cascadeLoad: number,
+  effectiveCoping: number,
+): CascadePosition {
+  if (cascadeLoad < agent.profile.constitution.threshold) return 'none';
+  if (!event.localized) return 'freeze';
+  if (effectiveCoping >= 0.55) return mobilizedPosition(agent, event);
+  if (effectiveCoping >= 0.2 && event.socialTargetId !== null) return 'fawn';
+  if (event.exitAvailable) return 'flight';
+  return 'flop';
+}
+
+function dwellMinutes(agent: SimulationAgent): number {
+  return Math.max(5, Math.ceil(12 * (1 - agent.profile.constitution.recoveryRate)));
+}
+
+function applyCascadeTarget(
+  state: SimulationState,
+  agent: SimulationAgent,
+  target: CascadePosition,
+  load: number,
+  targetId: string | null,
+): SimulationAgent {
+  const descending = CASCADE_DEPTH[target] > CASCADE_DEPTH[agent.cascade];
+  const mayRecover =
+    state.minute >= agent.cascadeDwellUntilMinute &&
+    load < agent.profile.constitution.threshold * 0.75;
+  const cascade = descending || agent.cascade === 'none' || mayRecover ? target : agent.cascade;
+  const changed = cascade !== agent.cascade;
+  return {
+    ...agent,
+    cascade,
+    cascadeDwellUntilMinute: changed
+      ? state.minute + dwellMinutes(agent)
+      : agent.cascadeDwellUntilMinute,
+    cascadeLoad: descending ? Math.max(agent.cascadeLoad, load) : load,
+    cascadeTargetId: cascade === 'fawn' ? targetId : null,
+  };
+}
+
+function negativeTurnIntensity(turns: Partial<ValueMap<number>>): number {
+  return clamp(
+    VALUE_IDS.reduce((total, valueId) => total + Math.max(0, -(turns[valueId] ?? 0)), 0) /
+      VALUE_IDS.length,
+    0,
+    1,
+  );
+}
+
+export function resolveAppraisalEvent(
+  state: SimulationState,
+  event: AppraisalEvent,
+): SimulationState {
+  const agent = agentFor(state, event.agentId);
+  const appliedTurns = reactiveValueTurns(agent, event.turns);
+  const values = applyTurns(agent.values, appliedTurns);
+  const turned = { ...agent, values };
+  const allostaticLoad = allostaticLoadFor(turned);
+  const effectiveCoping = clamp(
+    event.copingPotential - allostaticLoad * 0.35 - (1 - turned.resources.regulationReserve) * 0.2,
+    0,
+    1,
+  );
+  const cascadeLoad = clamp(
+    event.threat * (0.5 + turned.profile.constitution.reactivity * 0.5) +
+      allostaticLoad * 0.4 +
+      negativeTurnIntensity(appliedTurns) * 0.25,
+    0,
+    1.5,
+  );
+  const target = targetCascade(turned, event, cascadeLoad, effectiveCoping);
+  const updated = applyCascadeTarget(state, turned, target, cascadeLoad, event.socialTargetId);
+  const record: AppraisalRecord = {
+    agentId: event.agentId,
+    appliedTurns,
+    cascadeLoad,
+    copingPotential: event.copingPotential,
+    effectiveCoping,
+    eventId: event.id,
+    id: `${state.tick}:${event.id}`,
+    minute: state.minute,
+    nextCascade: updated.cascade,
+    previousCascade: agent.cascade,
+    socialTargetId: updated.cascadeTargetId,
+    tick: state.tick,
+  };
+  const memory: RuntimeMemory = {
+    emotionalTurn: -cascadeLoad,
+    id: `${state.tick}:${event.id}:appraisal`,
+    minute: state.minute,
+    subjectId: event.socialTargetId ?? undefined,
+    summary: event.summary,
+    type: 'aftermath',
+  };
+  let trace = appendTrace(
+    state.trace,
+    {
+      agentId: agent.id,
+      id: `${state.tick}:${event.id}:appraisal`,
+      kind: 'appraisal',
+      minute: state.minute,
+      selection: null,
+      summary: `${agent.profile.name} appraised ${event.summary.toLowerCase()}`,
+      terms: [
+        traceTerm('event', event.id, `scenario.appraisalEvents.${event.id}`),
+        traceTerm('threat', event.threat, `scenario.appraisalEvents.${event.id}.threat`),
+        traceTerm(
+          'coping-potential',
+          event.copingPotential,
+          `scenario.appraisalEvents.${event.id}.copingPotential`,
+        ),
+        traceTerm('allostatic-load', allostaticLoad, `agents.${agent.id}.values`),
+        traceTerm('effective-coping', effectiveCoping, `appraisalRecords.${record.id}`),
+        ...VALUE_IDS.flatMap(valueId =>
+          appliedTurns[valueId] === undefined
+            ? []
+            : [
+                traceTerm(
+                  `turn:${valueId}`,
+                  appliedTurns[valueId] ?? 0,
+                  `scenario.appraisalEvents.${event.id}.turns.${valueId}`,
+                  `characters.${agent.profile.id}.constitution.reactivity`,
+                ),
+              ],
+        ),
+      ],
+      tick: state.tick,
+    },
+    MAX_TRACE_ENTRIES,
+  );
+  trace = appendTrace(
+    trace,
+    {
+      agentId: agent.id,
+      id: `${state.tick}:${event.id}:cascade`,
+      kind: 'cascade',
+      minute: state.minute,
+      selection: null,
+      summary: `${agent.profile.name} entered ${updated.cascade}`,
+      terms: [
+        traceTerm('previous-cascade', agent.cascade, `agents.${agent.id}.cascade`),
+        traceTerm('cascade-load', cascadeLoad, `appraisalRecords.${record.id}.cascadeLoad`),
+        traceTerm(
+          'threshold',
+          agent.profile.constitution.threshold,
+          `characters.${agent.profile.id}.constitution.threshold`,
+        ),
+        traceTerm('next-cascade', updated.cascade, `agents.${agent.id}.cascade`),
+        traceTerm(
+          'target',
+          updated.cascadeTargetId,
+          `scenario.appraisalEvents.${event.id}.socialTargetId`,
+        ),
+        traceTerm(
+          'dwell-until',
+          updated.cascadeDwellUntilMinute,
+          `agents.${agent.id}.cascadeDwellUntilMinute`,
+        ),
+      ],
+      tick: state.tick,
+    },
+    MAX_TRACE_ENTRIES,
+  );
+  return {
+    ...state,
+    agents: state.agents.map(candidate =>
+      candidate.id === agent.id
+        ? { ...updated, memories: appendBounded(updated.memories, memory, MAX_MEMORIES) }
+        : candidate,
+    ),
+    appraisalRecords: appendBounded(state.appraisalRecords, record, MAX_APPRAISAL_RECORDS),
+    resolvedAppraisalEventIds: [...state.resolvedAppraisalEventIds, event.id],
+    trace,
+  };
+}
+
+function shallowerCascade(agent: SimulationAgent): CascadePosition {
+  if (agent.cascade === 'flop') return 'fawn';
+  if (agent.cascade === 'fawn') return 'freeze';
+  if (agent.cascade === 'fight' || agent.cascade === 'flight') return 'freeze';
+  if (agent.cascade === 'freeze') return 'none';
+  return 'none';
+}
+
+function dominantDeficit(agent: SimulationAgent): { pressure: number; valueId: ValueId } {
+  let valueId: ValueId = VALUE_IDS[0];
+  let pressure = Number.NEGATIVE_INFINITY;
+  for (const candidate of VALUE_IDS) {
+    const candidatePressure =
+      agent.values[candidate].deficitIntegral * agent.profile.values[candidate].weight;
+    if (candidatePressure > pressure) {
+      pressure = candidatePressure;
+      valueId = candidate;
+    }
+  }
+  return { pressure, valueId };
+}
+
+function outletUseFor(agent: SimulationAgent, affordanceId: string): OutletUseState {
+  return (
+    agent.outletHistory.find(candidate => candidate.affordanceId === affordanceId) ?? {
+      affordanceId,
+      habituation: 0,
+      uses: 0,
+    }
+  );
+}
+
+function matchingSatisfier(agent: SimulationAgent, affordance: OutletAffordance) {
+  return agent.profile.satisfierPreferences.find(
+    preference =>
+      preference.valueId === affordance.targetValueId &&
+      preference.flavor === affordance.satisfierFlavor,
+  );
+}
+
+function outletScore(agent: SimulationAgent, affordance: OutletAffordance): number {
+  const preference = agent.profile.outletPreferences.find(
+    candidate => candidate.operation === affordance.operation,
+  );
+  if (preference === undefined) return Number.NEGATIVE_INFINITY;
+  const history = outletUseFor(agent, affordance.id);
+  const flavorFit = matchingSatisfier(agent, affordance) === undefined ? 0 : 0.1;
+  return preference.rank + affordance.potency * 0.25 + flavorFit - history.habituation * 0.3;
+}
+
+function selectOutlet(
+  agent: SimulationAgent,
+  environment: EnvironmentDefinition,
+): OutletAffordance | null {
+  let selected: OutletAffordance | null = null;
+  let selectedScore = Number.NEGATIVE_INFINITY;
+  for (const affordance of environment.outletAffordances) {
+    const score = outletScore(agent, affordance);
+    if (score > selectedScore) {
+      selected = affordance;
+      selectedScore = score;
+    }
+  }
+  return selected;
+}
+
+function fireOutlet(
+  state: SimulationState,
+  agent: SimulationAgent,
+  affordance: OutletAffordance,
+): { agent: SimulationAgent; trace: TraceEntry } {
+  const previousUse = outletUseFor(agent, affordance.id);
+  const scheduleResistance = affordance.reinforcementSchedule === 'variable-ratio' ? 0.35 : 1;
+  const habituation = clamp(
+    previousUse.habituation +
+      agent.profile.constitution.habituationRate *
+        affordance.toleranceBuild *
+        scheduleResistance *
+        0.18,
+    0,
+    0.95,
+  );
+  const outletYield = affordance.potency * (1 - previousUse.habituation);
+  const satisfier = matchingSatisfier(agent, affordance);
+  const stateForValue = agent.values[affordance.targetValueId];
+  const positiveTurn =
+    satisfier?.type === 'surplus'
+      ? (1 - Math.max(0, stateForValue.charge)) * outletYield * 0.25
+      : satisfier?.type === 'deficit'
+        ? outletYield * 0.25
+        : outletYield * 0.1;
+  const repairedDeficit = affordance.displacesRepair ? 0 : outletYield * 0.08;
+  const values = {
+    ...agent.values,
+    [affordance.targetValueId]: {
+      ...stateForValue,
+      charge: clamp(stateForValue.charge + positiveTurn - affordance.valueDamage, -1, 1),
+      deficitIntegral: clamp(stateForValue.deficitIntegral - repairedDeficit, 0, 1),
+    },
+  };
+  const selection: OutletSelection = {
+    affordanceId: affordance.id,
+    label: affordance.label,
+    operation: affordance.operation,
+    remainingMinutes: affordance.durationMinutes,
+    startedMinute: state.minute,
+    targetValueId: affordance.targetValueId,
+    yield: outletYield,
+  };
+  const nextUse: OutletUseState = {
+    affordanceId: affordance.id,
+    habituation,
+    uses: previousUse.uses + 1,
+  };
+  const outletHistory = agent.outletHistory.some(
+    candidate => candidate.affordanceId === affordance.id,
+  )
+    ? agent.outletHistory.map(candidate =>
+        candidate.affordanceId === affordance.id ? nextUse : candidate,
+      )
+    : [...agent.outletHistory, nextUse];
+  return {
+    agent: { ...agent, currentOutlet: selection, outletHistory, values },
+    trace: {
+      agentId: agent.id,
+      id: `${state.tick}:${agent.id}:${affordance.id}:outlet`,
+      kind: 'outlet',
+      minute: state.minute,
+      selection: { rule: 'highest-score-then-authored-order', selectedId: affordance.id },
+      summary: `${agent.profile.name} turned to ${affordance.label.toLowerCase()}`,
+      terms: [
+        traceTerm(
+          'operation',
+          affordance.operation,
+          `characters.${agent.profile.id}.outletPreferences`,
+        ),
+        traceTerm(
+          'affordance',
+          affordance.id,
+          `environments.${state.environment.id}.outletAffordances`,
+        ),
+        traceTerm(
+          'target-value',
+          affordance.targetValueId,
+          `environments.${state.environment.id}.outletAffordances.${affordance.id}`,
+        ),
+        traceTerm('yield', outletYield, `agents.${agent.id}.outletHistory.${affordance.id}`),
+        traceTerm(
+          'deficit-repair',
+          repairedDeficit,
+          `environments.${state.environment.id}.outletAffordances.${affordance.id}.displacesRepair`,
+        ),
+        traceTerm('habituation', habituation, `agents.${agent.id}.outletHistory.${affordance.id}`),
+        traceTerm(
+          'reinforcement',
+          affordance.reinforcementSchedule,
+          `environments.${state.environment.id}.outletAffordances.${affordance.id}.reinforcementSchedule`,
+        ),
+        traceTerm(
+          'displaces-repair',
+          affordance.displacesRepair,
+          `environments.${state.environment.id}.outletAffordances.${affordance.id}.displacesRepair`,
+        ),
+      ],
+      tick: state.tick,
+    },
+  };
+}
+
+export function advanceCoping(state: SimulationState): SimulationState {
+  let trace = state.trace;
+  const agents = state.agents.map(agent => {
+    const cascadeLoad = clamp(
+      agent.cascadeLoad -
+        (agent.profile.constitution.recoveryRate * state.scenario.tickMinutes) / 60,
+      0,
+      1.5,
+    );
+    let next: SimulationAgent = {
+      ...agent,
+      cascadeLoad,
+      currentOutlet:
+        agent.currentOutlet === null
+          ? null
+          : agent.currentOutlet.remainingMinutes <= state.scenario.tickMinutes
+            ? null
+            : {
+                ...agent.currentOutlet,
+                remainingMinutes: agent.currentOutlet.remainingMinutes - state.scenario.tickMinutes,
+              },
+    };
+    if (
+      next.cascade !== 'none' &&
+      state.minute >= next.cascadeDwellUntilMinute &&
+      cascadeLoad < next.profile.constitution.threshold * 0.75
+    ) {
+      const previous = next.cascade;
+      const cascade = shallowerCascade(next);
+      next = {
+        ...next,
+        cascade,
+        cascadeDwellUntilMinute: state.minute + dwellMinutes(next),
+        cascadeTargetId: cascade === 'fawn' ? next.cascadeTargetId : null,
+      };
+      trace = appendTrace(
+        trace,
+        {
+          agentId: next.id,
+          id: `${state.tick}:${next.id}:cascade-recovery`,
+          kind: 'cascade',
+          minute: state.minute,
+          selection: null,
+          summary: `${next.profile.name} recovered from ${previous} toward ${cascade}`,
+          terms: [
+            traceTerm('previous-cascade', previous, `agents.${next.id}.cascade`),
+            traceTerm('cascade-load', cascadeLoad, `agents.${next.id}.cascadeLoad`),
+            traceTerm('next-cascade', cascade, `agents.${next.id}.cascade`),
+          ],
+          tick: state.tick,
+        },
+        MAX_TRACE_ENTRIES,
+      );
+    }
+    if (next.currentOutlet === null) {
+      const deficit = dominantDeficit(next);
+      const threshold = 0.45 - allostaticLoadFor(next) * 0.15;
+      if (deficit.pressure >= threshold) {
+        const affordance = selectOutlet(next, state.environment);
+        if (affordance !== null) {
+          const fired = fireOutlet(state, next, affordance);
+          next = fired.agent;
+          trace = appendTrace(trace, fired.trace, MAX_TRACE_ENTRIES);
+        }
+      }
+    }
+    return next;
+  });
+  return { ...state, agents, trace };
+}

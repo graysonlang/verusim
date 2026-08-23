@@ -1,4 +1,9 @@
-import { VALUE_IDS, type RecoveryMode, type SimulationSnapshotFile } from '../model/types.js';
+import {
+  OUTLET_OPERATIONS,
+  VALUE_IDS,
+  type RecoveryMode,
+  type SimulationSnapshotFile,
+} from '../model/types.js';
 import { parseScenario, ScenarioValidationError } from './parse.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
@@ -17,6 +22,7 @@ const TRACE_KINDS = new Set([
   'aftermath',
   'agenda',
   'appraisal',
+  'cascade',
   'decision',
   'disclosure-appraisal',
   'disclosure-decision',
@@ -26,6 +32,7 @@ const TRACE_KINDS = new Set([
   'intention',
   'norm-appraisal',
   'observation',
+  'outlet',
   'prediction',
   'relationship',
   'resource',
@@ -55,6 +62,7 @@ const OBSERVATION_CHANNELS = new Set(['hearing', 'sight']);
 const OBSERVATION_DIMENSIONS = new Set(['disclosure', 'empathy']);
 const OBSERVATION_OUTCOMES = new Set(['confirmed', 'corrected', 'missed', 'suspected']);
 const NORM_OBSERVATION_OUTCOMES = new Set(['appraised', 'missed']);
+const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
 
 function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
@@ -119,6 +127,31 @@ function validateValueState(value: unknown, path: string): void {
   numberValue(state.variance, `${path}.variance`, 0, 1);
 }
 
+function validateResourceMap(value: unknown, path: string): void {
+  const resources = objectValue(value, path);
+  for (const [resourceId, amount] of Object.entries(resources)) {
+    if (
+      !['executiveBudget', 'physicalStamina', 'regulationReserve', 'socialBattery'].includes(
+        resourceId,
+      )
+    ) {
+      throw new ScenarioValidationError(`${path}.${resourceId}`, 'unknown resource');
+    }
+    numberValue(amount, `${path}.${resourceId}`, 0, 1);
+  }
+}
+
+function validateMaskingDemand(value: unknown, path: string): void {
+  if (value === null) return;
+  const demand = objectValue(value, path);
+  numberValue(demand.presentationGap, `${path}.presentationGap`, 0, 1);
+  numberValue(demand.exposureRisk, `${path}.exposureRisk`, 0, 1);
+  integerValue(demand.audienceCount, `${path}.audienceCount`, 0);
+  if (typeof demand.fabricated !== 'boolean') {
+    throw new ScenarioValidationError(`${path}.fabricated`, 'expected a boolean');
+  }
+}
+
 function validateAgent(value: unknown, path: string): void {
   const agent = objectValue(value, path);
   stringValue(agent.id, `${path}.id`);
@@ -131,6 +164,34 @@ function validateAgent(value: unknown, path: string): void {
   stringValue(agent.currentActivity, `${path}.currentActivity`);
   if (typeof agent.cascade !== 'string' || !CASCADE_POSITIONS.has(agent.cascade)) {
     throw new ScenarioValidationError(`${path}.cascade`, 'expected a known cascade position');
+  }
+  numberValue(agent.cascadeLoad, `${path}.cascadeLoad`, 0, 1.5);
+  integerValue(agent.cascadeDwellUntilMinute, `${path}.cascadeDwellUntilMinute`);
+  if (agent.cascadeTargetId !== null) {
+    stringValue(agent.cascadeTargetId, `${path}.cascadeTargetId`);
+  }
+  if (agent.currentOutlet !== null) {
+    const outlet = objectValue(agent.currentOutlet, `${path}.currentOutlet`);
+    stringValue(outlet.affordanceId, `${path}.currentOutlet.affordanceId`);
+    stringValue(outlet.label, `${path}.currentOutlet.label`);
+    if (typeof outlet.operation !== 'string' || !OUTLET_OPERATION_SET.has(outlet.operation)) {
+      throw new ScenarioValidationError(
+        `${path}.currentOutlet.operation`,
+        'expected a known outlet operation',
+      );
+    }
+    if (
+      typeof outlet.targetValueId !== 'string' ||
+      !VALUE_IDS.some(candidate => candidate === outlet.targetValueId)
+    ) {
+      throw new ScenarioValidationError(
+        `${path}.currentOutlet.targetValueId`,
+        'expected a known value identifier',
+      );
+    }
+    integerValue(outlet.remainingMinutes, `${path}.currentOutlet.remainingMinutes`, 1);
+    integerValue(outlet.startedMinute, `${path}.currentOutlet.startedMinute`);
+    numberValue(outlet.yield, `${path}.currentOutlet.yield`, 0, 1);
   }
   numberValue(agent.walkingMetersPerMinute, `${path}.walkingMetersPerMinute`, 0.1, 500);
 
@@ -166,6 +227,16 @@ function validateAgent(value: unknown, path: string): void {
         'expected break, none, rest, or sleep',
       );
     }
+    validateResourceMap(block.resourceDrainsPerHour, `${blockPath}.resourceDrainsPerHour`);
+    validateMaskingDemand(block.maskingDemand, `${blockPath}.maskingDemand`);
+  });
+
+  arrayValue(agent.outletHistory, `${path}.outletHistory`).forEach((value, index) => {
+    const usePath = `${path}.outletHistory[${index}]`;
+    const use = objectValue(value, usePath);
+    stringValue(use.affordanceId, `${usePath}.affordanceId`);
+    integerValue(use.uses, `${usePath}.uses`, 1);
+    numberValue(use.habituation, `${usePath}.habituation`, 0, 1);
   });
 
   arrayValue(agent.memories, `${path}.memories`).forEach((value, index) => {
@@ -200,6 +271,49 @@ function validateRelationshipHistory(value: unknown, path: string): void {
     numberValue(entry.stanceTurn, `${entryPath}.stanceTurn`, -1, 1);
     if (entry.outcome !== 'accepted' && entry.outcome !== 'refused') {
       throw new ScenarioValidationError(`${entryPath}.outcome`, 'expected accepted or refused');
+    }
+  });
+}
+
+function validateAppraisalHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    stringValue(entry.id, `${entryPath}.id`);
+    stringValue(entry.eventId, `${entryPath}.eventId`);
+    stringValue(entry.agentId, `${entryPath}.agentId`);
+    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.tick, `${entryPath}.tick`);
+    numberValue(entry.copingPotential, `${entryPath}.copingPotential`, 0, 1);
+    numberValue(entry.effectiveCoping, `${entryPath}.effectiveCoping`, 0, 1);
+    numberValue(entry.cascadeLoad, `${entryPath}.cascadeLoad`, 0, 1.5);
+    if (
+      typeof entry.previousCascade !== 'string' ||
+      !CASCADE_POSITIONS.has(entry.previousCascade)
+    ) {
+      throw new ScenarioValidationError(
+        `${entryPath}.previousCascade`,
+        'expected a known cascade position',
+      );
+    }
+    if (typeof entry.nextCascade !== 'string' || !CASCADE_POSITIONS.has(entry.nextCascade)) {
+      throw new ScenarioValidationError(
+        `${entryPath}.nextCascade`,
+        'expected a known cascade position',
+      );
+    }
+    if (entry.socialTargetId !== null) {
+      stringValue(entry.socialTargetId, `${entryPath}.socialTargetId`);
+    }
+    const turns = objectValue(entry.appliedTurns, `${entryPath}.appliedTurns`);
+    for (const [valueId, turn] of Object.entries(turns)) {
+      if (!VALUE_IDS.some(candidate => candidate === valueId)) {
+        throw new ScenarioValidationError(
+          `${entryPath}.appliedTurns.${valueId}`,
+          'expected a known value identifier',
+        );
+      }
+      numberValue(turn, `${entryPath}.appliedTurns.${valueId}`, -1, 1);
     }
   });
 }
@@ -652,7 +766,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 3 &&
     file.schemaVersion !== 4 &&
     file.schemaVersion !== 5 &&
-    file.schemaVersion !== 6
+    file.schemaVersion !== 6 &&
+    file.schemaVersion !== 7
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -691,6 +806,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       if (block.recoveryMode === undefined) {
         block.recoveryMode = legacyRecoveryMode(block.activity);
       }
+      if (block.resourceDrainsPerHour === undefined) block.resourceDrainsPerHour = {};
+      if (block.maskingDemand === undefined) block.maskingDemand = null;
     }
   }
   if (sourceVersion < 4) {
@@ -716,7 +833,19 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.resolvedRelationshipEventIds = [];
     file.resolvedRelationshipRequestIds = [];
   }
-  file.schemaVersion = 6;
+  if (sourceVersion < 7) {
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      const agent = objectValue(agentValue, 'snapshot.agents');
+      agent.cascadeDwellUntilMinute = file.minute;
+      agent.cascadeLoad = 0;
+      agent.cascadeTargetId = null;
+      agent.currentOutlet = null;
+      agent.outletHistory = [];
+    }
+    file.appraisalRecords = [];
+    file.resolvedAppraisalEventIds = [];
+  }
+  file.schemaVersion = 7;
   return file;
 }
 
@@ -725,7 +854,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 6) {
+  if (file.schemaVersion !== 7) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -766,6 +895,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
   validateObservationHistory(file.observations, 'snapshot.observations');
   validateRelationshipHistory(file.relationshipDecisions, 'snapshot.relationshipDecisions');
+  validateAppraisalHistory(file.appraisalRecords, 'snapshot.appraisalRecords');
   validateTrace(file.trace, 'snapshot.trace');
   validateIdentifierList(file.resolvedOpportunityIds, 'snapshot.resolvedOpportunityIds');
   validateIdentifierList(
@@ -781,6 +911,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
     file.resolvedRelationshipRequestIds,
     'snapshot.resolvedRelationshipRequestIds',
   );
+  validateIdentifierList(file.resolvedAppraisalEventIds, 'snapshot.resolvedAppraisalEventIds');
 
   return {
     ...(file as unknown as SimulationSnapshotFile),

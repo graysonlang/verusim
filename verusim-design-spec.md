@@ -479,6 +479,18 @@ Do not build attachment as a separate subsystem. It reduces to parameters alread
 
 Recovery is that prior updating on safe exposures — gradual and playable, not a flag flip.
 
+### 9.6 Implemented Phase 3 boundary
+
+The first accumulation-and-coping slice derives allostatic load from value pressure, applies activity and masking drains to the shared resource pools, and resolves deterministic appraisal inputs through a dwell-and-hysteresis cascade.
+The same reactivity gain scales positive and negative turns, and fawn state retains its specific social target rather than becoming a room-wide relationship mode.
+
+Outlet profiles rank the six operations, while environments supply the concrete affordances.
+Satisfier flavor, deficit versus surplus yield, habituation, fixed versus variable-ratio reinforcement, direct value damage, and whether the outlet displaces repair all contribute explicit terms.
+Satisfier granularity is not yet authored because the runtime does not yet expose shared progress and completion events; adding a field before that boundary would imply semantics the evaluator cannot honor.
+
+Cascade position, target, dwell, outlet use, and habituation persist in snapshots, while adapters receive only a minimal stable tell vocabulary unless they are explicitly developer-facing.
+The acceptance targets are the seeded Lantern Inn accumulation fixture and the Cascade Room therapist/abuser composition probe.
+
 ---
 
 ## 10. Impulse control and horizon

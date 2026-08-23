@@ -59,9 +59,11 @@ const VALUE_LABELS: Record<ValueId, string> = {
 const EVENT_KINDS: ReadonlySet<TraceKind> = new Set([
   'activity',
   'aftermath',
+  'cascade',
   'decision',
   'goal',
   'intervention',
+  'outlet',
   'task',
 ]);
 
@@ -109,6 +111,7 @@ function isRecent(state: SimulationState, minute: number, settings: IndicatorSet
 }
 
 function currentAction(state: SimulationState, agent: SimulationAgent): string {
+  if (agent.currentOutlet !== null) return agent.currentOutlet.label;
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
   if (intention === undefined) return agent.currentActivity;
   const task = state.scenario.taskOperators.find(candidate => candidate.id === intention.taskId);

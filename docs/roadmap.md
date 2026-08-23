@@ -141,6 +141,8 @@ Exit probes:
 
 ## Phase 3 — accumulation and coping
 
+Status: complete.
+
 Expand the current resource ledger beyond task costs and authored recovery into activity and masking drains, then implement allostatic load, the defense cascade with dwell and hysteresis, outlet operations, satisfier flavor, habituation, and reinforcement schedules.
 Add environment affordances so the same outlet slot resolves to different available instances.
 Add a minimal shared tell vocabulary for cascade position, dominant concern, and outlet firing so probes can distinguish model failures from projection failures before the full adapters arrive.
@@ -155,6 +157,10 @@ Exit probes:
 - therapist and abuser in one room produce simultaneous superficial cooperation and target-specific fawning
 - the seeded innkeeper reaches an outlet from accumulated deficit rather than a one-event threshold
 - cascade positions and outlet firings produce stable minimal tells without exposing raw meters
+
+The completed slice adds deterministic appraisal events as a reusable input boundary, preserves target-specific cascade state alongside ordinary dyad cooperation, and derives outlet selection from character rankings plus environment affordances.
+The Lantern Inn fixture proves seeded accumulation can fire a control outlet without a precipitating appraisal, while the Cascade Room fixture separates therapist cooperation from abuser-targeted fawning.
+Snapshot replay persists appraisal, cascade, habituation, and active-outlet state exactly.
 
 ## Phase 4 — narrative-driven agency
 

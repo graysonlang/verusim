@@ -246,6 +246,25 @@ The resolved subjective turns update the observer's own value charge and remain 
 The trace also preserves membership, legibility, the capability result, the common baseline, the local compatibility contribution, and the weighted felt total.
 Norm appraisal does not read dyad stance, estimated empathy, suspicion, social features, or perceived threat, so norm opacity cannot become hostility or social distance by accident.
 
+## Accumulation and coping
+
+Phase 3 extends the shared resource transition with authored per-hour activity drains and explicit masking demand.
+Masking converts presentation gap, exposure risk, audience count, and concealment versus fabrication into executive and regulation drain without rewriting the value ledger.
+Schedule and task authors still declare context rather than a selected response.
+
+Allostatic load is derived from negative value charge and accumulated deficit rather than stored as a second mutable ledger.
+Deterministic appraisal events apply positive and negative value turns through the same reactivity gain, then combine threat, effective coping potential, resource availability, and allostatic load to derive a cascade target.
+Descent is immediate, while recovery advances one rung only after both a dwell interval and a lower hysteresis threshold.
+Fawn retains its social target on the agent, so cooperation with one person and appeasement toward another remain simultaneously representable.
+
+Outlet choice composes a character's operation ranking with the affordances supplied by the current environment.
+Satisfier flavor changes the yield for the affected value, accumulated use builds habituation, and variable-ratio reinforcement resists that habituation relative to a fixed schedule.
+An outlet that displaces repair may raise current charge without reducing the accumulated deficit; a non-displacing affordance can reduce both.
+Satisfier granularity remains a design target rather than an authored field until progress and completion events have a shared runtime boundary.
+
+Appraisal records, resolved event identifiers, cascade dwell and target state, current outlet use, and habituation history are bounded snapshot state.
+The observer projection exposes stable cascade and outlet tells, while the developer workbench separately exposes the numeric terms and causal trace.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.
@@ -285,12 +304,13 @@ Resource recovery is applied by the same deterministic tick transition used by t
 Derived affect keeps value valence and resource strain separate.
 Social battery below `0.50` contributes up to `0.38` negative valence and physical stamina below `0.30` contributes up to `0.16`; this can impair mood without mutating value charge or allostatic load.
 
-Character-library schema version 5 adds descriptive physical profiles and coarse build effects to the version 4 epistemic capability format.
-Explicit migrations preserve versions 1 through 4, using neutral capability defaults where versions 1 through 3 expressed no distinction and an unspecified, average physical profile where older libraries expressed no physical data.
-Scenario schema version 9 adds directed relationship events and request opportunities plus explicit exposure debt on dyads to the version 8 local-norm format.
-Explicit migrations preserve version 1 through 8 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, and supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent.
-Snapshot schema version 6 persists relationship decisions, resolved relationship inputs, exposure debt, and relationship-memory provenance in addition to the version 5 observation and agenda state and causal-trace schema version 1.
-Explicit snapshot migrations preserve versions 1 through 5, and snapshot parsing supplies recovery semantics for schedules saved before scenario version 5; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Character-library schema version 6 adds cascade priors, outlet rankings, and satisfier preferences to the version 5 physical and epistemic profile.
+Explicit migrations preserve versions 1 through 5, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, and neutral coping defaults where version 6 data was absent.
+Environment-library schema version 2 adds outlet affordances to the original spatial environment format, with an empty affordance list supplied for version 1 content.
+Scenario schema version 10 adds appraisal events plus activity and masking drains to the version 9 relationship format.
+Explicit migrations preserve version 1 through 9 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, and supplying empty appraisal inputs plus neutral drain data where version 10 data was absent.
+Snapshot schema version 7 persists appraisal records, resolved appraisal events, cascade dwell and target state, active outlets, and habituation history in addition to the version 6 relationship state and causal-trace schema version 1.
+Explicit snapshot migrations preserve versions 1 through 6, and snapshot parsing supplies recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

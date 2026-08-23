@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 10,
+  "id": "cascade-room",
+  "title": "Two Audiences in One Room",
+  "summary": "One threat drives target-specific fawning toward an abuser while a separate request from a therapist still receives superficial cooperation.",
+  "environmentId": "alders-edge",
+  "startMinute": 600,
+  "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "spring",
+    "temperatureCelsius": 18,
+    "weather": "clear"
+  },
+  "localNorms": [],
+  "dyads": [
+    {
+      "observerId": "witness",
+      "subjectId": "therapist",
+      "features": {
+        "kinship": 0,
+        "familiarity": 0.6,
+        "similarity": 0.5,
+        "reciprocity": 0.4,
+        "category": 0.4
+      },
+      "stance": 0,
+      "integratedHistory": 0.1,
+      "behaviorVariance": 0.1,
+      "estimatedEmpathy": 0.75,
+      "estimatedDisclosure": 0.6,
+      "estimateConfidence": 0.5,
+      "predictionError": 0,
+      "suspicion": 0,
+      "exposureDebt": 0,
+      "mode": "courteous"
+    }
+  ],
+  "disclosureItems": [],
+  "disclosureOpportunities": [],
+  "observationEvents": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [
+    {
+      "id": "answer-therapist",
+      "requesterId": "therapist",
+      "responderId": "witness",
+      "atMinute": 601,
+      "label": "request to keep answering",
+      "magnitude": 0.4
+    }
+  ],
+  "appraisalEvents": [
+    {
+      "id": "abuser-enters",
+      "agentId": "witness",
+      "atMinute": 601,
+      "summary": "the abuser entering the room",
+      "turns": {
+        "safety": -0.3,
+        "autonomy": -0.15
+      },
+      "threat": 0.95,
+      "copingPotential": 0.35,
+      "localized": true,
+      "believedLeverage": false,
+      "exitAvailable": false,
+      "socialTargetId": "abuser"
+    }
+  ],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "witness",
+      "characterId": "sera-dane",
+      "normPerspectives": [],
+      "position": { "x": 108, "y": 76 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Answering careful questions",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ]
+    },
+    {
+      "instanceId": "therapist",
+      "characterId": "nessa-arden",
+      "normPerspectives": [],
+      "position": { "x": 110, "y": 76 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Listening",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ]
+    },
+    {
+      "instanceId": "abuser",
+      "characterId": "tomas-reed",
+      "normPerspectives": [],
+      "position": { "x": 112, "y": 76 },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Watching",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {},
+          "maskingDemand": null
+        }
+      ]
+    }
+  ]
+}

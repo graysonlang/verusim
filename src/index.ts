@@ -8,6 +8,7 @@ export {
   MIND_MODEL_DIMENSIONS,
   OBSERVATION_CHANNELS,
   OBSERVATION_EVENT_TYPES,
+  OUTLET_OPERATIONS,
   SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
@@ -39,6 +40,12 @@ export {
   resolveDisclosureOpportunity,
 } from './simulation/disclosure.js';
 export { evaluateEmpathy } from './simulation/empathy.js';
+export {
+  advanceCoping,
+  allostaticLoadFor,
+  reactiveValueTurns,
+  resolveAppraisalEvent,
+} from './simulation/coping.js';
 export {
   advanceSimulation,
   createSimulation,

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 10,
+  "id": "innkeeper-coping",
+  "title": "The Innkeeper Under Load",
+  "summary": "A directly seeded safety deficit drives Mara toward the highest-ranked control outlet the current environment actually supplies.",
+  "environmentId": "coping-inn",
+  "startMinute": 600,
+  "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "winter",
+    "temperatureCelsius": 5,
+    "weather": "rain"
+  },
+  "localNorms": [],
+  "dyads": [],
+  "disclosureItems": [],
+  "disclosureOpportunities": [],
+  "observationEvents": [],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "mara",
+      "characterId": "mara-under-load",
+      "normPerspectives": [],
+      "position": { "x": 50, "y": 40 },
+      "initialResources": {
+        "executiveBudget": 0.62,
+        "physicalStamina": 0.7,
+        "regulationReserve": 0.58,
+        "socialBattery": 0.55
+      },
+      "initialValues": {
+        "safety": {
+          "charge": -0.35,
+          "deficitIntegral": 0.78,
+          "variance": 0.42
+        }
+      },
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "common-room",
+          "activity": "Holding the common room together",
+          "recoveryMode": "none",
+          "resourceDrainsPerHour": {
+            "executiveBudget": 0.06,
+            "physicalStamina": 0.03
+          },
+          "maskingDemand": {
+            "presentationGap": 0.45,
+            "exposureRisk": 0.7,
+            "audienceCount": 3,
+            "fabricated": false
+          }
+        }
+      ]
+    }
+  ]
+}

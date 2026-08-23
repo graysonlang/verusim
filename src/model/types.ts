@@ -203,6 +203,7 @@ export interface DisclosureEnvelope {
 
 export interface CharacterDefinition {
   capabilities: CapabilityMap<number>;
+  cascadePriors: CascadePriorMap;
   constitution: Constitution;
   contractAdherence: number;
   disclosure: DisclosureEnvelope;
@@ -212,15 +213,43 @@ export interface CharacterDefinition {
   identity: IdentityMarker[];
   name: string;
   narrativeClaims: string[];
+  outletPreferences: OutletPreference[];
   physical: PhysicalProfile;
   role: string;
+  satisfierPreferences: SatisfierPreference[];
   summary: string;
   values: ValueMap<ValueDisposition>;
 }
 
 export interface CharacterLibraryFile {
   characters: CharacterDefinition[];
-  schemaVersion: 5;
+  schemaVersion: 6;
+}
+
+export const OUTLET_OPERATIONS = [
+  'discharge',
+  'numb',
+  'substitute',
+  'regulate',
+  'control',
+  'avoid',
+] as const;
+
+export type OutletOperation = (typeof OUTLET_OPERATIONS)[number];
+
+export type CascadePriorMap = Record<Exclude<CascadePosition, 'none'>, number>;
+
+export interface OutletPreference {
+  operation: OutletOperation;
+  rank: number;
+}
+
+export type SatisfierType = 'deficit' | 'surplus';
+
+export interface SatisfierPreference {
+  flavor: string;
+  type: SatisfierType;
+  valueId: ValueId;
 }
 
 export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'path' | 'water';
@@ -243,12 +272,29 @@ export interface EnvironmentDefinition {
   id: string;
   locations: LocationDefinition[];
   name: string;
+  outletAffordances: OutletAffordance[];
   width: number;
 }
 
 export interface EnvironmentLibraryFile {
   environments: EnvironmentDefinition[];
-  schemaVersion: 1;
+  schemaVersion: 2;
+}
+
+export type ReinforcementSchedule = 'fixed' | 'variable-ratio';
+
+export interface OutletAffordance {
+  displacesRepair: boolean;
+  durationMinutes: number;
+  id: string;
+  label: string;
+  operation: OutletOperation;
+  potency: number;
+  reinforcementSchedule: ReinforcementSchedule;
+  satisfierFlavor: string | null;
+  targetValueId: ValueId;
+  toleranceBuild: number;
+  valueDamage: number;
 }
 
 export type RecoveryMode = 'break' | 'none' | 'rest' | 'sleep';
@@ -256,8 +302,17 @@ export type RecoveryMode = 'break' | 'none' | 'rest' | 'sleep';
 export interface ScheduleBlock {
   activity: string;
   locationId: string;
+  maskingDemand: MaskingDemand | null;
   recoveryMode: RecoveryMode;
+  resourceDrainsPerHour: Partial<ResourceState>;
   startMinute: number;
+}
+
+export interface MaskingDemand {
+  audienceCount: number;
+  exposureRisk: number;
+  fabricated: boolean;
+  presentationGap: number;
 }
 
 export interface ValueState {
@@ -433,9 +488,11 @@ export interface TaskOperator {
   id: string;
   label: string;
   locationId: string;
+  maskingDemand: MaskingDemand | null;
   preconditions: FactCondition[];
   recoveryMode: RecoveryMode;
   resourceCosts: Partial<ResourceState>;
+  resourceDrainsPerHour: Partial<ResourceState>;
   valueTurns: Partial<ValueMap<number>>;
 }
 
@@ -503,6 +560,7 @@ export interface EnvironmentConditions {
 export interface ScenarioFile {
   agendaGoals: AgendaGoalSeed[];
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
+  appraisalEvents: AppraisalEvent[];
   behaviorOpportunities: BehaviorOpportunity[];
   characters: CharacterPlacement[];
   disclosureItems: DisclosureItemSeed[];
@@ -516,7 +574,7 @@ export interface ScenarioFile {
   observationEvents: ObservationEvent[];
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
-  schemaVersion: 9;
+  schemaVersion: 10;
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -542,15 +600,34 @@ export interface RuntimeMemory {
     | 'task';
 }
 
+export interface AppraisalEvent {
+  agentId: string;
+  atMinute: number;
+  believedLeverage: boolean;
+  copingPotential: number;
+  exitAvailable: boolean;
+  id: string;
+  localized: boolean;
+  socialTargetId: string | null;
+  summary: string;
+  threat: number;
+  turns: Partial<ValueMap<number>>;
+}
+
 export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 'flop';
 
 export interface SimulationAgent {
   cascade: CascadePosition;
+  cascadeDwellUntilMinute: number;
+  cascadeLoad: number;
+  cascadeTargetId: string | null;
+  currentOutlet: OutletSelection | null;
   currentActivity: string;
   currentLocationId: string | null;
   destination: Point;
   id: string;
   memories: RuntimeMemory[];
+  outletHistory: OutletUseState[];
   position: Point;
   profile: CharacterDefinition;
   resources: ResourceState;
@@ -564,6 +641,7 @@ export type TraceKind =
   | 'aftermath'
   | 'agenda'
   | 'appraisal'
+  | 'cascade'
   | 'decision'
   | 'disclosure-appraisal'
   | 'disclosure-decision'
@@ -573,6 +651,7 @@ export type TraceKind =
   | 'intention'
   | 'norm-appraisal'
   | 'observation'
+  | 'outlet'
   | 'prediction'
   | 'relationship'
   | 'resource'
@@ -616,6 +695,7 @@ export interface CausalTrace {
 }
 
 export interface SimulationState {
+  appraisalRecords: AppraisalRecord[];
   agendaDecisions: AgendaDecisionRecord[];
   agendaGoals: AgendaGoalState[];
   agents: SimulationAgent[];
@@ -632,6 +712,7 @@ export interface SimulationState {
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
+  resolvedAppraisalEventIds: string[];
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
@@ -639,6 +720,37 @@ export interface SimulationState {
   trace: CausalTrace;
   worldFacts: WorldFact[];
   worldRevision: number;
+}
+
+export interface OutletSelection {
+  affordanceId: string;
+  label: string;
+  operation: OutletOperation;
+  remainingMinutes: number;
+  startedMinute: number;
+  targetValueId: ValueId;
+  yield: number;
+}
+
+export interface OutletUseState {
+  affordanceId: string;
+  habituation: number;
+  uses: number;
+}
+
+export interface AppraisalRecord {
+  agentId: string;
+  appliedTurns: Partial<ValueMap<number>>;
+  cascadeLoad: number;
+  copingPotential: number;
+  effectiveCoping: number;
+  eventId: string;
+  id: string;
+  minute: number;
+  nextCascade: CascadePosition;
+  previousCascade: CascadePosition;
+  socialTargetId: string | null;
+  tick: number;
 }
 
 export interface ScenarioContent {
@@ -876,11 +988,16 @@ export interface TaskIntention {
 
 export interface SimulationAgentSnapshot {
   cascade: CascadePosition;
+  cascadeDwellUntilMinute: number;
+  cascadeLoad: number;
+  cascadeTargetId: string | null;
+  currentOutlet: OutletSelection | null;
   currentActivity: string;
   currentLocationId: string | null;
   destination: Point;
   id: string;
   memories: RuntimeMemory[];
+  outletHistory: OutletUseState[];
   position: Point;
   profileId: string;
   resources: ResourceState;
@@ -890,6 +1007,7 @@ export interface SimulationAgentSnapshot {
 }
 
 export interface SimulationSnapshotFile {
+  appraisalRecords: AppraisalRecord[];
   agendaDecisions: AgendaDecisionRecord[];
   agendaGoals: AgendaGoalState[];
   agents: SimulationAgentSnapshot[];
@@ -906,10 +1024,11 @@ export interface SimulationSnapshotFile {
   resolvedDisclosureOpportunityIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
+  resolvedAppraisalEventIds: string[];
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 6;
+  schemaVersion: 7;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

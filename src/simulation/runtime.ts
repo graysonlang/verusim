@@ -5,6 +5,7 @@ import {
   type CharacterPlacement,
   type EnvironmentDefinition,
   type LocationDefinition,
+  type MaskingDemand,
   type Point,
   type RecoveryMode,
   type ResourceState,
@@ -28,6 +29,7 @@ import { parseSnapshot } from '../scenario/snapshot.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
+import { advanceCoping, resolveAppraisalEvent } from './coping.js';
 import { applyBuildToWalkingPace } from './physical.js';
 import { resolveObservationEvent } from './prediction.js';
 import {
@@ -155,6 +157,10 @@ function initializeAgent(
   const arrived = distance(placement.position, destination) < 0.01;
   return {
     cascade: 'none',
+    cascadeDwellUntilMinute: minute,
+    cascadeLoad: 0,
+    cascadeTargetId: null,
+    currentOutlet: null,
     currentActivity: arrived
       ? block.activity
       : `Walking to ${findLocation(environment, block.locationId).name}`,
@@ -162,6 +168,7 @@ function initializeAgent(
     destination,
     id: placement.instanceId,
     memories: initialMemories(profile),
+    outletHistory: [],
     position: { ...placement.position },
     profile,
     resources: { ...DEFAULT_RESOURCES, ...placement.initialResources },
@@ -342,6 +349,24 @@ function validateReferences(content: ScenarioContent): void {
       throw new ScenarioValidationError(`${path}.responderId`, 'a request requires two agents');
     }
   });
+  content.scenario.appraisalEvents.forEach((event, index) => {
+    const path = `scenario.appraisalEvents[${index}]`;
+    if (!instanceIds.has(event.agentId)) {
+      throw new ScenarioValidationError(`${path}.agentId`, `unknown agent "${event.agentId}"`);
+    }
+    if (event.socialTargetId !== null && !instanceIds.has(event.socialTargetId)) {
+      throw new ScenarioValidationError(
+        `${path}.socialTargetId`,
+        `unknown agent "${event.socialTargetId}"`,
+      );
+    }
+    if (event.socialTargetId === event.agentId) {
+      throw new ScenarioValidationError(
+        `${path}.socialTargetId`,
+        'an agent cannot be its own social threat target',
+      );
+    }
+  });
   const factIds = new Set(content.scenario.worldFacts.map(fact => fact.id));
   content.scenario.agendaGoals.forEach((goal, index) => {
     const path = `scenario.agendaGoals[${index}]`;
@@ -466,6 +491,7 @@ export function createSimulation(input: {
   });
 
   let initial: SimulationState = {
+    appraisalRecords: [],
     agendaDecisions: [],
     agendaGoals: content.scenario.agendaGoals.map(goal => ({
       ...goal,
@@ -496,6 +522,7 @@ export function createSimulation(input: {
     resolvedDisclosureOpportunityIds: [],
     resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
+    resolvedAppraisalEventIds: [],
     resolvedRelationshipEventIds: [],
     resolvedRelationshipRequestIds: [],
     scenario: content.scenario,
@@ -586,11 +613,16 @@ export function createSimulationFromSnapshot(input: {
     });
     return {
       cascade: saved.cascade,
+      cascadeDwellUntilMinute: saved.cascadeDwellUntilMinute,
+      cascadeLoad: saved.cascadeLoad,
+      cascadeTargetId: saved.cascadeTargetId,
+      currentOutlet: saved.currentOutlet === null ? null : { ...saved.currentOutlet },
       currentActivity: saved.currentActivity,
       currentLocationId: saved.currentLocationId,
       destination: { ...saved.destination },
       id: saved.id,
       memories: saved.memories.map(memory => ({ ...memory })),
+      outletHistory: saved.outletHistory.map(use => ({ ...use })),
       position: { ...saved.position },
       profile: agent.profile,
       resources: { ...saved.resources },
@@ -602,6 +634,24 @@ export function createSimulationFromSnapshot(input: {
     };
   });
   const agentIds = new Set(agents.map(agent => agent.id));
+  const outletAffordanceIds = new Set(base.environment.outletAffordances.map(item => item.id));
+  snapshot.agents.forEach((saved, index) => {
+    if (saved.cascadeTargetId !== null && !agentIds.has(saved.cascadeTargetId)) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].cascadeTargetId`,
+        `unknown agent "${saved.cascadeTargetId}"`,
+      );
+    }
+    if (
+      saved.currentOutlet !== null &&
+      !outletAffordanceIds.has(saved.currentOutlet.affordanceId)
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].currentOutlet.affordanceId`,
+        `unknown outlet affordance "${saved.currentOutlet.affordanceId}"`,
+      );
+    }
+  });
   snapshot.dyads.forEach((dyad, index) => {
     if (!agentIds.has(dyad.observerId) || !agentIds.has(dyad.subjectId)) {
       throw new ScenarioValidationError(
@@ -666,6 +716,23 @@ export function createSimulationFromSnapshot(input: {
       throw new ScenarioValidationError(
         `snapshot.relationshipDecisions[${index}]`,
         'relationship decision must reference snapshot agents',
+      );
+    }
+  });
+  const appraisalEventIds = new Set(snapshot.scenario.appraisalEvents.map(event => event.id));
+  snapshot.resolvedAppraisalEventIds.forEach((eventId, index) => {
+    if (!appraisalEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedAppraisalEventIds[${index}]`,
+        `unknown appraisal event "${eventId}"`,
+      );
+    }
+  });
+  snapshot.appraisalRecords.forEach((record, index) => {
+    if (!agentIds.has(record.agentId) || !appraisalEventIds.has(record.eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.appraisalRecords[${index}]`,
+        'appraisal record must reference a snapshot agent and authored event',
       );
     }
   });
@@ -780,6 +847,7 @@ export function createSimulationFromSnapshot(input: {
 
   return {
     ...base,
+    appraisalRecords: snapshot.appraisalRecords,
     agendaDecisions: snapshot.agendaDecisions,
     agendaGoals: snapshot.agendaGoals,
     agents,
@@ -795,6 +863,7 @@ export function createSimulationFromSnapshot(input: {
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
     resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
+    resolvedAppraisalEventIds: snapshot.resolvedAppraisalEventIds,
     resolvedRelationshipEventIds: snapshot.resolvedRelationshipEventIds,
     resolvedRelationshipRequestIds: snapshot.resolvedRelationshipRequestIds,
     tick: snapshot.tick,
@@ -833,16 +902,47 @@ interface ResourceRecoveryResult {
 function advanceResources(
   resources: ResourceState,
   recoveryMode: RecoveryMode,
-  tickMinutes: number,
+  recoveryMinutes: number,
+  drainMinutes: number,
+  drainsPerHour: Partial<ResourceState>,
 ): ResourceRecoveryResult {
   const rates = RECOVERY_RATES_PER_HOUR[recoveryMode];
   const next = {} as ResourceState;
   const deltas = {} as ResourceState;
   for (const resourceId of RESOURCE_IDS) {
-    next[resourceId] = clamp(resources[resourceId] + (rates[resourceId] * tickMinutes) / 60, 0, 1);
+    next[resourceId] = clamp(
+      resources[resourceId] +
+        (rates[resourceId] * recoveryMinutes) / 60 -
+        ((drainsPerHour[resourceId] ?? 0) * drainMinutes) / 60,
+      0,
+      1,
+    );
     deltas[resourceId] = next[resourceId] - resources[resourceId];
   }
   return { deltas, resources: next };
+}
+
+function maskingDrains(demand: MaskingDemand | null): Partial<ResourceState> {
+  if (demand === null) return {};
+  const fabricationMultiplier = demand.fabricated ? 1 : 0.2;
+  const cost =
+    demand.presentationGap * demand.exposureRisk * demand.audienceCount * fabricationMultiplier;
+  return {
+    executiveBudget: cost * 0.6,
+    regulationReserve: cost * 0.4,
+  };
+}
+
+function combinedResourceDrains(
+  authored: Partial<ResourceState>,
+  masking: Partial<ResourceState>,
+): Partial<ResourceState> {
+  return Object.fromEntries(
+    RESOURCE_IDS.map(resourceId => [
+      resourceId,
+      (authored[resourceId] ?? 0) + (masking[resourceId] ?? 0),
+    ]),
+  ) as Partial<ResourceState>;
 }
 
 interface AgentAdvanceResult {
@@ -902,7 +1002,19 @@ function advanceAgent(
       : task === null
         ? clamp(state.scenario.tickMinutes - arrivalMinutes, 0, state.scenario.tickMinutes)
         : state.scenario.tickMinutes;
-  const recovery = advanceResources(agent.resources, recoveryMode, recoveryMinutes);
+  const authoredDrains = arrived
+    ? (task?.resourceDrainsPerHour ?? block?.resourceDrainsPerHour ?? {})
+    : {};
+  const activeMasking = arrived ? (task?.maskingDemand ?? block?.maskingDemand ?? null) : null;
+  const drains = combinedResourceDrains(authoredDrains, maskingDrains(activeMasking));
+  const activeMinutes = arrived ? state.scenario.tickMinutes : 0;
+  const recovery = advanceResources(
+    agent.resources,
+    recoveryMode,
+    recoveryMinutes,
+    activeMinutes,
+    drains,
+  );
   const recoverySource =
     task === null
       ? `agents.${agent.id}.schedule.recoveryMode`
@@ -964,17 +1076,14 @@ function advanceAgent(
         tick: nextTick,
       });
     }
-    if (
-      recoveryMode !== 'none' &&
-      RESOURCE_IDS.some(resourceId => recovery.deltas[resourceId] > 0)
-    ) {
+    if (RESOURCE_IDS.some(resourceId => recovery.deltas[resourceId] !== 0)) {
       trace.push({
         agentId: agent.id,
         id: `${nextTick}:${agent.id}:resource`,
         kind: 'resource',
         minute: nextMinute,
         selection: null,
-        summary: `${agent.profile.name} recovers through ${recoveryMode}`,
+        summary: `${agent.profile.name}'s resources shift through ${task?.label ?? block?.activity ?? recoveryMode}`,
         terms: [
           traceTerm('recovery-mode', recoveryMode, recoverySource),
           ...RESOURCE_IDS.map(resourceId =>
@@ -982,6 +1091,15 @@ function advanceAgent(
               `recovery-rate:${resourceId}`,
               RECOVERY_RATES_PER_HOUR[recoveryMode][resourceId],
               `simulation.recovery.${recoveryMode}.${resourceId}`,
+            ),
+          ),
+          ...RESOURCE_IDS.map(resourceId =>
+            traceTerm(
+              `drain-rate:${resourceId}`,
+              drains[resourceId] ?? 0,
+              task === null
+                ? `agents.${agent.id}.schedule.resourceDrainsPerHour`
+                : `scenario.taskOperators.${task.id}.resourceDrainsPerHour`,
             ),
           ),
           ...RESOURCE_IDS.map(resourceId =>
@@ -1067,10 +1185,18 @@ function advanceOneTick(state: SimulationState): SimulationState {
       !prepared.resolvedRelationshipRequestIds.includes(request.id),
   );
   for (const request of dueRelationshipRequests) next = resolveRelationshipRequest(next, request);
-  return consolidateRelationshipMemories(
+  const dueAppraisalEvents = prepared.scenario.appraisalEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedAppraisalEventIds.includes(event.id),
+  );
+  for (const event of dueAppraisalEvents) next = resolveAppraisalEvent(next, event);
+  next = consolidateRelationshipMemories(
     next,
     results.filter(result => result.sleeping).map(result => result.agent.id),
   );
+  return advanceCoping(next);
 }
 
 export function advanceSimulation(state: SimulationState, ticks = 1): SimulationState {

@@ -1,4 +1,5 @@
 import { VALUE_IDS, type SimulationAgent, type ValueId } from '../model/types.js';
+import { allostaticLoadFor } from './coping.js';
 
 const VALUE_LABELS: Record<ValueId, string> = {
   safety: 'safety',
@@ -48,10 +49,12 @@ export function classifyMovementSpeed(metersPerMinute: number): MovementSpeedCla
 export interface AgentObservation {
   allostaticLoad: number;
   arousal: number;
+  cascadeTell: string | null;
   dominantValue: ValueId;
   mood: string;
   movementMetersPerMinute: number;
   movementSpeedClass: MovementSpeedClass;
+  outletTell: string | null;
   resourceStrain: number;
   stateOfMind: string;
   valence: number;
@@ -63,7 +66,6 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
   let dominantPressure = Number.NEGATIVE_INFINITY;
   let weightedCharge = 0;
   let totalWeight = 0;
-  let allostaticLoad = 0;
 
   for (const valueId of VALUE_IDS) {
     const state = agent.values[valueId];
@@ -75,7 +77,6 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
     }
     weightedCharge += state.charge * weight;
     totalWeight += weight;
-    allostaticLoad += Math.max(0, -state.charge) + state.deficitIntegral;
   }
 
   const valueValence = clamp(weightedCharge / Math.max(totalWeight, 0.001), -1, 1);
@@ -83,7 +84,7 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
   const physicalDepletion = clamp((0.3 - agent.resources.physicalStamina) / 0.3, 0, 1);
   const resourceStrain = clamp(socialDepletion * 0.38 + physicalDepletion * 0.16, 0, 1);
   const valence = clamp(valueValence - resourceStrain, -1, 1);
-  allostaticLoad = clamp(allostaticLoad / VALUE_IDS.length, 0, 1);
+  const allostaticLoad = allostaticLoadFor(agent);
   const arousal = clamp(
     agent.profile.constitution.baselineArousal +
       allostaticLoad * agent.profile.constitution.reactivity -
@@ -99,10 +100,28 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
   else if (valence > 0.3) mood = 'content';
   else if (arousal >= 0.7) mood = 'alert';
 
+  const cascadeTell =
+    agent.cascade === 'freeze'
+      ? 'Goes still'
+      : agent.cascade === 'fight'
+        ? 'Sets against the threat'
+        : agent.cascade === 'flight'
+          ? 'Tracks an exit'
+          : agent.cascade === 'fawn'
+            ? 'Appeases the threat'
+            : agent.cascade === 'flop'
+              ? 'Shuts down'
+              : null;
+  const outletTell =
+    agent.currentOutlet === null
+      ? null
+      : `${agent.currentOutlet.operation}: ${agent.currentOutlet.label}`;
   const stateOfMind =
-    dominantPressure < 0.08
+    cascadeTell ??
+    outletTell ??
+    (dominantPressure < 0.08
       ? `Present with ${agent.currentActivity.toLowerCase()}`
-      : `Protecting ${VALUE_LABELS[dominantValue]}`;
+      : `Protecting ${VALUE_LABELS[dominantValue]}`);
   const remainingDistance = Math.hypot(
     agent.destination.x - agent.position.x,
     agent.destination.y - agent.position.y,
@@ -112,10 +131,12 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
   return {
     allostaticLoad,
     arousal,
+    cascadeTell,
     dominantValue,
     mood,
     movementMetersPerMinute,
     movementSpeedClass: classifyMovementSpeed(movementMetersPerMinute),
+    outletTell,
     resourceStrain,
     stateOfMind,
     valence,

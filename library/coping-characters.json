@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 6,
+  "characters": [
+    {
+      "id": "mara-under-load",
+      "name": "Mara Vale",
+      "role": "Innkeeper",
+      "summary": "A capable innkeeper whose accumulated safety deficit seeks whatever tractable control the environment offers.",
+      "physical": {
+        "ageYears": 38,
+        "sex": "female",
+        "build": { "heightClass": "average", "weightClass": "average" },
+        "comeliness": 0.64
+      },
+      "capabilities": {
+        "acuity": 0.72,
+        "evidenceCalibration": 0.67,
+        "expressiveControl": 0.81
+      },
+      "constitution": {
+        "reactivity": 0.68,
+        "threshold": 0.57,
+        "recoveryRate": 0.34,
+        "socialValence": 0.41,
+        "habituationRate": 0.38,
+        "baselineArousal": 0.46
+      },
+      "cascadePriors": {
+        "freeze": 0.35,
+        "fight": 0.4,
+        "flight": 0.6,
+        "fawn": 0.7,
+        "flop": 0.3
+      },
+      "outletPreferences": [
+        { "operation": "control", "rank": 1 },
+        { "operation": "regulate", "rank": 0.82 },
+        { "operation": "avoid", "rank": 0.58 },
+        { "operation": "discharge", "rank": 0.45 },
+        { "operation": "substitute", "rank": 0.3 },
+        { "operation": "numb", "rank": 0.2 }
+      ],
+      "satisfierPreferences": [
+        {
+          "valueId": "safety",
+          "flavor": "accumulation",
+          "type": "deficit"
+        },
+        {
+          "valueId": "safety",
+          "flavor": "control of exits",
+          "type": "deficit"
+        },
+        {
+          "valueId": "safety",
+          "flavor": "predictability",
+          "type": "deficit"
+        }
+      ],
+      "contractAdherence": 0.72,
+      "disclosure": {
+        "intimateSafety": 0.92,
+        "strangerSafety": 0.7,
+        "troughDepth": 0.55,
+        "troughPosition": 0.5,
+        "troughWidth": 0.22
+      },
+      "empathy": {
+        "floor": 0.24,
+        "ceiling": 0.96,
+        "steepness": 2.8,
+        "selfPosition": 0,
+        "threatSensitivity": 0.62,
+        "featureWeights": {
+          "kinship": 1,
+          "familiarity": 1.2,
+          "similarity": 0.55,
+          "reciprocity": 0.9,
+          "category": 0.65
+        }
+      },
+      "identity": [
+        { "marker": "keeper of the Wayfarer", "centrality": 0.92 },
+        { "marker": "Vale family", "centrality": 0.61 }
+      ],
+      "values": {
+        "safety": {
+          "weight": 1.2,
+          "initialCharge": -0.25,
+          "initialDeficit": 0.2,
+          "initialVariance": 0.31
+        },
+        "belonging": {
+          "weight": 1.08,
+          "initialCharge": 0.28,
+          "initialDeficit": 0.1,
+          "initialVariance": 0.19
+        },
+        "respect": {
+          "weight": 0.82,
+          "initialCharge": 0.16,
+          "initialDeficit": 0.08,
+          "initialVariance": 0.12
+        },
+        "autonomy": {
+          "weight": 0.9,
+          "initialCharge": 0.22,
+          "initialDeficit": 0.07,
+          "initialVariance": 0.13
+        },
+        "competence": {
+          "weight": 1.18,
+          "initialCharge": 0.42,
+          "initialDeficit": 0.03,
+          "initialVariance": 0.08
+        },
+        "fairness": {
+          "weight": 0.86,
+          "initialCharge": 0.2,
+          "initialDeficit": 0.06,
+          "initialVariance": 0.11
+        }
+      },
+      "narrativeClaims": ["I keep a safe house", "No guest leaves hungry"],
+      "formativeEvents": [
+        {
+          "age": 11,
+          "value": "safety",
+          "turn": -0.66,
+          "attribution": null,
+          "copingPotential": 0.2,
+          "summary": "A winter flood took the old inn without warning."
+        }
+      ]
+    }
+  ]
+}

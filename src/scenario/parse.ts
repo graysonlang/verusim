@@ -3,6 +3,7 @@ import {
   HEIGHT_CLASSES,
   MIND_MODEL_DIMENSIONS,
   OBSERVATION_CHANNELS,
+  OUTLET_OPERATIONS,
   SEASON_IDS,
   SEX_IDS,
   SOCIAL_FEATURE_IDS,
@@ -35,6 +36,9 @@ const TIME_RATE_ID_SET = new Set<string>(TIME_RATE_IDS);
 const HEIGHT_CLASS_SET = new Set<string>(HEIGHT_CLASSES);
 const MIND_MODEL_DIMENSION_SET = new Set<string>(MIND_MODEL_DIMENSIONS);
 const OBSERVATION_CHANNEL_SET = new Set<string>(OBSERVATION_CHANNELS);
+const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
+const REINFORCEMENT_SCHEDULES = new Set(['fixed', 'variable-ratio']);
+const SATISFIER_TYPES = new Set(['deficit', 'surplus']);
 const SEASON_ID_SET = new Set<string>(SEASON_IDS);
 const SEX_ID_SET = new Set<string>(SEX_IDS);
 const WEATHER_ID_SET = new Set<string>(WEATHER_IDS);
@@ -244,6 +248,17 @@ function validateResourceCosts(value: unknown, path: string): void {
   }
 }
 
+function validateMaskingDemand(value: unknown, path: string): void {
+  if (value === null) return;
+  const demand = objectValue(value, path);
+  numberValue(demand.presentationGap, `${path}.presentationGap`, 0, 1);
+  numberValue(demand.exposureRisk, `${path}.exposureRisk`, 0, 1);
+  integerValue(demand.audienceCount, `${path}.audienceCount`, 0, 10_000);
+  if (typeof demand.fabricated !== 'boolean') {
+    throw new ScenarioValidationError(`${path}.fabricated`, 'expected a boolean');
+  }
+}
+
 function validateFactConditions(value: unknown, path: string, requireOne: boolean): void {
   const conditions = arrayValue(value, path);
   if (requireOne && conditions.length === 0) {
@@ -274,12 +289,13 @@ function legacyRecoveryMode(activity: unknown): RecoveryMode {
 
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
-  if (file.schemaVersion === 5) return file;
+  if (file.schemaVersion === 6) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
     file.schemaVersion !== 3 &&
-    file.schemaVersion !== 4
+    file.schemaVersion !== 4 &&
+    file.schemaVersion !== 5
   ) {
     throw new ScenarioValidationError(
       'characterLibrary.schemaVersion',
@@ -316,34 +332,65 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
         troughWidth: 0.2,
       };
     }
-    if (sourceVersion !== 4) {
+    if (sourceVersion < 4) {
       character.capabilities = {
         acuity: 0.5,
         evidenceCalibration: 0.5,
         expressiveControl: 0.5,
       };
     }
-    const latestFormativeAge = Array.isArray(character.formativeEvents)
-      ? character.formativeEvents.reduce((latest, event) => {
-          if (typeof event !== 'object' || event === null || Array.isArray(event)) return latest;
-          const age = (event as Record<string, unknown>).age;
-          return typeof age === 'number' && Number.isFinite(age) ? Math.max(latest, age) : latest;
-        }, 0)
-      : 0;
-    character.physical = {
-      ageYears: Math.min(130, Math.max(30, latestFormativeAge + 10)),
-      build: { heightClass: 'average', weightClass: 'average' },
-      comeliness: 0.5,
-      sex: 'unspecified',
+    if (sourceVersion < 5) {
+      const latestFormativeAge = Array.isArray(character.formativeEvents)
+        ? character.formativeEvents.reduce((latest, event) => {
+            if (typeof event !== 'object' || event === null || Array.isArray(event)) return latest;
+            const age = (event as Record<string, unknown>).age;
+            return typeof age === 'number' && Number.isFinite(age) ? Math.max(latest, age) : latest;
+          }, 0)
+        : 0;
+      character.physical = {
+        ageYears: Math.min(130, Math.max(30, latestFormativeAge + 10)),
+        build: { heightClass: 'average', weightClass: 'average' },
+        comeliness: 0.5,
+        sex: 'unspecified',
+      };
+    }
+    character.cascadePriors ??= {
+      fawn: 0.5,
+      fight: 0.5,
+      flight: 0.5,
+      flop: 0.5,
+      freeze: 0.5,
     };
+    character.outletPreferences ??= OUTLET_OPERATIONS.map((operation, index) => ({
+      operation,
+      rank: 1 - index * 0.1,
+    }));
+    character.satisfierPreferences ??= [];
   }
-  file.schemaVersion = 5;
+  file.schemaVersion = 6;
+  return file;
+}
+
+function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
+  const file = clone(objectValue(value, 'environmentLibrary'));
+  if (file.schemaVersion === 2) return file;
+  if (file.schemaVersion !== 1) {
+    throw new ScenarioValidationError(
+      'environmentLibrary.schemaVersion',
+      'unsupported schema version',
+    );
+  }
+  for (const environmentValue of arrayValue(file.environments, 'environmentLibrary.environments')) {
+    const environment = objectValue(environmentValue, 'environmentLibrary.environments');
+    environment.outletAffordances ??= [];
+  }
+  file.schemaVersion = 2;
   return file;
 }
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 9) return file;
+  if (file.schemaVersion === 10) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -352,7 +399,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 5 &&
     file.schemaVersion !== 6 &&
     file.schemaVersion !== 7 &&
-    file.schemaVersion !== 8
+    file.schemaVersion !== 8 &&
+    file.schemaVersion !== 9
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -420,19 +468,35 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       event.eventType = 'mind-model';
     }
   }
-  file.relationshipEvents = [];
-  file.relationshipRequests = [];
-  for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
-    const dyad = objectValue(dyadValue, 'scenario.dyads');
-    dyad.exposureDebt = 0;
+  if (sourceVersion < 9) {
+    file.relationshipEvents = [];
+    file.relationshipRequests = [];
+    for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
+      const dyad = objectValue(dyadValue, 'scenario.dyads');
+      dyad.exposureDebt = 0;
+    }
   }
-  file.schemaVersion = 9;
+  file.appraisalEvents = [];
+  for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+    const task = objectValue(taskValue, 'scenario.taskOperators');
+    task.maskingDemand = null;
+    task.resourceDrainsPerHour = {};
+  }
+  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+    const placement = objectValue(placementValue, 'scenario.characters');
+    for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
+      const block = objectValue(blockValue, 'scenario.characters.schedule');
+      block.maskingDemand = null;
+      block.resourceDrainsPerHour = {};
+    }
+  }
+  file.schemaVersion = 10;
   return file;
 }
 
 export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
   const file = migrateCharacterLibrary(value);
-  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 5);
+  schemaVersion(file.schemaVersion, 'characterLibrary.schemaVersion', 6);
   const characters = arrayValue(file.characters, 'characterLibrary.characters').map(
     (item, index) => {
       const path = `characterLibrary.characters[${index}]`;
@@ -447,6 +511,64 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       numberValue(character.contractAdherence, `${path}.contractAdherence`, 0, 1);
       validateDisclosureEnvelope(character.disclosure, `${path}.disclosure`);
       validateEmpathyEnvelope(character.empathy, `${path}.empathy`);
+
+      const cascadePriors = objectValue(character.cascadePriors, `${path}.cascadePriors`);
+      for (const position of ['freeze', 'fight', 'flight', 'fawn', 'flop']) {
+        numberValue(cascadePriors[position], `${path}.cascadePriors.${position}`, 0, 1);
+      }
+
+      const outletPreferences = arrayValue(
+        character.outletPreferences,
+        `${path}.outletPreferences`,
+      );
+      if (outletPreferences.length === 0) {
+        throw new ScenarioValidationError(
+          `${path}.outletPreferences`,
+          'expected at least one outlet preference',
+        );
+      }
+      const outletOperations = new Set<string>();
+      outletPreferences.forEach((entry, preferenceIndex) => {
+        const preferencePath = `${path}.outletPreferences[${preferenceIndex}]`;
+        const preference = objectValue(entry, preferencePath);
+        if (
+          typeof preference.operation !== 'string' ||
+          !OUTLET_OPERATION_SET.has(preference.operation)
+        ) {
+          throw new ScenarioValidationError(
+            `${preferencePath}.operation`,
+            'expected a known outlet operation',
+          );
+        }
+        if (outletOperations.has(preference.operation)) {
+          throw new ScenarioValidationError(
+            `${preferencePath}.operation`,
+            'duplicate outlet operation',
+          );
+        }
+        outletOperations.add(preference.operation);
+        numberValue(preference.rank, `${preferencePath}.rank`, 0, 1);
+      });
+
+      arrayValue(character.satisfierPreferences, `${path}.satisfierPreferences`).forEach(
+        (entry, preferenceIndex) => {
+          const preferencePath = `${path}.satisfierPreferences[${preferenceIndex}]`;
+          const preference = objectValue(entry, preferencePath);
+          if (typeof preference.valueId !== 'string' || !VALUE_ID_SET.has(preference.valueId)) {
+            throw new ScenarioValidationError(
+              `${preferencePath}.valueId`,
+              'expected a known value identifier',
+            );
+          }
+          stringValue(preference.flavor, `${preferencePath}.flavor`);
+          if (typeof preference.type !== 'string' || !SATISFIER_TYPES.has(preference.type)) {
+            throw new ScenarioValidationError(
+              `${preferencePath}.type`,
+              'expected deficit or surplus',
+            );
+          }
+        },
+      );
 
       const values = objectValue(character.values, `${path}.values`);
       for (const valueId of VALUE_IDS) {
@@ -498,8 +620,8 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
 }
 
 export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile {
-  const file = objectValue(value, 'environmentLibrary');
-  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 1);
+  const file = migrateEnvironmentLibrary(value);
+  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 2);
   const environments = arrayValue(file.environments, 'environmentLibrary.environments').map(
     (item, index) => {
       const path = `environmentLibrary.environments[${index}]`;
@@ -532,6 +654,58 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
         },
       );
       uniqueIds(locations, `${path}.locations`);
+
+      const outletAffordances = arrayValue(
+        environment.outletAffordances,
+        `${path}.outletAffordances`,
+      ).map((entry, affordanceIndex) => {
+        const affordancePath = `${path}.outletAffordances[${affordanceIndex}]`;
+        const affordance = objectValue(entry, affordancePath);
+        identifierValue(affordance.id, `${affordancePath}.id`);
+        stringValue(affordance.label, `${affordancePath}.label`);
+        if (
+          typeof affordance.operation !== 'string' ||
+          !OUTLET_OPERATION_SET.has(affordance.operation)
+        ) {
+          throw new ScenarioValidationError(
+            `${affordancePath}.operation`,
+            'expected a known outlet operation',
+          );
+        }
+        if (
+          typeof affordance.targetValueId !== 'string' ||
+          !VALUE_ID_SET.has(affordance.targetValueId)
+        ) {
+          throw new ScenarioValidationError(
+            `${affordancePath}.targetValueId`,
+            'expected a known value identifier',
+          );
+        }
+        if (affordance.satisfierFlavor !== null) {
+          stringValue(affordance.satisfierFlavor, `${affordancePath}.satisfierFlavor`);
+        }
+        numberValue(affordance.potency, `${affordancePath}.potency`, 0, 1);
+        numberValue(affordance.toleranceBuild, `${affordancePath}.toleranceBuild`, 0, 1);
+        numberValue(affordance.valueDamage, `${affordancePath}.valueDamage`, 0, 1);
+        integerValue(affordance.durationMinutes, `${affordancePath}.durationMinutes`, 1, 100_000);
+        if (
+          typeof affordance.reinforcementSchedule !== 'string' ||
+          !REINFORCEMENT_SCHEDULES.has(affordance.reinforcementSchedule)
+        ) {
+          throw new ScenarioValidationError(
+            `${affordancePath}.reinforcementSchedule`,
+            'expected fixed or variable-ratio',
+          );
+        }
+        if (typeof affordance.displacesRepair !== 'boolean') {
+          throw new ScenarioValidationError(
+            `${affordancePath}.displacesRepair`,
+            'expected a boolean',
+          );
+        }
+        return affordance;
+      });
+      uniqueIds(outletAffordances, `${path}.outletAffordances`);
       return environment;
     },
   );
@@ -541,7 +715,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 9);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 10);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -729,6 +903,8 @@ export function parseScenario(value: unknown): ScenarioFile {
         effectFactIds.add(factId);
       });
       validateResourceCosts(task.resourceCosts, `${path}.resourceCosts`);
+      validateResourceCosts(task.resourceDrainsPerHour, `${path}.resourceDrainsPerHour`);
+      validateMaskingDemand(task.maskingDemand, `${path}.maskingDemand`);
       validateValueTurns(task.valueTurns, `${path}.valueTurns`);
       return task;
     },
@@ -799,6 +975,8 @@ export function parseScenario(value: unknown): ScenarioFile {
             'expected break, none, rest, or sleep',
           );
         }
+        validateResourceCosts(block.resourceDrainsPerHour, `${schedulePath}.resourceDrainsPerHour`);
+        validateMaskingDemand(block.maskingDemand, `${schedulePath}.maskingDemand`);
         return block;
       },
     );
@@ -920,6 +1098,30 @@ export function parseScenario(value: unknown): ScenarioFile {
     return request;
   });
   uniqueIds(relationshipRequests, 'scenario.relationshipRequests');
+
+  const appraisalEvents = arrayValue(file.appraisalEvents, 'scenario.appraisalEvents').map(
+    (entry, index) => {
+      const path = `scenario.appraisalEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      identifierValue(event.agentId, `${path}.agentId`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      stringValue(event.summary, `${path}.summary`);
+      numberValue(event.threat, `${path}.threat`, 0, 1);
+      numberValue(event.copingPotential, `${path}.copingPotential`, 0, 1);
+      validateValueTurns(event.turns, `${path}.turns`);
+      if (event.socialTargetId !== null) {
+        identifierValue(event.socialTargetId, `${path}.socialTargetId`);
+      }
+      for (const field of ['localized', 'believedLeverage', 'exitAvailable']) {
+        if (typeof event[field] !== 'boolean') {
+          throw new ScenarioValidationError(`${path}.${field}`, 'expected a boolean');
+        }
+      }
+      return event;
+    },
+  );
+  uniqueIds(appraisalEvents, 'scenario.appraisalEvents');
 
   const observationEvents = arrayValue(file.observationEvents, 'scenario.observationEvents').map(
     (entry, index) => {
