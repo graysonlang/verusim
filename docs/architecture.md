@@ -321,6 +321,9 @@ Somatic preemption will emit a first-class `gate` entry before ordinary appraisa
 Phase 5 separates the organization of authored resources from their logical identity.
 Character and environment definitions should live in independently validated documents, preferably one resource per file, while directories group related settings, casts, fixtures, or packages for authors.
 The directory path and file name are discovery metadata rather than an address, so reorganizing the source tree does not invalidate a scenario.
+Repository-authored resources and scenarios share one `content/` tree.
+Character profiles, environment layouts, and future reusable kinds occupy ordinary organizational branches, while `content/scenarios/` is reserved for scenario documents.
+Scenarios are preparation roots rather than reusable addressed resources: they select semantic dependencies but are not owned by, nested inside, or registered with those dependencies.
 
 A resource address is a structured semantic key.
 Its package identifier supplies a namespace, its resource kind distinguishes characters from environments and other future content, and its stable identifier names the resource within that package.
@@ -383,7 +386,7 @@ Snapshot resume receives the same prepared content and verifies its resource loc
 
 ### Discovery and packing
 
-The repository generator discovers documents below `content/resources/` in code-unit-sorted order and emits the checked-in immutable import catalog at `content/catalog.generated.ts`.
+The repository generator discovers resource documents below `content/` in code-unit-sorted order, excluding the reserved `content/scenarios/` branch, and emits the checked-in immutable import catalog at `content/catalog.generated.ts`.
 Tests and builds reject a stale generated catalog.
 Traversal is an authoring and build concern only; deployed consumers are never required to expose a filesystem or reproduce the repository tree.
 

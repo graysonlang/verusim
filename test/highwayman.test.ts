@@ -6,8 +6,8 @@ import {
   highwaymanCharacters,
   highwaymanEnvironments,
 } from './fixtures.js';
-import roadScenario from '../scenarios/highwayman-road.json';
-import squareScenario from '../scenarios/highwayman-square.json';
+import roadScenario from '../content/scenarios/highwayman-road.json';
+import squareScenario from '../content/scenarios/highwayman-square.json';
 import {
   advanceSimulation,
   createSimulation,

@@ -8,12 +8,12 @@ import {
   mindModelCharacters,
   normCharacters,
 } from './fixtures.js';
-import scenario from '../scenarios/market-morning.json';
-import mindModelScenario from '../scenarios/endicott-margueritte.json';
-import normScenario from '../scenarios/pottsfield.json';
-import relationshipScenario from '../scenarios/relationship-momentum.json';
-import cascadeScenario from '../scenarios/cascade-room.json';
-import narrativeScenario from '../scenarios/narrative-agency.json';
+import scenario from '../content/scenarios/market-morning.json';
+import mindModelScenario from '../content/scenarios/endicott-margueritte.json';
+import normScenario from '../content/scenarios/pottsfield.json';
+import relationshipScenario from '../content/scenarios/relationship-momentum.json';
+import cascadeScenario from '../content/scenarios/cascade-room.json';
+import narrativeScenario from '../content/scenarios/narrative-agency.json';
 import {
   advanceSimulation,
   createSimulation,

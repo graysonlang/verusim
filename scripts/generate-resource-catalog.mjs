@@ -3,18 +3,20 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const RESOURCE_ROOT = path.join(REPOSITORY_ROOT, 'content', 'resources');
+const CONTENT_ROOT = path.join(REPOSITORY_ROOT, 'content');
+const SCENARIO_ROOT = path.join(CONTENT_ROOT, 'scenarios');
 const OUTPUT_PATH = path.join(REPOSITORY_ROOT, 'content', 'catalog.generated.ts');
 const RESOURCE_KINDS = new Set(['character-profile', 'environment-layout']);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** @param {string} directory @returns {Promise<string[]>} */
-async function discoverJsonFiles(directory) {
+async function discoverResourceFiles(directory) {
   const discovered = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) discovered.push(...(await discoverJsonFiles(entryPath)));
-    else if (entry.isFile() && entry.name.endsWith('.json')) discovered.push(entryPath);
+    if (entry.isDirectory() && entryPath !== SCENARIO_ROOT) {
+      discovered.push(...(await discoverResourceFiles(entryPath)));
+    } else if (entry.isFile() && entry.name.endsWith('.json')) discovered.push(entryPath);
   }
   return discovered.sort();
 }
@@ -54,7 +56,7 @@ function addressKey(address) {
 }
 
 async function generatedSource() {
-  const files = await discoverJsonFiles(RESOURCE_ROOT);
+  const files = await discoverResourceFiles(CONTENT_ROOT);
   const resources = [];
   const sourcesByAddress = new Map();
   for (const filePath of files) {

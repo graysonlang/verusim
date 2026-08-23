@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { characters, environments } from './fixtures.js';
-import bakerScenario from '../scenarios/baker-deadline.json';
+import bakerScenario from '../content/scenarios/baker-deadline.json';
 import {
   advanceSimulation,
   createSimulation,

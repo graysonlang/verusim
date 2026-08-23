@@ -201,6 +201,7 @@ The discriminating resource-preparation fixtures cover relocation, duplicate pro
 Scenario schema version 12 introduces structured semantic addresses and preserves migrations from versions 1 through 11.
 Snapshot schema version 9 persists the exact resource lock and preserves migrations from versions 1 through 8 while verifying legacy identifiers.
 The browser workbench now consumes prepared built-in scenarios from the generated catalog; this loading-only change does not alter presentation.
+Repository-authored resources and scenario roots share one `content/` tree, with the reserved scenario branch excluded from resource discovery and semantic identity remaining independent of every source path.
 
 ## Phase 5B — layered environment topology
 

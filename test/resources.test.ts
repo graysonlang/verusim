@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
-import marketScenario from '../scenarios/market-morning.json';
+import marketScenario from '../content/scenarios/market-morning.json';
 import {
   advanceSimulation,
   createResourceCatalog,
@@ -36,7 +36,7 @@ describe('resource preparation', () => {
     const original = prepareScenario({ catalog: builtInCatalog(), scenario: marketScenario });
     const relocated = BUILT_IN_RESOURCES.map(input =>
       input.source.endsWith('/mara-vale.json')
-        ? { ...input, source: 'content/resources/relocated-cast/mara.json' }
+        ? { ...input, source: 'content/characters/relocated-cast/mara.json' }
         : input,
     );
     const moved = prepareScenario({
@@ -139,7 +139,7 @@ describe('resource preparation', () => {
     );
     const resources: AuthoredResource[] = [
       ...BUILT_IN_RESOURCES,
-      { source: 'content/resources/characters/flashback/mara-vale.json', value: younger },
+      { source: 'content/characters/flashback/mara-vale.json', value: younger },
     ];
     const catalog = createResourceCatalog(resources);
     const adultScenario = parseScenario(marketScenario);

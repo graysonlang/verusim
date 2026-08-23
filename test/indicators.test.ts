@@ -7,8 +7,8 @@ import {
   inspectionIndicatorSettings,
 } from '../app/indicators.js';
 import { characters, environments } from './fixtures.js';
-import disclosureScenario from '../scenarios/disclosure-audience.json';
-import marketScenario from '../scenarios/market-morning.json';
+import disclosureScenario from '../content/scenarios/disclosure-audience.json';
+import marketScenario from '../content/scenarios/market-morning.json';
 import {
   advanceSimulation,
   createSimulation,

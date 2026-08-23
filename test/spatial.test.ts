@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { characters, environments } from './fixtures.js';
-import scenario from '../scenarios/disclosure-audience.json';
+import scenario from '../content/scenarios/disclosure-audience.json';
 import {
   createSimulation,
   evaluateEavesdropping,

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { characters, copingCharacters, copingEnvironments, environments } from './fixtures.js';
-import cascadeScenario from '../scenarios/cascade-room.json';
-import innkeeperScenario from '../scenarios/innkeeper-coping.json';
+import cascadeScenario from '../content/scenarios/cascade-room.json';
+import innkeeperScenario from '../content/scenarios/innkeeper-coping.json';
 import {
   advanceSimulation,
   createSimulation,

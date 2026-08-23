@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { characters, environments } from './fixtures.js';
-import narrativeScenario from '../scenarios/narrative-agency.json';
+import narrativeScenario from '../content/scenarios/narrative-agency.json';
 import {
   advanceSimulation,
   createSimulation,

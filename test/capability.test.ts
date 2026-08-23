@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { characters, environments } from './fixtures.js';
-import scenario from '../scenarios/market-morning.json';
+import scenario from '../content/scenarios/market-morning.json';
 import {
   createSimulation,
   resolveAgentCapabilityCheck,

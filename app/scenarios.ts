@@ -1,15 +1,15 @@
-import bakerDeadline from '../scenarios/baker-deadline.json';
-import aldersEdgeTown from '../scenarios/alders-edge-town.json';
-import cascadeRoom from '../scenarios/cascade-room.json';
-import disclosureAudience from '../scenarios/disclosure-audience.json';
-import endicottMargueritte from '../scenarios/endicott-margueritte.json';
-import highwaymanRoad from '../scenarios/highwayman-road.json';
-import highwaymanSquare from '../scenarios/highwayman-square.json';
-import innkeeperCoping from '../scenarios/innkeeper-coping.json';
-import marketMorning from '../scenarios/market-morning.json';
-import narrativeAgency from '../scenarios/narrative-agency.json';
-import pottsfield from '../scenarios/pottsfield.json';
-import relationshipMomentum from '../scenarios/relationship-momentum.json';
+import bakerDeadline from '../content/scenarios/baker-deadline.json';
+import aldersEdgeTown from '../content/scenarios/alders-edge-town.json';
+import cascadeRoom from '../content/scenarios/cascade-room.json';
+import disclosureAudience from '../content/scenarios/disclosure-audience.json';
+import endicottMargueritte from '../content/scenarios/endicott-margueritte.json';
+import highwaymanRoad from '../content/scenarios/highwayman-road.json';
+import highwaymanSquare from '../content/scenarios/highwayman-square.json';
+import innkeeperCoping from '../content/scenarios/innkeeper-coping.json';
+import marketMorning from '../content/scenarios/market-morning.json';
+import narrativeAgency from '../content/scenarios/narrative-agency.json';
+import pottsfield from '../content/scenarios/pottsfield.json';
+import relationshipMomentum from '../content/scenarios/relationship-momentum.json';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import {
   createResourceCatalog,

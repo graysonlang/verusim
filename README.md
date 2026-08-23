@@ -59,9 +59,8 @@ The dependency stack is intentionally small:
 - `src/model/` — shared serializable types and model constants
 - `src/scenario/` — resource and scenario parsing, preparation, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
-- `content/resources/` — independently validated reusable character-profile and environment-layout documents
+- `content/` — the authored tree: reusable character profiles and environment layouts plus scenario roots that reference them by semantic address
 - `content/catalog.generated.ts` — deterministic repository catalog generated from the authoring tree
-- `scenarios/` — scenario files that reference resources by semantic address
 - `app/` — the browser workbench
 - `test/` — regression tests over the headless runtime
 - `docs/` — architecture decisions and implementation boundaries
