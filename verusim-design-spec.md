@@ -693,7 +693,15 @@ Different layers are opaque to sight and hearing by default.
 An explicit stair connection permits travel but does not silently make an entire floor acoustically or visually open.
 Future apertures, balconies, shafts, or material transmission can weaken that separation through authored geometry without changing layer identity.
 
-The workbench may project one layer at a time and switch layers when an inspector focuses a character.
+Lateral enclosure and overhead cover are independent objective properties of authored area geometry.
+An interior room is laterally enclosed and normally has full overhead cover, while an awning, arcade, canopy, or tree may leave a position exterior despite supplying partial or full overhead cover.
+Sight and hearing consume their own authored lateral occlusion channels; overhead shelter does not become concealment from an observer on the same plan layer merely because it blocks a top-down view or exposure to weather.
+
+The workbench defaults to a roof-on Exterior projection and offers authored layers beneath it in descending elevation order.
+Selecting a layer is a cutaway: roofs peel away from active interiors, while muted ground, inactive structures, and dimmed off-layer character markers preserve relative plan position.
+Exterior keeps outdoor characters prominent and dims enclosed characters with a relative-level marker.
+These projections are observer presentation over the one objective topology and never alter proximity, perception, access, or simulation state.
+The workbench may switch from Exterior to the containing layer when an inspector focuses an enclosed character.
 That selection is an observer concern and never changes simulation state.
 `environmentId` continues to identify the place, while `layoutId` distinguishes a materially expanded or otherwise different realization of that place.
 

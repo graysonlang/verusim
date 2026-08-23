@@ -91,7 +91,7 @@ export function createResourceCatalogFromLibraries(input: {
           resourceId: layout.layoutId,
         },
         layout,
-        schemaVersion: 2,
+        schemaVersion: 3,
       } satisfies EnvironmentLayoutResourceFile,
     })),
   ]);
@@ -141,7 +141,7 @@ export function prepareScenario(input: {
     } satisfies CharacterLibraryFile,
     environmentLibrary: {
       environments: environmentFiles.map(resource => resource.layout),
-      schemaVersion: 2,
+      schemaVersion: 3,
     } satisfies EnvironmentLibraryFile,
     scenario,
   };

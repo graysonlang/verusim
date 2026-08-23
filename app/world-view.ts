@@ -1,6 +1,8 @@
 import { createEffect, createSignal, onCleanup, type Accessor } from 'solid-js';
 import type {
   EnvironmentArea,
+  EnvironmentDefinition,
+  LayerPosition,
   Point,
   Season,
   SimulationAgent,
@@ -8,6 +10,11 @@ import type {
   WeatherCondition,
 } from '../src/model/types.js';
 import { dayPeriodAtMinute, type DayPeriod } from '../src/simulation/atmosphere.js';
+import {
+  environmentLayersTopDown,
+  environmentSpatialContextAt,
+  relativeLayerLevel,
+} from '../src/simulation/environment.js';
 import {
   areaIndicatorsForState,
   indicatorsForAgent,
@@ -46,14 +53,38 @@ export interface WorldHover {
 }
 
 export interface WorldView {
-  activeLayerId: Accessor<string>;
+  activeProjection: Accessor<WorldProjection>;
   actualSize: () => void;
   camera: Accessor<Camera>;
   fit: () => void;
   focusAgent: (agentId: string) => void;
-  setLayer: (layerId: string) => void;
+  setProjection: (projection: WorldProjection) => void;
   setZoom: (zoom: number) => void;
   zoomBy: (factor: number) => void;
+}
+
+export type WorldProjection = { kind: 'exterior' } | { kind: 'layer'; layerId: string };
+
+export const EXTERIOR_PROJECTION: WorldProjection = Object.freeze({ kind: 'exterior' });
+
+export interface AgentProjectionStyle {
+  dimmed: boolean;
+  level: number | null;
+}
+
+export function agentProjectionStyle(
+  environment: EnvironmentDefinition,
+  agent: Pick<SimulationAgent, 'position'>,
+  projection: WorldProjection,
+): AgentProjectionStyle {
+  const context = environmentSpatialContextAt(environment, agent.position);
+  const inactiveInterior =
+    context.enclosure === 'interior' &&
+    (projection.kind === 'exterior' || projection.layerId !== agent.position.layerId);
+  return {
+    dimmed: inactiveInterior,
+    level: inactiveInterior ? relativeLayerLevel(environment, agent.position.layerId) : null,
+  };
 }
 
 export function agentsOnLayer(
@@ -486,14 +517,13 @@ function drawAgentIndicators(
   camera: Camera,
   selectedAgentId: string | null,
   settings: IndicatorSettings,
-  activeLayerId: string,
+  projection: WorldProjection,
   width: number,
   height: number,
 ): void {
   if (settings.verbosity === 'off') return;
   const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   for (const agent of state.agents) {
-    if (agent.position.layerId !== activeLayerId) continue;
     const selected = agent.id === selectedAgentId;
     if (screenPixelsPerMeter < 0.3 && !selected) continue;
     const projected = indicatorsForAgent(state, agent, settings);
@@ -508,6 +538,9 @@ function drawAgentIndicators(
       y: height / 2 + (agent.position.y - camera.y) * screenPixelsPerMeter,
     };
     const showLabels = selected && settings.verbosity !== 'minimal';
+    const style = agentProjectionStyle(state.environment, agent, projection);
+    context.save();
+    if (style.dimmed) context.globalAlpha = 0.34;
     if (showLabels) {
       const rowHeight = 27;
       const top = point.y - 43 - rowHeight * indicators.length;
@@ -527,7 +560,106 @@ function drawAgentIndicators(
         x += drawIndicator(context, indicator, x, point.y - 48, false) + gap;
       }
     }
+    context.restore();
   }
+}
+
+function drawAreaLabel(
+  context: CanvasRenderingContext2D,
+  area: EnvironmentArea,
+  screenPixelsPerMeter: number,
+  opacity = 0.62,
+): void {
+  if (area.label === undefined || screenPixelsPerMeter < 0.42) return;
+  context.fillStyle = `rgb(245 237 213 / ${Math.round(opacity * 100)}%)`;
+  context.font = `${11 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
+  context.textAlign = 'center';
+  context.fillText(area.label, area.x + area.width / 2, area.y + area.height / 2);
+}
+
+function drawInteriorFloor(
+  context: CanvasRenderingContext2D,
+  area: EnvironmentArea,
+  screenPixelsPerMeter: number,
+): void {
+  context.fillStyle = '#746956';
+  context.fillRect(area.x, area.y, area.width, area.height);
+  context.strokeStyle = 'rgb(239 222 181 / 82%)';
+  context.lineWidth = 3 / screenPixelsPerMeter;
+  context.strokeRect(area.x, area.y, area.width, area.height);
+  context.strokeStyle = 'rgb(54 45 36 / 48%)';
+  context.lineWidth = 1 / screenPixelsPerMeter;
+  const spacing = 3;
+  for (let y = area.y + spacing; y < area.y + area.height; y += spacing) {
+    context.beginPath();
+    context.moveTo(area.x + 1, y);
+    context.lineTo(area.x + area.width - 1, y);
+    context.stroke();
+  }
+}
+
+function drawExteriorCover(
+  context: CanvasRenderingContext2D,
+  area: EnvironmentArea,
+  screenPixelsPerMeter: number,
+): void {
+  if (area.enclosure === 'interior' || area.cover.overhead === 0) return;
+  if (area.kind === 'forest') return;
+  context.save();
+  context.globalAlpha = 0.18 + area.cover.overhead * 0.42;
+  context.fillStyle = '#c7a665';
+  context.fillRect(area.x, area.y, area.width, area.height);
+  context.beginPath();
+  for (let offset = -area.height; offset < area.width; offset += 2.4) {
+    context.moveTo(area.x + Math.max(0, offset), area.y + Math.max(0, -offset));
+    context.lineTo(
+      area.x + Math.min(area.width, offset + area.height),
+      area.y + Math.min(area.height, area.height + offset),
+    );
+  }
+  context.strokeStyle = 'rgb(72 53 31 / 55%)';
+  context.lineWidth = 0.8 / screenPixelsPerMeter;
+  context.stroke();
+  context.restore();
+}
+
+function drawMutedInterior(
+  context: CanvasRenderingContext2D,
+  area: EnvironmentArea,
+  screenPixelsPerMeter: number,
+): void {
+  context.save();
+  context.globalAlpha = 0.16;
+  context.fillStyle = '#9b8d74';
+  context.fillRect(area.x, area.y, area.width, area.height);
+  context.strokeStyle = '#d8c9aa';
+  context.lineWidth = 1.5 / screenPixelsPerMeter;
+  context.strokeRect(area.x, area.y, area.width, area.height);
+  context.restore();
+}
+
+function drawLevelMarker(
+  context: CanvasRenderingContext2D,
+  position: LayerPosition,
+  level: number,
+  screenPixelsPerMeter: number,
+): void {
+  const width = 17 / screenPixelsPerMeter;
+  const height = 12 / screenPixelsPerMeter;
+  const x = position.x + 5 / screenPixelsPerMeter;
+  const y = position.y + 4 / screenPixelsPerMeter;
+  context.fillStyle = 'rgb(22 28 24 / 92%)';
+  context.beginPath();
+  context.roundRect(x, y, width, height, 3 / screenPixelsPerMeter);
+  context.fill();
+  context.strokeStyle = 'rgb(245 218 151 / 80%)';
+  context.lineWidth = 1 / screenPixelsPerMeter;
+  context.stroke();
+  context.fillStyle = '#f5da98';
+  context.font = `700 ${8 / screenPixelsPerMeter}px ui-monospace, monospace`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(level > 0 ? `+${level}` : String(level), x + width / 2, y + height / 2);
 }
 
 function drawWorld(
@@ -536,7 +668,7 @@ function drawWorld(
   camera: Camera,
   selectedAgentId: string | null,
   indicatorSettings: IndicatorSettings,
-  activeLayerId: string,
+  projection: WorldProjection,
   width: number,
   height: number,
 ): void {
@@ -559,37 +691,88 @@ function drawWorld(
   );
   context.scale(screenPixelsPerMeter, screenPixelsPerMeter);
 
-  const activeLayer = state.environment.layers.find(layer => layer.id === activeLayerId);
+  const activeLayer =
+    projection.kind === 'layer'
+      ? state.environment.layers.find(layer => layer.id === projection.layerId)
+      : undefined;
   context.fillStyle =
-    (activeLayer?.elevationMeters ?? 0) < 0
-      ? '#302c27'
-      : (activeLayer?.elevationMeters ?? 0) > 0
-        ? '#344139'
-        : '#405f3d';
+    projection.kind === 'exterior'
+      ? '#405f3d'
+      : (activeLayer?.elevationMeters ?? 0) < 0
+        ? '#302c27'
+        : (activeLayer?.elevationMeters ?? 0) > 0
+          ? '#344139'
+          : '#405f3d';
   context.fillRect(0, 0, state.environment.width, state.environment.height);
   context.strokeStyle = 'rgb(228 218 182 / 18%)';
   context.lineWidth = 2 / screenPixelsPerMeter;
   context.strokeRect(0, 0, state.environment.width, state.environment.height);
 
+  const groundLayer = state.environment.layers.toSorted(
+    (left, right) =>
+      Math.abs(left.elevationMeters) - Math.abs(right.elevationMeters) ||
+      (left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
+  )[0];
   for (const area of state.environment.areas) {
-    if (area.layerId !== activeLayerId) continue;
+    if (area.layerId !== groundLayer?.id || area.enclosure === 'interior') continue;
+    context.save();
+    if (projection.kind === 'layer') context.globalAlpha = 0.27;
     context.fillStyle = AREA_COLORS[area.kind];
     context.fillRect(area.x, area.y, area.width, area.height);
     drawAreaTexture(context, area, screenPixelsPerMeter);
-    if (area.label !== undefined && screenPixelsPerMeter >= 0.42) {
-      context.fillStyle = 'rgb(245 237 213 / 62%)';
-      context.font = `${11 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
-      context.textAlign = 'center';
-      context.fillText(area.label, area.x + area.width / 2, area.y + area.height / 2);
+    drawAreaLabel(context, area, screenPixelsPerMeter, projection.kind === 'layer' ? 0.32 : 0.62);
+    context.restore();
+    if (projection.kind === 'exterior') drawExteriorCover(context, area, screenPixelsPerMeter);
+  }
+
+  if (projection.kind === 'exterior') {
+    const layerOrder = [...environmentLayersTopDown(state.environment)].reverse();
+    for (const layer of layerOrder) {
+      for (const area of state.environment.areas) {
+        if (area.layerId !== layer.id || area.enclosure !== 'interior') continue;
+        context.fillStyle = AREA_COLORS[area.kind];
+        context.fillRect(area.x, area.y, area.width, area.height);
+        drawAreaTexture(context, area, screenPixelsPerMeter);
+        drawAreaLabel(context, area, screenPixelsPerMeter);
+      }
+    }
+  } else {
+    for (const area of state.environment.areas) {
+      if (area.enclosure !== 'interior' || area.layerId === projection.layerId) continue;
+      drawMutedInterior(context, area, screenPixelsPerMeter);
+    }
+    for (const area of state.environment.areas) {
+      if (area.enclosure !== 'interior' || area.layerId !== projection.layerId) continue;
+      drawInteriorFloor(context, area, screenPixelsPerMeter);
+      drawAreaLabel(context, area, screenPixelsPerMeter, 0.76);
+    }
+    for (const area of state.environment.areas) {
+      if (area.layerId !== projection.layerId) continue;
+      drawExteriorCover(context, area, screenPixelsPerMeter);
+    }
+    for (const location of state.environment.locations) {
+      if (location.layerId !== projection.layerId) continue;
+      const center = {
+        layerId: location.layerId,
+        x: location.x + location.width / 2,
+        y: location.y + location.height / 2,
+      };
+      if (environmentSpatialContextAt(state.environment, center).enclosure !== 'interior') continue;
+      context.fillStyle = 'rgb(227 211 174 / 7%)';
+      context.fillRect(location.x, location.y, location.width, location.height);
+      context.strokeStyle = 'rgb(229 214 180 / 52%)';
+      context.lineWidth = 1.4 / screenPixelsPerMeter;
+      context.strokeRect(location.x, location.y, location.width, location.height);
     }
   }
 
   context.save();
-  for (const connector of state.environment.connectors) {
+  const connectorLayerId = projection.kind === 'layer' ? projection.layerId : null;
+  for (const connector of connectorLayerId === null ? [] : state.environment.connectors) {
     const endpoint =
-      connector.from.layerId === activeLayerId
+      connector.from.layerId === connectorLayerId
         ? connector.from
-        : connector.to.layerId === activeLayerId
+        : connector.to.layerId === connectorLayerId
           ? connector.to
           : null;
     if (endpoint === null) continue;
@@ -615,7 +798,7 @@ function drawWorld(
 
   if (screenPixelsPerMeter >= LOCATION_LABEL_MIN_PIXELS_PER_METER) {
     for (const location of state.environment.locations) {
-      if (location.layerId !== activeLayerId) continue;
+      if (projection.kind !== 'layer' || location.layerId !== projection.layerId) continue;
       context.fillStyle = 'rgb(255 250 226 / 72%)';
       context.font = `600 ${10 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
       context.textAlign = 'center';
@@ -628,9 +811,14 @@ function drawWorld(
   }
 
   for (const agent of state.agents) {
-    if (agent.position.layerId !== activeLayerId) continue;
+    if (agentProjectionStyle(state.environment, agent, projection).dimmed) continue;
     if (agent.currentLocationId === null) {
-      if (agent.destination.layerId !== activeLayerId) continue;
+      if (
+        projection.kind === 'layer' &&
+        agent.destination.layerId !== projection.layerId &&
+        agent.position.layerId !== projection.layerId
+      )
+        continue;
       context.beginPath();
       context.moveTo(agent.position.x, agent.position.y);
       context.lineTo(agent.destination.x, agent.destination.y);
@@ -643,9 +831,11 @@ function drawWorld(
   }
 
   for (const agent of state.agents) {
-    if (agent.position.layerId !== activeLayerId) continue;
+    const style = agentProjectionStyle(state.environment, agent, projection);
     const selected = agent.id === selectedAgentId;
     const radius = (selected ? 10 : 8) / screenPixelsPerMeter;
+    context.save();
+    if (style.dimmed) context.globalAlpha = 0.38;
     if (selected) {
       context.beginPath();
       context.arc(agent.position.x, agent.position.y, 15 / screenPixelsPerMeter, 0, Math.PI * 2);
@@ -669,6 +859,10 @@ function drawWorld(
       agent.position.x,
       agent.position.y - 15 / screenPixelsPerMeter,
     );
+    if (style.level !== null) {
+      drawLevelMarker(context, agent.position, style.level, screenPixelsPerMeter);
+    }
+    context.restore();
   }
   context.restore();
   drawAgentIndicators(
@@ -677,7 +871,7 @@ function drawWorld(
     camera,
     selectedAgentId,
     indicatorSettings,
-    activeLayerId,
+    projection,
     width,
     height,
   );
@@ -686,9 +880,8 @@ function drawWorld(
 export function createWorldView(options: WorldViewOptions): WorldView {
   const { canvas } = options;
   const initialState = options.state();
-  const [activeLayerId, setActiveLayerId] = createSignal(
-    initialState.environment.layers[0]?.id ?? 'surface',
-  );
+  const [activeProjection, setActiveProjection] =
+    createSignal<WorldProjection>(EXTERIOR_PROJECTION);
   const [camera, setCamera] = createSignal<Camera>({
     x: initialState.environment.width / 2,
     y: initialState.environment.height / 2,
@@ -702,6 +895,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   let gestureCameraStart = camera();
   let gestureCentroidStart = { x: 0, y: 0 };
   let gestureDistanceStart = 1;
+  let projectedLayoutId = initialState.environment.layoutId;
 
   function fit(): void {
     options.onHover(null);
@@ -727,7 +921,12 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   function focusAgent(agentId: string): void {
     const agent = options.state().agents.find(candidate => candidate.id === agentId);
     if (agent === undefined) return;
-    setActiveLayerId(agent.position.layerId);
+    const context = environmentSpatialContextAt(options.state().environment, agent.position);
+    setActiveProjection(
+      context.enclosure === 'interior'
+        ? { kind: 'layer', layerId: agent.position.layerId }
+        : EXTERIOR_PROJECTION,
+    );
     options.onHover(null);
     setCamera(current => ({
       ...current,
@@ -757,8 +956,15 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   }
 
   function nearestAgentId(screen: Point): string | null {
+    const state = options.state();
+    const projection = activeProjection();
+    const agents = state.agents.toSorted(
+      (left, right) =>
+        Number(agentProjectionStyle(state.environment, left, projection).dimmed) -
+        Number(agentProjectionStyle(state.environment, right, projection).dimmed),
+    );
     return agentIdAtScreenPoint(
-      agentsOnLayer(options.state().agents, activeLayerId()),
+      agents,
       camera(),
       { height: canvas.clientHeight, width: canvas.clientWidth },
       screen,
@@ -898,9 +1104,17 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const selectedAgentId = options.selectedAgentId();
     const indicatorSettings = options.indicatorSettings();
     const currentCamera = camera();
-    const currentLayerId = activeLayerId();
-    if (!state.environment.layers.some(layer => layer.id === currentLayerId)) {
-      setActiveLayerId(state.environment.layers[0]?.id ?? 'surface');
+    const projection = activeProjection();
+    if (state.environment.layoutId !== projectedLayoutId) {
+      projectedLayoutId = state.environment.layoutId;
+      setActiveProjection(EXTERIOR_PROJECTION);
+      return;
+    }
+    if (
+      projection.kind === 'layer' &&
+      !state.environment.layers.some(layer => layer.id === projection.layerId)
+    ) {
+      setActiveProjection(EXTERIOR_PROJECTION);
       return;
     }
     viewportRevision();
@@ -922,7 +1136,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
       currentCamera,
       selectedAgentId,
       indicatorSettings,
-      currentLayerId,
+      projection,
       width,
       height,
     );
@@ -939,12 +1153,12 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   });
 
   return {
-    activeLayerId,
+    activeProjection,
     actualSize,
     camera,
     fit,
     focusAgent,
-    setLayer: setActiveLayerId,
+    setProjection: setActiveProjection,
     setZoom: setZoomLevel,
     zoomBy: zoomAt,
   };

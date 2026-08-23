@@ -474,7 +474,7 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
 
 function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'environmentLibrary'));
-  if (file.schemaVersion === 2) {
+  if (file.schemaVersion === 2 || file.schemaVersion === 3) {
     for (const value of arrayValue(file.environments, 'environmentLibrary.environments')) {
       const environment = objectValue(value, 'environmentLibrary.environments');
       environment.layoutId ??= environment.id;
@@ -486,7 +486,15 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
         environment.areas,
         'environmentLibrary.environments.areas',
       )) {
-        objectValue(areaValue, 'environmentLibrary.environments.areas').layerId ??= 'surface';
+        const area = objectValue(areaValue, 'environmentLibrary.environments.areas');
+        area.layerId ??= 'surface';
+        area.enclosure ??= area.kind === 'building' ? 'interior' : 'exterior';
+        area.cover ??=
+          area.kind === 'building'
+            ? { hearingOcclusion: 0.7, overhead: 1, sightOcclusion: 1 }
+            : area.kind === 'forest'
+              ? { hearingOcclusion: 0.12, overhead: 0.65, sightOcclusion: 0.92 }
+              : { hearingOcclusion: 0, overhead: 0, sightOcclusion: 0 };
       }
       for (const locationValue of arrayValue(
         environment.locations,
@@ -496,6 +504,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
           'surface';
       }
     }
+    file.schemaVersion = 3;
     return file;
   }
   if (file.schemaVersion !== 1) {
@@ -516,7 +525,15 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
       environment.areas,
       'environmentLibrary.environments.areas',
     )) {
-      objectValue(areaValue, 'environmentLibrary.environments.areas').layerId = 'surface';
+      const area = objectValue(areaValue, 'environmentLibrary.environments.areas');
+      area.layerId = 'surface';
+      area.enclosure = area.kind === 'building' ? 'interior' : 'exterior';
+      area.cover =
+        area.kind === 'building'
+          ? { hearingOcclusion: 0.7, overhead: 1, sightOcclusion: 1 }
+          : area.kind === 'forest'
+            ? { hearingOcclusion: 0.12, overhead: 0.65, sightOcclusion: 0.92 }
+            : { hearingOcclusion: 0, overhead: 0, sightOcclusion: 0 };
     }
     for (const locationValue of arrayValue(
       environment.locations,
@@ -525,7 +542,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
       objectValue(locationValue, 'environmentLibrary.environments.locations').layerId = 'surface';
     }
   }
-  file.schemaVersion = 2;
+  file.schemaVersion = 3;
   return file;
 }
 
@@ -836,7 +853,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
 
 export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile {
   const file = migrateEnvironmentLibrary(value);
-  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 2);
+  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 3);
   const environments = arrayValue(file.environments, 'environmentLibrary.environments').map(
     (item, index) => {
       const path = `environmentLibrary.environments[${index}]`;
@@ -868,6 +885,16 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
         if (typeof area.kind !== 'string' || !AREA_KINDS.has(area.kind as AreaKind)) {
           throw new ScenarioValidationError(`${areaPath}.kind`, 'expected a known area kind');
         }
+        if (area.enclosure !== 'exterior' && area.enclosure !== 'interior') {
+          throw new ScenarioValidationError(
+            `${areaPath}.enclosure`,
+            'expected exterior or interior',
+          );
+        }
+        const cover = objectValue(area.cover, `${areaPath}.cover`);
+        numberValue(cover.hearingOcclusion, `${areaPath}.cover.hearingOcclusion`, 0, 1);
+        numberValue(cover.overhead, `${areaPath}.cover.overhead`, 0, 1);
+        numberValue(cover.sightOcclusion, `${areaPath}.cover.sightOcclusion`, 0, 1);
         const layerId = identifierValue(area.layerId, `${areaPath}.layerId`);
         if (!layerIds.has(layerId)) {
           throw new ScenarioValidationError(`${areaPath}.layerId`, `unknown layer "${layerId}"`);
@@ -1056,13 +1083,15 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
       schemaVersion: 1,
     }) as CharacterProfileResourceFile;
   }
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
     throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
   }
   let layout: EnvironmentLibraryFile['environments'][number] | undefined;
   try {
-    layout = parseEnvironmentLibrary({ environments: [file.layout], schemaVersion: 2 })
-      .environments[0];
+    layout = parseEnvironmentLibrary({
+      environments: [file.layout],
+      schemaVersion: file.schemaVersion,
+    }).environments[0];
   } catch (error) {
     if (error instanceof ScenarioValidationError) {
       throw new ScenarioValidationError(path, error.message);
@@ -1079,7 +1108,7 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
   return clone({
     address: address as EnvironmentLayoutAddress,
     layout,
-    schemaVersion: 2,
+    schemaVersion: 3,
   }) as EnvironmentLayoutResourceFile;
 }
 

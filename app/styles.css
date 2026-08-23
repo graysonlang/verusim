@@ -1352,6 +1352,7 @@ input[type="search"]::placeholder {
   top: 12px;
   left: 12px;
   display: flex;
+  flex-direction: column;
   overflow: hidden;
   border: 1px solid rgb(245 236 208 / 15%);
   border-radius: 6px;
@@ -1366,11 +1367,11 @@ input[type="search"]::placeholder {
 
 .layer-button {
   display: grid;
-  min-width: 76px;
+  min-width: 132px;
   gap: 1px;
   padding: 7px 10px;
   border: 0;
-  border-right: 1px solid rgb(245 236 208 / 10%);
+  border-bottom: 1px solid rgb(245 236 208 / 10%);
   background: transparent;
   color: var(--muted);
   font-family: var(--mono);
@@ -1379,7 +1380,7 @@ input[type="search"]::placeholder {
 }
 
 .layer-button:last-child {
-  border-right: 0;
+  border-bottom: 0;
 }
 
 .layer-button small {
@@ -1396,6 +1397,10 @@ input[type="search"]::placeholder {
 .layer-button.selected {
   background: rgb(245 204 104 / 15%);
   color: #f5d98f;
+}
+
+.layer-exterior-button {
+  padding-block: 9px;
 }
 
 .character-hover-card {

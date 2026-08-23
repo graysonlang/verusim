@@ -293,7 +293,17 @@ export interface SatisfierPreference {
 
 export type AreaKind = 'building' | 'field' | 'forest' | 'grass' | 'market' | 'path' | 'water';
 
+export interface EnvironmentCover {
+  hearingOcclusion: number;
+  overhead: number;
+  sightOcclusion: number;
+}
+
+export type EnvironmentEnclosure = 'exterior' | 'interior';
+
 export interface EnvironmentArea extends Bounds {
+  cover: EnvironmentCover;
+  enclosure: EnvironmentEnclosure;
   id: string;
   kind: AreaKind;
   layerId: string;
@@ -338,13 +348,13 @@ export interface EnvironmentDefinition {
 
 export interface EnvironmentLibraryFile {
   environments: EnvironmentDefinition[];
-  schemaVersion: 2;
+  schemaVersion: 3;
 }
 
 export interface EnvironmentLayoutResourceFile {
   address: EnvironmentLayoutAddress;
   layout: EnvironmentDefinition;
-  schemaVersion: 2;
+  schemaVersion: 3;
 }
 
 export type ResourceFile = CharacterProfileResourceFile | EnvironmentLayoutResourceFile;

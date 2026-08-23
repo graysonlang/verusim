@@ -85,7 +85,14 @@ Zoom percentages describe display magnification only; simulation positions, dist
 
 Every position, area, and location carries a `layerId`.
 Same-layer movement remains planar, while cross-layer schedules and agenda tasks use a deterministic shortest route through bidirectional authored stairs, ramps, or ladders and include connector traversal costs in travel estimates.
-The workbench projects one selected layer at a time; changing that projection or following a character between floors does not mutate authoritative state.
+Every area also resolves lateral enclosure, overhead cover, sight occlusion, and hearing occlusion before simulation begins.
+Enclosure and overhead cover are independent: a room may be enclosed with a complete roof, while an awning remains exterior with partial or complete overhead shelter and no implied lateral sensory barrier.
+The same area geometry supplies spatial context to rendering and perception; later portal-aware path feasibility must extend this geometry rather than introducing a second interior map.
+
+The workbench defaults to a roof-on Exterior projection followed by cutaway layers ordered from highest to lowest elevation.
+Exterior renders structure roofs and dims enclosed characters with relative-level markers.
+A cutaway renders active interiors as floors and walls while retaining muted ground, inactive structures, and dimmed off-layer interior characters as plan context.
+Changing that projection or following a character between floors does not mutate authoritative state.
 
 Current movement speed is a derived observation rather than additional mutable state.
 An agent at their destination is still; an agent in transit exposes their authored meters-per-minute pace and an observer-facing speed class from crawling through sprinting.
@@ -206,9 +213,9 @@ Social-battery depletion expands the desired boundary and increases discomfort a
 
 Sight and hearing are separate deterministic channels over meter-scale positions.
 Effective acuity combines the character's generation-fixed acuity with current executive and stamina availability.
-Distance falloff then composes with signal strength and semantic environment occlusion.
-The initial area defaults treat buildings as strong visual and acoustic barriers and forests as strong visual cover with mild acoustic attenuation.
-These defaults remain centralized in the spatial evaluator until environment authoring needs per-area material overrides.
+Distance falloff then composes with signal strength and authored per-area environment occlusion.
+Environment schema migration preserves the initial defaults: buildings are laterally enclosed with full overhead cover and strong visual and acoustic barriers, forests remain exterior with partial overhead cover, strong visual cover, and mild acoustic attenuation, and other legacy areas remain open.
+An authored area may override the sight, hearing, and overhead channels independently without changing whether the space is interior.
 
 Different environment layers are fully separated for proximity, sight, and hearing by default, even when their plan coordinates coincide.
 A connector makes movement possible but does not imply an open sensory channel between whole floors.
@@ -418,8 +425,8 @@ Social battery below `0.50` contributes up to `0.38` negative valence and physic
 
 The legacy character-library schema version 7 compatibility adapter replaces version 6 narrative string seeds with structured claim identifiers, kinds, commitment, and confidence.
 Its explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
-Environment-layout resource schema version 2 and the legacy environment-library schema version 2 add named layers, layer-bearing areas and locations, and explicit connectors.
-Version 1 environment content migrates onto one `surface` layer with no connectors while retaining the earlier outlet-affordance compatibility default.
+Environment-layout resource and aggregate environment-library schema version 3 add explicit area enclosure and independent hearing, overhead, and sight cover channels after version 2 added named layers, layer-bearing areas and locations, and explicit connectors.
+Versions 1 and 2 migrate kind-based cover defaults; version 1 also migrates onto one `surface` layer with no connectors while retaining the earlier outlet-affordance compatibility default.
 Scenario schema version 13 adds a layer identifier to every character position after version 12 replaced path-era character and environment identifiers with structured character-profile and environment-layout addresses.
 Explicit migrations preserve version 1 through 12 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, and placing pre-layer positions on `surface`.
 Snapshot schema version 10 persists layer-bearing positions and destinations after version 9 added structured resource addresses and the exact prepared resource lock.

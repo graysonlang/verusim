@@ -14,9 +14,11 @@ import {
   evaluateEavesdropping,
   evaluateProximity,
   evaluateSpatialPerception,
+  environmentLayersTopDown,
   parseSnapshot,
   prepareScenario,
   serializeSnapshot,
+  relativeLayerLevel,
   setAgentResource,
   setAgentValueCharge,
   setWorldFactAmount,
@@ -74,7 +76,12 @@ import {
   formatMovementSpeed,
   formatTemperature,
 } from './units.js';
-import { createWorldView, scaleBarForZoom, type WorldHover } from './world-view.js';
+import {
+  EXTERIOR_PROJECTION,
+  createWorldView,
+  scaleBarForZoom,
+  type WorldHover,
+} from './world-view.js';
 
 const INDICATOR_VERBOSITIES = ['off', 'minimal', 'standard', 'detailed'] as const;
 const INDICATOR_VERBOSITY_LABELS: Record<IndicatorVerbosity, string> = {
@@ -1419,7 +1426,7 @@ function createWorkbench(): HTMLElement {
 
   canvas.setAttribute('aria-label', 'Top-down scenario environment');
   layerSwitcher.dataset.testid = 'layer-switcher';
-  layerSwitcher.setAttribute('aria-label', 'Environment layer');
+  layerSwitcher.setAttribute('aria-label', 'Environment projection');
   characterHoverCard.dataset.testid = 'character-hover-card';
   characterHoverCard.hidden = true;
   characterHoverCard.setAttribute('aria-hidden', 'true');
@@ -2117,19 +2124,31 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const current = state();
-    const activeLayerId = worldView.activeLayerId();
+    const activeProjection = worldView.activeProjection();
     const signature = `${current.environment.layoutId}:${current.environment.layers
       .map(layer => `${layer.id}:${layer.name}:${layer.elevationMeters}`)
       .join('|')}`;
     if (signature !== renderedLayerSignature) {
       renderedLayerSignature = signature;
+      const exteriorControl = button('', 'layer-button layer-exterior-button');
+      const exteriorName = element('span');
+      const exteriorDetail = element('small');
+      exteriorName.textContent = 'Exterior';
+      exteriorDetail.textContent = 'Roofs on';
+      exteriorControl.dataset.projection = 'exterior';
+      exteriorControl.dataset.testid = 'projection-exterior';
+      exteriorControl.setAttribute('aria-pressed', 'false');
+      exteriorControl.append(exteriorName, exteriorDetail);
       layerSwitcher.replaceChildren(
-        ...current.environment.layers.map(layer => {
+        exteriorControl,
+        ...environmentLayersTopDown(current.environment).map(layer => {
           const control = button('', 'layer-button');
           const name = element('span');
           const elevation = element('small');
+          const level = relativeLayerLevel(current.environment, layer.id);
           name.textContent = layer.name;
-          elevation.textContent = `${layer.elevationMeters >= 0 ? '+' : ''}${layer.elevationMeters} m`;
+          elevation.textContent = `Level ${level > 0 ? '+' : ''}${level} / ${layer.elevationMeters >= 0 ? '+' : ''}${layer.elevationMeters} m`;
+          control.dataset.projection = 'layer';
           control.dataset.layerId = layer.id;
           control.dataset.testid = `layer-${layer.id}`;
           control.setAttribute('aria-pressed', 'false');
@@ -2138,14 +2157,23 @@ function createWorkbench(): HTMLElement {
         }),
       );
     }
-    layerSwitcher.hidden = current.environment.layers.length <= 1;
     for (const control of layerSwitcher.querySelectorAll<HTMLButtonElement>(
-      'button[data-layer-id]',
+      'button[data-projection]',
     )) {
-      const selected = control.dataset.layerId === activeLayerId;
+      const selected =
+        activeProjection.kind === 'exterior'
+          ? control.dataset.projection === 'exterior'
+          : control.dataset.projection === 'layer' &&
+            control.dataset.layerId === activeProjection.layerId;
       control.classList.toggle('selected', selected);
       control.setAttribute('aria-pressed', String(selected));
     }
+    canvas.setAttribute(
+      'aria-label',
+      activeProjection.kind === 'exterior'
+        ? 'Top-down scenario environment, Exterior projection'
+        : `Top-down scenario environment, ${current.environment.layers.find(layer => layer.id === activeProjection.layerId)?.name ?? activeProjection.layerId} projection`,
+    );
   });
 
   createEffect(() => {
@@ -2433,10 +2461,14 @@ function createWorkbench(): HTMLElement {
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
   layerSwitcher.addEventListener('click', event => {
     if (!(event.target instanceof Element)) return;
-    const control = event.target.closest<HTMLButtonElement>('button[data-layer-id]');
+    const control = event.target.closest<HTMLButtonElement>('button[data-projection]');
     if (control === null || !layerSwitcher.contains(control)) return;
+    if (control.dataset.projection === 'exterior') {
+      worldView.setProjection(EXTERIOR_PROJECTION);
+      return;
+    }
     const layerId = control.dataset.layerId;
-    if (layerId !== undefined) worldView.setLayer(layerId);
+    if (layerId !== undefined) worldView.setProjection({ kind: 'layer', layerId });
   });
   step.addEventListener('click', () => executeActionById('step'));
   play.addEventListener('click', () => executeActionById('play-pause'));

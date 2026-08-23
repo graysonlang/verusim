@@ -82,6 +82,12 @@ export type { BuildEffects } from './simulation/physical.js';
 export { resolveObservationEvent } from './simulation/prediction.js';
 export { resolveNormObservationEvent } from './simulation/norms.js';
 export {
+  areasAtPosition,
+  environmentLayersTopDown,
+  environmentSpatialContextAt,
+  relativeLayerLevel,
+} from './simulation/environment.js';
+export {
   claimExpressionPayoff,
   createNarrativeState,
   prepareNarrativeAgency,

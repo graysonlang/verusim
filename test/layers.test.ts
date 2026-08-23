@@ -2,13 +2,15 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { BUILT_IN_SCENARIOS } from '../app/scenarios.js';
-import { agentsOnLayer } from '../app/world-view.js';
+import { EXTERIOR_PROJECTION, agentProjectionStyle } from '../app/world-view.js';
 import {
   advanceSimulation,
   createSimulation,
   createSimulationFromSnapshot,
   evaluateProximity,
   evaluateSpatialPerception,
+  environmentLayersTopDown,
+  environmentSpatialContextAt,
   findNavigationRoute,
   parseEnvironmentLibrary,
   parseResourceFile,
@@ -58,7 +60,15 @@ describe('layered environments', () => {
       { elevationMeters: 0, id: 'surface', name: 'Surface' },
     ]);
     assert.deepEqual(migrated.environments[0]?.connectors, []);
+    assert.equal(migrated.schemaVersion, 3);
     assert.ok(migrated.environments[0]?.areas.every(area => area.layerId === 'surface'));
+    const building = migrated.environments[0]?.areas.find(area => area.kind === 'building');
+    assert.equal(building?.enclosure, 'interior');
+    assert.deepEqual(building?.cover, {
+      hearingOcclusion: 0.7,
+      overhead: 1,
+      sightOcclusion: 1,
+    });
     assert.ok(
       migrated.environments[0]?.locations.every(location => location.layerId === 'surface'),
     );
@@ -128,12 +138,82 @@ describe('layered environments', () => {
     );
   });
 
-  it('projects only characters on the selected workbench layer', () => {
+  it('rejects malformed authored cover at its area path', () => {
+    const input = BUILT_IN_RESOURCES.find(resource =>
+      resource.source.endsWith('/alders-edge-town.json'),
+    );
+    assert.ok(input);
+    const malformed = structuredClone(input.value) as EnvironmentLayoutResourceFile;
+    const awning = malformed.layout.areas.find(area => area.id === 'market-cloth-awning');
+    assert.ok(awning);
+    awning.cover.overhead = 1.2;
+
+    assert.throws(
+      () => parseResourceFile(malformed, 'town-layout.json'),
+      /town-layout\.json: .*areas\[.*\]\.cover\.overhead: expected a number from 0 through 1/,
+    );
+  });
+
+  it('orders cutaway controls from exterior through the authored layers top down', () => {
     const state = townState();
     assert.deepEqual(
-      agentsOnLayer(state.agents, 'upper').map(agent => agent.id),
-      ['mara', 'tomas', 'nessa', 'elian', 'sera'],
+      environmentLayersTopDown(state.environment).map(layer => layer.id),
+      ['upper', 'surface', 'cellars'],
     );
-    assert.deepEqual(agentsOnLayer(state.agents, 'surface'), []);
+  });
+
+  it('keeps inactive interior characters visible but dimmed with their relative level', () => {
+    const state = townState();
+    const mara = state.agents.find(agent => agent.id === 'mara');
+    assert.ok(mara);
+    assert.deepEqual(agentProjectionStyle(state.environment, mara, EXTERIOR_PROJECTION), {
+      dimmed: true,
+      level: 1,
+    });
+    assert.deepEqual(
+      agentProjectionStyle(state.environment, mara, { kind: 'layer', layerId: 'upper' }),
+      { dimmed: false, level: null },
+    );
+    assert.deepEqual(
+      agentProjectionStyle(state.environment, mara, { kind: 'layer', layerId: 'cellars' }),
+      { dimmed: true, level: 1 },
+    );
+  });
+
+  it('keeps an awning exterior while composing its independent overhead cover', () => {
+    const state = townState();
+    const context = environmentSpatialContextAt(state.environment, {
+      layerId: 'surface',
+      x: 150,
+      y: 80,
+    });
+    assert.equal(context.enclosure, 'exterior');
+    assert.equal(context.overheadCover, 0.72);
+
+    const beneathAwning = {
+      ...state,
+      agents: state.agents.map(agent =>
+        agent.id === 'mara'
+          ? { ...agent, position: { layerId: 'surface', x: 148, y: 80 } }
+          : agent.id === 'tomas'
+            ? { ...agent, position: { layerId: 'surface', x: 152, y: 80 } }
+            : agent,
+      ),
+    };
+    const inOpenMarket = {
+      ...state,
+      agents: state.agents.map(agent =>
+        agent.id === 'mara'
+          ? { ...agent, position: { layerId: 'surface', x: 110, y: 80 } }
+          : agent.id === 'tomas'
+            ? { ...agent, position: { layerId: 'surface', x: 114, y: 80 } }
+            : agent,
+      ),
+    };
+    const covered = evaluateSpatialPerception(beneathAwning, 'mara', 'tomas');
+    const open = evaluateSpatialPerception(inOpenMarket, 'mara', 'tomas');
+    assert.equal(covered.distanceMeters, open.distanceMeters);
+    assert.equal(covered.sight.strength, open.sight.strength);
+    assert.equal(covered.hearing.strength, open.hearing.strength);
   });
 });

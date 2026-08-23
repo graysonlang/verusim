@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "address": {
     "packageId": "verusim",
     "kind": "environment-layout",
@@ -131,6 +131,22 @@
         "width": 60,
         "height": 42,
         "label": "Market Square"
+      },
+      {
+        "id": "market-cloth-awning",
+        "kind": "market",
+        "layerId": "surface",
+        "x": 146,
+        "y": 76,
+        "width": 14,
+        "height": 8,
+        "label": "Cloth Awning",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0,
+          "overhead": 0.72,
+          "sightOcclusion": 0
+        }
       },
       {
         "id": "wayfarer-inn-building",

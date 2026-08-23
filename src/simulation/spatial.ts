@@ -1,8 +1,8 @@
 import type {
   Bounds,
   DyadMode,
-  EnvironmentArea,
   EavesdroppingAssessment,
+  EnvironmentDefinition,
   LayerPosition,
   Point,
   ProximityAssessment,
@@ -13,16 +13,12 @@ import type {
   SpatialPerceptionAssessment,
 } from '../model/types.js';
 import { capabilityAvailability } from './capability.js';
+import { pointInBounds } from './environment.js';
 import { navigationDistance } from './navigation.js';
 import { traceTerm } from './trace.js';
 
 const DEFAULT_AUDIBLE_RADIUS_METERS = 12;
 const SENSORY_THRESHOLD = 0.08;
-
-const OCCLUSION: Partial<Record<EnvironmentArea['kind'], { hearing: number; sight: number }>> = {
-  building: { hearing: 0.7, sight: 1 },
-  forest: { hearing: 0.12, sight: 0.92 },
-};
 
 const MODE_DISTANCE_METERS: Record<DyadMode, number> = {
   contesting: 0.2,
@@ -64,15 +60,6 @@ function proximityBand(distanceMeters: number): ProximityBand {
   return 'public';
 }
 
-function pointInBounds(point: Point, bounds: Bounds): boolean {
-  return (
-    point.x >= bounds.x &&
-    point.x <= bounds.x + bounds.width &&
-    point.y >= bounds.y &&
-    point.y <= bounds.y + bounds.height
-  );
-}
-
 function segmentIntersectsBounds(start: Point, end: Point, bounds: Bounds): boolean {
   let near = 0;
   let far = 1;
@@ -96,16 +83,17 @@ function segmentIntersectsBounds(start: Point, end: Point, bounds: Bounds): bool
 }
 
 function combinedOcclusion(
-  state: SimulationState,
+  environment: EnvironmentDefinition,
   observer: LayerPosition,
   subject: LayerPosition,
   sense: 'hearing' | 'sight',
 ): number {
   if (observer.layerId !== subject.layerId) return 1;
   let remaining = 1;
-  for (const area of state.environment.areas) {
+  for (const area of environment.areas) {
     if (area.layerId !== observer.layerId) continue;
-    const attenuation = OCCLUSION[area.kind]?.[sense] ?? 0;
+    const attenuation =
+      sense === 'hearing' ? area.cover.hearingOcclusion : area.cover.sightOcclusion;
     if (attenuation === 0) continue;
     const observerInside = pointInBounds(observer, area);
     const subjectInside = pointInBounds(subject, area);
@@ -260,8 +248,18 @@ export function evaluateSpatialPerception(
   const layerSeparated = observer.position.layerId !== subject.position.layerId;
   const distanceMeters = spatialDistance(state, observer.position, subject.position);
   const acuity = observer.profile.capabilities.acuity * capabilityAvailability(observer, 'acuity');
-  const hearingOcclusion = combinedOcclusion(state, observer.position, subject.position, 'hearing');
-  const sightOcclusion = combinedOcclusion(state, observer.position, subject.position, 'sight');
+  const hearingOcclusion = combinedOcclusion(
+    state.environment,
+    observer.position,
+    subject.position,
+    'hearing',
+  );
+  const sightOcclusion = combinedOcclusion(
+    state.environment,
+    observer.position,
+    subject.position,
+    'sight',
+  );
   const hearingRange = audibleRadiusMeters * (0.8 + acuity * 0.4);
   const sightRange = 45 + acuity * 45;
   const hearing = sensoryAssessment(acuity, distanceMeters, hearingRange, hearingOcclusion, 1);
@@ -298,14 +296,14 @@ export function evaluateSpatialPerception(
       hearingOcclusion,
       'environment.areas',
       'environment.layers',
-      'simulation.spatial.areaOcclusion',
+      'environment.areas.cover.hearingOcclusion',
     ),
     traceTerm(
       'sight-occlusion',
       sightOcclusion,
       'environment.areas',
       'environment.layers',
-      'simulation.spatial.areaOcclusion',
+      'environment.areas.cover.sightOcclusion',
     ),
     traceTerm('hearing-strength', hearing.strength, 'simulation.spatial.hearingFalloff'),
     traceTerm('sight-strength', sight.strength, 'simulation.spatial.sightFalloff'),

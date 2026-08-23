@@ -135,7 +135,7 @@ describe('scenario validation', () => {
     });
 
     const migratedEnvironments = parseEnvironmentLibrary(environments);
-    assert.equal(migratedEnvironments.schemaVersion, 2);
+    assert.equal(migratedEnvironments.schemaVersion, 3);
     assert.deepEqual(migratedEnvironments.environments[0]?.outletAffordances, []);
 
     const legacyScenario = downgradeScenarioReferences(scenario, 2);
