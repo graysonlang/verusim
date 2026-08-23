@@ -659,7 +659,7 @@ input[type="search"]::placeholder {
 }
 
 .stage-tools,
-.selected-readout,
+.character-hover-card,
 .stage-legend {
   position: absolute;
   border: 1px solid rgb(245 236 208 / 12%);
@@ -740,27 +740,49 @@ input[type="search"]::placeholder {
   text-align: right;
 }
 
-.selected-readout {
-  right: 12px;
-  bottom: 12px;
-  display: grid;
-  max-width: min(320px, calc(100% - 24px));
-  padding: 9px 12px;
-  border-radius: 7px;
+.character-hover-card {
+  z-index: 6;
+  width: min(250px, calc(100% - 16px));
+  padding: 11px;
+  border-radius: 8px;
   pointer-events: none;
 }
 
-.selected-readout strong {
-  color: #fff4ce;
-  font-size: 12px;
+.character-hover-card[hidden] {
+  display: none;
 }
 
-.selected-readout span {
-  overflow: hidden;
-  color: var(--muted);
+.character-hover-card h3 {
+  margin: 0;
+  color: #fff4ce;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.hover-card-meta,
+.hover-card-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.hover-card-activity,
+.hover-card-mind {
+  margin: 7px 0 0;
+  line-height: 1.35;
+}
+
+.hover-card-activity {
+  color: var(--text);
   font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 650;
+}
+
+.hover-card-mind {
+  color: var(--muted);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11px;
 }
 
 .stage-legend {

@@ -22,12 +22,20 @@ interface Camera {
 interface WorldViewOptions {
   canvas: HTMLCanvasElement;
   indicatorSettings: Accessor<IndicatorSettings>;
+  onHover: (hover: WorldHover | null) => void;
   onSelect: (agentId: string) => void;
   selectedAgentId: Accessor<string | null>;
   state: Accessor<SimulationState>;
 }
 
+export interface WorldHover {
+  agentId: string;
+  x: number;
+  y: number;
+}
+
 export interface WorldView {
+  actualSize: () => void;
   camera: Accessor<Camera>;
   fit: () => void;
   focusAgent: (agentId: string) => void;
@@ -449,6 +457,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   let cameraStart = camera();
 
   function fit(): void {
+    options.onHover(null);
     const state = options.state();
     const width = Math.max(canvas.clientWidth, 1);
     const height = Math.max(canvas.clientHeight, 1);
@@ -460,9 +469,15 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     setCamera({ x: state.environment.width / 2, y: state.environment.height / 2, zoom });
   }
 
+  function actualSize(): void {
+    options.onHover(null);
+    setCamera(current => ({ ...current, zoom: 1 }));
+  }
+
   function focusAgent(agentId: string): void {
     const agent = options.state().agents.find(candidate => candidate.id === agentId);
     if (agent === undefined) return;
+    options.onHover(null);
     setCamera(current => ({
       ...current,
       x: agent.position.x,
@@ -472,6 +487,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   }
 
   function zoomAt(factor: number, screen?: Point): void {
+    options.onHover(null);
     const current = camera();
     const anchor = screen ?? { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 };
     const worldAnchor = worldPoint(canvas, current, anchor);
@@ -483,7 +499,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     });
   }
 
-  function selectNearest(screen: Point): void {
+  function nearestAgent(screen: Point): SimulationAgent | null {
     const current = camera();
     let nearest: { agent: SimulationAgent; distance: number } | null = null;
     for (const agent of options.state().agents) {
@@ -493,11 +509,22 @@ export function createWorldView(options: WorldViewOptions): WorldView {
         nearest = { agent, distance: candidateDistance };
       }
     }
-    if (nearest !== null) options.onSelect(nearest.agent.id);
+    return nearest?.agent ?? null;
+  }
+
+  function showHover(screen: Point): void {
+    const agent = nearestAgent(screen);
+    options.onHover(agent === null ? null : { agentId: agent.id, x: screen.x, y: screen.y });
+  }
+
+  function selectNearest(screen: Point): void {
+    const agent = nearestAgent(screen);
+    if (agent !== null) options.onSelect(agent.id);
   }
 
   function onPointerDown(event: PointerEvent): void {
     if (event.button !== 0) return;
+    options.onHover(null);
     dragging = true;
     dragDistance = 0;
     pointerStart = screenPoint(canvas, event);
@@ -507,8 +534,11 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   }
 
   function onPointerMove(event: PointerEvent): void {
-    if (!dragging) return;
     const point = screenPoint(canvas, event);
+    if (!dragging) {
+      showHover(point);
+      return;
+    }
     const dx = point.x - pointerStart.x;
     const dy = point.y - pointerStart.y;
     dragDistance = Math.max(dragDistance, Math.hypot(dx, dy));
@@ -524,7 +554,17 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     dragging = false;
     canvas.releasePointerCapture(event.pointerId);
     canvas.classList.remove('is-panning');
-    if (dragDistance < 4) selectNearest(screenPoint(canvas, event));
+    const point = screenPoint(canvas, event);
+    if (event.type === 'pointercancel') {
+      options.onHover(null);
+      return;
+    }
+    if (dragDistance < 4) selectNearest(point);
+    showHover(point);
+  }
+
+  function onPointerLeave(): void {
+    options.onHover(null);
   }
 
   function onWheel(event: WheelEvent): void {
@@ -534,6 +574,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
 
   canvas.addEventListener('pointerdown', onPointerDown);
   canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerleave', onPointerLeave);
   canvas.addEventListener('pointerup', onPointerUp);
   canvas.addEventListener('pointercancel', onPointerUp);
   canvas.addEventListener('wheel', onWheel, { passive: false });
@@ -566,10 +607,11 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     observer.disconnect();
     canvas.removeEventListener('pointerdown', onPointerDown);
     canvas.removeEventListener('pointermove', onPointerMove);
+    canvas.removeEventListener('pointerleave', onPointerLeave);
     canvas.removeEventListener('pointerup', onPointerUp);
     canvas.removeEventListener('pointercancel', onPointerUp);
     canvas.removeEventListener('wheel', onWheel);
   });
 
-  return { camera, fit, focusAgent, zoomBy: zoomAt };
+  return { actualSize, camera, fit, focusAgent, zoomBy: zoomAt };
 }

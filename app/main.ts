@@ -46,7 +46,8 @@ import {
   playbackRateForId,
   type PlaybackRateId,
 } from './playback.js';
-import { createWorldView } from './world-view.js';
+import { zoomActionForShortcut } from './shortcuts.js';
+import { createWorldView, type WorldHover } from './world-view.js';
 
 const characterLibrary = {
   characters: [...characters.characters, ...highwaymanCharacters.characters],
@@ -757,6 +758,7 @@ function createWorkbench(): HTMLElement {
     createSignal<PlaybackRateId>(DEFAULT_PLAYBACK_RATE_ID);
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
+  const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
@@ -792,9 +794,7 @@ function createWorkbench(): HTMLElement {
   const zoomIn = button('+', 'icon-button');
   const fit = button('Fit', 'icon-button fit-button');
   const zoomReadout = element('span', 'zoom-readout');
-  const selectedReadout = element('div', 'selected-readout');
-  const selectedName = element('strong');
-  const selectedActivity = element('span');
+  const characterHoverCard = element('section', 'character-hover-card');
   const stageLegend = element('div', 'stage-legend');
   const indicatorSelect = element('select', 'indicator-verbosity');
   const indicatorToggles = element('div', 'indicator-toggles');
@@ -894,8 +894,11 @@ function createWorkbench(): HTMLElement {
   zoomIn.setAttribute('aria-label', 'Zoom in');
   fit.title = 'Frame environment';
   stageTools.append(zoomOut, zoomIn, fit, zoomReadout);
-  selectedReadout.append(selectedName, selectedActivity);
-  stageLegend.textContent = 'Drag to pan / scroll to zoom / select a character';
+  characterHoverCard.dataset.testid = 'character-hover-card';
+  characterHoverCard.hidden = true;
+  characterHoverCard.setAttribute('aria-hidden', 'true');
+  characterHoverCard.setAttribute('role', 'tooltip');
+  stageLegend.textContent = 'Drag to pan / scroll or - and = to zoom / hover or select a character';
   signalLabel.textContent = 'Signals';
   for (const [value, label] of [
     ['off', 'Off'],
@@ -920,7 +923,7 @@ function createWorkbench(): HTMLElement {
   signalControls.setAttribute('aria-label', 'Field signals');
   signalControls.append(signalLabel, indicatorSelect, indicatorToggles);
   header.append(fileActions, signalControls, transport);
-  stage.append(canvas, stageTools, selectedReadout, stageLegend);
+  stage.append(canvas, stageTools, characterHoverCard, stageLegend);
 
   inspector.append(inspectorContent);
   footer.append(statusText, simulationStats);
@@ -953,6 +956,7 @@ function createWorkbench(): HTMLElement {
   const worldView = createWorldView({
     canvas,
     indicatorSettings,
+    onHover: setWorldHover,
     onSelect: setSelectedAgentId,
     selectedAgentId,
     state,
@@ -1029,18 +1033,28 @@ function createWorkbench(): HTMLElement {
       keywords: ['canvas', 'frame', 'view', 'zoom'],
       label: 'Fit environment',
       run: worldView.fit,
+      shortcut: 'Shift+1 / Shift+9',
+    },
+    {
+      id: 'actual-size',
+      keywords: ['100', 'actual', 'canvas', 'view', 'zoom'],
+      label: 'Zoom to 100%',
+      run: worldView.actualSize,
+      shortcut: 'Shift+0',
     },
     {
       id: 'zoom-in',
       keywords: ['canvas', 'view'],
       label: 'Zoom in',
       run: () => worldView.zoomBy(1.25),
+      shortcut: '=',
     },
     {
       id: 'zoom-out',
       keywords: ['canvas', 'view'],
       label: 'Zoom out',
       run: () => worldView.zoomBy(0.8),
+      shortcut: '-',
     },
     ...(['off', 'minimal', 'standard', 'detailed'] as const).map(verbosity => ({
       id: `signals-${verbosity}`,
@@ -1291,13 +1305,45 @@ function createWorkbench(): HTMLElement {
     const agent = current.agents.find(candidate => candidate.id === selected) ?? current.agents[0];
     if (agent === undefined) {
       inspectorContent.replaceChildren();
-      selectedReadout.hidden = true;
       return;
     }
-    selectedReadout.hidden = false;
-    selectedName.textContent = agent.profile.name;
-    selectedActivity.textContent = `${agent.currentActivity} / ${locationName(current, agent)}`;
     renderInspector(inspectorContent, current, agent, indicatorSettings(), setState);
+  });
+
+  createEffect(() => {
+    const hover = worldHover();
+    const current = state();
+    const agent =
+      hover === null ? undefined : current.agents.find(candidate => candidate.id === hover.agentId);
+    if (hover === null || agent === undefined) {
+      characterHoverCard.hidden = true;
+      characterHoverCard.setAttribute('aria-hidden', 'true');
+      return;
+    }
+
+    const observation = describeAgent(agent);
+    const name = element('h3');
+    const meta = element('div', 'hover-card-meta');
+    const activity = element('p', 'hover-card-activity');
+    const mind = element('p', 'hover-card-mind');
+    const signals = indicatorStrip(current, agent, indicatorSettings(), 'hover-card-signals', true);
+    name.textContent = agent.profile.name;
+    meta.append(roleBadge(agent), locationBadge(current, agent));
+    activity.textContent = agent.currentActivity;
+    mind.textContent = `${observation.mood} mood. ${observation.stateOfMind}.`;
+    characterHoverCard.replaceChildren(name, meta, activity, mind, signals);
+    characterHoverCard.hidden = false;
+    characterHoverCard.setAttribute('aria-hidden', 'false');
+    characterHoverCard.style.left = `${clamp(
+      hover.x + 14,
+      8,
+      Math.max(8, stage.clientWidth - characterHoverCard.offsetWidth - 8),
+    )}px`;
+    characterHoverCard.style.top = `${clamp(
+      hover.y + 14,
+      8,
+      Math.max(8, stage.clientHeight - characterHoverCard.offsetHeight - 8),
+    )}px`;
   });
 
   searchInput.addEventListener('input', () => setSearch(searchInput.value));
@@ -1478,6 +1524,12 @@ function createWorkbench(): HTMLElement {
       target instanceof HTMLSelectElement ||
       (target instanceof HTMLElement && target.isContentEditable)
     ) {
+      return;
+    }
+    const zoomAction = zoomActionForShortcut(event);
+    if (zoomAction !== null) {
+      event.preventDefault();
+      executeActionById(zoomAction);
       return;
     }
     if (
