@@ -33,9 +33,9 @@ function withPositions(state: SimulationState, positions: Record<string, Point>)
 describe('spatial appraisal', () => {
   it('makes the same physical distance more invasive across a guarded dyad', () => {
     const state = withPositions(createState(), {
-      friend: { x: 650.6, y: 455 },
-      hostile: { x: 650.6, y: 455 },
-      owner: { x: 650, y: 455 },
+      friend: { x: 108.6, y: 76 },
+      hostile: { x: 108.6, y: 76 },
+      owner: { x: 108, y: 76 },
     });
     const friend = evaluateProximity(state, 'owner', 'friend');
     const hostile = evaluateProximity(state, 'owner', 'hostile');
@@ -50,8 +50,8 @@ describe('spatial appraisal', () => {
 
   it('expands personal-space needs as social battery depletes', () => {
     const positioned = withPositions(createState(), {
-      hostile: { x: 651, y: 455 },
-      owner: { x: 650, y: 455 },
+      hostile: { x: 109, y: 76 },
+      owner: { x: 108, y: 76 },
     });
     const rested = {
       ...positioned,
@@ -86,8 +86,8 @@ describe('spatial appraisal', () => {
 
   it('separates audibility from concealment in an open square', () => {
     const state = withPositions(createState(), {
-      hostile: { x: 658, y: 455 },
-      owner: { x: 650, y: 455 },
+      hostile: { x: 116, y: 76 },
+      owner: { x: 108, y: 76 },
     });
     const perception = evaluateSpatialPerception(state, 'hostile', 'owner');
     const eavesdropping = evaluateEavesdropping(state, 'hostile', 'owner');
@@ -100,12 +100,12 @@ describe('spatial appraisal', () => {
 
   it('lets nearby cover enable covert listening without improving hearing', () => {
     const openState = withPositions(createState(), {
-      hostile: { x: 658, y: 455 },
-      owner: { x: 650, y: 455 },
+      hostile: { x: 116, y: 76 },
+      owner: { x: 108, y: 76 },
     });
     const coveredState = withPositions(createState(), {
-      hostile: { x: 296, y: 250 },
-      owner: { x: 304, y: 250 },
+      hostile: { x: 49, y: 42 },
+      owner: { x: 57, y: 42 },
     });
     const open = evaluateEavesdropping(openState, 'hostile', 'owner');
     const covered = evaluateEavesdropping(coveredState, 'hostile', 'owner');
@@ -121,8 +121,8 @@ describe('spatial appraisal', () => {
 
   it('rejects covert listening outside the audible range regardless of cover', () => {
     const state = withPositions(createState(), {
-      hostile: { x: 250, y: 250 },
-      owner: { x: 304, y: 250 },
+      hostile: { x: 3, y: 42 },
+      owner: { x: 57, y: 42 },
     });
     const result = evaluateEavesdropping(state, 'hostile', 'owner');
     assert.equal(result.hearing.available, false);

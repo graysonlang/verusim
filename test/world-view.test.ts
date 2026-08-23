@@ -1,6 +1,25 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { cameraForGesture, scaleBarForZoom } from '../app/world-view.js';
+import { agentIdAtScreenPoint, cameraForGesture, scaleBarForZoom } from '../app/world-view.js';
+import environments from '../library/environments.json';
+import highwaymanEnvironments from '../library/highwayman-environments.json';
+
+describe('world view selection', () => {
+  const agents = [
+    { id: 'mara', position: { x: 100, y: 100 } },
+    { id: 'tomas', position: { x: 120, y: 100 } },
+  ];
+  const camera = { x: 100, y: 100, zoom: 1 };
+  const viewport = { height: 200, width: 200 };
+
+  it('hits the nearest character inside the selection radius', () => {
+    assert.equal(agentIdAtScreenPoint(agents, camera, viewport, { x: 101, y: 100 }), 'mara');
+  });
+
+  it('returns no selection for a click on the canvas background', () => {
+    assert.equal(agentIdAtScreenPoint(agents, camera, viewport, { x: 50, y: 50 }), null);
+  });
+});
 
 describe('world view gestures', () => {
   it('pans by following the two-pointer centroid', () => {
@@ -55,5 +74,20 @@ describe('world view scale', () => {
     assert.equal(scale.label, '300 ft');
     assert.ok(Math.abs(scale.meters - 91.44) < 0.01);
     assert.ok(Math.abs(scale.pixels - 91.44) < 0.01);
+  });
+
+  it('keeps authored buildings within plausible house and workshop dimensions', () => {
+    const authoredEnvironments = [
+      ...environments.environments,
+      ...highwaymanEnvironments.environments,
+    ];
+    for (const environment of authoredEnvironments) {
+      const buildings = environment.areas.filter(area => area.kind === 'building');
+      assert.ok(buildings.length > 0);
+      for (const building of buildings) {
+        assert.ok(building.width <= 20, `${building.id} is ${building.width} meters wide`);
+        assert.ok(building.height <= 22, `${building.id} is ${building.height} meters deep`);
+      }
+    }
   });
 });

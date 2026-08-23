@@ -21,7 +21,7 @@
     {
       "instanceId": "mara",
       "characterId": "mara-vale",
-      "position": { "x": 391, "y": 534 },
+      "position": { "x": 65, "y": 89 },
       "walkingMetersPerMinute": 18,
       "schedule": [
         {
@@ -65,7 +65,7 @@
     {
       "instanceId": "tomas",
       "characterId": "tomas-reed",
-      "position": { "x": 983, "y": 556 },
+      "position": { "x": 164, "y": 93 },
       "walkingMetersPerMinute": 17,
       "schedule": [
         {
@@ -115,7 +115,7 @@
     {
       "instanceId": "nessa",
       "characterId": "nessa-arden",
-      "position": { "x": 553, "y": 151 },
+      "position": { "x": 92.5, "y": 25 },
       "walkingMetersPerMinute": 16,
       "schedule": [
         {
@@ -159,7 +159,7 @@
     {
       "instanceId": "elian",
       "characterId": "elian-voss",
-      "position": { "x": 831, "y": 152 },
+      "position": { "x": 139, "y": 25.5 },
       "walkingMetersPerMinute": 20,
       "schedule": [
         {
@@ -209,7 +209,7 @@
     {
       "instanceId": "sera",
       "characterId": "sera-dane",
-      "position": { "x": 460, "y": 644 },
+      "position": { "x": 76.5, "y": 108 },
       "walkingMetersPerMinute": 15,
       "schedule": [
         {

@@ -4,37 +4,37 @@
     {
       "id": "old-king-road",
       "name": "The Old King's Road",
-      "width": 900,
-      "height": 500,
+      "width": 150,
+      "height": 84,
       "areas": [
-        { "id": "road-grass", "kind": "grass", "x": 0, "y": 0, "width": 900, "height": 500 },
+        { "id": "road-grass", "kind": "grass", "x": 0, "y": 0, "width": 150, "height": 84 },
         {
           "id": "west-trees",
           "kind": "forest",
           "x": 0,
           "y": 0,
-          "width": 220,
-          "height": 500,
+          "width": 37,
+          "height": 84,
           "label": "Old Wood"
         },
-        { "id": "east-trees", "kind": "forest", "x": 700, "y": 0, "width": 200, "height": 500 },
-        { "id": "king-road", "kind": "path", "x": 180, "y": 220, "width": 560, "height": 65 },
+        { "id": "east-trees", "kind": "forest", "x": 117, "y": 0, "width": 33, "height": 84 },
+        { "id": "king-road", "kind": "path", "x": 30, "y": 37, "width": 94, "height": 11 },
         {
           "id": "square-yard",
           "kind": "market",
-          "x": 330,
-          "y": 130,
-          "width": 260,
-          "height": 240,
+          "x": 55,
+          "y": 22,
+          "width": 44,
+          "height": 40,
           "label": "Town Square"
         },
         {
           "id": "watch-house-building",
           "kind": "building",
-          "x": 590,
-          "y": 145,
-          "width": 105,
-          "height": 88
+          "x": 98,
+          "y": 24,
+          "width": 18,
+          "height": 15
         }
       ],
       "locations": [
@@ -42,28 +42,28 @@
           "id": "dark-road",
           "kind": "road",
           "name": "Dark Road",
-          "x": 230,
-          "y": 220,
-          "width": 120,
-          "height": 65
+          "x": 38,
+          "y": 37,
+          "width": 20,
+          "height": 11
         },
         {
           "id": "town-square",
           "kind": "public",
           "name": "Town Square",
-          "x": 350,
-          "y": 150,
-          "width": 220,
-          "height": 200
+          "x": 58,
+          "y": 25,
+          "width": 37,
+          "height": 34
         },
         {
           "id": "watch-house",
           "kind": "workplace",
           "name": "Watch House",
-          "x": 590,
-          "y": 145,
-          "width": 105,
-          "height": 88
+          "x": 98,
+          "y": 24,
+          "width": 18,
+          "height": 15
         }
       ]
     }

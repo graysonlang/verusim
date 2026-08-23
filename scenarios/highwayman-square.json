@@ -158,7 +158,7 @@
     {
       "instanceId": "actor",
       "characterId": "corvin-rusk",
-      "position": { "x": 430, "y": 240 },
+      "position": { "x": 71.7, "y": 40 },
       "schedule": [
         {
           "startMinute": 0,
@@ -171,7 +171,7 @@
     {
       "instanceId": "merchant",
       "characterId": "jon-mere",
-      "position": { "x": 490, "y": 260 },
+      "position": { "x": 81.7, "y": 43.3 },
       "schedule": [
         {
           "startMinute": 0,
@@ -184,7 +184,7 @@
     {
       "instanceId": "warden",
       "characterId": "elian-voss",
-      "position": { "x": 530, "y": 190 },
+      "position": { "x": 88.3, "y": 31.7 },
       "schedule": [
         {
           "startMinute": 0,
@@ -197,7 +197,7 @@
     {
       "instanceId": "actor-kin",
       "characterId": "lena-rusk",
-      "position": { "x": 390, "y": 300 },
+      "position": { "x": 65, "y": 50 },
       "schedule": [
         {
           "startMinute": 0,
@@ -210,7 +210,7 @@
     {
       "instanceId": "merchant-kin",
       "characterId": "petra-mere",
-      "position": { "x": 520, "y": 310 },
+      "position": { "x": 86.7, "y": 51.7 },
       "schedule": [
         {
           "startMinute": 0,

@@ -22,7 +22,7 @@
       "label": "Sell the market bread",
       "source": "obligation",
       "activationMinute": 600,
-      "deadlineMinute": 690,
+      "deadlineMinute": 645,
       "urgencyHorizonMinutes": 60,
       "commitment": 0.92,
       "desired": [{ "factId": "bread-sold", "minimum": 1 }],
@@ -106,7 +106,7 @@
       "locationId": "market-square",
       "durationMinutes": 5,
       "availableFromMinute": null,
-      "availableUntilMinute": 690,
+      "availableUntilMinute": 645,
       "preconditions": [{ "factId": "bread-on-hand", "minimum": 1 }],
       "recoveryMode": "none",
       "effects": [
@@ -138,7 +138,7 @@
     {
       "instanceId": "mara",
       "characterId": "mara-vale",
-      "position": { "x": 463, "y": 372.5 },
+      "position": { "x": 77, "y": 62 },
       "walkingMetersPerMinute": 18,
       "schedule": [
         {

@@ -4,17 +4,17 @@
     {
       "id": "alders-edge",
       "name": "Alder's Edge",
-      "width": 1400,
-      "height": 900,
+      "width": 234,
+      "height": 150,
       "areas": [
-        { "id": "village-green", "kind": "grass", "x": 0, "y": 0, "width": 1400, "height": 900 },
+        { "id": "village-green", "kind": "grass", "x": 0, "y": 0, "width": 234, "height": 150 },
         {
           "id": "south-river",
           "kind": "water",
           "x": 0,
-          "y": 735,
-          "width": 1400,
-          "height": 165,
+          "y": 123,
+          "width": 234,
+          "height": 27,
           "label": "River Alder"
         },
         {
@@ -22,111 +22,111 @@
           "kind": "forest",
           "x": 0,
           "y": 0,
-          "width": 300,
-          "height": 660,
+          "width": 50,
+          "height": 110,
           "label": "West Wood"
         },
-        { "id": "north-wood", "kind": "forest", "x": 920, "y": 0, "width": 480, "height": 180 },
+        { "id": "north-wood", "kind": "forest", "x": 153, "y": 0, "width": 81, "height": 30 },
         {
           "id": "east-fields",
           "kind": "field",
-          "x": 1040,
-          "y": 220,
-          "width": 310,
-          "height": 420,
+          "x": 173,
+          "y": 37,
+          "width": 52,
+          "height": 70,
           "label": "East Fields"
         },
-        { "id": "mill-field", "kind": "field", "x": 45, "y": 640, "width": 315, "height": 80 },
-        { "id": "high-road", "kind": "path", "x": 280, "y": 403, "width": 820, "height": 58 },
-        { "id": "river-road", "kind": "path", "x": 660, "y": 120, "width": 56, "height": 640 },
+        { "id": "mill-field", "kind": "field", "x": 8, "y": 107, "width": 53, "height": 13 },
+        { "id": "high-road", "kind": "path", "x": 47, "y": 67, "width": 137, "height": 10 },
+        { "id": "river-road", "kind": "path", "x": 110, "y": 20, "width": 10, "height": 107 },
         {
           "id": "market-yard",
           "kind": "market",
-          "x": 520,
-          "y": 310,
-          "width": 330,
-          "height": 250,
+          "x": 87,
+          "y": 52,
+          "width": 55,
+          "height": 42,
           "label": "Market Square"
         },
         {
           "id": "inn-building",
           "kind": "building",
-          "x": 414,
-          "y": 305,
-          "width": 98,
-          "height": 135
+          "x": 69,
+          "y": 51,
+          "width": 16,
+          "height": 22
         },
         {
           "id": "smithy-building",
           "kind": "building",
-          "x": 866,
-          "y": 390,
-          "width": 120,
-          "height": 98
+          "x": 144,
+          "y": 65,
+          "width": 20,
+          "height": 16
         },
         {
           "id": "healer-building",
           "kind": "building",
-          "x": 575,
-          "y": 205,
-          "width": 105,
-          "height": 88
+          "x": 96,
+          "y": 34,
+          "width": 18,
+          "height": 15
         },
         {
           "id": "guard-building",
           "kind": "building",
-          "x": 660,
-          "y": 62,
-          "width": 118,
-          "height": 82
+          "x": 110,
+          "y": 10,
+          "width": 20,
+          "height": 14
         },
         {
           "id": "mill-building",
           "kind": "building",
-          "x": 275,
-          "y": 650,
-          "width": 92,
-          "height": 78
+          "x": 46,
+          "y": 108,
+          "width": 15,
+          "height": 13
         },
         {
           "id": "mara-house-building",
           "kind": "building",
-          "x": 350,
-          "y": 500,
-          "width": 82,
-          "height": 68
+          "x": 58,
+          "y": 83,
+          "width": 14,
+          "height": 12
         },
         {
           "id": "tomas-house-building",
           "kind": "building",
-          "x": 940,
-          "y": 520,
-          "width": 86,
-          "height": 72
+          "x": 157,
+          "y": 87,
+          "width": 14,
+          "height": 12
         },
         {
           "id": "nessa-house-building",
           "kind": "building",
-          "x": 515,
-          "y": 120,
-          "width": 76,
-          "height": 62
+          "x": 86,
+          "y": 20,
+          "width": 13,
+          "height": 10
         },
         {
           "id": "elian-house-building",
           "kind": "building",
-          "x": 790,
-          "y": 120,
-          "width": 82,
-          "height": 64
+          "x": 132,
+          "y": 20,
+          "width": 14,
+          "height": 11
         },
         {
           "id": "sera-house-building",
           "kind": "building",
-          "x": 420,
-          "y": 610,
-          "width": 80,
-          "height": 68
+          "x": 70,
+          "y": 102,
+          "width": 13,
+          "height": 12
         }
       ],
       "locations": [
@@ -134,127 +134,127 @@
           "id": "market-square",
           "kind": "public",
           "name": "Market Square",
-          "x": 535,
-          "y": 325,
-          "width": 300,
-          "height": 220
+          "x": 89,
+          "y": 54,
+          "width": 50,
+          "height": 37
         },
         {
           "id": "north-gate",
           "kind": "public",
           "name": "North Gate",
-          "x": 668,
-          "y": 15,
-          "width": 102,
-          "height": 45
+          "x": 111,
+          "y": 3,
+          "width": 17,
+          "height": 7
         },
         {
           "id": "riverside",
           "kind": "public",
           "name": "Riverside",
-          "x": 610,
-          "y": 690,
-          "width": 160,
-          "height": 44
+          "x": 102,
+          "y": 115,
+          "width": 27,
+          "height": 7
         },
         {
           "id": "wayfarer-inn",
           "kind": "workplace",
           "name": "Wayfarer Inn",
-          "x": 414,
-          "y": 305,
-          "width": 98,
-          "height": 135
+          "x": 69,
+          "y": 51,
+          "width": 16,
+          "height": 22
         },
         {
           "id": "iron-yard",
           "kind": "workplace",
           "name": "Iron Yard",
-          "x": 866,
-          "y": 390,
-          "width": 120,
-          "height": 98
+          "x": 144,
+          "y": 65,
+          "width": 20,
+          "height": 16
         },
         {
           "id": "healers-house",
           "kind": "workplace",
           "name": "Healer's House",
-          "x": 575,
-          "y": 205,
-          "width": 105,
-          "height": 88
+          "x": 96,
+          "y": 34,
+          "width": 18,
+          "height": 15
         },
         {
           "id": "guard-house",
           "kind": "workplace",
           "name": "Guard House",
-          "x": 660,
-          "y": 62,
-          "width": 118,
-          "height": 82
+          "x": 110,
+          "y": 10,
+          "width": 20,
+          "height": 14
         },
         {
           "id": "alder-mill",
           "kind": "workplace",
           "name": "Alder Mill",
-          "x": 275,
-          "y": 650,
-          "width": 92,
-          "height": 78
+          "x": 46,
+          "y": 108,
+          "width": 15,
+          "height": 13
         },
         {
           "id": "east-field",
           "kind": "workplace",
           "name": "East Field",
-          "x": 1070,
-          "y": 250,
-          "width": 250,
-          "height": 360
+          "x": 178,
+          "y": 42,
+          "width": 42,
+          "height": 60
         },
         {
           "id": "mara-house",
           "kind": "home",
           "name": "Mara's House",
-          "x": 350,
-          "y": 500,
-          "width": 82,
-          "height": 68
+          "x": 58,
+          "y": 83,
+          "width": 14,
+          "height": 12
         },
         {
           "id": "tomas-house",
           "kind": "home",
           "name": "Tomas's House",
-          "x": 940,
-          "y": 520,
-          "width": 86,
-          "height": 72
+          "x": 157,
+          "y": 87,
+          "width": 14,
+          "height": 12
         },
         {
           "id": "nessa-house",
           "kind": "home",
           "name": "Nessa's House",
-          "x": 515,
-          "y": 120,
-          "width": 76,
-          "height": 62
+          "x": 86,
+          "y": 20,
+          "width": 13,
+          "height": 10
         },
         {
           "id": "elian-house",
           "kind": "home",
           "name": "Elian's House",
-          "x": 790,
-          "y": 120,
-          "width": 82,
-          "height": 64
+          "x": 132,
+          "y": 20,
+          "width": 14,
+          "height": 11
         },
         {
           "id": "sera-house",
           "kind": "home",
           "name": "Sera's House",
-          "x": 420,
-          "y": 610,
-          "width": 80,
-          "height": 68
+          "x": 70,
+          "y": 102,
+          "width": 13,
+          "height": 12
         }
       ]
     }

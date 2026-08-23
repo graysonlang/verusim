@@ -82,7 +82,7 @@
     {
       "instanceId": "actor",
       "characterId": "corvin-rusk",
-      "position": { "x": 275, "y": 250 },
+      "position": { "x": 45.8, "y": 41.7 },
       "schedule": [
         {
           "startMinute": 0,
@@ -95,7 +95,7 @@
     {
       "instanceId": "merchant",
       "characterId": "jon-mere",
-      "position": { "x": 325, "y": 250 },
+      "position": { "x": 54.2, "y": 41.7 },
       "schedule": [
         {
           "startMinute": 0,

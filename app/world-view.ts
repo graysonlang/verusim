@@ -31,7 +31,7 @@ interface WorldViewOptions {
   canvas: HTMLCanvasElement;
   indicatorSettings: Accessor<IndicatorSettings>;
   onHover: (hover: WorldHover | null) => void;
-  onSelect: (agentId: string) => void;
+  onSelect: (agentId: string | null) => void;
   selectedAgentId: Accessor<string | null>;
   state: Accessor<SimulationState>;
 }
@@ -68,6 +68,8 @@ const INDICATOR_COLORS: Record<Exclude<IndicatorKind, 'area'>, string> = {
   speech: '#eee6d2',
   thought: '#80aaa5',
 };
+
+const LOCATION_LABEL_MIN_ZOOM = 3.6;
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -132,15 +134,28 @@ function worldPoint(canvas: HTMLCanvasElement, camera: Camera, screen: Point): P
   };
 }
 
-function agentScreenPoint(
-  canvas: HTMLCanvasElement,
+export function agentIdAtScreenPoint(
+  agents: readonly Pick<SimulationAgent, 'id' | 'position'>[],
   camera: Camera,
-  agent: SimulationAgent,
-): Point {
-  return {
-    x: canvas.clientWidth / 2 + (agent.position.x - camera.x) * camera.zoom,
-    y: canvas.clientHeight / 2 + (agent.position.y - camera.y) * camera.zoom,
-  };
+  viewport: { height: number; width: number },
+  screen: Point,
+  hitRadius = 18,
+): string | null {
+  let nearest: { agentId: string; distance: number } | null = null;
+  for (const agent of agents) {
+    const point = {
+      x: viewport.width / 2 + (agent.position.x - camera.x) * camera.zoom,
+      y: viewport.height / 2 + (agent.position.y - camera.y) * camera.zoom,
+    };
+    const candidateDistance = Math.hypot(screen.x - point.x, screen.y - point.y);
+    if (
+      candidateDistance <= hitRadius &&
+      (nearest === null || candidateDistance < nearest.distance)
+    ) {
+      nearest = { agentId: agent.id, distance: candidateDistance };
+    }
+  }
+  return nearest?.agentId ?? null;
 }
 
 function drawInfiniteGrid(
@@ -167,53 +182,57 @@ function drawInfiniteGrid(
   context.stroke();
 }
 
-function drawAreaTexture(context: CanvasRenderingContext2D, area: EnvironmentArea): void {
+function drawAreaTexture(
+  context: CanvasRenderingContext2D,
+  area: EnvironmentArea,
+  zoom: number,
+): void {
   if (area.kind === 'field') {
     context.beginPath();
-    for (let x = area.x + 14; x < area.x + area.width; x += 22) {
-      context.moveTo(x, area.y + 6);
-      context.lineTo(x, area.y + area.height - 6);
+    for (let x = area.x + 2; x < area.x + area.width; x += 4) {
+      context.moveTo(x, area.y + 1);
+      context.lineTo(x, area.y + area.height - 1);
     }
     context.strokeStyle = 'rgb(81 61 29 / 23%)';
-    context.lineWidth = 2;
+    context.lineWidth = 1 / zoom;
     context.stroke();
   } else if (area.kind === 'water') {
     context.beginPath();
-    for (let y = area.y + 18; y < area.y + area.height; y += 28) {
-      context.moveTo(area.x + 12, y);
+    for (let y = area.y + 3; y < area.y + area.height; y += 5) {
+      context.moveTo(area.x + 2, y);
       context.bezierCurveTo(
         area.x + area.width * 0.3,
-        y - 8,
+        y - 1.3,
         area.x + area.width * 0.7,
-        y + 8,
-        area.x + area.width - 12,
+        y + 1.3,
+        area.x + area.width - 2,
         y,
       );
     }
     context.strokeStyle = 'rgb(202 238 230 / 15%)';
-    context.lineWidth = 3;
+    context.lineWidth = 1.5 / zoom;
     context.stroke();
   } else if (area.kind === 'forest') {
     context.fillStyle = 'rgb(11 43 30 / 58%)';
-    for (let y = area.y + 18; y < area.y + area.height; y += 34) {
-      for (let x = area.x + 18; x < area.x + area.width; x += 38) {
-        const offset = ((x + y) / 2) % 13;
+    for (let y = area.y + 3; y < area.y + area.height; y += 6) {
+      for (let x = area.x + 3; x < area.x + area.width; x += 7) {
+        const offset = ((x + y) / 2) % 2;
         context.beginPath();
-        context.arc(x + offset, y, 9, 0, Math.PI * 2);
+        context.arc(x + offset, y, 1.6, 0, Math.PI * 2);
         context.fill();
       }
     }
   } else if (area.kind === 'building') {
     context.fillStyle = 'rgb(52 32 22 / 28%)';
-    context.fillRect(area.x + 7, area.y + 7, area.width, area.height);
+    context.fillRect(area.x + 1.2, area.y + 1.2, area.width, area.height);
     context.fillStyle = '#9d7650';
     context.fillRect(area.x, area.y, area.width, area.height);
     context.strokeStyle = '#5c422f';
-    context.lineWidth = 3;
+    context.lineWidth = 1.5 / zoom;
     context.strokeRect(area.x, area.y, area.width, area.height);
     context.beginPath();
-    context.moveTo(area.x + area.width / 2, area.y + 6);
-    context.lineTo(area.x + area.width / 2, area.y + area.height - 6);
+    context.moveTo(area.x + area.width / 2, area.y + 1);
+    context.lineTo(area.x + area.width / 2, area.y + area.height - 1);
     context.strokeStyle = 'rgb(69 46 31 / 42%)';
     context.stroke();
   }
@@ -433,7 +452,7 @@ function drawWorld(
   for (const area of state.environment.areas) {
     context.fillStyle = AREA_COLORS[area.kind];
     context.fillRect(area.x, area.y, area.width, area.height);
-    drawAreaTexture(context, area);
+    drawAreaTexture(context, area, camera.zoom);
     if (area.label !== undefined && camera.zoom >= 0.42) {
       context.fillStyle = 'rgb(245 237 213 / 62%)';
       context.font = `${11 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
@@ -444,7 +463,7 @@ function drawWorld(
 
   drawAreaIndicators(context, state, camera, indicatorSettings);
 
-  if (camera.zoom >= 0.55) {
+  if (camera.zoom >= LOCATION_LABEL_MIN_ZOOM) {
     for (const location of state.environment.locations) {
       context.fillStyle = 'rgb(255 250 226 / 72%)';
       context.font = `600 ${10 / camera.zoom}px ui-sans-serif, system-ui, sans-serif`;
@@ -535,7 +554,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
       ...current,
       x: agent.position.x,
       y: agent.position.y,
-      zoom: Math.max(1.15, current.zoom),
+      zoom: Math.max(LOCATION_LABEL_MIN_ZOOM, current.zoom),
     }));
   }
 
@@ -557,27 +576,22 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     zoomAt(clamp(zoom, 0.12, 5) / current.zoom);
   }
 
-  function nearestAgent(screen: Point): SimulationAgent | null {
-    const current = camera();
-    let nearest: { agent: SimulationAgent; distance: number } | null = null;
-    for (const agent of options.state().agents) {
-      const point = agentScreenPoint(canvas, current, agent);
-      const candidateDistance = Math.hypot(screen.x - point.x, screen.y - point.y);
-      if (candidateDistance <= 18 && (nearest === null || candidateDistance < nearest.distance)) {
-        nearest = { agent, distance: candidateDistance };
-      }
-    }
-    return nearest?.agent ?? null;
+  function nearestAgentId(screen: Point): string | null {
+    return agentIdAtScreenPoint(
+      options.state().agents,
+      camera(),
+      { height: canvas.clientHeight, width: canvas.clientWidth },
+      screen,
+    );
   }
 
   function showHover(screen: Point): void {
-    const agent = nearestAgent(screen);
-    options.onHover(agent === null ? null : { agentId: agent.id, x: screen.x, y: screen.y });
+    const agentId = nearestAgentId(screen);
+    options.onHover(agentId === null ? null : { agentId, x: screen.x, y: screen.y });
   }
 
   function selectNearest(screen: Point): void {
-    const agent = nearestAgent(screen);
-    if (agent !== null) options.onSelect(agent.id);
+    options.onSelect(nearestAgentId(screen));
   }
 
   function firstTwoPointers(): readonly [Point, Point] | null {

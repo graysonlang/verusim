@@ -35,7 +35,7 @@ describe('agenda planning', () => {
       ['fetch-flour', 'bake-bread-rush', 'sell-market-bread'],
     );
 
-    const completed = advanceSimulation(initial, 80);
+    const completed = advanceSimulation(initial, 45);
     assert.equal(
       completed.agendaGoals.find(goal => goal.id === 'sell-market-bread')?.status,
       'completed',
@@ -142,13 +142,13 @@ describe('agenda planning', () => {
     const marketTask = impossible.taskOperators.find(task => task.id === 'sell-market-bread');
     assert.ok(marketGoal);
     assert.ok(marketTask);
-    marketGoal.deadlineMinute = 650;
-    marketTask.availableUntilMinute = 650;
-    const completed = advanceSimulation(createBakerSimulation(impossible), 50);
+    marketGoal.deadlineMinute = 630;
+    marketTask.availableUntilMinute = 630;
+    const completed = advanceSimulation(createBakerSimulation(impossible), 30);
     const failed = completed.agendaGoals.find(goal => goal.id === 'sell-market-bread');
-    assert.equal(completed.minute, 650);
+    assert.equal(completed.minute, 630);
     assert.equal(failed?.status, 'failed');
-    assert.equal(failed?.resolvedMinute, 650);
+    assert.equal(failed?.resolvedMinute, 630);
     assert.ok(
       completed.trace.entries.some(entry => entry.kind === 'goal' && entry.id.endsWith(':failed')),
     );

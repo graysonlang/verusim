@@ -83,7 +83,7 @@
     {
       "instanceId": "owner",
       "characterId": "nessa-arden",
-      "position": { "x": 650, "y": 455 },
+      "position": { "x": 108, "y": 76 },
       "schedule": [
         {
           "startMinute": 0,
@@ -96,7 +96,7 @@
     {
       "instanceId": "friend",
       "characterId": "sera-dane",
-      "position": { "x": 680, "y": 455 },
+      "position": { "x": 113, "y": 76 },
       "schedule": [
         {
           "startMinute": 0,
@@ -109,7 +109,7 @@
     {
       "instanceId": "hostile",
       "characterId": "tomas-reed",
-      "position": { "x": 710, "y": 455 },
+      "position": { "x": 118, "y": 76 },
       "schedule": [
         {
           "startMinute": 0,
