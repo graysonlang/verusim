@@ -161,6 +161,7 @@ select:focus-visible {
   min-height: 32px;
   flex: 0 1 auto;
   grid-template-columns: minmax(0, max-content) 24px;
+  align-items: center;
   overflow: hidden;
   padding: 0;
   border-color: transparent;
@@ -386,26 +387,23 @@ select:focus-visible {
 }
 
 .time-context {
-  display: grid;
-  min-width: 126px;
-  grid-template:
-    "celestial clock" auto
-    "celestial period" auto / 28px minmax(0, auto);
+  display: flex;
+  min-width: 0;
   align-items: center;
-  column-gap: 5px;
+  gap: 5px;
 }
 
 .celestial-indicator {
   --sky-color: #253849;
   position: relative;
   display: block;
-  grid-area: celestial;
   width: 26px;
   height: 28px;
   overflow: hidden;
   border: 1px solid rgb(238 225 190 / 14%);
   border-radius: 5px;
   background: linear-gradient(#142235, var(--sky-color));
+  cursor: help;
 }
 
 .celestial-orb {
@@ -521,14 +519,6 @@ select:focus-visible {
   top: -2px;
   left: 3px;
   display: block;
-}
-
-.day-period-label {
-  grid-area: period;
-  color: var(--faint);
-  font-family: var(--mono);
-  font-size: 8px;
-  line-height: 1;
 }
 
 .environment-conditions {
@@ -931,22 +921,16 @@ select {
 }
 
 .simulation-time {
+  display: flex;
   min-width: 0;
-  grid-area: clock;
+  height: 28px;
+  align-items: center;
   color: #e5dec9;
+  cursor: help;
   font-family: var(--mono);
   font-size: 10px;
   line-height: 1.15;
   text-align: left;
-  white-space: nowrap;
-}
-
-.simulation-tick {
-  padding-left: 8px;
-  border-left: 1px solid var(--line);
-  color: var(--faint);
-  font-family: var(--mono);
-  font-size: 9px;
   white-space: nowrap;
 }
 
@@ -2228,10 +2212,6 @@ input[type="search"]::placeholder {
 
   .app-header {
     grid-template-columns: minmax(240px, 1.2fr) max-content minmax(130px, 0.8fr);
-  }
-
-  .time-context {
-    min-width: 105px;
   }
 
   .condition-season,

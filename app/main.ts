@@ -1069,7 +1069,6 @@ function createWorkbench(): HTMLElement {
   const celestialOrb = element('span', 'celestial-orb');
   const celestialHorizon = element('span', 'celestial-horizon');
   const time = element('time', 'simulation-time');
-  const dayPeriodLabel = element('span', 'day-period-label');
   const environmentConditions = element('span', 'environment-conditions');
   const weatherGraphic = element('span', 'weather-graphic');
   const conditionSeason = element('span', 'condition-season');
@@ -1077,7 +1076,6 @@ function createWorkbench(): HTMLElement {
   const conditionTemperature = element('span', 'condition-temperature');
   const conditionSeparatorTwo = element('span', 'condition-separator');
   const conditionWeather = element('span', 'condition-weather');
-  const tickCount = element('span', 'simulation-tick');
   const roster = element('aside', 'roster');
   const rosterHeader = element('div', 'panel-header');
   const rosterTitleWrap = element('div');
@@ -1241,7 +1239,8 @@ function createWorkbench(): HTMLElement {
   celestialIndicator.dataset.testid = 'day-period-indicator';
   celestialIndicator.setAttribute('role', 'img');
   celestialIndicator.append(celestialOrb, celestialHorizon);
-  timeContext.append(celestialIndicator, time, dayPeriodLabel);
+  time.dataset.testid = 'simulation-time';
+  timeContext.append(time, celestialIndicator);
   conditionSeparatorOne.textContent = '/';
   conditionSeparatorTwo.textContent = '/';
   conditionSeparatorOne.setAttribute('aria-hidden', 'true');
@@ -1256,15 +1255,7 @@ function createWorkbench(): HTMLElement {
     conditionSeparatorTwo,
     conditionWeather,
   );
-  transport.append(
-    resetScenario,
-    play,
-    step,
-    timeRateButton,
-    timeContext,
-    environmentConditions,
-    tickCount,
-  );
+  transport.append(resetScenario, play, step, timeRateButton, timeContext, environmentConditions);
 
   zoomLevelButton.dataset.testid = 'zoom-level-button';
   zoomLevelButton.setAttribute('aria-controls', 'zoom-menu');
@@ -2025,9 +2016,12 @@ function createWorkbench(): HTMLElement {
       const stateLabel = scenarioMenuStateLabels.get(entry.id);
       if (stateLabel !== undefined) stateLabel.textContent = selected ? 'Loaded' : '';
     }
-    time.textContent = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
-    dayPeriodLabel.textContent = dayPeriodName;
+    const formattedTime = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
+    time.textContent = formattedTime;
+    time.title = `Simulation tick ${current.tick}`;
+    time.setAttribute('aria-label', `${formattedTime}, simulation tick ${current.tick}`);
     celestialIndicator.dataset.dayPeriod = dayPeriod;
+    celestialIndicator.title = dayPeriodName;
     celestialIndicator.setAttribute('aria-label', `Time of day: ${dayPeriodName}`);
     conditionSeason.textContent = seasonName;
     conditionTemperature.textContent = temperature;
@@ -2038,7 +2032,6 @@ function createWorkbench(): HTMLElement {
       'aria-label',
       `Environment conditions: ${seasonName}, ${temperature}, ${weatherName}`,
     );
-    tickCount.textContent = `Tick ${current.tick}`;
   });
 
   createEffect(() => {
