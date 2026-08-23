@@ -69,6 +69,14 @@ const environmentLibrary = {
   schemaVersion: 1,
 };
 
+const INDICATOR_VERBOSITIES = ['off', 'minimal', 'standard', 'detailed'] as const;
+const INDICATOR_VERBOSITY_LABELS: Record<IndicatorVerbosity, string> = {
+  detailed: 'Detailed',
+  minimal: 'Minimal',
+  off: 'Off',
+  standard: 'Standard',
+};
+
 export function getFilePaths(): { index: string } {
   return { index: indexPath };
 }
@@ -822,7 +830,13 @@ function createWorkbench(): HTMLElement {
   const fileActions = element('div', 'file-actions');
   const fileInput = element('input');
   const signalControls = element('section', 'header-signals');
-  const signalLabel = element('strong');
+  const signalMenuButton = button('', 'signal-menu-button');
+  const signalMenuValue = element('span', 'signal-menu-value');
+  const signalMenuDisclosure = element('span', 'signal-menu-disclosure');
+  const signalMenu = element('section', 'signal-menu');
+  const signalVerbosityButtons = new Map<IndicatorVerbosity, HTMLButtonElement>();
+  const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
+  const indicatorStateLabels = new Map<IndicatorKind, HTMLElement>();
   const zoomLevelButton = button('', 'zoom-level-button');
   const zoomLevelValue = element('span', 'zoom-level-value');
   const zoomLevelDisclosure = element('span', 'zoom-level-disclosure');
@@ -859,9 +873,6 @@ function createWorkbench(): HTMLElement {
   const worldScale = element('div', 'world-scale');
   const worldScaleLabel = element('span', 'world-scale-label');
   const worldScaleRule = element('span', 'world-scale-rule');
-  const indicatorSelect = element('select', 'indicator-verbosity');
-  const indicatorToggles = element('div', 'indicator-toggles');
-  const indicatorButtons = new Map<IndicatorKind, HTMLButtonElement>();
   const inspector = element('aside', 'inspector');
   const inspectorContent = element('div', 'inspector-content');
   const footer = element('footer', 'status-bar');
@@ -996,29 +1007,52 @@ function createWorkbench(): HTMLElement {
   worldScale.dataset.testid = 'world-scale';
   worldScale.setAttribute('role', 'img');
   worldScale.append(worldScaleLabel, worldScaleRule);
-  signalLabel.textContent = 'Signals';
-  for (const [value, label] of [
-    ['off', 'Off'],
-    ['minimal', 'Minimal'],
-    ['standard', 'Standard'],
-    ['detailed', 'Detailed'],
-  ] as const) {
-    const option = element('option');
-    option.value = value;
-    option.textContent = label;
-    indicatorSelect.append(option);
+  signalMenuButton.dataset.testid = 'signal-menu-button';
+  signalMenuButton.setAttribute('aria-controls', 'signal-menu');
+  signalMenuButton.setAttribute('aria-expanded', 'false');
+  signalMenuButton.setAttribute('aria-haspopup', 'menu');
+  signalMenuDisclosure.append(controlIcon('chevron'));
+  signalMenuButton.append(signalMenuValue, signalMenuDisclosure);
+  signalMenu.id = 'signal-menu';
+  signalMenu.dataset.testid = 'signal-menu';
+  signalMenu.hidden = true;
+  signalMenu.setAttribute('aria-label', 'Signal display');
+  signalMenu.setAttribute('role', 'menu');
+  for (const verbosity of INDICATOR_VERBOSITIES) {
+    const control = button('', 'signal-menu-item');
+    const label = element('span');
+    label.textContent = INDICATOR_VERBOSITY_LABELS[verbosity];
+    control.dataset.testid = `indicator-verbosity-${verbosity}`;
+    control.dataset.verbosity = verbosity;
+    control.setAttribute('aria-checked', 'false');
+    control.setAttribute('role', 'menuitemradio');
+    control.append(label);
+    signalVerbosityButtons.set(verbosity, control);
+    signalMenu.append(control);
   }
-  indicatorSelect.setAttribute('aria-label', 'Indicator verbosity');
-  indicatorSelect.dataset.testid = 'indicator-verbosity';
+  const signalMenuSeparator = element('div', 'menu-separator signal-menu-separator');
+  signalMenuSeparator.setAttribute('role', 'separator');
+  signalMenu.append(signalMenuSeparator);
   for (const kind of INDICATOR_KINDS) {
-    const toggle = button(INDICATOR_LABELS[kind], `indicator-toggle signal-${kind}`);
-    toggle.setAttribute('aria-label', `Show ${INDICATOR_LABELS[kind].toLowerCase()}`);
+    const toggle = button('', 'signal-menu-item signal-toggle-item');
+    const identity = element('span', 'signal-menu-identity');
+    const swatch = element('span', `signal-menu-swatch signal-${kind}`);
+    const label = element('span');
+    const stateLabel = element('small');
+    label.textContent = INDICATOR_LABELS[kind];
+    identity.append(swatch, label);
+    toggle.dataset.signalKind = kind;
     toggle.dataset.testid = `indicator-toggle-${kind}`;
+    toggle.setAttribute('aria-checked', 'true');
+    toggle.setAttribute('aria-label', `Toggle ${INDICATOR_LABELS[kind].toLowerCase()} signals`);
+    toggle.setAttribute('role', 'menuitemcheckbox');
+    toggle.append(identity, stateLabel);
     indicatorButtons.set(kind, toggle);
-    indicatorToggles.append(toggle);
+    indicatorStateLabels.set(kind, stateLabel);
+    signalMenu.append(toggle);
   }
   signalControls.setAttribute('aria-label', 'Field signals');
-  signalControls.append(signalLabel, indicatorSelect, indicatorToggles, zoomLevelButton);
+  signalControls.append(signalMenuButton, zoomLevelButton);
   header.append(fileActions, transport, signalControls);
   stage.append(canvas, characterHoverCard, worldScale);
 
@@ -1117,6 +1151,7 @@ function createWorkbench(): HTMLElement {
   shell.append(
     appMenu,
     timeRateMenu,
+    signalMenu,
     zoomMenu,
     header,
     roster,
@@ -1239,7 +1274,7 @@ function createWorkbench(): HTMLElement {
       run: () => worldView.zoomBy(0.8),
       shortcut: '-',
     },
-    ...(['off', 'minimal', 'standard', 'detailed'] as const).map(verbosity => ({
+    ...INDICATOR_VERBOSITIES.map(verbosity => ({
       id: `signals-${verbosity}`,
       keywords: ['indicator', 'overlay', 'verbosity'],
       label: `Signals: ${verbosity}`,
@@ -1262,6 +1297,7 @@ function createWorkbench(): HTMLElement {
   const timeRateButtons = Array.from(
     timeRateMenu.querySelectorAll<HTMLButtonElement>('button[data-rate]'),
   );
+  const signalMenuButtons = Array.from(signalMenu.querySelectorAll<HTMLButtonElement>('button'));
   let filteredQuickActions: readonly QuickAction[] = actions;
   let quickActionFocus = 0;
 
@@ -1281,6 +1317,7 @@ function createWorkbench(): HTMLElement {
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
       setTimeRateMenuOpen(false);
+      setSignalMenuOpen(false);
     }
     zoomMenu.hidden = !open;
     zoomLevelButton.setAttribute('aria-expanded', String(open));
@@ -1304,6 +1341,7 @@ function createWorkbench(): HTMLElement {
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
       setZoomMenuOpen(false);
+      setSignalMenuOpen(false);
     }
     timeRateMenu.hidden = !open;
     timeRateButton.setAttribute('aria-expanded', String(open));
@@ -1314,9 +1352,30 @@ function createWorkbench(): HTMLElement {
     }
   }
 
+  function setSignalMenuOpen(open: boolean, restoreFocus = false): void {
+    if (open) {
+      const bounds = signalMenuButton.getBoundingClientRect();
+      const menuWidth = 202;
+      signalMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, bounds.right - menuWidth))}px`;
+      signalMenu.style.top = `${bounds.bottom + 6}px`;
+      appMenu.hidden = true;
+      menuButton.setAttribute('aria-expanded', 'false');
+      setTimeRateMenuOpen(false);
+      setZoomMenuOpen(false);
+    }
+    signalMenu.hidden = !open;
+    signalMenuButton.setAttribute('aria-expanded', String(open));
+    if (open) {
+      signalVerbosityButtons.get(indicatorSettings().verbosity)?.focus();
+    } else if (restoreFocus) {
+      signalMenuButton.focus();
+    }
+  }
+
   function setMenuOpen(open: boolean, focusFirst = false): void {
     if (open) {
       setTimeRateMenuOpen(false);
+      setSignalMenuOpen(false);
       setZoomMenuOpen(false);
     }
     appMenu.hidden = !open;
@@ -1360,6 +1419,7 @@ function createWorkbench(): HTMLElement {
     closeQuickActions();
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
+    setSignalMenuOpen(false);
     setZoomMenuOpen(false);
     syncSettingsControls();
     settingsOverlay.inert = false;
@@ -1374,6 +1434,7 @@ function createWorkbench(): HTMLElement {
     closeSettings();
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
+    setSignalMenuOpen(false);
     setZoomMenuOpen(false);
     try {
       void Promise.resolve(action.run()).catch(error => {
@@ -1423,6 +1484,7 @@ function createWorkbench(): HTMLElement {
     closeSettings();
     setMenuOpen(false);
     setTimeRateMenuOpen(false);
+    setSignalMenuOpen(false);
     setZoomMenuOpen(false);
     quickActionsInput.value = '';
     renderQuickActions('');
@@ -1499,11 +1561,21 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const settings = indicatorSettings();
-    indicatorSelect.value = settings.verbosity;
-    signalControls.classList.toggle('is-off', settings.verbosity === 'off');
+    const verbosityLabel = INDICATOR_VERBOSITY_LABELS[settings.verbosity];
+    signalMenuValue.textContent = `Signals: ${verbosityLabel}`;
+    signalMenuButton.title = `Signal display: ${verbosityLabel}`;
+    signalMenuButton.setAttribute('aria-label', `Signal display: ${verbosityLabel}`);
+    signalMenuButton.classList.toggle('is-off', settings.verbosity === 'off');
+    for (const [verbosity, control] of signalVerbosityButtons) {
+      const selected = verbosity === settings.verbosity;
+      control.classList.toggle('selected', selected);
+      control.setAttribute('aria-checked', String(selected));
+    }
     for (const [kind, toggle] of indicatorButtons) {
-      toggle.setAttribute('aria-pressed', String(settings.visible[kind]));
+      toggle.setAttribute('aria-checked', String(settings.visible[kind]));
       toggle.classList.toggle('is-hidden', !settings.visible[kind]);
+      const stateLabel = indicatorStateLabels.get(kind);
+      if (stateLabel !== undefined) stateLabel.textContent = settings.visible[kind] ? 'On' : 'Off';
     }
   });
 
@@ -1691,15 +1763,46 @@ function createWorkbench(): HTMLElement {
     event.stopPropagation();
     setZoomMenuOpen(false, true);
   });
-  indicatorSelect.addEventListener('change', () => {
+  signalMenuButton.addEventListener('click', () => setSignalMenuOpen(signalMenu.hidden));
+  signalMenuButton.addEventListener('keydown', event => {
+    if (event.key !== 'ArrowDown') return;
+    event.preventDefault();
+    setSignalMenuOpen(true);
+  });
+  signalMenu.addEventListener('click', event => {
+    if (!(event.target instanceof Element)) return;
+    const control = event.target.closest<HTMLButtonElement>('button');
+    if (control === null || !signalMenu.contains(control)) return;
+    const verbosity = INDICATOR_VERBOSITIES.find(
+      candidate => candidate === control.dataset.verbosity,
+    );
+    if (verbosity !== undefined) {
+      setIndicatorSettings(current => ({ ...current, verbosity }));
+      setSignalMenuOpen(false, true);
+      return;
+    }
+    const kind = INDICATOR_KINDS.find(candidate => candidate === control.dataset.signalKind);
+    if (kind === undefined) return;
     setIndicatorSettings(current => ({
       ...current,
-      verbosity: indicatorSelect.value as IndicatorVerbosity,
+      visible: { ...current.visible, [kind]: !current.visible[kind] },
     }));
   });
-  for (const [kind, toggle] of indicatorButtons) {
-    toggle.addEventListener('click', () => executeActionById(`toggle-signal-${kind}`));
-  }
+  signalMenu.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      setSignalMenuOpen(false, true);
+      return;
+    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    const currentIndex = signalMenuButtons.indexOf(document.activeElement as HTMLButtonElement);
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    const nextIndex =
+      (currentIndex + direction + signalMenuButtons.length) % signalMenuButtons.length;
+    signalMenuButtons[nextIndex]?.focus();
+  });
   resetScenario.addEventListener('click', () => executeActionById('reset-scenario'));
   menuButton.addEventListener('click', () => {
     syncMenuActions();
@@ -1828,10 +1931,18 @@ function createWorkbench(): HTMLElement {
     ) {
       setZoomMenuOpen(false);
     }
+    if (
+      !signalMenu.hidden &&
+      !signalMenu.contains(event.target) &&
+      !signalMenuButton.contains(event.target)
+    ) {
+      setSignalMenuOpen(false);
+    }
   }
 
   function onWindowResize(): void {
     if (!timeRateMenu.hidden) setTimeRateMenuOpen(true);
+    if (!signalMenu.hidden) setSignalMenuOpen(true);
     if (!zoomMenu.hidden) setZoomMenuOpen(true);
   }
 
@@ -1864,6 +1975,11 @@ function createWorkbench(): HTMLElement {
       if (!timeRateMenu.hidden) {
         event.preventDefault();
         setTimeRateMenuOpen(false, true);
+        return;
+      }
+      if (!signalMenu.hidden) {
+        event.preventDefault();
+        setSignalMenuOpen(false, true);
         return;
       }
       if (!zoomMenu.hidden) {
