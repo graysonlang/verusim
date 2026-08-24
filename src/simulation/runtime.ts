@@ -1223,6 +1223,20 @@ function rupturePlasticitySignals(
     }));
 }
 
+function dueDuringTick<Event extends { atMinute: number; id: string }>(
+  events: readonly Event[],
+  currentMinute: number,
+  nextMinute: number,
+  resolvedIds: readonly string[],
+): Event[] {
+  return events.filter(
+    event =>
+      event.atMinute >= currentMinute &&
+      event.atMinute <= nextMinute &&
+      !resolvedIds.includes(event.id),
+  );
+}
+
 function advanceOneTick(state: SimulationState): SimulationState {
   const prepared = prepareAgenda(prepareNarrativeAgency(state));
   const nextTick = prepared.tick + 1;
@@ -1239,78 +1253,78 @@ function advanceOneTick(state: SimulationState): SimulationState {
     tick: nextTick,
     trace,
   };
-  const dueSomaticEvents = prepared.scenario.somaticEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedSomaticEventIds.includes(event.id),
+  const dueSomaticEvents = dueDuringTick(
+    prepared.scenario.somaticEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedSomaticEventIds,
   );
   for (const event of dueSomaticEvents) next = resolveSomaticEvent(next, event);
   if (dueSomaticEvents.length > 0) next = prepareAgenda(next);
   next = advanceIntentions(next);
-  const dueOpportunities = prepared.scenario.behaviorOpportunities.filter(
-    opportunity =>
-      opportunity.atMinute > prepared.minute &&
-      opportunity.atMinute <= nextMinute &&
-      !prepared.resolvedOpportunityIds.includes(opportunity.id),
+  const dueOpportunities = dueDuringTick(
+    prepared.scenario.behaviorOpportunities,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedOpportunityIds,
   );
   for (const opportunity of dueOpportunities) next = resolveOpportunity(next, opportunity);
-  const dueDisclosureOpportunities = prepared.scenario.disclosureOpportunities.filter(
-    opportunity =>
-      opportunity.atMinute > prepared.minute &&
-      opportunity.atMinute <= nextMinute &&
-      !prepared.resolvedDisclosureOpportunityIds.includes(opportunity.id),
+  const dueDisclosureOpportunities = dueDuringTick(
+    prepared.scenario.disclosureOpportunities,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedDisclosureOpportunityIds,
   );
   for (const opportunity of dueDisclosureOpportunities) {
     next = resolveDisclosureOpportunity(next, opportunity);
   }
-  const dueObservationEvents = prepared.scenario.observationEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedObservationEventIds.includes(event.id),
+  const dueObservationEvents = dueDuringTick(
+    prepared.scenario.observationEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedObservationEventIds,
   );
   for (const event of dueObservationEvents) next = resolveObservationEvent(next, event);
-  const dueIncidentEvents = prepared.scenario.incidentEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedIncidentEventIds.includes(event.id),
+  const dueIncidentEvents = dueDuringTick(
+    prepared.scenario.incidentEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedIncidentEventIds,
   );
   for (const event of dueIncidentEvents) next = resolveIncidentEvent(next, event);
-  const dueDisplayEvents = prepared.scenario.displayEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedDisplayEventIds.includes(event.id),
+  const dueDisplayEvents = dueDuringTick(
+    prepared.scenario.displayEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedDisplayEventIds,
   );
   for (const event of dueDisplayEvents) next = resolveDisplayEvent(next, event);
-  const dueRelationshipEvents = prepared.scenario.relationshipEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedRelationshipEventIds.includes(event.id),
+  const dueRelationshipEvents = dueDuringTick(
+    prepared.scenario.relationshipEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedRelationshipEventIds,
   );
   for (const event of dueRelationshipEvents) next = resolveRelationshipEvent(next, event);
-  const dueRelationshipRequests = prepared.scenario.relationshipRequests.filter(
-    request =>
-      request.atMinute > prepared.minute &&
-      request.atMinute <= nextMinute &&
-      !prepared.resolvedRelationshipRequestIds.includes(request.id),
+  const dueRelationshipRequests = dueDuringTick(
+    prepared.scenario.relationshipRequests,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedRelationshipRequestIds,
   );
   for (const request of dueRelationshipRequests) next = resolveRelationshipRequest(next, request);
-  const dueAppraisalEvents = prepared.scenario.appraisalEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedAppraisalEventIds.includes(event.id),
+  const dueAppraisalEvents = dueDuringTick(
+    prepared.scenario.appraisalEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedAppraisalEventIds,
   );
   for (const event of dueAppraisalEvents) next = resolveAppraisalEvent(next, event);
-  const dueNarrativeEvents = prepared.scenario.narrativeEvents.filter(
-    event =>
-      event.atMinute > prepared.minute &&
-      event.atMinute <= nextMinute &&
-      !prepared.resolvedNarrativeEventIds.includes(event.id),
+  const dueNarrativeEvents = dueDuringTick(
+    prepared.scenario.narrativeEvents,
+    prepared.minute,
+    nextMinute,
+    prepared.resolvedNarrativeEventIds,
   );
   for (const event of dueNarrativeEvents) next = resolveNarrativeEvent(next, event);
   next = consolidateRelationshipMemories(
@@ -1353,9 +1367,16 @@ function interventionEntry(
   value: number,
   source: string,
 ): TraceEntry {
+  const idPrefix = `${state.tick}:${agent.id}:intervention:`;
+  let ordinal = 0;
+  for (const entry of state.trace.entries) {
+    if (!entry.id.startsWith(idPrefix)) continue;
+    const candidate = Number(entry.id.slice(idPrefix.length));
+    if (Number.isInteger(candidate) && candidate >= ordinal) ordinal = candidate + 1;
+  }
   return {
     agentId: agent.id,
-    id: `${state.tick}:${agent.id}:intervention:${state.trace.entries.length}`,
+    id: `${idPrefix}${ordinal}`,
     kind: 'intervention',
     minute: state.minute,
     selection: null,

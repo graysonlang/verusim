@@ -562,6 +562,29 @@ Cadence-save schema version 1 embeds snapshot schema version 16 with a validated
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 250 deterministic tests, including exact snapshot and cadence-save replay.
 
+## Phase 8P1 — event boundaries and trace identity
+
+Status: complete.
+
+Define scenario-start behavior consistently for every authored event family.
+Reject runtime events earlier than the scenario start at their exact authored path, allow events exactly at the start to become due once during the first transition, and retain the existing resolved-event ledgers and event-specific evaluators.
+Replace intervention trace identifiers derived from the bounded trace length with a deterministic identity that cannot repeat when the trace window is saturated or when multiple interventions occur during one transition.
+
+Exit probes:
+
+- authored events earlier than scenario start fail at their indexed `atMinute` path, while exact-start events resolve once through their ordinary evaluator
+- saturated same-tick interventions retain distinct stable trace and memory identifiers across snapshot save and resume
+
+The start-boundary validation matrix covers appraisal, aspiration, behavior, disclosure, display, incident, narrative, observation, relationship event, relationship request, and somatic collections at their indexed authored paths.
+All ten tick dispatchers use one inclusive unresolved-event selector, and the runtime fixture proves an exact-start behavior opportunity resolves during the first transition and does not resolve again during the second.
+
+The intervention regression begins with a valid 240-entry saturated trace, applies two same-agent interventions without advancing the tick, and proves distinct trace and memory identifiers.
+Snapshot resume derives the next ordinal from the retained same-tick identities, produces a third distinct identifier, and replays the resulting state byte-equivalently.
+No scenario, snapshot, or trace schema changes are introduced.
+
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 257 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

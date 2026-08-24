@@ -65,6 +65,8 @@ Simulation time is an integer number of minutes from the beginning of day one.
 A scenario chooses the number of minutes advanced by one tick.
 Calendar formatting, display units, and playback speed are observer concerns.
 The built-in scenarios use one-minute ticks so movement, deadlines, recovery, and short interactions do not collapse into five-minute jumps.
+Discrete authored event times may equal but never precede the scenario start minute.
+The first transition includes that lower boundary, every later transition remains protected by the event family's resolved-identifier ledger, and all tick-dispatched event families share the same inclusive interval rule.
 
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
@@ -455,6 +457,7 @@ Every chosen action must eventually produce both:
 
 The causal trace is a strict, independently versioned contract rather than a debug string stream.
 Schema version 1 stores typed entries whose terms preserve their scalar values and source paths.
+Direct interventions use a deterministic per-agent, per-tick ordinal derived from retained matching identities rather than the bounded window length, so a saturated trace cannot assign the same identity to consecutive interventions.
 Candidate appraisal entries keep `turn_felt`, `repercussion_cost`, `contract_violation_cost`, and `narrative_expression` separate; selection entries name the winner and the deterministic rule, including authored-order tie breaking.
 Somatic preemption emits a first-class `gate` entry before ordinary appraisal, allowing the harness to assert both that the gate fired and that no social term was evaluated.
 

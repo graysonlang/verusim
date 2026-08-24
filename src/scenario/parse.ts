@@ -1424,7 +1424,12 @@ export function parseScenario(value: unknown): ScenarioFile {
       'expected a known weather identifier',
     );
   }
-  integerValue(file.startMinute, 'scenario.startMinute', 0, Number.MAX_SAFE_INTEGER);
+  const startMinute = integerValue(
+    file.startMinute,
+    'scenario.startMinute',
+    0,
+    Number.MAX_SAFE_INTEGER,
+  );
   integerValue(file.tickMinutes, 'scenario.tickMinutes', 1, 1440);
   if (
     file.initialTimeRate !== undefined &&
@@ -1806,7 +1811,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(opportunity.id, `${path}.id`);
     identifierValue(opportunity.ownerId, `${path}.ownerId`);
     identifierValue(opportunity.itemId, `${path}.itemId`);
-    integerValue(opportunity.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    integerValue(opportunity.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
     numberValue(opportunity.disclosureBenefit, `${path}.disclosureBenefit`, 0, 4);
     numberValue(opportunity.networkConductivity, `${path}.networkConductivity`, 0, 1);
     const audiences = arrayValue(opportunity.audienceIds, `${path}.audienceIds`);
@@ -1830,7 +1835,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.observerId, `${path}.observerId`);
       identifierValue(event.subjectId, `${path}.subjectId`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       const turn = numberValue(event.stanceTurn, `${path}.stanceTurn`, -1, 1);
       if (turn === 0) {
@@ -1850,7 +1855,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(request.id, `${path}.id`);
     identifierValue(request.requesterId, `${path}.requesterId`);
     identifierValue(request.responderId, `${path}.responderId`);
-    integerValue(request.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    integerValue(request.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
     stringValue(request.label, `${path}.label`);
     numberValue(request.magnitude, `${path}.magnitude`, 0, 1);
     return request;
@@ -1863,7 +1868,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.agentId, `${path}.agentId`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       numberValue(event.threat, `${path}.threat`, 0, 1);
       numberValue(event.copingPotential, `${path}.copingPotential`, 0, 1);
@@ -1909,7 +1914,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(opportunity.actorId, `${path}.actorId`);
     identifierValue(opportunity.claimId, `${path}.claimId`);
     stringValue(opportunity.label, `${path}.label`);
-    integerValue(opportunity.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    integerValue(opportunity.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
     numberValue(opportunity.commitment, `${path}.commitment`, 0, 1);
     if (opportunity.deadlineMinute !== null) {
       const deadline = integerValue(
@@ -1939,7 +1944,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const path = `scenario.narrativeEvents[${index}]`;
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       if (event.eventType === 'claim-evidence') {
         identifierValue(event.actorId, `${path}.actorId`);
@@ -1983,7 +1988,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.subjectId, `${path}.subjectId`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       if (event.eventType !== 'mind-model' && event.eventType !== 'norm') {
         throw new ScenarioValidationError(`${path}.eventType`, 'expected mind-model or norm');
       }
@@ -2030,7 +2035,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.affectedAgentId, `${path}.affectedAgentId`);
       if (event.actorId !== null) identifierValue(event.actorId, `${path}.actorId`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       if (typeof event.rootImpact !== 'string' || !INCIDENT_ROOT_IMPACT_SET.has(event.rootImpact)) {
         throw new ScenarioValidationError(`${path}.rootImpact`, 'expected a known root impact');
@@ -2144,7 +2149,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.displayId, `${path}.displayId`);
       identifierValue(event.wearerId, `${path}.wearerId`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       stringValue(event.statusMarker, `${path}.statusMarker`);
       if (typeof event.domainContested !== 'boolean') {
@@ -2187,7 +2192,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.agentId, `${path}.agentId`);
-      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       identifierValue(event.sourceId, `${path}.sourceId`);
       stringValue(event.summary, `${path}.summary`);
       numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
@@ -2225,7 +2230,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(opportunity.id, `${path}.id`);
     identifierValue(opportunity.actorId, `${path}.actorId`);
     if (opportunity.targetId !== null) identifierValue(opportunity.targetId, `${path}.targetId`);
-    integerValue(opportunity.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+    integerValue(opportunity.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
 
     const contextPath = `${path}.context`;
     const context = objectValue(opportunity.context, contextPath);

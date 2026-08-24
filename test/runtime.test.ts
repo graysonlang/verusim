@@ -196,6 +196,108 @@ describe('simulation runtime', () => {
     assert.equal(changedResource.trace.entries.at(-1)?.kind, 'intervention');
   });
 
+  it('resolves an event at scenario start exactly once', () => {
+    const authored = parseScenario(scenario);
+    authored.behaviorOpportunities = [
+      {
+        actorId: 'mara',
+        atMinute: authored.startMinute,
+        candidates: [
+          {
+            claimExpressions: [],
+            contractViolation: 0,
+            id: 'acknowledge-opening',
+            impacts: [{ subjectId: 'mara', turns: { safety: 0.1 } }],
+            label: 'Acknowledge the opening moment',
+            operation: 'acknowledge-opening',
+            repercussionSeverity: 0,
+            selfDirected: true,
+            somaticDemand: 0,
+          },
+        ],
+        context: {
+          enforcementPresence: 0,
+          networkConductivity: 0,
+          perceivedThreat: 0,
+          witnessIds: [],
+        },
+        id: 'start-boundary-opportunity',
+        targetId: null,
+      },
+    ];
+    const initial = createSimulation({
+      characterLibrary: characters,
+      environmentLibrary: environments,
+      scenario: authored,
+    });
+    const first = advanceSimulation(initial, 1);
+    const second = advanceSimulation(first, 1);
+
+    assert.deepEqual(first.resolvedOpportunityIds, ['start-boundary-opportunity']);
+    assert.deepEqual(second.resolvedOpportunityIds, ['start-boundary-opportunity']);
+    assert.equal(
+      second.decisions.filter(decision => decision.opportunityId === 'start-boundary-opportunity')
+        .length,
+      1,
+    );
+  });
+
+  it('keeps same-tick intervention identities distinct after trace saturation and resume', () => {
+    const initial = starterSimulation();
+    const scenarioEntry = initial.trace.entries[0];
+    assert.ok(scenarioEntry);
+    const saturated = {
+      ...initial,
+      trace: {
+        ...initial.trace,
+        entries: Array.from({ length: 240 }, (_, index) => ({
+          ...scenarioEntry,
+          id: `saturated-trace:${index}`,
+        })),
+      },
+    };
+    assert.equal(saturated.trace.entries.length, 240);
+    const first = setAgentValueCharge(saturated, 'sera', 'autonomy', 0.6);
+    const second = setAgentValueCharge(first, 'sera', 'autonomy', 0.7);
+    const interventionIds = second.trace.entries
+      .filter(entry => entry.kind === 'intervention' && entry.tick === second.tick)
+      .map(entry => entry.id);
+    const sera = second.agents.find(agent => agent.id === 'sera');
+    assert.ok(sera);
+    const memoryIds = sera.memories
+      .filter(memory => memory.type === 'intervention')
+      .map(memory => memory.id);
+
+    assert.equal(interventionIds.length, 2);
+    assert.equal(new Set(interventionIds).size, interventionIds.length);
+    assert.deepEqual(memoryIds.slice(-2), interventionIds);
+
+    const snapshot = serializeSnapshot(second);
+    const resumed = createSimulationFromSnapshot({
+      characterLibrary: characters,
+      environmentLibrary: environments,
+      snapshot,
+    });
+    const continued = setAgentValueCharge(resumed, 'sera', 'autonomy', 0.8);
+    const replayed = setAgentValueCharge(
+      createSimulationFromSnapshot({
+        characterLibrary: characters,
+        environmentLibrary: environments,
+        snapshot,
+      }),
+      'sera',
+      'autonomy',
+      0.8,
+    );
+    const continuedIds = continued.trace.entries
+      .filter(entry => entry.kind === 'intervention' && entry.tick === continued.tick)
+      .map(entry => entry.id);
+
+    assert.equal(continuedIds.length, 3);
+    assert.equal(new Set(continuedIds).size, continuedIds.length);
+    assert.deepEqual(continued, replayed);
+  });
+
   it('keeps authored scenarios separate from resumable snapshots', () => {
     const advanced = advanceSimulation(starterSimulation(), 20);
     const authored = serializeScenario(advanced);

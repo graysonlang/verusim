@@ -549,6 +549,87 @@ describe('scenario validation', () => {
     );
   });
 
+  it('rejects every pre-start event at its indexed authored path', () => {
+    const eventCases: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
+      ['appraisalEvents', { agentId: 'mara', atMinute: 469, id: 'pre-start-appraisal' }],
+      [
+        'aspirationOpportunities',
+        {
+          actorId: 'mara',
+          atMinute: 469,
+          claimId: 'claim-1',
+          id: 'pre-start-aspiration',
+          label: 'Already available',
+        },
+      ],
+      [
+        'behaviorOpportunities',
+        { actorId: 'mara', atMinute: 469, id: 'pre-start-behavior', targetId: null },
+      ],
+      [
+        'disclosureOpportunities',
+        {
+          atMinute: 469,
+          id: 'pre-start-disclosure',
+          itemId: 'private-matter',
+          ownerId: 'mara',
+        },
+      ],
+      [
+        'displayEvents',
+        {
+          atMinute: 469,
+          displayId: 'old-display',
+          id: 'pre-start-display',
+          wearerId: 'mara',
+        },
+      ],
+      [
+        'incidentEvents',
+        {
+          actorId: null,
+          affectedAgentId: 'mara',
+          atMinute: 469,
+          id: 'pre-start-incident',
+        },
+      ],
+      ['narrativeEvents', { atMinute: 469, id: 'pre-start-narrative' }],
+      ['observationEvents', { atMinute: 469, id: 'pre-start-observation', subjectId: 'mara' }],
+      [
+        'relationshipEvents',
+        {
+          atMinute: 469,
+          id: 'pre-start-relationship',
+          observerId: 'mara',
+          subjectId: 'tomas',
+        },
+      ],
+      [
+        'relationshipRequests',
+        {
+          atMinute: 469,
+          id: 'pre-start-request',
+          requesterId: 'mara',
+          responderId: 'tomas',
+        },
+      ],
+      ['somaticEvents', { agentId: 'mara', atMinute: 469, id: 'pre-start-somatic' }],
+    ];
+
+    for (const [field, event] of eventCases) {
+      const malformed = structuredClone(parseScenario(scenario)) as unknown as Record<
+        string,
+        unknown
+      >;
+      malformed[field] = [event];
+      assert.throws(
+        () => parseScenario(malformed),
+        new RegExp(`scenario\\.${field}\\[0\\]\\.atMinute`),
+        field,
+      );
+    }
+  });
+
   it('reports malformed capabilities at their authored path', () => {
     const malformed = structuredClone(characters);
     const first = malformed.characters[0];

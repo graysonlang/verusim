@@ -18,30 +18,22 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8P1: event-boundary and trace-identity correctness.
-Close the two audit defects that can silently lose authored events or collide causal identities before beginning the authoring document graph.
+The active slice is Phase 8P2: current-schema content and project documentation.
+Make current-schema first-party content and accurate project documentation the baseline consumed by the authoring document graph.
 
 ### Current-focus non-goals
 
-- no change to event appraisal, consequence, or ordering semantics beyond the scenario-start boundary
-- no causal-trace retention redesign until Phase 9A
+- no deletion of legacy migration support before its compact version matrix is green
+- no change to prepared behavior, semantic addresses, or discriminating decisions during the content rewrite
 - no behavior-model or evaluator-fidelity expansion
-- no schema rewrite, authoring graph, Build workspace shell, or workbench refactor in this slice
+- no authoring graph, Build workspace shell, or workbench refactor in this slice
 
 ## Phase 8P — audit repair and authoring readiness
 
 Close the correctness and primary-path debt identified by the 2026-08-24 project audit before building authoring transactions over the existing formats.
-Keep this preflight narrow: repair observable defects first, then establish current-schema first-party content and documentation as the baseline consumed by Phase 8A.
+The event-boundary and trace-identity repair is recorded in COMPLETED.md; the remaining preflight establishes current-schema first-party content and documentation as the baseline consumed by Phase 8A.
 
 ### Phase 8P implementation sequence
-
-#### Phase 8P1 — event boundaries and trace identity
-
-Define scenario-start behavior consistently for every authored event family.
-Reject runtime events earlier than the scenario start at their exact authored path, allow events exactly at the start to become due once during the first transition, and retain the existing resolved-event ledgers and event-specific evaluators.
-Replace intervention trace identifiers derived from the bounded trace length with a deterministic identity that cannot repeat when the trace window is saturated or when multiple interventions occur during one transition.
-
-Gate: a table-driven start-boundary fixture proves each event family either rejects a pre-start timestamp or resolves an exact-start event once, while a saturated trace accepts multiple same-tick interventions with distinct trace and memory identifiers and exact snapshot replay.
 
 #### Phase 8P2 — current-schema content and project documentation
 
@@ -53,8 +45,6 @@ Gate: every first-party document parses without migration, its prepared scenario
 
 Exit probes:
 
-- authored events earlier than scenario start fail at their indexed `atMinute` path, while exact-start events resolve once through their ordinary evaluator
-- saturated same-tick interventions retain distinct stable trace and memory identifiers across snapshot save and resume
 - every shipped content file declares the current schema version and no built-in scenario depends on migration to prepare
 - the migration matrix retains explicit coverage for every supported legacy version and reports malformed legacy elements at indexed paths
 - the README names the active phase and current generation, integration, cadence, observation, and persistence surfaces
