@@ -119,30 +119,30 @@ The port must be explicitly reserved for that agent rather than automatically se
 
 ### Playwright tool availability
 
-Do not infer whether Playwright MCP is available from memory, prior messages, the presence or absence of an in-app browser bridge, or other browser tools.
+Browser automation is provisioned by the repository: `.mcp.json` registers the project's pinned Playwright MCP server through `playwright-mcp.config.json`, which runs the browser headless and isolated so automation never raises a window over the owner's work and every run starts from blank browser state.
+The registration needs one-time approval per collaborator, and MCP servers connect at session start, so a session started before approval or before a config change must be restarted to see the tools.
 
-When browser validation is required, attempt to invoke the Playwright MCP `browser_navigate` tool directly.
+When browser validation is required, attempt to invoke the Playwright MCP `browser_navigate` tool directly rather than inferring availability from memory, prior messages, or other browser mechanisms.
+If that invocation fails because the tool is absent, report that browser validation was unavailable and that a restarted, approved session is the likely fix; do not fall back to the owner's own browser.
 
-If that invocation succeeds, continue browser validation with Playwright. Do not claim that Playwright MCP is unavailable merely because another browser mechanism, such as the in-app browser or Node REPL bridge, is unavailable.
-
-Only report Playwright MCP as unavailable if an attempted Playwright MCP tool invocation itself fails because the tool is absent or inaccessible.
-
-The in-app browser and Playwright MCP are independent browser-control paths. Failure of the in-app browser does not imply failure of Playwright MCP.
-
-The repository's `.mcp.json` registers Playwright MCP through `playwright-mcp.config.json`, which runs the browser headless and isolated by default so automation never raises a window over the owner's work.
-To watch a run while debugging automation, temporarily set `browser.launchOptions.headless` to `false` in that file and restart the agent session.
-The server reads that file at startup, and changing it neither alters `.mcp.json` nor requires re-approving the server.
+To watch a run while debugging automation, temporarily set `browser.launchOptions.headless` to `false` in `playwright-mcp.config.json` and restart the session.
+That file is read at startup, and changing it neither alters `.mcp.json` nor requires re-approving the server.
 
 ### Browser validation
 
-For browser-visible changes, try the `browser-use` skill against the owner's existing in-app browser session first. If that path is unavailable after completing the skill's required tool discovery, use the configured Playwright MCP server as the preferred fallback.
+For browser-visible changes, validate with the Playwright MCP server against an isolated preview: start it on the agent's explicitly reserved port as described above, navigate to the exact emitted URL, and stop the preview afterward.
+Never start `npm run dev` or `npm run serve` for verification, and do not drive the owner's own browser or running application; the headless isolated browser exists so validation never interferes with their work.
 
-Preserve the server rules above: never start `npm run dev` or `npm run serve` merely for browser verification.
-Reuse the owner's current app when the browser can reach it; otherwise start an isolated preview on the agent's explicitly reserved port, navigate to the exact emitted URL, and stop the preview afterward.
+Start ordinary control inspection from an accessibility snapshot and prefer semantic roles, names, labels, or test IDs.
+Snapshot element references are valid only for the snapshot that produced them, so selectors and test IDs are the durable way to address controls across steps.
+Use `browser_evaluate` to read precise DOM state such as `hidden`, ARIA attributes, computed positions, and the active element, and use screenshots for visual layout and Canvas results rather than as the primary way to locate ordinary DOM controls.
+Canvas verification should combine application or DOM state, browser runtime evidence, and rendered pixels where each applies.
+Pass screenshot and snapshot file paths under `.playwright-mcp/`, which is gitignored; a bare relative filename lands in the repository root.
+Playwright refuses to click a target covered by another element, such as a control beneath an open menu or a point the Canvas intercepts, so choose an uncovered target rather than forcing the click.
 
-Start ordinary control inspection from a structured DOM or accessibility snapshot and prefer semantic roles, names, labels, or test IDs. Use screenshots for visual layout and Canvas results, not as the primary way to locate ordinary DOM controls. Canvas verification should combine application or DOM state, browser runtime evidence, and rendered pixels where each applies.
-
-After load and interaction, inspect unexpected console errors and relevant failed network requests, including HTTP, WASM, worker, and asset failures. Wait for observable state rather than fixed sleeps. Report the exercised flow, assertions, console and network results, and visual checks; if browser validation was unavailable, say so explicitly.
+After load and interaction, inspect unexpected console errors and relevant failed network requests, including HTTP, WASM, worker, and asset failures.
+Wait for observable state rather than fixed sleeps; a delay belongs in a check only when the behavior under test is itself time-dependent, and then it should be the smallest interval that discriminates.
+Report the exercised flow, assertions, console and network results, and visual checks; if browser validation was unavailable, say so explicitly rather than describing the change as verified.
 
 ### Where not to look
 
