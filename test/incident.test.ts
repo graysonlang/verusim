@@ -254,6 +254,8 @@ describe('objective incidents and social interpretation', () => {
           label: 'Comply without agreement',
           operation: 'comply',
           repercussionSeverity: 0,
+          selfDirected: false,
+          somaticDemand: 0,
         },
         {
           claimExpressions: [],
@@ -263,6 +265,8 @@ describe('objective incidents and social interpretation', () => {
           label: 'Violate the convention',
           operation: 'violate',
           repercussionSeverity: 1,
+          selfDirected: false,
+          somaticDemand: 0,
         },
       ],
       context: {

@@ -18,6 +18,7 @@ import {
   type ValueId,
   type ValueMap,
   type ValueState,
+  type SomaticSourceSeed,
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
@@ -27,6 +28,14 @@ import { resolveDisplayEvent } from './display.js';
 import { advanceCoping, resolveAppraisalEvent } from './coping.js';
 import { initializeHistoryDerivedState } from './history.js';
 import { resolveIncidentEvent } from './incident.js';
+import {
+  advanceSomaticState,
+  applySomaticResourceTax,
+  createSomaticState,
+  isDerivedSomaticState,
+  resolveSomaticEvent,
+  somaticActivityLabel,
+} from './somatic.js';
 import {
   createNarrativeState,
   prepareNarrativeAgency,
@@ -161,6 +170,7 @@ function initializeAgent(
   placement: CharacterPlacement,
   environment: EnvironmentDefinition,
   minute: number,
+  ambientSomaticSources: readonly SomaticSourceSeed[],
 ): SimulationAgent {
   const block = activeScheduleBlock(placement.schedule, minute);
   const destination = locationCenter(findLocation(environment, block.locationId));
@@ -199,12 +209,17 @@ function initializeAgent(
     profile,
     resources: { ...DEFAULT_RESOURCES, ...placement.initialResources },
     schedule: placement.schedule.map(scheduleBlock => ({ ...scheduleBlock })),
+    somatic: createSomaticState([
+      ...ambientSomaticSources.map(source => ({ ...source })),
+      ...placement.initialSomaticSources.map(source => ({ ...source })),
+    ]),
     values: initialValues(profile, placement),
     walkingMetersPerMinute: applyBuildToWalkingPace(
       placement.walkingMetersPerMinute ?? DEFAULT_WALKING_METERS_PER_MINUTE,
       profile.physical.build,
     ),
   };
+  agent.currentActivity = somaticActivityLabel(agent.somatic) ?? agent.currentActivity;
   if (placement.agency === 'responder') return agent;
   const narrative = createNarrativeState(agent, minute);
   return {
@@ -239,7 +254,13 @@ function goalSeedSignature(goal: AgendaGoalSeed): string {
 export function createSimulationFromPrepared(prepared: PreparedScenario): SimulationState {
   const environment = prepared.environment;
   const agents = prepared.characters.map(({ placement, profile }) =>
-    initializeAgent(profile, placement, environment, prepared.scenario.startMinute),
+    initializeAgent(
+      profile,
+      placement,
+      environment,
+      prepared.scenario.startMinute,
+      prepared.scenario.ambientSomaticSources,
+    ),
   );
 
   let initial: SimulationState = {
@@ -289,8 +310,10 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     resolvedNarrativeEventIds: [],
     resolvedRelationshipEventIds: [],
     resolvedRelationshipRequestIds: [],
+    resolvedSomaticEventIds: [],
     scenario: prepared.scenario,
     socialContracts: prepared.socialContracts,
+    somaticRecords: [],
     tick: 0,
     trace: createTrace([
       {
@@ -410,6 +433,12 @@ export function createSimulationFromPreparedSnapshot(input: {
         'expected effective ceiling at or above effective floor',
       );
     }
+    if (!isDerivedSomaticState(saved.somatic)) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].somatic`,
+        'must match its exact sorted somatic source ledger',
+      );
+    }
     return {
       cascade: saved.cascade,
       cascadeDwellUntilMinute: saved.cascadeDwellUntilMinute,
@@ -442,6 +471,7 @@ export function createSimulationFromPreparedSnapshot(input: {
       profile: agent.profile,
       resources: { ...saved.resources },
       schedule: saved.schedule.map(block => ({ ...block })),
+      somatic: structuredClone(saved.somatic),
       values: Object.fromEntries(
         VALUE_IDS.map(valueId => [valueId, { ...saved.values[valueId] }]),
       ) as ValueMap<ValueState>,
@@ -574,6 +604,32 @@ export function createSimulationFromPreparedSnapshot(input: {
       throw new ScenarioValidationError(
         `snapshot.resolvedDisplayEventIds[${index}]`,
         `unknown display event "${eventId}"`,
+      );
+    }
+  });
+  const somaticEventIds = new Set(snapshot.scenario.somaticEvents.map(event => event.id));
+  snapshot.somaticRecords.forEach((record, index) => {
+    if (
+      !somaticEventIds.has(record.eventId) ||
+      !agentIds.has(record.subjectId) ||
+      record.observations.some(
+        observation =>
+          observation.eventId !== record.eventId ||
+          observation.subjectId !== record.subjectId ||
+          !agentIds.has(observation.observerId),
+      )
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.somaticRecords[${index}]`,
+        'somatic record must reference snapshot agents and an authored event',
+      );
+    }
+  });
+  snapshot.resolvedSomaticEventIds.forEach((eventId, index) => {
+    if (!somaticEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedSomaticEventIds[${index}]`,
+        `unknown somatic event "${eventId}"`,
       );
     }
   });
@@ -825,6 +881,8 @@ export function createSimulationFromPreparedSnapshot(input: {
     resolvedNarrativeEventIds: snapshot.resolvedNarrativeEventIds,
     resolvedRelationshipEventIds: snapshot.resolvedRelationshipEventIds,
     resolvedRelationshipRequestIds: snapshot.resolvedRelationshipRequestIds,
+    resolvedSomaticEventIds: snapshot.resolvedSomaticEventIds,
+    somaticRecords: snapshot.somaticRecords,
     tick: snapshot.tick,
     trace: snapshot.trace,
     worldFacts: snapshot.worldFacts,
@@ -924,19 +982,26 @@ function advanceAgent(
   if (locationId === undefined)
     throw new Error('An agent always has a task or schedule destination');
   const location = findLocation(state.environment, locationId);
-  const destination = locationCenter(location);
-  const remaining = navigationDistance(state.environment, agent.position, destination);
+  const preempted = agent.somatic.level >= 3;
+  const destination = preempted ? agent.position : locationCenter(location);
+  const remaining = preempted
+    ? 0
+    : navigationDistance(state.environment, agent.position, destination);
   const travel = agent.walkingMetersPerMinute * state.scenario.tickMinutes;
-  const position = advanceLayerPosition(state.environment, agent.position, destination, travel);
-  const arrived = sameLayerPosition(position, destination);
-  const currentActivity = arrived
-    ? task === null
-      ? (block?.activity ?? agent.currentActivity)
-      : intention?.phase === 'waiting'
-        ? `Waiting to ${task.label.toLowerCase()}`
-        : task.label
-    : `Walking to ${location.name}${task === null ? '' : ` to ${task.label.toLowerCase()}`}`;
-  const currentLocationId = arrived ? locationId : null;
+  const position = preempted
+    ? agent.position
+    : advanceLayerPosition(state.environment, agent.position, destination, travel);
+  const arrived = !preempted && sameLayerPosition(position, destination);
+  const currentActivity = preempted
+    ? agent.currentActivity
+    : arrived
+      ? task === null
+        ? (block?.activity ?? agent.currentActivity)
+        : intention?.phase === 'waiting'
+          ? `Waiting to ${task.label.toLowerCase()}`
+          : task.label
+      : `Walking to ${location.name}${task === null ? '' : ` to ${task.label.toLowerCase()}`}`;
+  const currentLocationId = preempted ? agent.currentLocationId : arrived ? locationId : null;
   const values = {} as ValueMap<ValueState>;
   for (const valueId of VALUE_IDS) {
     values[valueId] = advanceValueState(
@@ -969,6 +1034,12 @@ function advanceAgent(
     activeMinutes,
     drains,
   );
+  const somatic = advanceSomaticState(agent.somatic, state.scenario.tickMinutes);
+  const resources = applySomaticResourceTax(
+    recovery.resources,
+    somatic,
+    state.scenario.tickMinutes,
+  );
   const recoverySource =
     task === null
       ? `agents.${agent.id}.schedule.recoveryMode`
@@ -997,6 +1068,26 @@ function advanceAgent(
 
   let memories = agent.memories;
   const trace: TraceEntry[] = [];
+  if (somatic.attentionTax > 0) {
+    trace.push({
+      agentId: agent.id,
+      id: `${nextTick}:${agent.id}:somatic`,
+      kind: 'somatic',
+      minute: nextMinute,
+      selection: null,
+      summary: `${agent.profile.name} carries a somatic attention tax`,
+      terms: [
+        traceTerm('attention-tax', somatic.attentionTax, `agents.${agent.id}.somatic.sources`),
+        traceTerm(
+          'executive-budget',
+          resources.executiveBudget,
+          `agents.${agent.id}.resources.executiveBudget`,
+        ),
+        traceTerm('level', somatic.level, `agents.${agent.id}.somatic.level`),
+      ],
+      tick: nextTick,
+    });
+  }
   if (currentActivity !== agent.currentActivity) {
     const summary = `${agent.profile.name}: ${currentActivity}`;
     memories = appendBounded(
@@ -1051,7 +1142,9 @@ function advanceAgent(
         tick: nextTick,
       });
     }
-    if (RESOURCE_IDS.some(resourceId => recovery.deltas[resourceId] !== 0)) {
+    if (
+      RESOURCE_IDS.some(resourceId => resources[resourceId] - agent.resources[resourceId] !== 0)
+    ) {
       trace.push({
         agentId: agent.id,
         id: `${nextTick}:${agent.id}:resource`,
@@ -1080,7 +1173,7 @@ function advanceAgent(
           ...RESOURCE_IDS.map(resourceId =>
             traceTerm(
               `resource:${resourceId}`,
-              recovery.resources[resourceId],
+              resources[resourceId],
               `agents.${agent.id}.resources.${resourceId}`,
             ),
           ),
@@ -1098,7 +1191,8 @@ function advanceAgent(
       destination,
       memories,
       position,
-      resources: recovery.resources,
+      resources,
+      somatic,
       values,
     },
     plasticitySignals,
@@ -1145,6 +1239,14 @@ function advanceOneTick(state: SimulationState): SimulationState {
     tick: nextTick,
     trace,
   };
+  const dueSomaticEvents = prepared.scenario.somaticEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedSomaticEventIds.includes(event.id),
+  );
+  for (const event of dueSomaticEvents) next = resolveSomaticEvent(next, event);
+  if (dueSomaticEvents.length > 0) next = prepareAgenda(next);
   next = advanceIntentions(next);
   const dueOpportunities = prepared.scenario.behaviorOpportunities.filter(
     opportunity =>

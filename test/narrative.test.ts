@@ -60,6 +60,8 @@ function expressionScenario(valueId: 'belonging' | 'competence'): ScenarioFile {
           label: 'Express care through presence',
           operation: 'express-belonging',
           repercussionSeverity: 0,
+          selfDirected: false,
+          somaticDemand: 0,
         },
         {
           claimExpressions: [{ claimId: 'claim-1', strength: 1, valueId: 'competence' }],
@@ -69,6 +71,8 @@ function expressionScenario(valueId: 'belonging' | 'competence'): ScenarioFile {
           label: 'Express care through skilled work',
           operation: 'express-competence',
           repercussionSeverity: 0,
+          selfDirected: false,
+          somaticDemand: 0,
         },
       ],
       context: {

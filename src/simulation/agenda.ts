@@ -22,6 +22,7 @@ import { effectiveContractAdherence } from './history.js';
 import { claimExpressionPayoff } from './narrative.js';
 import { locationCenter, navigationDistance, sameLayerPosition } from './navigation.js';
 import { effectiveValueWeights } from './salience.js';
+import { somaticActionAvailable } from './somatic.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyAgentValueTurns } from './value-turn.js';
 
@@ -142,7 +143,10 @@ function relevantTasks(
   actorId: string,
   goal: AgendaGoalState,
 ): TaskOperator[] {
-  const available = state.scenario.taskOperators.filter(task => task.actorIds.includes(actorId));
+  const actor = findAgent(state, actorId);
+  const available = state.scenario.taskOperators.filter(
+    task => task.actorIds.includes(actorId) && somaticActionAvailable(actor, task.somaticDemand),
+  );
   const relevantFactIds = new Set(goal.desired.map(condition => condition.factId));
   const relevantTaskIds = new Set<string>();
   let changed = true;
@@ -610,10 +614,12 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
   for (const intention of state.intentions) {
     const task = findTask(state, intention.taskId);
     const goal = state.agendaGoals.find(candidate => candidate.id === intention.goalId);
+    const actor = findAgent(state, intention.actorId);
     const invalid =
       goal === undefined ||
       goal.status !== 'active' ||
       !conditionsMet(facts, task.preconditions) ||
+      !somaticActionAvailable(actor, task.somaticDemand) ||
       (task.availableUntilMinute !== null && state.minute >= task.availableUntilMinute);
     if (!invalid) continue;
     next = {
@@ -637,9 +643,10 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
         traceTerm('task', task.id, `scenario.taskOperators.${task.id}`),
         traceTerm(
           'reason',
-          'precondition-or-window-changed',
+          'availability-changed',
           `scenario.taskOperators.${task.id}.preconditions`,
           `scenario.taskOperators.${task.id}.availableUntilMinute`,
+          `agents.${actor.id}.somatic`,
           'worldFacts',
         ),
       ],

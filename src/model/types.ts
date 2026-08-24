@@ -565,6 +565,7 @@ export interface CharacterPlacement {
   agency: AgencyMode;
   profile: CharacterProfileAddress;
   initialResources?: Partial<ResourceState>;
+  initialSomaticSources: SomaticSourceSeed[];
   initialValues?: Partial<ValueMap<Partial<ValueState>>>;
   instanceId: string;
   narrativeOverrides: NarrativeClaimOverride[];
@@ -768,6 +769,50 @@ export interface DisplayEvent {
   wearerId: string;
 }
 
+export type SomaticCadence = 'fluctuating' | 'steady';
+export type SomaticPreemption = 'dead' | 'emergency' | 'incapacitated' | 'none';
+export type SomaticLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
+export interface SomaticSourceSeed {
+  attentionTax: number;
+  cadence: SomaticCadence;
+  copingPotential: number;
+  id: string;
+  impairment: number;
+  label: string;
+  origin: 'activity' | 'environment' | 'event';
+  pain: number;
+  preemption: SomaticPreemption;
+  perceivedUrgency: number;
+  visible: number;
+}
+
+export interface SomaticSourceState extends SomaticSourceSeed {
+  habituation: number;
+}
+
+export interface SomaticState {
+  attentionTax: number;
+  impairment: number;
+  level: SomaticLevel;
+  pain: number;
+  perceivedUrgency: number;
+  sources: SomaticSourceState[];
+  threatContribution: number;
+}
+
+export interface SomaticEvent {
+  agentId: string;
+  atMinute: number;
+  id: string;
+  observerIds: string[];
+  operation: 'clear' | 'set';
+  source: SomaticSourceSeed | null;
+  sourceId: string;
+  summary: string;
+  visualProminence: number;
+}
+
 export interface LegacyLocalNorm extends NormDefinition {
   address: NormAddress;
 }
@@ -837,6 +882,7 @@ export interface TaskOperator {
   recoveryMode: RecoveryMode;
   resourceCosts: Partial<ResourceState>;
   resourceDrainsPerHour: Partial<ResourceState>;
+  somaticDemand: number;
   valueTurns: Partial<ValueMap<number>>;
 }
 
@@ -853,6 +899,8 @@ export interface ActionCandidate {
   label: string;
   operation: string;
   repercussionSeverity: number;
+  selfDirected: boolean;
+  somaticDemand: number;
 }
 
 export interface ClaimExpression {
@@ -969,6 +1017,7 @@ export interface EnvironmentConditions {
 export interface ScenarioFile {
   agendaGoals: AgendaGoalSeed[];
   ambientTurnsPerHour?: Partial<ValueMap<number>>;
+  ambientSomaticSources: SomaticSourceSeed[];
   appraisalEvents: AppraisalEvent[];
   aspirationOpportunities: AspirationOpportunity[];
   behaviorOpportunities: BehaviorOpportunity[];
@@ -988,8 +1037,9 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 16;
+  schemaVersion: 17;
   socialContractPlacements: SocialContractPlacement[];
+  somaticEvents: SomaticEvent[];
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -1052,6 +1102,7 @@ export interface SimulationAgent {
   profile: CharacterDefinition;
   resources: ResourceState;
   schedule: ScheduleBlock[];
+  somatic: SomaticState;
   values: ValueMap<ValueState>;
   walkingMetersPerMinute: number;
 }
@@ -1080,6 +1131,7 @@ export type TraceKind =
   | 'relationship'
   | 'resource'
   | 'scenario'
+  | 'somatic'
   | 'task'
   | 'value-turn';
 
@@ -1150,8 +1202,10 @@ export interface SimulationState {
   resolvedNarrativeEventIds: string[];
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
+  resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
   socialContracts: readonly SocialContractResourceFile[];
+  somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;
   worldFacts: WorldFact[];
@@ -1186,6 +1240,8 @@ export interface AppraisalRecord {
   nextCascade: CascadePosition;
   previousCascade: CascadePosition;
   socialTargetId: string | null;
+  somaticImpairment: number;
+  somaticThreatContribution: number;
   tick: number;
 }
 
@@ -1463,6 +1519,37 @@ export interface DisplayResolutionRecord {
   wearerYield: number;
 }
 
+export type SomaticCrowdResponse = 'concern' | 'freeze' | 'help' | 'ignore' | 'leave';
+
+export interface SomaticObservationRecord {
+  calibrationBand: CapabilityResolutionBand | null;
+  calibrationMargin: number | null;
+  empathy: number;
+  eventId: string;
+  helpProbability: number;
+  id: string;
+  inferredSeverity: number | null;
+  minute: number;
+  observerId: string;
+  outcome: 'missed' | 'observed';
+  perceptionStrength: number;
+  response: SomaticCrowdResponse | null;
+  subjectId: string;
+  tick: number;
+  witnessCount: number;
+}
+
+export interface SomaticResolutionRecord {
+  eventId: string;
+  id: string;
+  levelAfter: SomaticLevel;
+  levelBefore: SomaticLevel;
+  minute: number;
+  observations: SomaticObservationRecord[];
+  subjectId: string;
+  tick: number;
+}
+
 export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | 'pending';
 
 export interface AgendaGoalState extends AgendaGoalSeed {
@@ -1537,6 +1624,7 @@ export interface SimulationAgentSnapshot {
   profile: CharacterProfileAddress;
   resources: ResourceState;
   schedule: ScheduleBlock[];
+  somatic: SomaticState;
   values: ValueMap<ValueState>;
   walkingMetersPerMinute: number;
 }
@@ -1572,8 +1660,10 @@ export interface SimulationSnapshotFile {
   resolvedAspirationOpportunityIds: string[];
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
+  resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 15;
+  schemaVersion: 16;
+  somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

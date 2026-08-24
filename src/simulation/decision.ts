@@ -14,6 +14,7 @@ import { evaluateEmpathy } from './empathy.js';
 import { effectiveContractAdherence } from './history.js';
 import { claimExpressionPayoff } from './narrative.js';
 import { effectiveValueWeights } from './salience.js';
+import { somaticActionAvailable } from './somatic.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyAgentValueTurns } from './value-turn.js';
 
@@ -118,9 +119,14 @@ export function evaluateOpportunity(
   state: SimulationState,
   opportunity: BehaviorOpportunity,
 ): DecisionRecord {
-  const candidates = opportunity.candidates.map(candidate =>
-    evaluateCandidate(state, opportunity, candidate),
+  const actor = findAgent(state, opportunity.actorId);
+  const available = opportunity.candidates.filter(candidate =>
+    somaticActionAvailable(actor, candidate.somaticDemand),
   );
+  if (available.length === 0) {
+    throw new RangeError('Somatic state leaves no ordinary candidate to evaluate');
+  }
+  const candidates = available.map(candidate => evaluateCandidate(state, opportunity, candidate));
   let selected = candidates[0];
   if (selected === undefined) throw new Error('Validated opportunities always contain a candidate');
   for (const candidate of candidates.slice(1)) {
@@ -135,6 +141,78 @@ export function evaluateOpportunity(
     selectedCandidateId: selected.candidateId,
     targetId: opportunity.targetId,
     tick: state.tick,
+  };
+}
+
+function somaticGateTrace(
+  state: SimulationState,
+  opportunity: BehaviorOpportunity,
+  selectedId: string | null,
+  removedIds: readonly string[],
+): TraceEntry {
+  const actor = findAgent(state, opportunity.actorId);
+  return {
+    agentId: actor.id,
+    id: `${state.tick}:${opportunity.id}:somatic-gate`,
+    kind: 'gate',
+    minute: state.minute,
+    selection: { rule: 'preempt-gate', selectedId },
+    summary: `${actor.profile.name}'s somatic state restricted ${opportunity.id}`,
+    terms: [
+      traceTerm('somatic-level', actor.somatic.level, `agents.${actor.id}.somatic.level`),
+      traceTerm(
+        'somatic-impairment',
+        actor.somatic.impairment,
+        `agents.${actor.id}.somatic.impairment`,
+      ),
+      ...removedIds.map((candidateId, index) =>
+        traceTerm(
+          `removed:${index}`,
+          candidateId,
+          `scenario.behaviorOpportunities.${opportunity.id}.candidates.${candidateId}.somaticDemand`,
+        ),
+      ),
+    ],
+    tick: state.tick,
+  };
+}
+
+function resolvePreemptedOpportunity(
+  state: SimulationState,
+  opportunity: BehaviorOpportunity,
+): SimulationState {
+  const actor = findAgent(state, opportunity.actorId);
+  const selected =
+    actor.somatic.level === 3
+      ? (opportunity.candidates.find(candidate => candidate.selfDirected) ?? null)
+      : null;
+  let agents = state.agents;
+  if (selected !== null) {
+    for (const impact of selected.impacts) {
+      agents = agents.map(agent =>
+        agent.id === impact.subjectId ? applyAgentValueTurns(agent, impact.turns) : agent,
+      );
+    }
+    agents = agents.map(agent =>
+      agent.id === actor.id ? { ...agent, currentActivity: selected.label } : agent,
+    );
+  }
+  return {
+    ...state,
+    agents,
+    resolvedOpportunityIds: [...state.resolvedOpportunityIds, opportunity.id],
+    trace: appendTrace(
+      state.trace,
+      somaticGateTrace(
+        state,
+        opportunity,
+        selected?.id ?? null,
+        opportunity.candidates
+          .filter(candidate => candidate.id !== selected?.id)
+          .map(candidate => candidate.id),
+      ),
+      MAX_TRACE_ENTRIES,
+    ),
   };
 }
 
@@ -204,11 +282,18 @@ export function resolveOpportunity(
   state: SimulationState,
   opportunity: BehaviorOpportunity,
 ): SimulationState {
-  const decision = evaluateOpportunity(state, opportunity);
+  const actor = findAgent(state, opportunity.actorId);
+  if (actor.somatic.level >= 3) return resolvePreemptedOpportunity(state, opportunity);
+  const availableCandidates = opportunity.candidates.filter(candidate =>
+    somaticActionAvailable(actor, candidate.somaticDemand),
+  );
+  if (availableCandidates.length === 0) return resolvePreemptedOpportunity(state, opportunity);
+  const restricted = { ...opportunity, candidates: availableCandidates };
+  const decision = evaluateOpportunity(state, restricted);
   const selectedEvaluation = decision.candidates.find(
     candidate => candidate.candidateId === decision.selectedCandidateId,
   );
-  const selectedCandidate = opportunity.candidates.find(
+  const selectedCandidate = availableCandidates.find(
     candidate => candidate.id === decision.selectedCandidateId,
   );
   if (selectedEvaluation === undefined || selectedCandidate === undefined) {
@@ -258,6 +343,16 @@ export function resolveOpportunity(
   });
 
   let trace = state.trace;
+  const removedIds = opportunity.candidates
+    .filter(candidate => !availableCandidates.includes(candidate))
+    .map(candidate => candidate.id);
+  if (removedIds.length > 0) {
+    trace = appendTrace(
+      trace,
+      somaticGateTrace(state, opportunity, selectedCandidate.id, removedIds),
+      MAX_TRACE_ENTRIES,
+    );
+  }
   for (const candidate of decision.candidates) {
     trace = appendTrace(trace, appraisalTrace(state, opportunity, candidate), MAX_TRACE_ENTRIES);
   }

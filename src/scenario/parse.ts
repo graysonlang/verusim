@@ -62,6 +62,9 @@ const OBSERVATION_CHANNEL_SET = new Set<string>(OBSERVATION_CHANNELS);
 const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
 const REINFORCEMENT_SCHEDULES = new Set(['fixed', 'variable-ratio']);
 const SATISFIER_TYPES = new Set(['deficit', 'surplus']);
+const SOMATIC_CADENCES = new Set(['fluctuating', 'steady']);
+const SOMATIC_ORIGINS = new Set(['activity', 'environment', 'event']);
+const SOMATIC_PREEMPTIONS = new Set(['dead', 'emergency', 'incapacitated', 'none']);
 const AGENCY_MODES = new Set(['invoker', 'responder']);
 const NARRATIVE_CLAIM_KINDS = new Set(['affirm', 'deny', 'deserve']);
 const RESOURCE_KIND_SET = new Set<string>(RESOURCE_KINDS);
@@ -397,6 +400,53 @@ function validateResourceCosts(value: unknown, path: string): void {
   }
 }
 
+function validateSomaticSource(
+  value: unknown,
+  path: string,
+  expectedOrigin?: 'activity' | 'environment' | 'event',
+): Record<string, unknown> {
+  const source = objectValue(value, path);
+  identifierValue(source.id, `${path}.id`);
+  stringValue(source.label, `${path}.label`);
+  for (const field of [
+    'attentionTax',
+    'copingPotential',
+    'impairment',
+    'pain',
+    'perceivedUrgency',
+    'visible',
+  ]) {
+    numberValue(source[field], `${path}.${field}`, 0, 1);
+  }
+  if (typeof source.cadence !== 'string' || !SOMATIC_CADENCES.has(source.cadence)) {
+    throw new ScenarioValidationError(`${path}.cadence`, 'expected fluctuating or steady');
+  }
+  if (typeof source.origin !== 'string' || !SOMATIC_ORIGINS.has(source.origin)) {
+    throw new ScenarioValidationError(`${path}.origin`, 'expected activity, environment, or event');
+  }
+  if (expectedOrigin !== undefined && source.origin !== expectedOrigin) {
+    throw new ScenarioValidationError(`${path}.origin`, `expected ${expectedOrigin}`);
+  }
+  if (typeof source.preemption !== 'string' || !SOMATIC_PREEMPTIONS.has(source.preemption)) {
+    throw new ScenarioValidationError(
+      `${path}.preemption`,
+      'expected dead, emergency, incapacitated, or none',
+    );
+  }
+  return source;
+}
+
+function validateSomaticSources(
+  value: unknown,
+  path: string,
+  expectedOrigin?: 'activity' | 'environment' | 'event',
+): void {
+  const sources = arrayValue(value, path).map((entry, index) =>
+    validateSomaticSource(entry, `${path}[${index}]`, expectedOrigin),
+  );
+  uniqueIds(sources, path);
+}
+
 function validateMaskingDemand(value: unknown, path: string): void {
   if (value === null) return;
   const demand = objectValue(value, path);
@@ -626,7 +676,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 16) return file;
+  if (file.schemaVersion === 17) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -642,7 +692,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 12 &&
     file.schemaVersion !== 13 &&
     file.schemaVersion !== 14 &&
-    file.schemaVersion !== 15
+    file.schemaVersion !== 15 &&
+    file.schemaVersion !== 16
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -865,7 +916,31 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     }
   }
   if (sourceVersion < 16) file.displayEvents = [];
-  file.schemaVersion = 16;
+  if (sourceVersion < 17) {
+    file.ambientSomaticSources = [];
+    file.somaticEvents = [];
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      objectValue(placementValue, 'scenario.characters').initialSomaticSources = [];
+    }
+    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
+      objectValue(taskValue, 'scenario.taskOperators').somaticDemand = 0;
+    }
+    for (const opportunityValue of arrayValue(
+      file.behaviorOpportunities,
+      'scenario.behaviorOpportunities',
+    )) {
+      const opportunity = objectValue(opportunityValue, 'scenario.behaviorOpportunities');
+      for (const candidateValue of arrayValue(
+        opportunity.candidates,
+        'scenario.behaviorOpportunities.candidates',
+      )) {
+        const candidate = objectValue(candidateValue, 'scenario.behaviorOpportunities.candidates');
+        candidate.selfDirected = false;
+        candidate.somaticDemand = 0;
+      }
+    }
+  }
+  file.schemaVersion = 17;
   return file;
 }
 
@@ -1316,7 +1391,7 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 16);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 17);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -1373,6 +1448,11 @@ export function parseScenario(value: unknown): ScenarioFile {
       numberValue(turn, `scenario.ambientTurnsPerHour.${valueId}`, -1, 1);
     }
   }
+  validateSomaticSources(
+    file.ambientSomaticSources,
+    'scenario.ambientSomaticSources',
+    'environment',
+  );
 
   const legacyLocalNorms = arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms').map(
     (entry, index) => {
@@ -1538,6 +1618,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       validateResourceCosts(task.resourceCosts, `${path}.resourceCosts`);
       validateResourceCosts(task.resourceDrainsPerHour, `${path}.resourceDrainsPerHour`);
       validateMaskingDemand(task.maskingDemand, `${path}.maskingDemand`);
+      numberValue(task.somaticDemand, `${path}.somaticDemand`, 0, 1);
       validateValueTurns(task.valueTurns, `${path}.valueTurns`);
       return task;
     },
@@ -1600,6 +1681,12 @@ export function parseScenario(value: unknown): ScenarioFile {
         validateValueState(state, `${path}.initialValues.${valueId}`);
       }
     }
+
+    validateSomaticSources(
+      placement.initialSomaticSources,
+      `${path}.initialSomaticSources`,
+      'activity',
+    );
 
     const normPerspectives = arrayValue(placement.normPerspectives, `${path}.normPerspectives`).map(
       (entry, perspectiveIndex) => {
@@ -2094,6 +2181,41 @@ export function parseScenario(value: unknown): ScenarioFile {
   );
   uniqueIds(displayEvents, 'scenario.displayEvents');
 
+  const somaticEvents = arrayValue(file.somaticEvents, 'scenario.somaticEvents').map(
+    (entry, index) => {
+      const path = `scenario.somaticEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      identifierValue(event.agentId, `${path}.agentId`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      identifierValue(event.sourceId, `${path}.sourceId`);
+      stringValue(event.summary, `${path}.summary`);
+      numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
+      if (event.operation !== 'clear' && event.operation !== 'set') {
+        throw new ScenarioValidationError(`${path}.operation`, 'expected clear or set');
+      }
+      if (event.operation === 'clear') {
+        if (event.source !== null) {
+          throw new ScenarioValidationError(`${path}.source`, 'expected null for a clear event');
+        }
+      } else {
+        const source = validateSomaticSource(event.source, `${path}.source`, 'event');
+        if (source.id !== event.sourceId) {
+          throw new ScenarioValidationError(`${path}.source.id`, 'must match sourceId');
+        }
+      }
+      const observerIds = arrayValue(event.observerIds, `${path}.observerIds`);
+      observerIds.forEach((observerId, observerIndex) => {
+        identifierValue(observerId, `${path}.observerIds[${observerIndex}]`);
+      });
+      if (new Set(observerIds).size !== observerIds.length) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'duplicate agent identifier');
+      }
+      return event;
+    },
+  );
+  uniqueIds(somaticEvents, 'scenario.somaticEvents');
+
   const opportunities = arrayValue(
     file.behaviorOpportunities,
     'scenario.behaviorOpportunities',
@@ -2126,6 +2248,10 @@ export function parseScenario(value: unknown): ScenarioFile {
         numberValue(candidate.contractViolation, `${candidatePath}.contractViolation`, 0, 1);
         validateClaimExpressions(candidate.claimExpressions, `${candidatePath}.claimExpressions`);
         numberValue(candidate.repercussionSeverity, `${candidatePath}.repercussionSeverity`, 0, 4);
+        if (typeof candidate.selfDirected !== 'boolean') {
+          throw new ScenarioValidationError(`${candidatePath}.selfDirected`, 'expected a boolean');
+        }
+        numberValue(candidate.somaticDemand, `${candidatePath}.somaticDemand`, 0, 1);
         arrayValue(candidate.impacts, `${candidatePath}.impacts`).forEach(
           (impactEntry, impactIndex) => {
             const impactPath = `${candidatePath}.impacts[${impactIndex}]`;

@@ -144,6 +144,15 @@ export { evaluateEmpathy } from './simulation/empathy.js';
 export { resolveDisplayEvent } from './simulation/display.js';
 export { resolveIncidentEvent } from './simulation/incident.js';
 export {
+  advanceSomaticState,
+  applySomaticResourceTax,
+  createSomaticState,
+  deriveSomaticState,
+  resolveSomaticEvent,
+  somaticActivityLabel,
+  somaticActionAvailable,
+} from './simulation/somatic.js';
+export {
   advanceCoping,
   allostaticLoadFor,
   resolveAppraisalEvent,

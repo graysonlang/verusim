@@ -132,14 +132,18 @@ export function resolveAppraisalEvent(
   const turned = { ...agent, values };
   const allostaticLoad = allostaticLoadFor(turned);
   const effectiveCoping = clamp(
-    event.copingPotential - allostaticLoad * 0.35 - (1 - turned.resources.regulationReserve) * 0.2,
+    event.copingPotential -
+      allostaticLoad * 0.35 -
+      (1 - turned.resources.regulationReserve) * 0.2 -
+      turned.somatic.impairment * 0.5,
     0,
     1,
   );
   const cascadeLoad = clamp(
     event.threat * (0.5 + turned.profile.constitution.reactivity * 0.5) +
       allostaticLoad * 0.4 +
-      negativeTurnIntensity(appliedTurns) * 0.25,
+      negativeTurnIntensity(appliedTurns) * 0.25 +
+      turned.somatic.threatContribution * 0.5,
     0,
     1.5,
   );
@@ -157,6 +161,8 @@ export function resolveAppraisalEvent(
     nextCascade: updated.cascade,
     previousCascade: agent.cascade,
     socialTargetId: updated.cascadeTargetId,
+    somaticImpairment: turned.somatic.impairment,
+    somaticThreatContribution: turned.somatic.threatContribution,
     tick: state.tick,
   };
   const memory: RuntimeMemory = {
@@ -185,6 +191,16 @@ export function resolveAppraisalEvent(
           `scenario.appraisalEvents.${event.id}.copingPotential`,
         ),
         traceTerm('allostatic-load', allostaticLoad, `agents.${agent.id}.values`),
+        traceTerm(
+          'somatic-impairment',
+          turned.somatic.impairment,
+          `agents.${agent.id}.somatic.impairment`,
+        ),
+        traceTerm(
+          'somatic-threat',
+          turned.somatic.threatContribution,
+          `agents.${agent.id}.somatic.threatContribution`,
+        ),
         traceTerm('effective-coping', effectiveCoping, `appraisalRecords.${record.id}`),
         ...VALUE_IDS.flatMap(valueId =>
           appliedTurns[valueId] === undefined

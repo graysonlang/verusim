@@ -79,6 +79,17 @@ export function validateReferences(content: ScenarioContent): void {
         `unknown layer "${placement.position.layerId}"`,
       );
     }
+    const ambientSomaticIds = new Set(
+      content.scenario.ambientSomaticSources.map(source => source.id),
+    );
+    placement.initialSomaticSources.forEach((source, sourceIndex) => {
+      if (ambientSomaticIds.has(source.id)) {
+        throw new ScenarioValidationError(
+          `scenario.characters[${index}].initialSomaticSources[${sourceIndex}].id`,
+          `duplicates ambient somatic source "${source.id}"`,
+        );
+      }
+    });
     const profileClaimIds = new Set(
       characters.get(placement.profile.resourceId)?.narrativeClaims.map(claim => claim.id) ?? [],
     );
@@ -293,6 +304,26 @@ export function validateReferences(content: ScenarioContent): void {
       }
     });
   });
+  content.scenario.somaticEvents.forEach((event, index) => {
+    const path = `scenario.somaticEvents[${index}]`;
+    if (!instanceIds.has(event.agentId)) {
+      throw new ScenarioValidationError(`${path}.agentId`, `unknown agent "${event.agentId}"`);
+    }
+    event.observerIds.forEach((observerId, observerIndex) => {
+      if (!instanceIds.has(observerId)) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          `unknown agent "${observerId}"`,
+        );
+      }
+      if (observerId === event.agentId) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          'an agent cannot observe its own somatic state',
+        );
+      }
+    });
+  });
   content.scenario.relationshipEvents.forEach((event, index) => {
     const path = `scenario.relationshipEvents[${index}]`;
     if (!instanceIds.has(event.observerId)) {
@@ -444,6 +475,12 @@ export function validateReferences(content: ScenarioContent): void {
           throw new ScenarioValidationError(
             `${path}.candidates[${candidateIndex}].impacts[${impactIndex}].subjectId`,
             `unknown agent "${impact.subjectId}"`,
+          );
+        }
+        if (candidate.selfDirected && impact.subjectId !== opportunity.actorId) {
+          throw new ScenarioValidationError(
+            `${path}.candidates[${candidateIndex}].impacts[${impactIndex}].subjectId`,
+            'a self-directed candidate may only affect its actor',
           );
         }
       });

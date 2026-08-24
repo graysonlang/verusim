@@ -51,6 +51,7 @@ const TRACE_KINDS = new Set([
   'relationship',
   'resource',
   'scenario',
+  'somatic',
   'task',
   'value-turn',
 ]);
@@ -77,6 +78,10 @@ const OBSERVATION_DIMENSIONS = new Set(['disclosure', 'empathy']);
 const OBSERVATION_OUTCOMES = new Set(['confirmed', 'corrected', 'missed', 'suspected']);
 const NORM_OBSERVATION_OUTCOMES = new Set(['appraised', 'missed']);
 const DISPLAY_RESPONSES = new Set(['admiration', 'disdain', 'envy', 'indifference', 'missed']);
+const SOMATIC_CADENCES = new Set(['fluctuating', 'steady']);
+const SOMATIC_ORIGINS = new Set(['activity', 'environment', 'event']);
+const SOMATIC_PREEMPTIONS = new Set(['dead', 'emergency', 'incapacitated', 'none']);
+const SOMATIC_RESPONSES = new Set(['concern', 'freeze', 'help', 'ignore', 'leave']);
 const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
 const NARRATIVE_DISPOSITIONS = new Set([
   'accepted',
@@ -172,6 +177,60 @@ function validateResourceMap(value: unknown, path: string): void {
     }
     numberValue(amount, `${path}.${resourceId}`, 0, 1);
   }
+}
+
+function validateSomaticSource(value: unknown, path: string): string {
+  const source = objectValue(value, path);
+  const id = stringValue(source.id, `${path}.id`);
+  stringValue(source.label, `${path}.label`);
+  for (const field of [
+    'attentionTax',
+    'copingPotential',
+    'impairment',
+    'pain',
+    'perceivedUrgency',
+    'visible',
+  ]) {
+    numberValue(source[field], `${path}.${field}`, 0, 1);
+  }
+  if (typeof source.cadence !== 'string' || !SOMATIC_CADENCES.has(source.cadence)) {
+    throw new ScenarioValidationError(`${path}.cadence`, 'expected fluctuating or steady');
+  }
+  if (typeof source.origin !== 'string' || !SOMATIC_ORIGINS.has(source.origin)) {
+    throw new ScenarioValidationError(`${path}.origin`, 'expected activity, environment, or event');
+  }
+  if (typeof source.preemption !== 'string' || !SOMATIC_PREEMPTIONS.has(source.preemption)) {
+    throw new ScenarioValidationError(`${path}.preemption`, 'expected a known preemption');
+  }
+  return id;
+}
+
+function validateSomaticState(value: unknown, path: string): void {
+  const state = objectValue(value, path);
+  for (const field of [
+    'attentionTax',
+    'impairment',
+    'pain',
+    'perceivedUrgency',
+    'threatContribution',
+  ]) {
+    numberValue(state[field], `${path}.${field}`, 0, 1);
+  }
+  const level = integerValue(state.level, `${path}.level`, 0);
+  if (level > 5) {
+    throw new ScenarioValidationError(`${path}.level`, 'expected an integer from 0 through 5');
+  }
+  const sourceIds = new Set<string>();
+  arrayValue(state.sources, `${path}.sources`).forEach((value, index) => {
+    const sourcePath = `${path}.sources[${index}]`;
+    const source = objectValue(value, sourcePath);
+    const id = validateSomaticSource(source, sourcePath);
+    if (sourceIds.has(id)) {
+      throw new ScenarioValidationError(`${sourcePath}.id`, 'duplicate somatic source');
+    }
+    sourceIds.add(id);
+    numberValue(source.habituation, `${sourcePath}.habituation`, 0, 1);
+  });
 }
 
 function validateMaskingDemand(value: unknown, path: string): void {
@@ -532,6 +591,7 @@ function validateAgent(value: unknown, path: string): void {
   ]) {
     numberValue(resources[resourceId], `${path}.resources.${resourceId}`, 0, 1);
   }
+  validateSomaticState(agent.somatic, `${path}.somatic`);
 
   const values = objectValue(agent.values, `${path}.values`);
   for (const valueId of VALUE_IDS) validateValueState(values[valueId], `${path}.values.${valueId}`);
@@ -665,6 +725,8 @@ function validateAppraisalHistory(value: unknown, path: string): void {
     numberValue(entry.copingPotential, `${entryPath}.copingPotential`, 0, 1);
     numberValue(entry.effectiveCoping, `${entryPath}.effectiveCoping`, 0, 1);
     numberValue(entry.cascadeLoad, `${entryPath}.cascadeLoad`, 0, 1.5);
+    numberValue(entry.somaticImpairment, `${entryPath}.somaticImpairment`, 0, 1);
+    numberValue(entry.somaticThreatContribution, `${entryPath}.somaticThreatContribution`, 0, 1);
     if (
       typeof entry.previousCascade !== 'string' ||
       !CASCADE_POSITIONS.has(entry.previousCascade)
@@ -1107,6 +1169,74 @@ function validateDisplayExposures(value: unknown, path: string): void {
   });
 }
 
+function validateSomaticHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    for (const field of ['eventId', 'id', 'subjectId']) {
+      stringValue(entry[field], `${entryPath}.${field}`);
+    }
+    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.tick, `${entryPath}.tick`);
+    for (const field of ['levelAfter', 'levelBefore']) {
+      const level = integerValue(entry[field], `${entryPath}.${field}`);
+      if (level > 5) {
+        throw new ScenarioValidationError(
+          `${entryPath}.${field}`,
+          'expected an integer from 0 through 5',
+        );
+      }
+    }
+    arrayValue(entry.observations, `${entryPath}.observations`).forEach(
+      (observationValue, observationIndex) => {
+        const observationPath = `${entryPath}.observations[${observationIndex}]`;
+        const observation = objectValue(observationValue, observationPath);
+        for (const field of ['eventId', 'id', 'observerId', 'subjectId']) {
+          stringValue(observation[field], `${observationPath}.${field}`);
+        }
+        integerValue(observation.minute, `${observationPath}.minute`);
+        integerValue(observation.tick, `${observationPath}.tick`);
+        integerValue(observation.witnessCount, `${observationPath}.witnessCount`);
+        for (const field of ['empathy', 'helpProbability', 'perceptionStrength']) {
+          numberValue(observation[field], `${observationPath}.${field}`, 0, 1);
+        }
+        nullableNumber(observation.inferredSeverity, `${observationPath}.inferredSeverity`);
+        nullableNumber(
+          observation.calibrationMargin,
+          `${observationPath}.calibrationMargin`,
+          -1,
+          1,
+        );
+        if (
+          observation.calibrationBand !== null &&
+          (typeof observation.calibrationBand !== 'string' ||
+            !CAPABILITY_BANDS.has(observation.calibrationBand))
+        ) {
+          throw new ScenarioValidationError(
+            `${observationPath}.calibrationBand`,
+            'expected a known capability band or null',
+          );
+        }
+        if (observation.outcome !== 'missed' && observation.outcome !== 'observed') {
+          throw new ScenarioValidationError(
+            `${observationPath}.outcome`,
+            'expected missed or observed',
+          );
+        }
+        if (
+          observation.response !== null &&
+          (typeof observation.response !== 'string' || !SOMATIC_RESPONSES.has(observation.response))
+        ) {
+          throw new ScenarioValidationError(
+            `${observationPath}.response`,
+            'expected a known crowd response or null',
+          );
+        }
+      },
+    );
+  });
+}
+
 function validateIdentifierList(value: unknown, path: string): void {
   const values = arrayValue(value, path);
   values.forEach((entry, index) => {
@@ -1319,7 +1449,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 12 &&
     file.schemaVersion !== 13 &&
     file.schemaVersion !== 14 &&
-    file.schemaVersion !== 15
+    file.schemaVersion !== 15 &&
+    file.schemaVersion !== 16
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1537,7 +1668,28 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       };
     }
   }
-  file.schemaVersion = 15;
+  if (sourceVersion < 16) {
+    file.scenario = parseScenario(file.scenario);
+    file.resolvedSomaticEventIds = [];
+    file.somaticRecords = [];
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      objectValue(agentValue, 'snapshot.agents').somatic = {
+        attentionTax: 0,
+        impairment: 0,
+        level: 0,
+        pain: 0,
+        perceivedUrgency: 0,
+        sources: [],
+        threatContribution: 0,
+      };
+    }
+    for (const recordValue of arrayValue(file.appraisalRecords, 'snapshot.appraisalRecords')) {
+      const record = objectValue(recordValue, 'snapshot.appraisalRecords');
+      record.somaticImpairment = 0;
+      record.somaticThreatContribution = 0;
+    }
+  }
+  file.schemaVersion = 16;
   return file;
 }
 
@@ -1546,7 +1698,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 15) {
+  if (file.schemaVersion !== 16) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1623,6 +1775,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
   validateDisplayExposures(file.displayExposures, 'snapshot.displayExposures');
   validateDisplayHistory(file.displayRecords, 'snapshot.displayRecords');
+  validateSomaticHistory(file.somaticRecords, 'snapshot.somaticRecords');
   validateIncidentHistory(file.incidentRecords, 'snapshot.incidentRecords');
   validateObservationHistory(file.observations, 'snapshot.observations');
   validateRelationshipHistory(file.relationshipDecisions, 'snapshot.relationshipDecisions');
@@ -1652,6 +1805,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
     'snapshot.resolvedAspirationOpportunityIds',
   );
   validateIdentifierList(file.resolvedNarrativeEventIds, 'snapshot.resolvedNarrativeEventIds');
+  validateIdentifierList(file.resolvedSomaticEventIds, 'snapshot.resolvedSomaticEventIds');
 
   return {
     ...(file as unknown as SimulationSnapshotFile),

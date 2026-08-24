@@ -357,6 +357,30 @@ Satisfier granularity remains a design target rather than an authored field unti
 Appraisal records, resolved event identifiers, cascade dwell and target state, current outlet use, and habituation history are bounded snapshot state.
 The observer projection exposes stable cascade and outlet tells, while the developer workbench separately exposes the numeric terms and causal trace.
 
+## Somatic state and preemption
+
+Each runtime agent carries an exact, semantically ordered ledger of somatic sources rather than a single authored condition label.
+Environment sources enter every agent at initialization, placement sources establish per-agent initial state, and timed set or clear events replace sources by stable identifier.
+Each source keeps pain, perceived urgency, coping potential, impairment, visibility, cadence, and objective preemption separate.
+The aggregate derives attention tax, threat contribution, impairment, and preempt level without erasing that source evidence.
+
+Attention tax drains executive budget through the ordinary resource transition, while low coping potential converts discomfort into additional cascade load.
+Steady sources habituate and fluctuating sources retain their full sensitivity.
+Pain contributes attention load independently of perceived urgency, so severe pain without time pressure and urgent low-pain injury remain representable.
+
+Level-2 impairment filters agenda tasks and behavior candidates by their authored physical demand before ordinary appraisal.
+Level 3 cancels ordinary intentions, halts schedule movement, and permits only an explicitly self-directed behavior candidate without evaluating empathy, contract, narrative, or repercussion terms.
+Levels 4 and 5 have no movement or decision agency.
+Every restriction emits a first-class `gate` trace whose terms name only somatic state and removed actions.
+
+Visible level-2 or greater state becomes observer-relative evidence through ordinary sight and evidence-calibration capability checks.
+Observers store inferred severity rather than the subject's authoritative somatic level.
+At incapacity, empathy, competence orientation, cascade prior, and contract adherence derive heterogeneous concern, help, freeze, ignore, or departure responses; the obligation component is divided by witness count so the same observer's help drive falls in a larger crowd.
+
+Scenario schema version 17 adds ambient and per-placement somatic sources, timed somatic events, and physical-demand metadata for tasks and behavior candidates while migrating versions 1 through 16 to neutral state.
+Snapshot schema version 16 persists exact source ledgers, bounded observer records, resolved event identifiers, and somatic appraisal contributions while migrating versions 1 through 15 to neutral runtime state.
+Snapshot resume rejects aggregates that do not match their sorted source ledger.
+
 ## Narrative-driven agency
 
 Character definitions seed a small set of structured affirm, deny, or deserve claims.
@@ -398,7 +422,7 @@ Every chosen action must eventually produce both:
 The causal trace is a strict, independently versioned contract rather than a debug string stream.
 Schema version 1 stores typed entries whose terms preserve their scalar values and source paths.
 Candidate appraisal entries keep `turn_felt`, `repercussion_cost`, `contract_violation_cost`, and `narrative_expression` separate; selection entries name the winner and the deterministic rule, including authored-order tie breaking.
-Somatic preemption will emit a first-class `gate` entry before ordinary appraisal, allowing the harness to assert both that the gate fired and that no social term was evaluated.
+Somatic preemption emits a first-class `gate` entry before ordinary appraisal, allowing the harness to assert both that the gate fired and that no social term was evaluated.
 
 ## Content identity and preparation
 
