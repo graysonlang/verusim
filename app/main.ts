@@ -45,7 +45,7 @@ import {
   formatWorkbenchTime,
   playbackRateForId,
   playbackRateShowsSeconds,
-  projectPlaybackMovement,
+  projectPlaybackState,
   type PlaybackRateId,
 } from './playback.js';
 import {
@@ -175,10 +175,7 @@ function createWorkbench(): HTMLElement {
   );
   const [showTickNumber, setShowTickNumber] = createSignal(false);
   const [playbackPreviewMinutes, setPlaybackPreviewMinutes] = createSignal(0);
-  const nextPlaybackState = createMemo(() => (playing() ? advanceSimulation(state(), 1) : state()));
-  const canvasState = createMemo(() =>
-    projectPlaybackMovement(state(), nextPlaybackState(), playbackPreviewMinutes()),
-  );
+  const canvasState = createMemo(() => projectPlaybackState(state(), playbackPreviewMinutes()));
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');

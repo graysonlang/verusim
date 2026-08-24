@@ -100,6 +100,18 @@ Exit probe:
 Preference regression coverage distinguishes startup fallback from later scenario activation and exercises both the retained-rate and explicit-override branches.
 Isolated headless Chromium verification selected `15x`, switched from Market Morning to Alder's Edge Town, and retained both the `15x` control state and numeric URL rate without console errors or failed non-static requests.
 
+### Repair slice — paused movement projection continuity
+
+Pausing playback now freezes Canvas movement at the retained fractional tick position instead of disabling lookahead and rendering the character back at the authoritative tick-start position.
+The fractional position remains observer state and does not enter the simulation, snapshot, or causal trace.
+
+Exit probe:
+
+- pausing a moving character between authoritative ticks preserves the projected clock and Canvas position without further movement until playback resumes
+
+Playback regression coverage projects retained fractional time through a self-contained next-tick lookahead and proves that it matches the connector-aware interpolation without mutating authoritative state.
+Isolated headless Chromium verification paused real-time playback at `7:50:10 am`, confirmed the paused Canvas differed from the tick-start frame, and confirmed a later paused capture was byte-identical, without console errors or failed non-static requests.
+
 ## Phase 1 — the highwayman vertical slice
 
 Status: complete.

@@ -7,6 +7,7 @@ import {
   playbackRateForId,
   playbackRateShowsSeconds,
   projectPlaybackMovement,
+  projectPlaybackState,
 } from '../app/playback.js';
 import scenario from '../content/scenarios/market-morning.json';
 import { advanceSimulation, createSimulation, navigationDistance } from '../src/index.js';
@@ -114,6 +115,10 @@ describe('workbench playback', () => {
         ) -
           currentMara.walkingMetersPerMinute * partialTickMinutes,
       ) < 1e-9,
+    );
+    assert.deepEqual(
+      projectPlaybackState(beforeDeparture, partialTickMinutes).agents.map(agent => agent.position),
+      halfway.agents.map(agent => agent.position),
     );
     assert.deepEqual(
       beforeDeparture.agents.find(agent => agent.id === 'mara'),

@@ -1,5 +1,6 @@
 import type { SimulationState, TimeRateId } from '../src/model/types.js';
 import { advanceLayerPosition } from '../src/simulation/navigation.js';
+import { advanceSimulation } from '../src/simulation/runtime.js';
 import type { ClockFormat } from './preferences.js';
 
 export interface PlaybackRate {
@@ -59,6 +60,20 @@ export function projectPlaybackMovement(
     return { ...agent, position };
   });
   return changed ? { ...state, agents } : state;
+}
+
+export function projectPlaybackState(
+  state: SimulationState,
+  partialTickMinutes: number,
+): SimulationState {
+  if (!Number.isFinite(partialTickMinutes) || partialTickMinutes < 0) {
+    throw new RangeError('partialTickMinutes must be a non-negative finite number');
+  }
+  if (partialTickMinutes > state.scenario.tickMinutes) {
+    throw new RangeError('partialTickMinutes cannot exceed the scenario tick cadence');
+  }
+  if (partialTickMinutes === 0) return state;
+  return projectPlaybackMovement(state, advanceSimulation(state, 1), partialTickMinutes);
 }
 
 export function playbackRateShowsSeconds(rate: PlaybackRate): boolean {

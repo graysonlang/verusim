@@ -75,7 +75,8 @@ Each preset also carries that speed as one numeric rate in simulated seconds per
 Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
 Fractional simulated time survives pause, resume, and active scale changes so changing playback controls cannot move the projected clock or movement backward; reset and scenario load clear that observer state.
 The clock omits the Day 1 prefix and shows frame-projected seconds for rates below `60`; rates at or above `60` retain minute precision.
-While playback is active, the workbench computes one pure next-tick lookahead and projects only locomotion between the current and next authoritative positions at animation-frame resolution.
+Whenever playback retains fractional simulated time, whether active or paused, the workbench computes one pure next-tick lookahead and projects only locomotion between the current and next authoritative positions.
+Active playback updates that observer projection at animation-frame resolution, while pausing freezes it at the retained fraction.
 The projection uses the same connector-aware route and meters-per-simulation-minute walking pace as the solver, reaches the exact next position at the tick boundary, and never enters snapshots, traces, behavioral evaluation, or other authoritative state.
 The neutral walking calibration is 80 meters per simulation minute, or about 1.33 meters per second, before authored physical-build effects.
 Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, Fahrenheit, a hidden status bar, and visible 250-pixel roster and 350-pixel inspector sidebars.
