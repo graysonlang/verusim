@@ -753,6 +753,21 @@ export interface IncidentEvent {
   volition: IncidentVolition;
 }
 
+export interface DisplayEvent {
+  atMinute: number;
+  context: IncidentContext;
+  displayId: string;
+  domainContested: boolean;
+  habituationPerExposure: number;
+  id: string;
+  magnitude: number;
+  observerIds: string[];
+  statusMarker: string;
+  summary: string;
+  visualProminence: number;
+  wearerId: string;
+}
+
 export interface LegacyLocalNorm extends NormDefinition {
   address: NormAddress;
 }
@@ -960,6 +975,7 @@ export interface ScenarioFile {
   characters: CharacterPlacement[];
   disclosureItems: DisclosureItemSeed[];
   disclosureOpportunities: DisclosureOpportunity[];
+  displayEvents: DisplayEvent[];
   dyads: DyadSeed[];
   environment: EnvironmentLayoutAddress;
   environmentConditions: EnvironmentConditions;
@@ -972,7 +988,7 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 15;
+  schemaVersion: 16;
   socialContractPlacements: SocialContractPlacement[];
   startMinute: number;
   summary: string;
@@ -1031,6 +1047,7 @@ export interface SimulationAgent {
   memories: RuntimeMemory[];
   narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
+  positionalRespect: PositionalRespectState;
   position: LayerPosition;
   profile: CharacterDefinition;
   resources: ResourceState;
@@ -1048,6 +1065,7 @@ export type TraceKind =
   | 'decision'
   | 'disclosure-appraisal'
   | 'disclosure-decision'
+  | 'display-appraisal'
   | 'gate'
   | 'goal'
   | 'intervention'
@@ -1108,6 +1126,8 @@ export interface SimulationState {
   decisions: DecisionRecord[];
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
+  displayExposures: DisplayExposureState[];
+  displayRecords: DisplayResolutionRecord[];
   dyads: DyadState[];
   environment: EnvironmentDefinition;
   incidentRecords: IncidentAppraisalRecord[];
@@ -1121,6 +1141,7 @@ export interface SimulationState {
   reputations: AttributedNarrative[];
   resourceLock: ResourceLock;
   resolvedDisclosureOpportunityIds: string[];
+  resolvedDisplayEventIds: string[];
   resolvedIncidentEventIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
@@ -1391,6 +1412,57 @@ export interface IncidentAppraisalRecord {
   tick: number;
 }
 
+export type DisplayResponse = 'admiration' | 'disdain' | 'envy' | 'indifference' | 'missed';
+
+export interface DisplayExposureState {
+  displayId: string;
+  exposures: number;
+  habituation: number;
+  observerId: string;
+}
+
+export interface PositionalRespectReference {
+  relevance: number;
+  standing: number;
+  subjectId: string;
+}
+
+export interface PositionalRespectState {
+  ambientCount: number;
+  ambientStanding: number;
+  references: PositionalRespectReference[];
+}
+
+export interface DisplayObserverAppraisal {
+  admirationTurn: number;
+  comparability: number;
+  contractTerms: IncidentContractTerm[];
+  eventId: string;
+  exposureAfter: number;
+  exposureBefore: number;
+  id: string;
+  markerCentrality: number;
+  minute: number;
+  observerId: string;
+  outcome: DisplayResponse;
+  perceptionStrength: number;
+  positionalTurn: number;
+  rankSimilarity: number;
+  subjectiveTurns: Partial<ValueMap<number>>;
+  tick: number;
+}
+
+export interface DisplayResolutionRecord {
+  appraisals: DisplayObserverAppraisal[];
+  eventId: string;
+  id: string;
+  minute: number;
+  perceivedAudienceCount: number;
+  tick: number;
+  wearerId: string;
+  wearerYield: number;
+}
+
 export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | 'pending';
 
 export interface AgendaGoalState extends AgendaGoalSeed {
@@ -1460,6 +1532,7 @@ export interface SimulationAgentSnapshot {
   memories: RuntimeMemory[];
   narrative: NarrativeState | null;
   outletHistory: OutletUseState[];
+  positionalRespect: PositionalRespectState;
   position: LayerPosition;
   profile: CharacterProfileAddress;
   resources: ResourceState;
@@ -1476,6 +1549,8 @@ export interface SimulationSnapshotFile {
   decisions: DecisionRecord[];
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
+  displayExposures: DisplayExposureState[];
+  displayRecords: DisplayResolutionRecord[];
   dyads: DyadState[];
   environment: EnvironmentLayoutAddress;
   incidentRecords: IncidentAppraisalRecord[];
@@ -1488,6 +1563,7 @@ export interface SimulationSnapshotFile {
   reputations: AttributedNarrative[];
   resourceLock: ResourceLock;
   resolvedDisclosureOpportunityIds: string[];
+  resolvedDisplayEventIds: string[];
   resolvedIncidentEventIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
@@ -1497,7 +1573,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 14;
+  schemaVersion: 15;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

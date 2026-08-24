@@ -23,6 +23,7 @@ import { ScenarioValidationError } from '../model/validation.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
+import { resolveDisplayEvent } from './display.js';
 import { advanceCoping, resolveAppraisalEvent } from './coping.js';
 import { initializeHistoryDerivedState } from './history.js';
 import { resolveIncidentEvent } from './incident.js';
@@ -193,6 +194,7 @@ function initializeAgent(
     memories: formative.memories,
     narrative: null,
     outletHistory: [],
+    positionalRespect: { ambientCount: 0, ambientStanding: 0, references: [] },
     position: { ...placement.position },
     profile,
     resources: { ...DEFAULT_RESOURCES, ...placement.initialResources },
@@ -259,6 +261,8 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
       ...item,
       knownByIds: [...item.knownByIds],
     })),
+    displayExposures: [],
+    displayRecords: [],
     dyads: prepared.scenario.dyads.map(dyad => ({
       ...dyad,
       features: { ...dyad.features },
@@ -276,6 +280,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     reputations: [],
     resourceLock: prepared.resourceLock,
     resolvedDisclosureOpportunityIds: [],
+    resolvedDisplayEventIds: [],
     resolvedIncidentEventIds: [],
     resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
@@ -432,6 +437,7 @@ export function createSimulationFromPreparedSnapshot(input: {
               claims: saved.narrative.claims.map(claim => ({ ...claim })),
             },
       outletHistory: saved.outletHistory.map(use => ({ ...use })),
+      positionalRespect: structuredClone(saved.positionalRespect),
       position: { ...saved.position },
       profile: agent.profile,
       resources: { ...saved.resources },
@@ -474,6 +480,14 @@ export function createSimulationFromPreparedSnapshot(input: {
         );
       }
     }
+    saved.positionalRespect.references.forEach((reference, referenceIndex) => {
+      if (!agentIds.has(reference.subjectId) || reference.subjectId === saved.id) {
+        throw new ScenarioValidationError(
+          `snapshot.agents[${index}].positionalRespect.references[${referenceIndex}].subjectId`,
+          'positional reference must name another snapshot agent',
+        );
+      }
+    });
   });
   snapshot.dyads.forEach((dyad, index) => {
     if (!agentIds.has(dyad.observerId) || !agentIds.has(dyad.subjectId)) {
@@ -528,6 +542,38 @@ export function createSimulationFromPreparedSnapshot(input: {
       throw new ScenarioValidationError(
         `snapshot.resolvedIncidentEventIds[${index}]`,
         `unknown incident event "${eventId}"`,
+      );
+    }
+  });
+  const displayEventIds = new Set(snapshot.scenario.displayEvents.map(event => event.id));
+  const displayIds = new Set(snapshot.scenario.displayEvents.map(event => event.displayId));
+  snapshot.displayRecords.forEach((record, index) => {
+    if (
+      !displayEventIds.has(record.eventId) ||
+      !agentIds.has(record.wearerId) ||
+      record.appraisals.some(
+        appraisal => appraisal.eventId !== record.eventId || !agentIds.has(appraisal.observerId),
+      )
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.displayRecords[${index}]`,
+        'display record must reference snapshot agents and an authored event',
+      );
+    }
+  });
+  snapshot.displayExposures.forEach((exposure, index) => {
+    if (!agentIds.has(exposure.observerId) || !displayIds.has(exposure.displayId)) {
+      throw new ScenarioValidationError(
+        `snapshot.displayExposures[${index}]`,
+        'display exposure must reference a snapshot agent and authored display',
+      );
+    }
+  });
+  snapshot.resolvedDisplayEventIds.forEach((eventId, index) => {
+    if (!displayEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedDisplayEventIds[${index}]`,
+        `unknown display event "${eventId}"`,
       );
     }
   });
@@ -758,6 +804,8 @@ export function createSimulationFromPreparedSnapshot(input: {
     decisions: snapshot.decisions,
     disclosureDecisions: snapshot.disclosureDecisions,
     disclosureItems: snapshot.disclosureItems,
+    displayExposures: snapshot.displayExposures,
+    displayRecords: snapshot.displayRecords,
     dyads: snapshot.dyads,
     incidentRecords: snapshot.incidentRecords,
     intentions: snapshot.intentions,
@@ -768,6 +816,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     relationshipDecisions: snapshot.relationshipDecisions,
     reputations: snapshot.reputations,
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
+    resolvedDisplayEventIds: snapshot.resolvedDisplayEventIds,
     resolvedIncidentEventIds: snapshot.resolvedIncidentEventIds,
     resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
@@ -1127,6 +1176,13 @@ function advanceOneTick(state: SimulationState): SimulationState {
       !prepared.resolvedIncidentEventIds.includes(event.id),
   );
   for (const event of dueIncidentEvents) next = resolveIncidentEvent(next, event);
+  const dueDisplayEvents = prepared.scenario.displayEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedDisplayEventIds.includes(event.id),
+  );
+  for (const event of dueDisplayEvents) next = resolveDisplayEvent(next, event);
   const dueRelationshipEvents = prepared.scenario.relationshipEvents.filter(
     event =>
       event.atMinute > prepared.minute &&

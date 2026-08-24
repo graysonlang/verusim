@@ -626,7 +626,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 15) return file;
+  if (file.schemaVersion === 16) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -641,7 +641,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 11 &&
     file.schemaVersion !== 12 &&
     file.schemaVersion !== 13 &&
-    file.schemaVersion !== 14
+    file.schemaVersion !== 14 &&
+    file.schemaVersion !== 15
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -863,7 +864,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       }
     }
   }
-  file.schemaVersion = 15;
+  if (sourceVersion < 16) file.displayEvents = [];
+  file.schemaVersion = 16;
   return file;
 }
 
@@ -1314,7 +1316,7 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 15);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 16);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -2047,6 +2049,50 @@ export function parseScenario(value: unknown): ScenarioFile {
     },
   );
   uniqueIds(incidentEvents, 'scenario.incidentEvents');
+
+  const displayEvents = arrayValue(file.displayEvents, 'scenario.displayEvents').map(
+    (entry, index) => {
+      const path = `scenario.displayEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      identifierValue(event.displayId, `${path}.displayId`);
+      identifierValue(event.wearerId, `${path}.wearerId`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      stringValue(event.summary, `${path}.summary`);
+      stringValue(event.statusMarker, `${path}.statusMarker`);
+      if (typeof event.domainContested !== 'boolean') {
+        throw new ScenarioValidationError(`${path}.domainContested`, 'expected a boolean');
+      }
+      numberValue(event.magnitude, `${path}.magnitude`, Number.EPSILON, 1);
+      numberValue(event.habituationPerExposure, `${path}.habituationPerExposure`, 0, 1);
+      numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
+      const observerIds = arrayValue(event.observerIds, `${path}.observerIds`);
+      if (observerIds.length === 0) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'expected at least one observer');
+      }
+      observerIds.forEach((observerId, observerIndex) => {
+        identifierValue(observerId, `${path}.observerIds[${observerIndex}]`);
+      });
+      if (new Set(observerIds).size !== observerIds.length) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'duplicate agent identifier');
+      }
+      const context = objectValue(event.context, `${path}.context`);
+      if (context.locationId !== null) {
+        identifierValue(context.locationId, `${path}.context.locationId`);
+      }
+      for (const field of ['groupIds', 'institutionIds']) {
+        const ids = arrayValue(context[field], `${path}.context.${field}`);
+        ids.forEach((id, idIndex) => {
+          identifierValue(id, `${path}.context.${field}[${idIndex}]`);
+        });
+        if (new Set(ids).size !== ids.length) {
+          throw new ScenarioValidationError(`${path}.context.${field}`, 'duplicate identifier');
+        }
+      }
+      return event;
+    },
+  );
+  uniqueIds(displayEvents, 'scenario.displayEvents');
 
   const opportunities = arrayValue(
     file.behaviorOpportunities,

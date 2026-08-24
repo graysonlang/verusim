@@ -36,6 +36,7 @@ const TRACE_KINDS = new Set([
   'decision',
   'disclosure-appraisal',
   'disclosure-decision',
+  'display-appraisal',
   'gate',
   'goal',
   'incident-appraisal',
@@ -75,6 +76,7 @@ const OBSERVATION_CHANNELS = new Set(['hearing', 'sight']);
 const OBSERVATION_DIMENSIONS = new Set(['disclosure', 'empathy']);
 const OBSERVATION_OUTCOMES = new Set(['confirmed', 'corrected', 'missed', 'suspected']);
 const NORM_OBSERVATION_OUTCOMES = new Set(['appraised', 'missed']);
+const DISPLAY_RESPONSES = new Set(['admiration', 'disdain', 'envy', 'indifference', 'missed']);
 const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
 const NARRATIVE_DISPOSITIONS = new Set([
   'accepted',
@@ -565,6 +567,29 @@ function validateAgent(value: unknown, path: string): void {
     numberValue(use.habituation, `${usePath}.habituation`, 0, 1);
   });
 
+  const positional = objectValue(agent.positionalRespect, `${path}.positionalRespect`);
+  integerValue(positional.ambientCount, `${path}.positionalRespect.ambientCount`, 0);
+  numberValue(positional.ambientStanding, `${path}.positionalRespect.ambientStanding`, -1, 1);
+  const referenceIds = new Set<string>();
+  const references = arrayValue(positional.references, `${path}.positionalRespect.references`);
+  if (references.length > 5) {
+    throw new ScenarioValidationError(
+      `${path}.positionalRespect.references`,
+      'expected no more than five exact references',
+    );
+  }
+  references.forEach((referenceValue, index) => {
+    const referencePath = `${path}.positionalRespect.references[${index}]`;
+    const reference = objectValue(referenceValue, referencePath);
+    const subjectId = stringValue(reference.subjectId, `${referencePath}.subjectId`);
+    if (referenceIds.has(subjectId)) {
+      throw new ScenarioValidationError(`${referencePath}.subjectId`, 'duplicate reference');
+    }
+    referenceIds.add(subjectId);
+    numberValue(reference.relevance, `${referencePath}.relevance`, 0, 1);
+    numberValue(reference.standing, `${referencePath}.standing`, -1, 1);
+  });
+
   arrayValue(agent.memories, `${path}.memories`).forEach((value, index) => {
     const memoryPath = `${path}.memories[${index}]`;
     const memory = objectValue(value, memoryPath);
@@ -1005,6 +1030,83 @@ function validateIncidentHistory(value: unknown, path: string): void {
   });
 }
 
+function validateDisplayHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    stringValue(entry.eventId, `${entryPath}.eventId`);
+    stringValue(entry.id, `${entryPath}.id`);
+    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.perceivedAudienceCount, `${entryPath}.perceivedAudienceCount`, 0);
+    integerValue(entry.tick, `${entryPath}.tick`);
+    stringValue(entry.wearerId, `${entryPath}.wearerId`);
+    numberValue(entry.wearerYield, `${entryPath}.wearerYield`, 0, 1);
+    arrayValue(entry.appraisals, `${entryPath}.appraisals`).forEach(
+      (appraisalValue, appraisalIndex) => {
+        const appraisalPath = `${entryPath}.appraisals[${appraisalIndex}]`;
+        const appraisal = objectValue(appraisalValue, appraisalPath);
+        stringValue(appraisal.eventId, `${appraisalPath}.eventId`);
+        stringValue(appraisal.id, `${appraisalPath}.id`);
+        integerValue(appraisal.minute, `${appraisalPath}.minute`);
+        stringValue(appraisal.observerId, `${appraisalPath}.observerId`);
+        integerValue(appraisal.tick, `${appraisalPath}.tick`);
+        if (typeof appraisal.outcome !== 'string' || !DISPLAY_RESPONSES.has(appraisal.outcome)) {
+          throw new ScenarioValidationError(
+            `${appraisalPath}.outcome`,
+            'expected a known display response',
+          );
+        }
+        for (const field of [
+          'admirationTurn',
+          'comparability',
+          'exposureAfter',
+          'exposureBefore',
+          'markerCentrality',
+          'perceptionStrength',
+          'rankSimilarity',
+        ]) {
+          numberValue(appraisal[field], `${appraisalPath}.${field}`, 0, 1);
+        }
+        numberValue(appraisal.positionalTurn, `${appraisalPath}.positionalTurn`, -1, 0);
+        validateValueTurns(appraisal.subjectiveTurns, `${appraisalPath}.subjectiveTurns`);
+        arrayValue(appraisal.contractTerms, `${appraisalPath}.contractTerms`).forEach(
+          (termValue, termIndex) => {
+            const termPath = `${appraisalPath}.contractTerms[${termIndex}]`;
+            const term = objectValue(termValue, termPath);
+            if (typeof term.affiliated !== 'boolean') {
+              throw new ScenarioValidationError(`${termPath}.affiliated`, 'expected a boolean');
+            }
+            stringValue(term.contractId, `${termPath}.contractId`);
+            stringValue(term.normId, `${termPath}.normId`);
+            numberValue(term.enforcementPressure, `${termPath}.enforcementPressure`, 0, 1);
+            numberValue(term.identityStake, `${termPath}.identityStake`, 0, 1);
+            numberValue(term.internalization, `${termPath}.internalization`, 0, 1);
+            numberValue(term.legibility, `${termPath}.legibility`, 0, 1);
+            validateValueTurns(term.conventionalTurns, `${termPath}.conventionalTurns`);
+          },
+        );
+      },
+    );
+  });
+}
+
+function validateDisplayExposures(value: unknown, path: string): void {
+  const keys = new Set<string>();
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    const displayId = stringValue(entry.displayId, `${entryPath}.displayId`);
+    const observerId = stringValue(entry.observerId, `${entryPath}.observerId`);
+    const key = `${observerId}:${displayId}`;
+    if (keys.has(key)) {
+      throw new ScenarioValidationError(entryPath, 'duplicate observer display exposure');
+    }
+    keys.add(key);
+    integerValue(entry.exposures, `${entryPath}.exposures`, 1);
+    numberValue(entry.habituation, `${entryPath}.habituation`, 0, 1);
+  });
+}
+
 function validateIdentifierList(value: unknown, path: string): void {
   const values = arrayValue(value, path);
   values.forEach((entry, index) => {
@@ -1216,7 +1318,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 11 &&
     file.schemaVersion !== 12 &&
     file.schemaVersion !== 13 &&
-    file.schemaVersion !== 14
+    file.schemaVersion !== 14 &&
+    file.schemaVersion !== 15
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1421,7 +1524,20 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       }
     }
   }
-  file.schemaVersion = 14;
+  if (sourceVersion < 15) {
+    file.scenario = parseScenario(file.scenario);
+    file.displayExposures = [];
+    file.displayRecords = [];
+    file.resolvedDisplayEventIds = [];
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      objectValue(agentValue, 'snapshot.agents').positionalRespect = {
+        ambientCount: 0,
+        ambientStanding: 0,
+        references: [],
+      };
+    }
+  }
+  file.schemaVersion = 15;
   return file;
 }
 
@@ -1430,7 +1546,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 14) {
+  if (file.schemaVersion !== 15) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1505,6 +1621,8 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   integerValue(file.worldRevision, 'snapshot.worldRevision');
   validateDecisionHistory(file.decisions, 'snapshot.decisions');
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
+  validateDisplayExposures(file.displayExposures, 'snapshot.displayExposures');
+  validateDisplayHistory(file.displayRecords, 'snapshot.displayRecords');
   validateIncidentHistory(file.incidentRecords, 'snapshot.incidentRecords');
   validateObservationHistory(file.observations, 'snapshot.observations');
   validateRelationshipHistory(file.relationshipDecisions, 'snapshot.relationshipDecisions');
@@ -1517,6 +1635,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
     file.resolvedDisclosureOpportunityIds,
     'snapshot.resolvedDisclosureOpportunityIds',
   );
+  validateIdentifierList(file.resolvedDisplayEventIds, 'snapshot.resolvedDisplayEventIds');
   validateIdentifierList(file.resolvedIncidentEventIds, 'snapshot.resolvedIncidentEventIds');
   validateIdentifierList(file.resolvedObservationEventIds, 'snapshot.resolvedObservationEventIds');
   validateIdentifierList(

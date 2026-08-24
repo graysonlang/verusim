@@ -4,18 +4,16 @@ import {
   type IncidentContractTerm,
   type IncidentEvent,
   type IncidentPerceivedAttribution,
-  type NormAddress,
-  type NormPerspective,
   type SimulationAgent,
   type SimulationState,
-  type SocialContractPlacement,
   type TraceEntry,
   type ValueMap,
 } from '../model/types.js';
-import { effectiveIdentity, effectiveNormInternalization } from './history.js';
+import { effectiveIdentity } from './history.js';
 import { evaluateEmpathy } from './empathy.js';
 import { effectiveValueWeights } from './salience.js';
 import { evaluateSpatialPerception } from './spatial.js';
+import { activeSocialInterpretationTerms } from './social-context.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyAgentValueTurns } from './value-turn.js';
 
@@ -31,37 +29,10 @@ function appendBounded<Item>(items: readonly Item[], item: Item, maximum: number
   return next.length <= maximum ? next : next.slice(next.length - maximum);
 }
 
-function addressKey(address: NormAddress): string {
-  return `${address.packageId}:${address.kind}:${address.resourceId}`;
-}
-
 function agentFor(state: SimulationState, agentId: string): SimulationAgent {
   const agent = state.agents.find(candidate => candidate.id === agentId);
   if (agent === undefined) throw new RangeError(`Unknown incident agent "${agentId}"`);
   return agent;
-}
-
-function perspectiveFor(
-  state: SimulationState,
-  observerId: string,
-  norm: NormAddress,
-): NormPerspective | null {
-  return (
-    state.scenario.characters
-      .find(placement => placement.instanceId === observerId)
-      ?.normPerspectives.find(perspective => addressKey(perspective.norm) === addressKey(norm)) ??
-    null
-  );
-}
-
-function placementIsActive(placement: SocialContractPlacement, event: IncidentEvent): boolean {
-  if (placement.scope.kind === 'event') return placement.scope.eventId === event.id;
-  if (placement.scope.kind === 'group')
-    return event.context.groupIds.includes(placement.scope.groupId);
-  if (placement.scope.kind === 'institution') {
-    return event.context.institutionIds.includes(placement.scope.institutionId);
-  }
-  return placement.scope.locationId === event.context.locationId;
 }
 
 function baselineTurns(
@@ -106,54 +77,6 @@ function perceivedAttribution(
     model.suspicion * 0.5 -
     model.predictionError * 0.2;
   return benign >= 0.45 ? 'nobody' : 'other';
-}
-
-function contractTerms(
-  state: SimulationState,
-  event: IncidentEvent,
-  observer: SimulationAgent,
-): IncidentContractTerm[] {
-  const terms: IncidentContractTerm[] = [];
-  for (const placement of state.scenario.socialContractPlacements) {
-    if (!placementIsActive(placement, event)) continue;
-    const contractKey = `${placement.contract.packageId}:${placement.contract.kind}:${placement.contract.resourceId}`;
-    const contractResource = state.socialContracts.find(
-      resource =>
-        `${resource.address.packageId}:${resource.address.kind}:${resource.address.resourceId}` ===
-        contractKey,
-    );
-    if (contractResource === undefined) continue;
-    for (const normAddress of contractResource.contract.norms) {
-      const normKey = addressKey(normAddress);
-      const normResource = state.norms.find(resource => addressKey(resource.address) === normKey);
-      const interpretation = normResource?.norm.interpretations.find(
-        candidate => candidate.rootImpact === event.rootImpact,
-      );
-      if (interpretation === undefined) continue;
-      const perspective = perspectiveFor(state, observer.id, normAddress);
-      const internalization = effectiveNormInternalization(observer, normAddress);
-      const conventionalTurns = Object.fromEntries(
-        VALUE_IDS.flatMap(valueId => {
-          const turn = (interpretation.turns[valueId] ?? 0) * internalization * event.magnitude;
-          return turn === 0 ? [] : [[valueId, turn]];
-        }),
-      ) as Partial<ValueMap<number>>;
-      terms.push({
-        affiliated: perspective?.affiliated ?? false,
-        contractId: contractKey,
-        conventionalTurns,
-        enforcementPressure:
-          placement.enforcementPresence *
-          contractResource.contract.enforcementSeverity *
-          event.magnitude,
-        identityStake: interpretation.identityStake * internalization,
-        internalization,
-        legibility: perspective?.legibility ?? 0,
-        normId: normKey,
-      });
-    }
-  }
-  return terms;
 }
 
 function estimatedAudienceAppraisal(state: SimulationState, event: IncidentEvent): number {
@@ -339,7 +262,13 @@ function resolveForObserver(
   }
   const observer = agentFor(state, observerId);
   const baseline = baselineTurns(state, event, observerId);
-  const terms = contractTerms(state, event, observer);
+  const terms = activeSocialInterpretationTerms(state, {
+    context: event.context,
+    eventId: event.id,
+    magnitude: event.magnitude,
+    observer,
+    rootImpact: event.rootImpact,
+  });
   const shame = shameTurn(state, event, observer, terms);
   const turns = combinedTurns(baseline, terms, shame);
   const attribution = perceivedAttribution(state, event, observerId);

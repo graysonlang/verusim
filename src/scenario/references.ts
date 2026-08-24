@@ -259,6 +259,40 @@ export function validateReferences(content: ScenarioContent): void {
       }
     });
   });
+  content.scenario.displayEvents.forEach((event, index) => {
+    const path = `scenario.displayEvents[${index}]`;
+    if (!instanceIds.has(event.wearerId)) {
+      throw new ScenarioValidationError(`${path}.wearerId`, `unknown agent "${event.wearerId}"`);
+    }
+    if (event.context.locationId !== null && !locationIds.has(event.context.locationId)) {
+      throw new ScenarioValidationError(
+        `${path}.context.locationId`,
+        `unknown location "${event.context.locationId}"`,
+      );
+    }
+    event.context.groupIds.forEach((groupId, groupIndex) => {
+      if (!reputationGroupIds.has(groupId)) {
+        throw new ScenarioValidationError(
+          `${path}.context.groupIds[${groupIndex}]`,
+          `unknown group "${groupId}"`,
+        );
+      }
+    });
+    event.observerIds.forEach((observerId, observerIndex) => {
+      if (!instanceIds.has(observerId)) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          `unknown agent "${observerId}"`,
+        );
+      }
+      if (observerId === event.wearerId) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          'the wearer cannot observe its own display',
+        );
+      }
+    });
+  });
   content.scenario.relationshipEvents.forEach((event, index) => {
     const path = `scenario.relationshipEvents[${index}]`;
     if (!instanceIds.has(event.observerId)) {

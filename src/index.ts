@@ -141,6 +141,7 @@ export {
   resolveDisclosureOpportunity,
 } from './simulation/disclosure.js';
 export { evaluateEmpathy } from './simulation/empathy.js';
+export { resolveDisplayEvent } from './simulation/display.js';
 export { resolveIncidentEvent } from './simulation/incident.js';
 export {
   advanceCoping,
