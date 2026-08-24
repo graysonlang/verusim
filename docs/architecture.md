@@ -49,7 +49,7 @@ Choosing a bundled entry or an external file still uses the same validated simul
 The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains, broad capabilities, and descriptive physical profiles live on reusable character definitions and are not changed by normal stepping.
-2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Narrative claims and every other mutable history-derived field resolve through snapshot-persisted per-instance state, so one instance can move without mutating its reusable profile or every agent that references the same definition. The sparse override shape is the required boundary for later generation and rare §14.4 writers; constitutional gains remain outside it.
+2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Narrative claims and every other mutable history-derived field resolve through snapshot-persisted per-instance state, so one instance can move without mutating its reusable profile or every agent that references the same definition. Rare §14.4 writers use years-scale persisted accumulators and sparse overrides; constitutional gains remain outside that boundary.
 3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
 Authored scenarios and live snapshots are distinct formats.
@@ -397,6 +397,12 @@ Initialization applies constitutional reactivity and the same clamped value-char
 Each applied event produces an immutable disposition record and a linked formative memory with the authored resource path, profile identity, event index, and appraisal inputs.
 The reusable profile remains unchanged.
 
+Baseline plasticity has only three named write paths: sustained outlet use can promote an identity marker, rewarded masking can promote the performed identity, and accumulated directed ruptures can crystallize a cascade prior.
+Signals below the large-gap gate do not accumulate.
+Qualifying signals first cross a years-scale gate, then earn quantized sparse-override changes through an age-decaying and confirmation-stiffening curve.
+Adult rates have an explicit hard cap and a longer gate, while child exposure can produce genuine long-horizon movement.
+Each write retains its mechanism, target, source, age, minute, integral, and before-and-after values in snapshot-persisted per-instance state.
+
 Role-conditioned character generation is an authoring adapter over this boundary.
 A reusable role bundle defines continuous draw regions across behavioral subsystems plus categorical identity, satisfier, outlet, and weighted formative-event inputs; it is not a runtime class or behavior selector.
 Each numeric dimension consumes its own draw from one explicit deterministic sampler.
@@ -419,6 +425,11 @@ The result is ordinary scenario dyad data and passes the same scenario validatio
 Environment generation likewise consumes a complete authored topology blueprint.
 It may sample overall dimensions, fractional area and location bounds, objective cover, layer elevations, connector positions, and traversal distances, but it cannot discover layers, locations, affordances, or resource candidates from a registry.
 The materialized version 3 layout passes ordinary environment-resource validation, including layer connectivity, and becomes immutable before preparation.
+
+The version 2 generated-project envelope adds a source path to every generated resource after version 1 retained only resource values.
+Migration supplies deterministic index-based provenance for version 1 inputs.
+Project validation builds the ordinary resource catalog and calls the ordinary scenario preparation boundary, then reports resolved character, cohort-dyad, environment, norm, and social-contract counts or the original actionable authored path.
+It does not implement a second resource, scenario, reference, or closure parser.
 
 `deriveCharacterCheckpoint` materializes an independently valid earlier profile by retaining the stable `characterId`, constitutional base, and formative-event prefix while assigning an explicit new `profileId` and age.
 It never creates a runtime save or an overlay chain.
@@ -515,10 +526,11 @@ Versions 1 and 2 migrate kind-based cover defaults; version 1 also migrates onto
 Scenario schema version 14 adds structured norm references and scoped social-contract placements after version 13 added layer-bearing character positions and version 12 replaced path-era character and environment identifiers with semantic addresses.
 Explicit migrations preserve version 1 through 13 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, placing pre-layer positions on `surface`, and moving the bounded inline norm shape into the explicit `legacyLocalNorms` compatibility field with default-package norm addresses.
 Native version 14 repository scenarios keep `legacyLocalNorms` empty and acquire reusable norms through placed social contracts.
-Snapshot schema version 12 persists sparse history-derived overrides, formative disposition records, and linked memory provenance after version 11 persisted the version 14 scenario and transitive prepared resource lock, version 10 added layer-bearing positions and destinations, and version 9 added structured resource addresses and the initial exact lock.
+Snapshot schema version 13 persists baseline-plasticity accumulators and write records after version 12 added sparse history-derived overrides, formative disposition records, and linked memory provenance, version 11 persisted the version 14 scenario and transitive prepared resource lock, version 10 added layer-bearing positions and destinations, and version 9 added structured resource addresses and the initial exact lock.
 Standalone snapshot parsing verifies sorted unique lock entries and every direct scenario dependency; prepared resume verifies the exact transitive lock because the external contract graph is available only at that boundary.
-Explicit snapshot migrations preserve versions 1 through 11, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules.
-Snapshots before version 12 receive an empty history override boundary rather than retroactively replaying formative events and changing saved behavior; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Explicit snapshot migrations preserve versions 1 through 12, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules.
+Snapshots before version 12 receive an empty history override boundary rather than retroactively replaying formative events and changing saved behavior, and snapshots before version 13 receive empty plasticity accumulators and records rather than retroactively integrating elapsed experience.
+Legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

@@ -3,6 +3,9 @@ import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import scenario from '../content/scenarios/market-morning.json';
 import {
+  ADULT_BASELINE_CHANGE_CAP_PER_YEAR,
+  BASELINE_PLASTICITY_YEAR_MINUTES,
+  advanceBaselinePlasticity,
   createSimulation,
   createSimulationFromSnapshot,
   deriveCharacterCheckpoint,
@@ -145,14 +148,127 @@ describe('history-derived instance state', () => {
     assert.notEqual(effectiveValueWeight(original, 'fairness'), 0.18);
   });
 
-  it('round-trips schema 12 state and migrates schema 11 without retroactive derivation', () => {
+  it('gates baseline plasticity on years, large gaps, age, and named mechanisms', () => {
+    const adult = maraAgent();
+    const ordinary = advanceBaselinePlasticity(adult, {
+      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      signals: [
+        {
+          gap: 0.64,
+          mechanism: 'outlet-promotion',
+          source: 'test.ordinaryOutlet',
+          strength: 1,
+          target: { id: 'patient repair', kind: 'identity-marker' },
+        },
+      ],
+    });
+    assert.deepEqual(ordinary.history, adult.history);
+
+    const child: SimulationAgent = {
+      ...adult,
+      profile: {
+        ...adult.profile,
+        constitution: { ...adult.profile.constitution },
+        physical: { ...adult.profile.physical, ageYears: 10 },
+      },
+    };
+    const elapsedYears = 5;
+    const signals = [
+      {
+        gap: 0.9,
+        mechanism: 'outlet-promotion' as const,
+        source: 'test.outlet',
+        strength: 1,
+        target: { id: 'maker', kind: 'identity-marker' as const },
+      },
+      {
+        gap: 0.9,
+        mechanism: 'rewarded-masking' as const,
+        source: 'test.masking',
+        strength: 1,
+        target: { id: 'host', kind: 'identity-marker' as const },
+      },
+      {
+        gap: 0.9,
+        mechanism: 'rupture-crystallization' as const,
+        source: 'test.rupture',
+        strength: 1,
+        target: { id: 'freeze', kind: 'cascade-prior' as const },
+      },
+    ];
+    const changed = advanceBaselinePlasticity(child, {
+      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
+      minute: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
+      signals,
+    });
+    const replayed = advanceBaselinePlasticity(child, {
+      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
+      minute: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
+      signals,
+    });
+
+    assert.deepEqual(replayed, changed);
+    assert.equal(changed.history.plasticity.records.length, 3);
+    assert.ok(
+      (effectiveIdentity(changed).find(item => item.marker === 'maker')?.centrality ?? 0) > 0.1,
+    );
+    assert.ok(
+      (effectiveIdentity(changed).find(item => item.marker === 'host')?.centrality ?? 0) > 0.1,
+    );
+    assert.ok(effectiveCascadePrior(changed, 'freeze') > effectiveCascadePrior(child, 'freeze'));
+    assert.deepEqual(changed.profile.constitution, adult.profile.constitution);
+
+    const outletSignal = signals[0];
+    assert.ok(outletSignal);
+    const adultUnderPressure = advanceBaselinePlasticity(adult, {
+      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      signals: [outletSignal],
+    });
+    const adultChange = adultUnderPressure.history.plasticity.records.reduce(
+      (total, record) => total + record.appliedChange,
+      0,
+    );
+    assert.ok(adultChange <= ADULT_BASELINE_CHANGE_CAP_PER_YEAR * (20 - 5));
+    assert.ok(
+      adultChange <
+        (effectiveIdentity(changed).find(item => item.marker === 'maker')?.centrality ?? 0),
+    );
+
+    const persistedState = createSimulation({
+      characterLibrary: characters,
+      environmentLibrary: environments,
+      scenario,
+    });
+    const stateWithPlasticity = {
+      ...persistedState,
+      agents: persistedState.agents.map(agent =>
+        agent.id === adultUnderPressure.id ? adultUnderPressure : agent,
+      ),
+      minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+    };
+    const plasticitySnapshot = serializeSnapshot(stateWithPlasticity);
+    assert.deepEqual(parseSnapshot(plasticitySnapshot), plasticitySnapshot);
+    const resumed = createSimulationFromSnapshot({
+      characterLibrary: characters,
+      environmentLibrary: environments,
+      snapshot: plasticitySnapshot,
+    });
+    assert.deepEqual(
+      resumed.agents.find(agent => agent.id === adultUnderPressure.id)?.history.plasticity,
+      adultUnderPressure.history.plasticity,
+    );
+  });
+
+  it('round-trips schema 13 state and migrates earlier history without retroactive derivation', () => {
     const initial = createSimulation({
       characterLibrary: characters,
       environmentLibrary: environments,
       scenario,
     });
     const snapshot = serializeSnapshot(initial);
-    assert.equal(snapshot.schemaVersion, 12);
+    assert.equal(snapshot.schemaVersion, 13);
     assert.deepEqual(parseSnapshot(snapshot), snapshot);
     assert.deepEqual(
       createSimulationFromSnapshot({
@@ -172,8 +288,12 @@ describe('history-derived instance state', () => {
       }
     }
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 12);
-    assert.deepEqual(migrated.agents[0]?.history, { formativeRecords: [], overrides: {} });
+    assert.equal(migrated.schemaVersion, 13);
+    assert.deepEqual(migrated.agents[0]?.history, {
+      formativeRecords: [],
+      overrides: {},
+      plasticity: { accumulators: [], records: [] },
+    });
     const resumed = createSimulationFromSnapshot({
       characterLibrary: characters,
       environmentLibrary: environments,
@@ -182,6 +302,16 @@ describe('history-derived instance state', () => {
     const mara = resumed.agents.find(agent => agent.id === 'mara');
     assert.ok(mara);
     assert.equal(effectiveValueWeight(mara, 'safety'), mara.profile.values.safety.weight);
+
+    const schema12 = structuredClone(snapshot) as unknown as Record<string, unknown>;
+    schema12.schemaVersion = 12;
+    for (const agentValue of schema12.agents as Array<Record<string, unknown>>) {
+      delete (agentValue.history as Record<string, unknown>).plasticity;
+    }
+    assert.deepEqual(parseSnapshot(schema12).agents[0]?.history.plasticity, {
+      accumulators: [],
+      records: [],
+    });
   });
 
   it('rejects malformed formative chronology and snapshot override state at authored paths', () => {
@@ -206,6 +336,24 @@ describe('history-derived instance state', () => {
     assert.throws(
       () => parseSnapshot(malformed),
       /snapshot\.agents\[0\]\.history\.overrides\.valueWeights\.safety/,
+    );
+
+    const malformedPlasticity = structuredClone(snapshot);
+    const plasticityAgent = malformedPlasticity.agents[0];
+    assert.ok(plasticityAgent);
+    plasticityAgent.history.plasticity.accumulators = [
+      {
+        appliedChange: 0,
+        earnedChange: 0,
+        integratedYears: 1,
+        key: 'outlet-promotion:cascade-prior:freeze',
+        mechanism: 'outlet-promotion',
+        target: { id: 'freeze', kind: 'cascade-prior' },
+      },
+    ];
+    assert.throws(
+      () => parseSnapshot(malformedPlasticity),
+      /snapshot\.agents\[0\]\.history\.plasticity\.accumulators\[0\]\.target\.kind/,
     );
   });
 });

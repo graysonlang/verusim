@@ -262,9 +262,48 @@ export interface FormativeDispositionRecord {
   valueId: ValueId;
 }
 
+export type BaselinePlasticityMechanism =
+  | 'outlet-promotion'
+  | 'rewarded-masking'
+  | 'rupture-crystallization';
+
+export type BaselinePlasticityTargetKind = 'cascade-prior' | 'identity-marker';
+
+export interface BaselinePlasticityTarget {
+  id: string;
+  kind: BaselinePlasticityTargetKind;
+}
+
+export interface BaselinePlasticityAccumulator {
+  appliedChange: number;
+  earnedChange: number;
+  integratedYears: number;
+  key: string;
+  mechanism: BaselinePlasticityMechanism;
+  target: BaselinePlasticityTarget;
+}
+
+export interface BaselinePlasticityRecord {
+  ageYears: number;
+  appliedChange: number;
+  integratedYears: number;
+  mechanism: BaselinePlasticityMechanism;
+  minute: number;
+  previous: number;
+  resulting: number;
+  source: string;
+  target: BaselinePlasticityTarget;
+}
+
+export interface BaselinePlasticityState {
+  accumulators: BaselinePlasticityAccumulator[];
+  records: BaselinePlasticityRecord[];
+}
+
 export interface HistoryDerivedState {
   formativeRecords: FormativeDispositionRecord[];
   overrides: HistoryDerivedOverrides;
+  plasticity: BaselinePlasticityState;
 }
 
 export interface FormativeMemoryProvenance {
@@ -1353,7 +1392,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 12;
+  schemaVersion: 13;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

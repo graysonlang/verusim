@@ -18,41 +18,17 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5G: bounded baseline plasticity, format migration, and scenario validation tooling.
-Implement the remaining §14.4 history-derived writers over the Phase 5D sparse override boundary, with years-scale integrals, a hard adult rate cap, large-gap gating, age-sensitive plasticity, and genuine long-horizon movement for children.
-Ordinary adult runtime experience must remain below the write gate.
-
-Finish the Phase 5 format and authoring boundary with explicit generation-file migrations and validation reports that cover generated character, cohort-context, environment, and scenario content without creating a second parser or preparation path.
+The active slice is Phase 6: world stimuli, social interpretation, and somatic state.
+Resolve the incident-sampling and somatic open decisions before fixing their storage contracts, then introduce objective incident facts and observer-side interpretation through the existing appraisal, social-contract, and causal-trace boundaries.
 
 ### Current-focus non-goals
 
-- no unrestricted adult drift or constitutional writes
-- no changes to the completed generation algorithms
-- no Phase 6 incident, normative-interpretation, or somatic changes
+- no changes to completed Phase 5 generation or plasticity algorithms
+- no authored moral verdict or winning social contract
+- no reduced-fidelity evaluator path
+- no unresolved incident or somatic fields that appear authoritative
+- no Phase 7 cadence or integration adapters
 - no package manager, remote dependency resolver, authoring UI, or pack writer
-
-## Phase 5 — authoring and population generation
-
-Split reusable characters and environments into independently validated resource documents whose semantic addresses do not depend on their file paths.
-Promote atomic norm definitions and coherent social-contract bundles into the same reusable resource system rather than attaching them to a character, species, environment, or scenario.
-Add stable package, character-profile, environment-layout, norm, and social-contract references plus a generated immutable catalog for repository discovery.
-Establish the acquisition-neutral prepared-scenario boundary so source-backed and direct in-memory content pass through the same migrations, validation, and reference resolution before entering the engine.
-Let scenarios place one or more social contracts into explicit location, institution, group, or event scopes independently of the physical environment, so the same place can host different administrations and multiple conventions can coexist.
-
-Run structured formative events through runtime update rules, add a sparse per-instance override for history-derived content before enabling §14.4 writes, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, pre-contact dyad and mind-model seeds, environment generation, format migrations, and scenario validation tools.
-Make character profiles at different ages or continuities explicit realizations of one stable character identity, deriving chronological checkpoints from the shared constitutional base and formative history where possible.
-
-Exit probes:
-
-- moving a resource document within an authoring tree does not change its address or invalidate a scenario
-- two scenarios select different profiles of one stable character identity without copying the character into either scenario
-- two scenarios share one social contract without copying its norms, while one physical environment accepts different social-context placements
-- generated-catalog and direct in-memory preparation produce equivalent resolved content, and simulation performs no resource reads after preparation
-- a dependency-closure report includes every referenced character, environment, norm, and social contract once and excludes unrelated resources
-- generated agents can explain unusual dispositions by pointing to stored formative events
-- a small cohort maintains minimum separation in parameter space
-- regenerating with the same seed produces byte-equivalent authored content
-- adult baselines resist ordinary runtime drift while child cohorts show long-horizon change
 
 ## Phase 6 — world stimuli, social interpretation, and somatic state
 

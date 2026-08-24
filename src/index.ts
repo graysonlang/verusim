@@ -30,6 +30,11 @@ export {
   generateRecentCohortHistory,
 } from './generation/cohort-context.js';
 export { generateEnvironmentLayout } from './generation/environment.js';
+export {
+  parseGenerationProject,
+  prepareGenerationProject,
+  validateGenerationProject,
+} from './generation/project.js';
 export type {
   CharacterGenerationProvenance,
   CharacterGenerationRequest,
@@ -68,6 +73,13 @@ export type {
   GeneratedEnvironmentLayout,
 } from './generation/environment.js';
 export type {
+  GenerationProjectFile,
+  GenerationValidationDiagnostic,
+  GenerationValidationReport,
+  GenerationValidationSummary,
+  PreparedGenerationProject,
+} from './generation/project.js';
+export type {
   IntegerGenerationRange,
   NumericGenerationRange,
   RealizedGenerationDraw,
@@ -92,6 +104,16 @@ export {
 export { createSimulation, createSimulationFromSnapshot } from './scenario/load.js';
 export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
 export { parseSnapshot } from './scenario/snapshot.js';
+export {
+  ADULT_BASELINE_CHANGE_CAP_PER_YEAR,
+  BASELINE_PLASTICITY_YEAR_MINUTES,
+  advanceBaselinePlasticity,
+  baselinePlasticityRateForAge,
+} from './simulation/plasticity.js';
+export type {
+  BaselinePlasticityAdvance,
+  BaselinePlasticitySignal,
+} from './simulation/plasticity.js';
 export {
   advanceIntentions,
   intendedTask,

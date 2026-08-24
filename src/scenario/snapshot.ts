@@ -10,6 +10,12 @@ import { ScenarioValidationError } from '../model/validation.js';
 import { parseResourceAddress, parseScenario, resourceAddressKey } from './parse.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
+const BASELINE_PLASTICITY_MECHANISMS = new Set([
+  'outlet-promotion',
+  'rewarded-masking',
+  'rupture-crystallization',
+]);
+const BASELINE_PLASTICITY_TARGET_KINDS = new Set(['cascade-prior', 'identity-marker']);
 const MEMORY_TYPES = new Set([
   'activity',
   'aftermath',
@@ -317,6 +323,56 @@ function validateFormativeProvenance(value: unknown, path: string): Record<strin
 function validateHistoryState(value: unknown, path: string): Map<string, Record<string, unknown>> {
   const history = objectValue(value, path);
   validateHistoryOverrides(history.overrides, `${path}.overrides`);
+  const plasticity = objectValue(history.plasticity, `${path}.plasticity`);
+  const accumulatorKeys = new Set<string>();
+  arrayValue(plasticity.accumulators, `${path}.plasticity.accumulators`).forEach(
+    (entryValue, index) => {
+      const entryPath = `${path}.plasticity.accumulators[${index}]`;
+      const entry = objectValue(entryValue, entryPath);
+      const appliedChange = numberValue(entry.appliedChange, `${entryPath}.appliedChange`, 0);
+      const earnedChange = numberValue(entry.earnedChange, `${entryPath}.earnedChange`, 0);
+      if (appliedChange > earnedChange) {
+        throw new ScenarioValidationError(
+          `${entryPath}.appliedChange`,
+          'must not exceed earnedChange',
+        );
+      }
+      numberValue(entry.integratedYears, `${entryPath}.integratedYears`, 0);
+      const key = stringValue(entry.key, `${entryPath}.key`);
+      if (accumulatorKeys.has(key)) {
+        throw new ScenarioValidationError(`${entryPath}.key`, 'duplicate plasticity accumulator');
+      }
+      accumulatorKeys.add(key);
+      validateBaselinePlasticityMechanism(entry.mechanism, `${entryPath}.mechanism`);
+      const target = validateBaselinePlasticityTarget(entry.target, `${entryPath}.target`);
+      if (key !== `${String(entry.mechanism)}:${target.kind}:${target.id}`) {
+        throw new ScenarioValidationError(`${entryPath}.key`, 'must match mechanism and target');
+      }
+      validatePlasticityTargetCompatibility(
+        String(entry.mechanism),
+        target.kind,
+        `${entryPath}.target.kind`,
+      );
+    },
+  );
+  arrayValue(plasticity.records, `${path}.plasticity.records`).forEach((entryValue, index) => {
+    const entryPath = `${path}.plasticity.records[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    numberValue(entry.ageYears, `${entryPath}.ageYears`, 0);
+    numberValue(entry.appliedChange, `${entryPath}.appliedChange`, 0, 1);
+    numberValue(entry.integratedYears, `${entryPath}.integratedYears`, 0);
+    validateBaselinePlasticityMechanism(entry.mechanism, `${entryPath}.mechanism`);
+    integerValue(entry.minute, `${entryPath}.minute`, 0);
+    numberValue(entry.previous, `${entryPath}.previous`, 0, 1);
+    numberValue(entry.resulting, `${entryPath}.resulting`, 0, 1);
+    stringValue(entry.source, `${entryPath}.source`);
+    const target = validateBaselinePlasticityTarget(entry.target, `${entryPath}.target`);
+    validatePlasticityTargetCompatibility(
+      String(entry.mechanism),
+      target.kind,
+      `${entryPath}.target.kind`,
+    );
+  });
   const byMemoryId = new Map<string, Record<string, unknown>>();
   const eventIds = new Set<string>();
   arrayValue(history.formativeRecords, `${path}.formativeRecords`).forEach((entryValue, index) => {
@@ -354,6 +410,38 @@ function validateHistoryState(value: unknown, path: string): Map<string, Record<
     byMemoryId.set(memoryId, entry);
   });
   return byMemoryId;
+}
+
+function validateBaselinePlasticityMechanism(value: unknown, path: string): void {
+  if (typeof value !== 'string' || !BASELINE_PLASTICITY_MECHANISMS.has(value)) {
+    throw new ScenarioValidationError(path, 'expected a known baseline plasticity mechanism');
+  }
+}
+
+function validateBaselinePlasticityTarget(
+  value: unknown,
+  path: string,
+): { id: string; kind: string } {
+  const target = objectValue(value, path);
+  const id = stringValue(target.id, `${path}.id`);
+  if (typeof target.kind !== 'string' || !BASELINE_PLASTICITY_TARGET_KINDS.has(target.kind)) {
+    throw new ScenarioValidationError(`${path}.kind`, 'expected a known plasticity target kind');
+  }
+  if (target.kind === 'cascade-prior' && (id === 'none' || !CASCADE_POSITIONS.has(id))) {
+    throw new ScenarioValidationError(`${path}.id`, 'expected a cascade position');
+  }
+  return { id, kind: target.kind };
+}
+
+function validatePlasticityTargetCompatibility(
+  mechanism: string,
+  targetKind: string,
+  path: string,
+): void {
+  const expectsCascade = mechanism === 'rupture-crystallization';
+  if (expectsCascade !== (targetKind === 'cascade-prior')) {
+    throw new ScenarioValidationError(path, `incompatible with ${mechanism}`);
+  }
 }
 
 function validateAgent(value: unknown, path: string): void {
@@ -1070,7 +1158,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 9 &&
     file.schemaVersion !== 10 &&
     file.schemaVersion !== 11 &&
-    file.schemaVersion !== 12
+    file.schemaVersion !== 12 &&
+    file.schemaVersion !== 13
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1233,13 +1322,21 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       agent.history = {
         formativeRecords: [],
         overrides: {},
+        plasticity: { accumulators: [], records: [] },
       };
       for (const memoryValue of arrayValue(agent.memories, 'snapshot.agents.memories')) {
         delete objectValue(memoryValue, 'snapshot.agents.memories').provenance;
       }
     }
   }
-  file.schemaVersion = 12;
+  if (sourceVersion < 13) {
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      const agent = objectValue(agentValue, 'snapshot.agents');
+      const history = objectValue(agent.history, 'snapshot.agents.history');
+      history.plasticity = { accumulators: [], records: [] };
+    }
+  }
+  file.schemaVersion = 13;
   return file;
 }
 
@@ -1248,7 +1345,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 12) {
+  if (file.schemaVersion !== 13) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);

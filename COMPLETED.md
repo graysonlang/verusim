@@ -249,6 +249,37 @@ Objective narrative events resolve claim evidence, agreement with self-deprecati
 Distributed reputation remains scoped to an agent or authored group audience; incompatible stocks coexist, while resistance spends regulation and adult wear-in is capped on an in-game-years gate.
 The acceptance target is Stories in the Square.
 
+## Phase 5 — authoring and population generation
+
+Status: complete.
+
+Split reusable characters and environments into independently validated resource documents whose semantic addresses do not depend on their file paths.
+Promote atomic norm definitions and coherent social-contract bundles into the same reusable resource system rather than attaching them to a character, species, environment, or scenario.
+Add stable package, character-profile, environment-layout, norm, and social-contract references plus a generated immutable catalog for repository discovery.
+Establish the acquisition-neutral prepared-scenario boundary so source-backed and direct in-memory content pass through the same migrations, validation, and reference resolution before entering the engine.
+Let scenarios place one or more social contracts into explicit location, institution, group, or event scopes independently of the physical environment, so the same place can host different administrations and multiple conventions can coexist.
+
+Run structured formative events through runtime update rules, add a sparse per-instance override for history-derived content before enabling §14.4 writes, add role-conditioned correlated bundles, stratified cohort generation, recent-event staggering, pre-contact dyad and mind-model seeds, environment generation, format migrations, and scenario validation tools.
+Make character profiles at different ages or continuities explicit realizations of one stable character identity, deriving chronological checkpoints from the shared constitutional base and formative history where possible.
+
+Exit probes:
+
+- moving a resource document within an authoring tree does not change its address or invalidate a scenario
+- two scenarios select different profiles of one stable character identity without copying the character into either scenario
+- two scenarios share one social contract without copying its norms, while one physical environment accepts different social-context placements
+- generated-catalog and direct in-memory preparation produce equivalent resolved content, and simulation performs no resource reads after preparation
+- a dependency-closure report includes every referenced character, environment, norm, and social contract once and excludes unrelated resources
+- generated agents can explain unusual dispositions by pointing to stored formative events
+- a small cohort maintains minimum separation in parameter space
+- regenerating with the same seed produces byte-equivalent authored content
+- adult baselines resist ordinary runtime drift while child cohorts show long-horizon change
+
+The discriminating coverage combines the stable Mara Vale age checkpoints, the seven-keeper separated cohort, the five-member fifteen-year recent-history fixture, household and occupational pre-contact dyads, the generated two-layer town, and the adult-versus-child plasticity comparison.
+Regression coverage verifies every exit probe, including relocated resources, exact dependency closure, acquisition isolation, shared and coexisting contracts, deterministic generation with rejection provenance, formative-event explanation links, actionable generated-project reports, and large-gap years-scale baseline writes.
+Snapshot replay preserves Phase 5 history overrides, plasticity integrals, and write provenance exactly; snapshot schema version 13 migrates versions before 13 with empty plasticity state rather than retroactively changing behavior.
+Character, environment, norm, social-contract, scenario, generated-project, and snapshot migrations retain their explicit schema boundaries and converge on the ordinary catalog and preparation path.
+Phase 5 changes no player-facing presentation, so browser verification does not apply.
+
 ## Phase 5A — resource identity and scenario preparation
 
 Status: complete.
@@ -438,6 +469,33 @@ Exit probes:
 
 Regression coverage chains sampler positions across stages, checks distinct recent-event strata and Phase 5D links, validates generated dyads through the scenario parser, distinguishes household and sparse-community estimates, rejects malformed household cadence, verifies immutable layered resources, and rejects geometry ranges that could leave the generated layout.
 No storage schema changes are introduced: the stages materialize existing character-profile, scenario-dyad, and environment-layout shapes, and runtime creation and stepping remain sampler-free.
+
+## Phase 5G — bounded baseline plasticity and generated-project validation
+
+Status: complete.
+
+Implement the three §14.4 write mechanisms over Phase 5D sparse per-instance overrides: outlet-to-marker promotion, rewarded-masking marker promotion, and rupture crystallization into cascade priors.
+Only large-gap signals accumulate, every mechanism first crosses a years-scale gate, confirmation stiffening slows continued movement, and the age curve gives adults a longer gate plus an explicit `0.005` per-year hard cap while retaining genuine child long-horizon change.
+Constitutional gains remain immutable.
+
+Persist every qualifying integral and applied write with its mechanism, target, source, age, minute, and before-and-after value.
+Snapshot schema version 13 installs empty plasticity state when migrating versions 1 through 12 so old saves never gain retroactive experience.
+
+Add a versioned generated-project envelope whose version 2 resources carry authored source provenance.
+Version 1 migration supplies deterministic index-based sources, and validation delegates to the existing resource catalog and scenario preparation boundary before reporting generated character, cohort-dyad, environment, norm, social-contract, scenario-character, and exact resource-lock counts.
+
+Exit probes:
+
+- twenty years of an ordinary below-gate adult signal leaves history byte-equivalent
+- the same five-year large-gap exposure moves child identity markers and a cascade prior substantially more than an adult baseline
+- all three named mechanisms write only sparse history-derived content and leave constitutional gains byte-equivalent
+- replaying one plasticity transition is byte-equivalent, and snapshot resume preserves its accumulators and records exactly
+- version 12 snapshot migration adds empty plasticity state without retroactive integration
+- version 1 and version 2 generated-project files prepare equivalent content through the ordinary boundary
+- generated-project reports include character, cohort-context, environment, scenario, and exact closure results while malformed content retains its authored failure path
+
+The discriminating regression uses the same high-gap five-year signals against age-10 and age-38 realizations while a below-threshold twenty-year adult exposure proves the drift-mush guard.
+Coverage also checks the adult rate bound, confirmation-stiffened integrals, deterministic replay, all three targets, constitutional immutability, malformed snapshot rejection, generated-project migration and immutability, exact prepared equivalence, closure reporting, and actionable resource and dependency failures.
 
 ## Phase 1 decisions
 

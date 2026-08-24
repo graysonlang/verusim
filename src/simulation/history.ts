@@ -94,7 +94,14 @@ export function initializeHistoryDerivedState(profile: CharacterDefinition): {
     });
   });
 
-  return { history: { formativeRecords, overrides }, memories };
+  return {
+    history: {
+      formativeRecords,
+      overrides,
+      plasticity: { accumulators: [], records: [] },
+    },
+    memories,
+  };
 }
 
 function effectiveProfileValueWeight(

@@ -31,6 +31,7 @@ import {
   resolveNarrativeEvent,
 } from './narrative.js';
 import { DEFAULT_WALKING_METERS_PER_MINUTE, applyBuildToWalkingPace } from './physical.js';
+import { advanceBaselinePlasticity, type BaselinePlasticitySignal } from './plasticity.js';
 import {
   advanceLayerPosition,
   locationCenter,
@@ -401,6 +402,7 @@ export function createSimulationFromPreparedSnapshot(input: {
       history: {
         formativeRecords: saved.history.formativeRecords.map(record => ({ ...record })),
         overrides: structuredClone(saved.history.overrides),
+        plasticity: structuredClone(saved.history.plasticity),
       },
       id: saved.id,
       memories: saved.memories.map(memory => ({
@@ -821,6 +823,7 @@ function combinedResourceDrains(
 
 interface AgentAdvanceResult {
   agent: SimulationAgent;
+  plasticitySignals: BaselinePlasticitySignal[];
   sleeping: boolean;
   trace: TraceEntry[];
 }
@@ -887,6 +890,27 @@ function advanceAgent(
     task === null
       ? `agents.${agent.id}.schedule.recoveryMode`
       : `scenario.taskOperators.${task.id}.recoveryMode`;
+  const plasticitySignals: BaselinePlasticitySignal[] = [];
+  if (agent.currentOutlet !== null) {
+    plasticitySignals.push({
+      gap: agent.currentOutlet.yield,
+      mechanism: 'outlet-promotion',
+      source: `agents.${agent.id}.currentOutlet`,
+      strength: 1,
+      target: { id: agent.currentOutlet.label, kind: 'identity-marker' },
+    });
+  }
+  const maskingReward =
+    task === null ? 0 : Math.max(task.valueTurns.belonging ?? 0, task.valueTurns.respect ?? 0);
+  if (activeMasking !== null && task !== null && maskingReward > 0) {
+    plasticitySignals.push({
+      gap: activeMasking.presentationGap,
+      mechanism: 'rewarded-masking',
+      source: `scenario.taskOperators.${task.id}`,
+      strength: clamp(maskingReward, 0, 1),
+      target: { id: task.label, kind: 'identity-marker' },
+    });
+  }
 
   let memories = agent.memories;
   const trace: TraceEntry[] = [];
@@ -994,9 +1018,32 @@ function advanceAgent(
       resources: recovery.resources,
       values,
     },
+    plasticitySignals,
     sleeping: recoveryMode === 'sleep' && arrived,
     trace,
   };
+}
+
+function rupturePlasticitySignals(
+  state: SimulationState,
+  agent: SimulationAgent,
+): BaselinePlasticitySignal[] {
+  return state.dyads
+    .filter(dyad => dyad.observerId === agent.id && dyad.mode === 'ruptured')
+    .map(dyad => ({
+      gap: clamp(
+        Math.max(dyad.predictionError, Math.abs(dyad.stance), agent.cascadeLoad / 1.5),
+        0,
+        1,
+      ),
+      mechanism: 'rupture-crystallization',
+      source: `dyads.${dyad.observerId}->${dyad.subjectId}`,
+      strength: 1,
+      target: {
+        id: agent.cascade === 'none' ? 'freeze' : agent.cascade,
+        kind: 'cascade-prior',
+      },
+    }));
 }
 
 function advanceOneTick(state: SimulationState): SimulationState {
@@ -1071,7 +1118,24 @@ function advanceOneTick(state: SimulationState): SimulationState {
     next,
     results.filter(result => result.sleeping).map(result => result.agent.id),
   );
-  return advanceCoping(next);
+  next = advanceCoping(next);
+  const signalsByAgent = new Map(
+    results.map(result => [result.agent.id, result.plasticitySignals]),
+  );
+  return {
+    ...next,
+    agents: next.agents.map(agent =>
+      advanceBaselinePlasticity(agent, {
+        elapsedMinutes: next.scenario.tickMinutes,
+        minute: next.minute,
+        originMinute: next.scenario.startMinute,
+        signals: [
+          ...(signalsByAgent.get(agent.id) ?? []),
+          ...rupturePlasticitySignals(next, agent),
+        ],
+      }),
+    ),
+  };
 }
 
 export function advanceSimulation(state: SimulationState, ticks = 1): SimulationState {
