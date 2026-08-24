@@ -261,14 +261,14 @@ describe('history-derived instance state', () => {
     );
   });
 
-  it('round-trips schema 13 state and migrates earlier history without retroactive derivation', () => {
+  it('round-trips schema 14 state and migrates earlier history without retroactive derivation', () => {
     const initial = createSimulation({
       characterLibrary: characters,
       environmentLibrary: environments,
       scenario,
     });
     const snapshot = serializeSnapshot(initial);
-    assert.equal(snapshot.schemaVersion, 13);
+    assert.equal(snapshot.schemaVersion, 14);
     assert.deepEqual(parseSnapshot(snapshot), snapshot);
     assert.deepEqual(
       createSimulationFromSnapshot({
@@ -288,7 +288,7 @@ describe('history-derived instance state', () => {
       }
     }
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.deepEqual(migrated.agents[0]?.history, {
       formativeRecords: [],
       overrides: {},

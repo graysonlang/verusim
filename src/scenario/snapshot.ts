@@ -38,6 +38,7 @@ const TRACE_KINDS = new Set([
   'disclosure-decision',
   'gate',
   'goal',
+  'incident-appraisal',
   'intervention',
   'intention',
   'norm-appraisal',
@@ -247,6 +248,16 @@ function validateHistoryOverrides(value: unknown, path: string): void {
       stringValue(entry.marker, `${entryPath}.marker`);
       numberValue(entry.centrality, `${entryPath}.centrality`, 0, 1);
     });
+  }
+  if (overrides.normInternalizations !== undefined) {
+    const internalizations = objectValue(
+      overrides.normInternalizations,
+      `${path}.normInternalizations`,
+    );
+    for (const [key, amount] of Object.entries(internalizations)) {
+      stringValue(key, `${path}.normInternalizations`);
+      numberValue(amount, `${path}.normInternalizations.${key}`, 0, 1);
+    }
   }
   if (overrides.outletPreferences !== undefined) {
     const operations = new Set<string>();
@@ -878,9 +889,10 @@ function validateObservationHistory(value: unknown, path: string): void {
     }
     if (entry.eventType === 'norm') {
       stringValue(entry.normId, `${entryPath}.normId`);
-      if (typeof entry.member !== 'boolean') {
-        throw new ScenarioValidationError(`${entryPath}.member`, 'expected a boolean');
+      if (typeof entry.affiliated !== 'boolean') {
+        throw new ScenarioValidationError(`${entryPath}.affiliated`, 'expected a boolean');
       }
+      numberValue(entry.internalization, `${entryPath}.internalization`, 0, 1);
       numberValue(entry.legibility, `${entryPath}.legibility`, 0, 1);
       numberValue(entry.perceptionStrength, `${entryPath}.perceptionStrength`, 0, 1);
       if (typeof entry.outcome !== 'string' || !NORM_OBSERVATION_OUTCOMES.has(entry.outcome)) {
@@ -946,6 +958,50 @@ function validateObservationHistory(value: unknown, path: string): void {
         'expected a known capability band or null',
       );
     }
+  });
+}
+
+function validateIncidentHistory(value: unknown, path: string): void {
+  arrayValue(value, path).forEach((entryValue, index) => {
+    const entryPath = `${path}[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    stringValue(entry.eventId, `${entryPath}.eventId`);
+    stringValue(entry.id, `${entryPath}.id`);
+    integerValue(entry.minute, `${entryPath}.minute`);
+    stringValue(entry.observerId, `${entryPath}.observerId`);
+    integerValue(entry.tick, `${entryPath}.tick`);
+    if (entry.outcome !== 'appraised' && entry.outcome !== 'missed') {
+      throw new ScenarioValidationError(`${entryPath}.outcome`, 'expected appraised or missed');
+    }
+    if (
+      entry.perceivedAttribution !== null &&
+      !['nobody', 'other', 'self'].includes(String(entry.perceivedAttribution))
+    ) {
+      throw new ScenarioValidationError(
+        `${entryPath}.perceivedAttribution`,
+        'expected nobody, other, self, or null',
+      );
+    }
+    numberValue(entry.perceptionStrength, `${entryPath}.perceptionStrength`, 0, 1);
+    numberValue(entry.shameTurn, `${entryPath}.shameTurn`, -1, 0);
+    validateValueTurns(entry.baselineTurns, `${entryPath}.baselineTurns`);
+    validateValueTurns(entry.subjectiveTurns, `${entryPath}.subjectiveTurns`);
+    arrayValue(entry.contractTerms, `${entryPath}.contractTerms`).forEach(
+      (termValue, termIndex) => {
+        const termPath = `${entryPath}.contractTerms[${termIndex}]`;
+        const term = objectValue(termValue, termPath);
+        if (typeof term.affiliated !== 'boolean') {
+          throw new ScenarioValidationError(`${termPath}.affiliated`, 'expected a boolean');
+        }
+        stringValue(term.contractId, `${termPath}.contractId`);
+        stringValue(term.normId, `${termPath}.normId`);
+        numberValue(term.enforcementPressure, `${termPath}.enforcementPressure`, 0, 1);
+        numberValue(term.identityStake, `${termPath}.identityStake`, 0, 1);
+        numberValue(term.internalization, `${termPath}.internalization`, 0, 1);
+        numberValue(term.legibility, `${termPath}.legibility`, 0, 1);
+        validateValueTurns(term.conventionalTurns, `${termPath}.conventionalTurns`);
+      },
+    );
   });
 }
 
@@ -1159,7 +1215,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 10 &&
     file.schemaVersion !== 11 &&
     file.schemaVersion !== 12 &&
-    file.schemaVersion !== 13
+    file.schemaVersion !== 13 &&
+    file.schemaVersion !== 14
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1336,7 +1393,35 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       history.plasticity = { accumulators: [], records: [] };
     }
   }
-  file.schemaVersion = 13;
+  if (sourceVersion < 14) {
+    const scenario = parseScenario(file.scenario);
+    file.scenario = scenario;
+    file.incidentRecords = [];
+    file.resolvedIncidentEventIds = [];
+    for (const observationValue of arrayValue(file.observations, 'snapshot.observations')) {
+      const observation = objectValue(observationValue, 'snapshot.observations');
+      if (observation.eventType !== 'norm') continue;
+      const member = observation.member === true;
+      observation.affiliated = member;
+      observation.internalization = member ? 1 : 0;
+      delete observation.member;
+    }
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      const agent = objectValue(agentValue, 'snapshot.agents');
+      const history = objectValue(agent.history, 'snapshot.agents.history');
+      const overrides = objectValue(history.overrides, 'snapshot.agents.history.overrides');
+      const placement = scenario.characters.find(candidate => candidate.instanceId === agent.id);
+      if (placement !== undefined && placement.normPerspectives.length > 0) {
+        overrides.normInternalizations = Object.fromEntries(
+          placement.normPerspectives.map(perspective => [
+            resourceAddressKey(perspective.norm),
+            perspective.internalization,
+          ]),
+        );
+      }
+    }
+  }
+  file.schemaVersion = 14;
   return file;
 }
 
@@ -1345,7 +1430,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 13) {
+  if (file.schemaVersion !== 14) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1420,6 +1505,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   integerValue(file.worldRevision, 'snapshot.worldRevision');
   validateDecisionHistory(file.decisions, 'snapshot.decisions');
   validateDisclosureHistory(file.disclosureDecisions, 'snapshot.disclosureDecisions');
+  validateIncidentHistory(file.incidentRecords, 'snapshot.incidentRecords');
   validateObservationHistory(file.observations, 'snapshot.observations');
   validateRelationshipHistory(file.relationshipDecisions, 'snapshot.relationshipDecisions');
   validateAppraisalHistory(file.appraisalRecords, 'snapshot.appraisalRecords');
@@ -1431,6 +1517,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
     file.resolvedDisclosureOpportunityIds,
     'snapshot.resolvedDisclosureOpportunityIds',
   );
+  validateIdentifierList(file.resolvedIncidentEventIds, 'snapshot.resolvedIncidentEventIds');
   validateIdentifierList(file.resolvedObservationEventIds, 'snapshot.resolvedObservationEventIds');
   validateIdentifierList(
     file.resolvedRelationshipEventIds,

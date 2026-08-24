@@ -239,6 +239,7 @@ export interface HistoryDerivedOverrides {
   disclosure?: Partial<DisclosureEnvelope>;
   empathy?: HistoryDerivedEmpathyOverride;
   identity?: IdentityMarker[];
+  normInternalizations?: Record<string, number>;
   outletPreferences?: OutletPreference[];
   satisfierPreferences?: SatisfierPreference[];
   valueWeights?: Partial<ValueMap<number>>;
@@ -461,16 +462,18 @@ export interface EnvironmentLayoutResourceFile {
 
 export interface NormDefinition {
   compatibilityTurns: Partial<ValueMap<number>>;
+  interpretations: NormInterpretation[];
   label: string;
 }
 
 export interface NormResourceFile {
   address: NormAddress;
   norm: NormDefinition;
-  schemaVersion: 1;
+  schemaVersion: 2;
 }
 
 export interface SocialContractDefinition {
+  enforcementSeverity: number;
   label: string;
   norms: NormAddress[];
   summary: string;
@@ -479,7 +482,7 @@ export interface SocialContractDefinition {
 export interface SocialContractResourceFile {
   address: SocialContractAddress;
   contract: SocialContractDefinition;
-  schemaVersion: 1;
+  schemaVersion: 2;
 }
 
 export type ResourceFile =
@@ -580,8 +583,9 @@ export interface NarrativeClaimOverride {
 }
 
 export interface NormPerspective {
+  affiliated: boolean;
+  internalization: number;
   legibility: number;
-  member: boolean;
   norm: NormAddress;
 }
 
@@ -682,6 +686,73 @@ export interface NormObservationEvent extends ObservationEventBase {
 
 export type ObservationEvent = MindModelObservationEvent | NormObservationEvent;
 
+export const INCIDENT_ROOT_IMPACTS = [
+  'accidental-disclosure',
+  'material-gain',
+  'material-loss',
+  'norm-violation',
+  'obligation-created',
+  'physical-harm-risk',
+  'public-status-shift',
+] as const;
+
+export type IncidentRootImpact = (typeof INCIDENT_ROOT_IMPACTS)[number];
+
+export type IncidentAttribution = 'ambiguous' | 'nobody' | 'other' | 'self';
+export type IncidentPerceivedAttribution = Exclude<IncidentAttribution, 'ambiguous'>;
+export type IncidentPublicity = 'private' | 'public' | 'witnessed';
+export type IncidentVolition = 'careless' | 'deliberate' | 'involuntary';
+
+export interface NormInterpretation {
+  identityStake: number;
+  rootImpact: IncidentRootImpact;
+  turns: Partial<ValueMap<number>>;
+}
+
+export interface IncidentGenerationDraw {
+  label: string;
+  maximum: number;
+  minimum: number;
+  position: number;
+  unit: number;
+  value: number;
+}
+
+export interface IncidentGenerationMetadata {
+  algorithm: 'verusim-incident-v1';
+  draws: IncidentGenerationDraw[];
+  eligibleWeights: Array<{ agentId: string; weight: number }>;
+  samplerEnd: number;
+  samplerStart: number;
+  seed: number;
+  templateId: string;
+}
+
+export interface IncidentContext {
+  groupIds: string[];
+  institutionIds: string[];
+  locationId: string | null;
+}
+
+export interface IncidentEvent {
+  actorId: string | null;
+  affectedAgentId: string;
+  atMinute: number;
+  attribution: IncidentAttribution;
+  audibleRadiusMeters: number;
+  context: IncidentContext;
+  generation: IncidentGenerationMetadata | null;
+  id: string;
+  interpretationDifficulty: number;
+  magnitude: number;
+  observerIds: string[];
+  publicity: IncidentPublicity;
+  rootImpact: IncidentRootImpact;
+  summary: string;
+  visualProminence: number;
+  volition: IncidentVolition;
+}
+
 export interface LegacyLocalNorm extends NormDefinition {
   address: NormAddress;
 }
@@ -698,6 +769,7 @@ export type SocialContractScope =
 
 export interface SocialContractPlacement {
   contract: SocialContractAddress;
+  enforcementPresence: number;
   id: string;
   scope: SocialContractScope;
 }
@@ -892,6 +964,7 @@ export interface ScenarioFile {
   environment: EnvironmentLayoutAddress;
   environmentConditions: EnvironmentConditions;
   id: string;
+  incidentEvents: IncidentEvent[];
   initialTimeRate?: TimeRateId;
   legacyLocalNorms: LegacyLocalNorm[];
   narrativeEvents: NarrativeEvent[];
@@ -899,7 +972,7 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 14;
+  schemaVersion: 15;
   socialContractPlacements: SocialContractPlacement[];
   startMinute: number;
   summary: string;
@@ -979,6 +1052,7 @@ export type TraceKind =
   | 'goal'
   | 'intervention'
   | 'intention'
+  | 'incident-appraisal'
   | 'norm-appraisal'
   | 'narrative'
   | 'observation'
@@ -1036,6 +1110,7 @@ export interface SimulationState {
   disclosureItems: DisclosureItemSeed[];
   dyads: DyadState[];
   environment: EnvironmentDefinition;
+  incidentRecords: IncidentAppraisalRecord[];
   intentions: TaskIntention[];
   minute: number;
   narrativeRecords: NarrativeRecord[];
@@ -1046,6 +1121,7 @@ export interface SimulationState {
   reputations: AttributedNarrative[];
   resourceLock: ResourceLock;
   resolvedDisclosureOpportunityIds: string[];
+  resolvedIncidentEventIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
   resolvedAppraisalEventIds: string[];
@@ -1265,6 +1341,7 @@ export interface MindModelObservationRecord {
 export type NormObservationOutcome = 'appraised' | 'missed';
 
 export interface NormObservationRecord {
+  affiliated: boolean;
   baselineTurns: Partial<ValueMap<number>>;
   channel: ObservationChannel;
   compatibilityTurns: Partial<ValueMap<number>>;
@@ -1274,7 +1351,7 @@ export interface NormObservationRecord {
   legibility: number;
   legibilityBand: CapabilityResolutionBand | null;
   legibilityMargin: number | null;
-  member: boolean;
+  internalization: number;
   minute: number;
   normId: string;
   observerId: string;
@@ -1287,6 +1364,32 @@ export interface NormObservationRecord {
 }
 
 export type ObservationRecord = MindModelObservationRecord | NormObservationRecord;
+
+export interface IncidentContractTerm {
+  affiliated: boolean;
+  contractId: string;
+  conventionalTurns: Partial<ValueMap<number>>;
+  enforcementPressure: number;
+  identityStake: number;
+  internalization: number;
+  legibility: number;
+  normId: string;
+}
+
+export interface IncidentAppraisalRecord {
+  baselineTurns: Partial<ValueMap<number>>;
+  contractTerms: IncidentContractTerm[];
+  eventId: string;
+  id: string;
+  minute: number;
+  observerId: string;
+  outcome: 'appraised' | 'missed';
+  perceivedAttribution: IncidentPerceivedAttribution | null;
+  perceptionStrength: number;
+  shameTurn: number;
+  subjectiveTurns: Partial<ValueMap<number>>;
+  tick: number;
+}
 
 export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | 'pending';
 
@@ -1375,6 +1478,7 @@ export interface SimulationSnapshotFile {
   disclosureItems: DisclosureItemSeed[];
   dyads: DyadState[];
   environment: EnvironmentLayoutAddress;
+  incidentRecords: IncidentAppraisalRecord[];
   intentions: TaskIntention[];
   minute: number;
   narrativeRecords: NarrativeRecord[];
@@ -1384,6 +1488,7 @@ export interface SimulationSnapshotFile {
   reputations: AttributedNarrative[];
   resourceLock: ResourceLock;
   resolvedDisclosureOpportunityIds: string[];
+  resolvedIncidentEventIds: string[];
   resolvedObservationEventIds: string[];
   resolvedOpportunityIds: string[];
   resolvedNarrativeEventIds: string[];
@@ -1392,7 +1497,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 13;
+  schemaVersion: 14;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

@@ -5,6 +5,7 @@
 export {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
+  INCIDENT_ROOT_IMPACTS,
   MIND_MODEL_DIMENSIONS,
   OBSERVATION_CHANNELS,
   OBSERVATION_EVENT_TYPES,
@@ -30,6 +31,7 @@ export {
   generateRecentCohortHistory,
 } from './generation/cohort-context.js';
 export { generateEnvironmentLayout } from './generation/environment.js';
+export { generateIncident } from './generation/incident.js';
 export {
   parseGenerationProject,
   prepareGenerationProject,
@@ -72,6 +74,12 @@ export type {
   FractionalLayerPositionTemplate,
   GeneratedEnvironmentLayout,
 } from './generation/environment.js';
+export type {
+  GeneratedIncident,
+  IncidentGenerationRequest,
+  IncidentSamplingProvenance,
+  IncidentTemplate,
+} from './generation/incident.js';
 export type {
   GenerationProjectFile,
   GenerationValidationDiagnostic,
@@ -133,6 +141,7 @@ export {
   resolveDisclosureOpportunity,
 } from './simulation/disclosure.js';
 export { evaluateEmpathy } from './simulation/empathy.js';
+export { resolveIncidentEvent } from './simulation/incident.js';
 export {
   advanceCoping,
   allostaticLoadFor,
@@ -144,6 +153,7 @@ export {
   effectiveDisclosure,
   effectiveEmpathy,
   effectiveIdentity,
+  effectiveNormInternalization,
   effectiveOutletPreferences,
   effectiveSatisfierPreferences,
   effectiveValueWeight,

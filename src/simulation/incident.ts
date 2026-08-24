@@ -1,0 +1,388 @@
+import {
+  VALUE_IDS,
+  type IncidentAppraisalRecord,
+  type IncidentContractTerm,
+  type IncidentEvent,
+  type IncidentPerceivedAttribution,
+  type NormAddress,
+  type NormPerspective,
+  type SimulationAgent,
+  type SimulationState,
+  type SocialContractPlacement,
+  type TraceEntry,
+  type ValueMap,
+} from '../model/types.js';
+import { effectiveIdentity, effectiveNormInternalization } from './history.js';
+import { evaluateEmpathy } from './empathy.js';
+import { effectiveValueWeights } from './salience.js';
+import { evaluateSpatialPerception } from './spatial.js';
+import { appendTrace, traceTerm } from './trace.js';
+import { applyAgentValueTurns } from './value-turn.js';
+
+const MAX_INCIDENT_RECORDS = 160;
+const MAX_TRACE_ENTRIES = 240;
+
+function clamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function appendBounded<Item>(items: readonly Item[], item: Item, maximum: number): Item[] {
+  const next = [...items, item];
+  return next.length <= maximum ? next : next.slice(next.length - maximum);
+}
+
+function addressKey(address: NormAddress): string {
+  return `${address.packageId}:${address.kind}:${address.resourceId}`;
+}
+
+function agentFor(state: SimulationState, agentId: string): SimulationAgent {
+  const agent = state.agents.find(candidate => candidate.id === agentId);
+  if (agent === undefined) throw new RangeError(`Unknown incident agent "${agentId}"`);
+  return agent;
+}
+
+function perspectiveFor(
+  state: SimulationState,
+  observerId: string,
+  norm: NormAddress,
+): NormPerspective | null {
+  return (
+    state.scenario.characters
+      .find(placement => placement.instanceId === observerId)
+      ?.normPerspectives.find(perspective => addressKey(perspective.norm) === addressKey(norm)) ??
+    null
+  );
+}
+
+function placementIsActive(placement: SocialContractPlacement, event: IncidentEvent): boolean {
+  if (placement.scope.kind === 'event') return placement.scope.eventId === event.id;
+  if (placement.scope.kind === 'group')
+    return event.context.groupIds.includes(placement.scope.groupId);
+  if (placement.scope.kind === 'institution') {
+    return event.context.institutionIds.includes(placement.scope.institutionId);
+  }
+  return placement.scope.locationId === event.context.locationId;
+}
+
+function baselineTurns(
+  state: SimulationState,
+  event: IncidentEvent,
+  observerId: string,
+): Partial<ValueMap<number>> {
+  const empathy = evaluateEmpathy(state, observerId, event.affectedAgentId).empathy;
+  const magnitude = event.magnitude * empathy;
+  switch (event.rootImpact) {
+    case 'accidental-disclosure':
+      return { autonomy: -magnitude, respect: -magnitude * 0.5, safety: -magnitude * 0.4 };
+    case 'material-gain':
+      return { competence: magnitude, safety: magnitude * 0.35 };
+    case 'material-loss':
+      return { competence: -magnitude, safety: -magnitude * 0.35 };
+    case 'obligation-created':
+      return { autonomy: -magnitude };
+    case 'physical-harm-risk':
+      return { safety: -magnitude };
+    case 'public-status-shift':
+      return { respect: magnitude };
+    case 'norm-violation':
+      return {};
+  }
+}
+
+function perceivedAttribution(
+  state: SimulationState,
+  event: IncidentEvent,
+  observerId: string,
+): IncidentPerceivedAttribution {
+  if (event.attribution !== 'ambiguous') return event.attribution;
+  if (event.actorId === null) return 'nobody';
+  const model = state.dyads.find(
+    dyad => dyad.observerId === observerId && dyad.subjectId === event.actorId,
+  );
+  if (model === undefined) return 'nobody';
+  const benign =
+    model.estimatedEmpathy +
+    Math.max(0, model.stance) * 0.3 -
+    model.suspicion * 0.5 -
+    model.predictionError * 0.2;
+  return benign >= 0.45 ? 'nobody' : 'other';
+}
+
+function contractTerms(
+  state: SimulationState,
+  event: IncidentEvent,
+  observer: SimulationAgent,
+): IncidentContractTerm[] {
+  const terms: IncidentContractTerm[] = [];
+  for (const placement of state.scenario.socialContractPlacements) {
+    if (!placementIsActive(placement, event)) continue;
+    const contractKey = `${placement.contract.packageId}:${placement.contract.kind}:${placement.contract.resourceId}`;
+    const contractResource = state.socialContracts.find(
+      resource =>
+        `${resource.address.packageId}:${resource.address.kind}:${resource.address.resourceId}` ===
+        contractKey,
+    );
+    if (contractResource === undefined) continue;
+    for (const normAddress of contractResource.contract.norms) {
+      const normKey = addressKey(normAddress);
+      const normResource = state.norms.find(resource => addressKey(resource.address) === normKey);
+      const interpretation = normResource?.norm.interpretations.find(
+        candidate => candidate.rootImpact === event.rootImpact,
+      );
+      if (interpretation === undefined) continue;
+      const perspective = perspectiveFor(state, observer.id, normAddress);
+      const internalization = effectiveNormInternalization(observer, normAddress);
+      const conventionalTurns = Object.fromEntries(
+        VALUE_IDS.flatMap(valueId => {
+          const turn = (interpretation.turns[valueId] ?? 0) * internalization * event.magnitude;
+          return turn === 0 ? [] : [[valueId, turn]];
+        }),
+      ) as Partial<ValueMap<number>>;
+      terms.push({
+        affiliated: perspective?.affiliated ?? false,
+        contractId: contractKey,
+        conventionalTurns,
+        enforcementPressure:
+          placement.enforcementPresence *
+          contractResource.contract.enforcementSeverity *
+          event.magnitude,
+        identityStake: interpretation.identityStake * internalization,
+        internalization,
+        legibility: perspective?.legibility ?? 0,
+        normId: normKey,
+      });
+    }
+  }
+  return terms;
+}
+
+function estimatedAudienceAppraisal(state: SimulationState, event: IncidentEvent): number {
+  if (event.actorId === null) return 0;
+  const estimates = event.observerIds
+    .filter(observerId => observerId !== event.actorId)
+    .map(observerId =>
+      state.dyads.find(dyad => dyad.observerId === event.actorId && dyad.subjectId === observerId),
+    )
+    .filter(dyad => dyad !== undefined)
+    .map(dyad => dyad.estimatedEmpathy * dyad.estimateConfidence);
+  return estimates.length === 0
+    ? 0
+    : estimates.reduce((total, estimate) => total + estimate, 0) / estimates.length;
+}
+
+function shameTurn(
+  state: SimulationState,
+  event: IncidentEvent,
+  observer: SimulationAgent,
+  terms: readonly IncidentContractTerm[],
+): number {
+  if (
+    observer.id !== event.actorId ||
+    event.rootImpact !== 'norm-violation' ||
+    event.volition !== 'involuntary'
+  ) {
+    return 0;
+  }
+  const centrality = effectiveIdentity(observer).reduce(
+    (maximum, marker) => Math.max(maximum, marker.centrality),
+    0,
+  );
+  const identityStake = terms.reduce((total, term) => total + term.identityStake, 0);
+  const amount = clamp(
+    event.magnitude * centrality * identityStake * estimatedAudienceAppraisal(state, event),
+    0,
+    1,
+  );
+  return amount === 0 ? 0 : -amount;
+}
+
+function combinedTurns(
+  baseline: Partial<ValueMap<number>>,
+  terms: readonly IncidentContractTerm[],
+  shame: number,
+): Partial<ValueMap<number>> {
+  const turns: Partial<ValueMap<number>> = {};
+  for (const valueId of VALUE_IDS) {
+    const conventional = terms.reduce(
+      (total, term) => total + (term.conventionalTurns[valueId] ?? 0),
+      0,
+    );
+    const turn = clamp(
+      (baseline[valueId] ?? 0) + conventional + (valueId === 'respect' ? shame : 0),
+      -1,
+      1,
+    );
+    if (turn !== 0) turns[valueId] = turn;
+  }
+  return turns;
+}
+
+function appraisalTrace(
+  state: SimulationState,
+  event: IncidentEvent,
+  record: IncidentAppraisalRecord,
+): TraceEntry {
+  const observer = agentFor(state, record.observerId);
+  const weighted = VALUE_IDS.reduce(
+    (total, valueId) =>
+      total + (record.subjectiveTurns[valueId] ?? 0) * effectiveValueWeights(observer)[valueId],
+    0,
+  );
+  return {
+    agentId: observer.id,
+    id: `${record.id}:trace`,
+    kind: 'incident-appraisal',
+    minute: state.minute,
+    selection: null,
+    summary: `${observer.profile.name} appraised ${event.summary.toLowerCase()}`,
+    terms: [
+      traceTerm('incident', event.id, `scenario.incidentEvents.${event.id}`),
+      traceTerm('root-impact', event.rootImpact, `scenario.incidentEvents.${event.id}.rootImpact`),
+      traceTerm('perceived', record.outcome === 'appraised', `incidentRecords.${record.id}`),
+      traceTerm(
+        'perceived-attribution',
+        record.perceivedAttribution,
+        `incidentRecords.${record.id}`,
+      ),
+      ...record.contractTerms.flatMap((term, index) => [
+        traceTerm(
+          `contract:${index}`,
+          term.contractId,
+          `incidentRecords.${record.id}.contractTerms.${index}`,
+        ),
+        traceTerm(
+          `affiliated:${index}`,
+          term.affiliated,
+          `scenario.characters.${observer.id}.normPerspectives`,
+        ),
+        traceTerm(
+          `internalization:${index}`,
+          term.internalization,
+          `agents.${observer.id}.history.overrides.normInternalizations.${term.normId}`,
+        ),
+        traceTerm(
+          `legibility:${index}`,
+          term.legibility,
+          `scenario.characters.${observer.id}.normPerspectives`,
+        ),
+        traceTerm(
+          `enforcement:${index}`,
+          term.enforcementPressure,
+          `incidentRecords.${record.id}.contractTerms.${index}`,
+        ),
+      ]),
+      traceTerm('shame-turn', record.shameTurn, `incidentRecords.${record.id}.shameTurn`),
+      traceTerm('weighted-turn', weighted, `incidentRecords.${record.id}.subjectiveTurns`),
+    ],
+    tick: state.tick,
+  };
+}
+
+function applyAttributionInference(
+  state: SimulationState,
+  event: IncidentEvent,
+  observerId: string,
+  attribution: IncidentPerceivedAttribution,
+): SimulationState {
+  if (event.attribution !== 'ambiguous' || event.actorId === null) return state;
+  return {
+    ...state,
+    dyads: state.dyads.map(dyad => {
+      if (dyad.observerId !== observerId || dyad.subjectId !== event.actorId) return dyad;
+      const direction = attribution === 'other' ? 1 : -1;
+      return {
+        ...dyad,
+        predictionError: clamp(dyad.predictionError + direction * event.magnitude * 0.08, 0, 1),
+        suspicion: clamp(dyad.suspicion + direction * event.magnitude * 0.12, 0, 1),
+      };
+    }),
+  };
+}
+
+function resolveForObserver(
+  state: SimulationState,
+  event: IncidentEvent,
+  observerId: string,
+): SimulationState {
+  const perception =
+    observerId === event.affectedAgentId
+      ? null
+      : evaluateSpatialPerception(state, observerId, event.affectedAgentId, {
+          audibleRadiusMeters: event.audibleRadiusMeters,
+          visualProminence: event.visualProminence,
+        });
+  const perceptionStrength =
+    perception === null ? 1 : Math.max(perception.hearing.strength, perception.sight.strength);
+  const perceived =
+    perception === null || perception.hearing.available || perception.sight.available;
+  const id = `${state.tick}:${event.id}:${observerId}`;
+  if (!perceived) {
+    const record: IncidentAppraisalRecord = {
+      baselineTurns: {},
+      contractTerms: [],
+      eventId: event.id,
+      id,
+      minute: state.minute,
+      observerId,
+      outcome: 'missed',
+      perceivedAttribution: null,
+      perceptionStrength,
+      shameTurn: 0,
+      subjectiveTurns: {},
+      tick: state.tick,
+    };
+    return {
+      ...state,
+      incidentRecords: appendBounded(state.incidentRecords, record, MAX_INCIDENT_RECORDS),
+      trace: appendTrace(state.trace, appraisalTrace(state, event, record), MAX_TRACE_ENTRIES),
+    };
+  }
+  const observer = agentFor(state, observerId);
+  const baseline = baselineTurns(state, event, observerId);
+  const terms = contractTerms(state, event, observer);
+  const shame = shameTurn(state, event, observer, terms);
+  const turns = combinedTurns(baseline, terms, shame);
+  const attribution = perceivedAttribution(state, event, observerId);
+  const record: IncidentAppraisalRecord = {
+    baselineTurns: baseline,
+    contractTerms: terms,
+    eventId: event.id,
+    id,
+    minute: state.minute,
+    observerId,
+    outcome: 'appraised',
+    perceivedAttribution: attribution,
+    perceptionStrength,
+    shameTurn: shame,
+    subjectiveTurns: turns,
+    tick: state.tick,
+  };
+  const next = applyAttributionInference(
+    {
+      ...state,
+      agents: state.agents.map(agent =>
+        agent.id === observerId ? applyAgentValueTurns(agent, turns) : agent,
+      ),
+      incidentRecords: appendBounded(state.incidentRecords, record, MAX_INCIDENT_RECORDS),
+    },
+    event,
+    observerId,
+    attribution,
+  );
+  return {
+    ...next,
+    trace: appendTrace(next.trace, appraisalTrace(next, event, record), MAX_TRACE_ENTRIES),
+  };
+}
+
+export function resolveIncidentEvent(
+  state: SimulationState,
+  event: IncidentEvent,
+): SimulationState {
+  let next = state;
+  for (const observerId of event.observerIds) next = resolveForObserver(next, event, observerId);
+  return {
+    ...next,
+    resolvedIncidentEventIds: [...next.resolvedIncidentEventIds, event.id],
+  };
+}

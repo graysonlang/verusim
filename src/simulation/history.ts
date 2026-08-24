@@ -6,6 +6,7 @@ import {
   type EmpathyEnvelope,
   type HistoryDerivedState,
   type IdentityMarker,
+  type NormAddress,
   type OutletPreference,
   type RuntimeMemory,
   type SatisfierPreference,
@@ -145,6 +146,11 @@ export function effectiveEmpathy(agent: SimulationAgent): EmpathyEnvelope {
 
 export function effectiveIdentity(agent: SimulationAgent): IdentityMarker[] {
   return agent.history.overrides.identity ?? agent.profile.identity;
+}
+
+export function effectiveNormInternalization(agent: SimulationAgent, norm: NormAddress): number {
+  const key = `${norm.packageId}:${norm.kind}:${norm.resourceId}`;
+  return agent.history.overrides.normInternalizations?.[key] ?? 0;
 }
 
 export function effectiveOutletPreferences(agent: SimulationAgent): OutletPreference[] {

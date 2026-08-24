@@ -49,12 +49,12 @@ Choosing a bundled entry or an external file still uses the same validated simul
 The implementation keeps the design's three lifetimes visible in the data model.
 
 1. Constitutional gains, broad capabilities, and descriptive physical profiles live on reusable character definitions and are not changed by normal stepping.
-2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, narratives, and formative events. Narrative claims and every other mutable history-derived field resolve through snapshot-persisted per-instance state, so one instance can move without mutating its reusable profile or every agent that references the same definition. Rare §14.4 writers use years-scale persisted accumulators and sparse overrides; constitutional gains remain outside that boundary.
+2. Character definitions seed history-derived content, expressed through identity markers, value weights, empathy-envelope shape, contract adherence, norm internalization, narratives, and formative events. Narrative claims and every other mutable history-derived field resolve through snapshot-persisted per-instance state, so one instance can move without mutating its reusable profile or every agent that references the same definition. Rare §14.4 writers use years-scale persisted accumulators and sparse overrides; constitutional gains remain outside that boundary.
 3. Situational state lives on simulation instances and changes on each step: position, value charge, deficit integrals, variance, resources, current activity, memories, directed dyads, exposure ledgers, world facts, goal status, plans, and intentions.
 
 Authored scenarios and live snapshots are distinct formats.
 A scenario supplies immutable initial conditions and reusable library references.
-A snapshot wraps those references with current agents, dyads, exposure items, world facts, agendas, plans, intentions, resolved opportunities, decisions, and causal trace so resuming does not rewrite the authored fixture.
+A snapshot wraps those references with current agents, dyads, exposure items, incident appraisals, world facts, agendas, plans, intentions, resolved opportunities, decisions, and causal trace so resuming does not rewrite the authored fixture.
 
 ## Time and scale
 
@@ -288,22 +288,34 @@ The dyad stores the observer's estimates of the subject, not a recursive represe
 If an observed pair has no authored dyad, the observer projects a neutral directed record from its own empathy and disclosure shape; only encountered pairs are materialized.
 Observation records and resolved event identifiers are bounded, snapshot-persisted runtime state so replay does not repeat an event or lose the reason a correction occurred.
 
-## Local norm appraisal
+## Incidents and social interpretation
 
-Local norm events are a discriminated extension of the event-driven observation contract.
-They share the same authored timing, subject position, observer list, sight or hearing channel, interpretation difficulty, and resolved-event ledger as mind-model observations.
-An observer must perceive the objective event before any normative appraisal occurs.
+An incident is an objective impact signature rather than an authored moral verdict.
+It identifies a root impact, magnitude, attribution ambiguity, volition, publicity, affected subject, sensory prominence, observers, and explicit location, group, institution, or event context.
+Every observer first passes through the ordinary union of sight and hearing before appraising the same immutable event.
 
-Resolved norm resources supply compatibility value turns, while each character placement supplies an explicit perspective containing the norm's semantic address plus independent `member` and `legibility` fields.
-The scenario reaches those norms through one or more placed social contracts; preparation resolves that graph before simulation, and the evaluator reads the prepared immutable norm collection without resource access.
-The migrated `legacyLocalNorms` collection preserves version 1 through 13 scenario behavior but is not the native version 14 authoring path.
-Missing perspectives fail at the authored observer path rather than silently becoming outsider defaults.
-Membership decides whether the norm's compatibility turns modify the event's common baseline turns.
-Legibility supplies domain support to an evidence-calibration check and records Pass when the observer has no knowledge of the rationale; it does not gate an internalized member appraisal or alter a nonmember's baseline turn.
+The optional incident generator is an authoring adapter rather than runtime randomness.
+An authored base rate is modulated by depletion-weighted eligible subjects in the ordinary perceptual shell, and a cubed magnitude draw preserves a low-frequency long tail.
+The seed, sampler range, eligible weights, realized draws, chosen template, and complete resulting event are serialized inputs before stepping.
 
-The resolved subjective turns update the observer's own value charge and remain separate by value in the observation record and causal trace.
-The trace also preserves membership, legibility, the capability result, the common baseline, the local compatibility contribution, and the weighted felt total.
-Norm appraisal does not read dyad stance, estimated empathy, suspicion, social features, or perceived threat, so norm opacity cannot become hostility or social distance by accident.
+Root-impact appraisal supplies only the ordinary objective value consequences of the event.
+Ambiguous attribution is resolved independently from each observer's directed mind model, so friendly and suspicious observers can infer different causes without either inference becoming privileged ground truth.
+Attribution corrections use the existing prediction-error and suspicion state rather than a second relationship model.
+
+Norm resources retain migrated compatibility turns for the bounded Phase 2C observation fixture and add interpretations keyed by incident root impact for the native Phase 6 path.
+Each interpretation supplies conventional value turns and an identity stake, not a selected behavior.
+Each character perspective stores a complete norm address plus independent affiliation, history-derived internalization, and legibility fields.
+Internalization scales conventional appraisal and identity stake; affiliation and legibility remain inspectable social facts and do not substitute for internalization.
+
+Social-contract resources bundle exact norm addresses and an enforcement severity.
+Scenario placements supply independent enforcement presence and an exact location, institution, group, or event scope.
+All placements matching an incident's explicit context contribute simultaneous causal terms in authored order; conflicting contracts are never ranked, merged, or resolved by priority.
+Preparation closes both contract dependencies and direct character-perspective norm references before simulation begins.
+
+The incident evaluator records objective turns, every active conventional term, affiliation, internalization, legibility, enforcement pressure, inferred attribution, perception strength, and final subjective turns separately.
+Involuntary norm violation produces shame only for the actor, and only through effective identity centrality, internalized identity stakes, and the actor's estimated audience appraisal.
+Anticipated enforcement remains an ordinary repercussion term in action appraisal, so it can produce compliance even when intrinsic agreement and contract-adherence cost are zero.
+Incident records, resolved identifiers, history-derived norm internalizations, attribution changes, and causal trace entries are bounded or snapshot-persisted so replay cannot repeat or reinterpret an event.
 
 ## Accumulation and coping
 
@@ -441,11 +453,11 @@ Named layers, their authored elevations, areas, locations, and connectors belong
 A richer multi-floor realization can therefore retain the place's `environmentId` while using a distinct `layoutId`; layer names are not a substitute for layout identity.
 
 Norm identity is the complete semantic resource address rather than a scenario-local string.
-An atomic norm definition supplies the label and compatibility turns consumed by the bounded Phase 2C evaluator.
-A social-contract resource supplies a labeled coherent bundle of exact norm addresses without copying those definitions.
+An atomic norm definition supplies a label, migrated compatibility turns for the bounded Phase 2C evaluator, and root-impact interpretations for Phase 6 incidents.
+A social-contract resource supplies a labeled coherent bundle of exact norm addresses plus enforcement severity without copying those definitions.
 
-Scenarios place social-contract addresses through authored placement records whose scope is exactly one location, institution, group, or event identifier.
-Location scopes validate against the resolved environment layout; the other scope identifiers remain explicit scenario context until their Phase 6 consumers land.
+Scenarios place social-contract addresses through authored placement records whose scope is exactly one location, institution, group, or event identifier and whose enforcement presence is independent of conventional agreement.
+Location scopes validate against the resolved environment layout; incidents activate every placement matching their explicit context identifiers.
 Placements are retained in authored order and may overlap or repeat a contract across scopes, while dependency resolution deduplicates the addressed contract and norm resources without selecting a winner or priority.
 
 ### Preparation boundary
@@ -500,7 +512,7 @@ The workbench may bundle a catalog containing every authored resource, while a d
 ## Storage contracts
 
 Files use strict, versioned JSON and stable string identifiers.
-Character-profile, norm, and social-contract resource files use schema version 1, while environment-layout resource files use schema version 3.
+Character-profile resource files use schema version 1, norm and social-contract resource files use schema version 2, and environment-layout resource files use schema version 3.
 Every resource carries a structured package, kind, and resource identifier address independent of its source path.
 Scenarios reference character profiles, environment layouts, and placed social contracts by semantic address; social contracts reference norms the same way.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
@@ -523,13 +535,15 @@ The legacy character-library schema version 7 compatibility adapter replaces ver
 Its explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
 Environment-layout resource and aggregate environment-library schema version 3 add explicit area enclosure and independent hearing, overhead, and sight cover channels after version 2 added named layers, layer-bearing areas and locations, and explicit connectors.
 Versions 1 and 2 migrate kind-based cover defaults; version 1 also migrates onto one `surface` layer with no connectors while retaining the earlier outlet-affordance compatibility default.
-Scenario schema version 14 adds structured norm references and scoped social-contract placements after version 13 added layer-bearing character positions and version 12 replaced path-era character and environment identifiers with semantic addresses.
-Explicit migrations preserve version 1 through 13 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, placing pre-layer positions on `surface`, and moving the bounded inline norm shape into the explicit `legacyLocalNorms` compatibility field with default-package norm addresses.
-Native version 14 repository scenarios keep `legacyLocalNorms` empty and acquire reusable norms through placed social contracts.
-Snapshot schema version 13 persists baseline-plasticity accumulators and write records after version 12 added sparse history-derived overrides, formative disposition records, and linked memory provenance, version 11 persisted the version 14 scenario and transitive prepared resource lock, version 10 added layer-bearing positions and destinations, and version 9 added structured resource addresses and the initial exact lock.
+Norm resource schema version 2 adds root-impact interpretations while migrating version 1 resources with an interpretation equivalent to their bounded norm-violation compatibility turns.
+Social-contract resource schema version 2 adds enforcement severity with a neutral migration default for version 1 resources.
+Scenario schema version 15 adds objective incident events, independent norm affiliation and internalization, and placement enforcement presence after version 14 added structured norm references and scoped social-contract placements, version 13 added layer-bearing character positions, and version 12 replaced path-era character and environment identifiers with semantic addresses.
+Explicit migrations preserve version 1 through 14 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, placing pre-layer positions on `surface`, moving the bounded inline norm shape into the explicit `legacyLocalNorms` compatibility field with default-package norm addresses, and mapping the former membership bit to affiliation plus full or zero initial internalization.
+Native incident scenarios use version 15, while version 14 repository scenarios migrate with no incident inputs and neutral enforcement presence.
+Snapshot schema version 14 persists incident records, resolved incident identifiers, and per-instance norm internalization after version 13 persisted baseline-plasticity accumulators and write records, version 12 added sparse history-derived overrides, formative disposition records, and linked memory provenance, version 11 persisted the version 14 scenario and transitive prepared resource lock, version 10 added layer-bearing positions and destinations, and version 9 added structured resource addresses and the initial exact lock.
 Standalone snapshot parsing verifies sorted unique lock entries and every direct scenario dependency; prepared resume verifies the exact transitive lock because the external contract graph is available only at that boundary.
-Explicit snapshot migrations preserve versions 1 through 12, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules.
-Snapshots before version 12 receive an empty history override boundary rather than retroactively replaying formative events and changing saved behavior, and snapshots before version 13 receive empty plasticity accumulators and records rather than retroactively integrating elapsed experience.
+Explicit snapshot migrations preserve versions 1 through 13, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules.
+Snapshots before version 12 receive an empty history override boundary rather than retroactively replaying formative events and changing saved behavior, snapshots before version 13 receive empty plasticity accumulators and records rather than retroactively integrating elapsed experience, and snapshots before version 14 receive empty incident aftermath while deriving initial norm internalization from the migrated authored perspectives.
 Legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 

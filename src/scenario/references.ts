@@ -216,6 +216,49 @@ export function validateReferences(content: ScenarioContent): void {
       }
     });
   });
+  const reputationGroupIds = new Set(content.scenario.reputationGroups.map(group => group.id));
+  content.scenario.incidentEvents.forEach((event, index) => {
+    const path = `scenario.incidentEvents[${index}]`;
+    if (!instanceIds.has(event.affectedAgentId)) {
+      throw new ScenarioValidationError(
+        `${path}.affectedAgentId`,
+        `unknown agent "${event.affectedAgentId}"`,
+      );
+    }
+    if (event.actorId !== null && !instanceIds.has(event.actorId)) {
+      throw new ScenarioValidationError(`${path}.actorId`, `unknown agent "${event.actorId}"`);
+    }
+    if (event.context.locationId !== null && !locationIds.has(event.context.locationId)) {
+      throw new ScenarioValidationError(
+        `${path}.context.locationId`,
+        `unknown location "${event.context.locationId}"`,
+      );
+    }
+    event.context.groupIds.forEach((groupId, groupIndex) => {
+      if (!reputationGroupIds.has(groupId)) {
+        throw new ScenarioValidationError(
+          `${path}.context.groupIds[${groupIndex}]`,
+          `unknown group "${groupId}"`,
+        );
+      }
+    });
+    event.observerIds.forEach((observerId, observerIndex) => {
+      if (!instanceIds.has(observerId)) {
+        throw new ScenarioValidationError(
+          `${path}.observerIds[${observerIndex}]`,
+          `unknown agent "${observerId}"`,
+        );
+      }
+    });
+    event.generation?.eligibleWeights.forEach((weight, weightIndex) => {
+      if (!instanceIds.has(weight.agentId)) {
+        throw new ScenarioValidationError(
+          `${path}.generation.eligibleWeights[${weightIndex}].agentId`,
+          `unknown agent "${weight.agentId}"`,
+        );
+      }
+    });
+  });
   content.scenario.relationshipEvents.forEach((event, index) => {
     const path = `scenario.relationshipEvents[${index}]`;
     if (!instanceIds.has(event.observerId)) {

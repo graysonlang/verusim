@@ -13,6 +13,7 @@ import {
 } from '../model/types.js';
 import { resolveAgentCapabilityCheck } from './capability.js';
 import { effectiveValueWeights } from './salience.js';
+import { effectiveNormInternalization } from './history.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyAgentValueTurns } from './value-turn.js';
@@ -77,7 +78,7 @@ function sensoryFor(event: NormObservationEvent, state: SimulationState, observe
 function subjectiveTurns(
   event: NormObservationEvent,
   norm: NormDefinition,
-  member: boolean,
+  internalization: number,
 ): {
   compatibilityTurns: Partial<ValueMap<number>>;
   subjectiveTurns: Partial<ValueMap<number>>;
@@ -86,9 +87,8 @@ function subjectiveTurns(
   const resolvedTurns: Partial<ValueMap<number>> = {};
   for (const valueId of VALUE_IDS) {
     const baseline = event.baselineTurns[valueId] ?? 0;
-    const compatibilityTurn = member
-      ? (norm.compatibilityTurns[valueId] ?? 0) * event.compatibility
-      : 0;
+    const compatibilityTurn =
+      (norm.compatibilityTurns[valueId] ?? 0) * event.compatibility * internalization;
     const subjectiveTurn = clamp(baseline + compatibilityTurn, -1, 1);
     if (compatibilityTurn !== 0) compatibilityTurns[valueId] = compatibilityTurn;
     if (subjectiveTurn !== 0) resolvedTurns[valueId] = subjectiveTurn;
@@ -141,6 +141,7 @@ function missedRecord(
 ): NormObservationRecord {
   const key = normKey(event.norm);
   return {
+    affiliated: perspective.affiliated,
     baselineTurns: { ...event.baselineTurns },
     channel: event.channel,
     compatibilityTurns: {},
@@ -150,7 +151,7 @@ function missedRecord(
     legibility: perspective.legibility,
     legibilityBand: null,
     legibilityMargin: null,
-    member: perspective.member,
+    internalization: effectiveNormInternalization(agentFor(state, observerId), event.norm),
     minute: state.minute,
     normId: key,
     observerId,
@@ -187,7 +188,12 @@ function appraisalTrace(
     summary: `${observer.profile.name} derived a ${direction} turn from ${event.summary.toLowerCase()}`,
     terms: [
       traceTerm('norm', key, `resources.${key}.norm`),
-      traceTerm('member', record.member, `${perspectiveSource}.member`),
+      traceTerm('affiliated', record.affiliated, `${perspectiveSource}.affiliated`),
+      traceTerm(
+        'internalization',
+        record.internalization,
+        `agents.${record.observerId}.history.overrides.normInternalizations.${key}`,
+      ),
       traceTerm('legibility', record.legibility, `${perspectiveSource}.legibility`),
       ...capabilityTerms,
       traceTerm('legibility-band', record.legibilityBand, `observations.${record.id}`),
@@ -216,7 +222,7 @@ function appraisalTrace(
               `compatibility:${valueId}`,
               compatibility,
               `resources.${key}.norm.compatibilityTurns.${valueId}`,
-              `${perspectiveSource}.member`,
+              `agents.${record.observerId}.history.overrides.normInternalizations.${key}`,
             ),
           );
         }
@@ -272,9 +278,11 @@ function resolveForObserver(
       },
     ],
   });
-  const turns = subjectiveTurns(event, norm, perspective.member);
+  const internalization = effectiveNormInternalization(observer, event.norm);
+  const turns = subjectiveTurns(event, norm, internalization);
   const subjectiveTurn = weightedTurn(observer, turns.subjectiveTurns);
   const record: NormObservationRecord = {
+    affiliated: perspective.affiliated,
     baselineTurns: { ...event.baselineTurns },
     channel: event.channel,
     compatibilityTurns: turns.compatibilityTurns,
@@ -284,7 +292,7 @@ function resolveForObserver(
     legibility: perspective.legibility,
     legibilityBand: legibility.band,
     legibilityMargin: legibility.margin,
-    member: perspective.member,
+    internalization,
     minute: state.minute,
     normId: key,
     observerId,

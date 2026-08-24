@@ -102,6 +102,7 @@ export function createResourceCatalogFromLibraries(input: {
 
 interface ResourceRequirement {
   address: ResourceAddress;
+  missingLabel?: string;
   path: string;
 }
 
@@ -111,13 +112,25 @@ function compareRequirements(left: ResourceRequirement, right: ResourceRequireme
 
 function directRequirements(scenario: ScenarioFile): ResourceRequirement[] {
   const byKey = new Map<string, ResourceRequirement>();
-  const add = (address: ResourceAddress, path: string) => {
+  const localNormKeys = new Set(
+    scenario.legacyLocalNorms.map(norm => resourceAddressKey(norm.address)),
+  );
+  const add = (address: ResourceAddress, path: string, missingLabel?: string) => {
     const key = resourceAddressKey(address);
-    if (!byKey.has(key)) byKey.set(key, { address: cloneAddress(address), path });
+    if (!byKey.has(key)) byKey.set(key, { address: cloneAddress(address), missingLabel, path });
   };
   add(scenario.environment, 'scenario.environment');
   scenario.characters.forEach((item, index) => {
     add(item.profile, `scenario.characters[${index}].profile`);
+    item.normPerspectives.forEach((perspective, perspectiveIndex) => {
+      if (!localNormKeys.has(resourceAddressKey(perspective.norm))) {
+        add(
+          perspective.norm,
+          `scenario.characters[${index}].normPerspectives[${perspectiveIndex}].norm`,
+          'norm resource',
+        );
+      }
+    });
   });
   scenario.socialContractPlacements.forEach((item, index) => {
     add(item.contract, `scenario.socialContractPlacements[${index}].contract`);
@@ -149,7 +162,10 @@ function resolvedCatalogResources(
     if (resolved.has(key)) continue;
     const entry = entries.get(key);
     if (entry === undefined) {
-      throw new ScenarioValidationError(requirement.path, `unknown resource "${key}"`);
+      throw new ScenarioValidationError(
+        requirement.path,
+        `unknown ${requirement.missingLabel ?? 'resource'} "${key}"`,
+      );
     }
     resolved.set(key, entry.resource);
     for (const dependency of resourceRequirements(entry.resource, entry.source)) {
@@ -226,7 +242,7 @@ export function prepareScenario(input: {
     ...scenario.legacyLocalNorms.map(({ address, ...norm }) => ({
       address,
       norm,
-      schemaVersion: 1 as const,
+      schemaVersion: 2 as const,
     })),
   ].sort((left, right) => compareAddresses(left.address, right.address));
   return deepFreeze({

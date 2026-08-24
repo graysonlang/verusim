@@ -1000,7 +1000,7 @@ function renderInspector(
               ];
         }).join(' / ');
         copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${norm?.norm.label ?? observation.normId}`;
-        terms.textContent = `${observation.member ? 'member' : 'nonmember'} / legibility ${observation.legibility.toFixed(2)} (${observation.legibilityBand ?? 'n/a'}) / felt ${observation.subjectiveTurn?.toFixed(3) ?? 'not perceived'} / ${turnDetails || 'no value turn'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+        terms.textContent = `${observation.affiliated ? 'affiliated' : 'nonmember'} / internalization ${observation.internalization.toFixed(2)} / legibility ${observation.legibility.toFixed(2)} (${observation.legibilityBand ?? 'n/a'}) / felt ${observation.subjectiveTurn?.toFixed(3) ?? 'not perceived'} / ${turnDetails || 'no value turn'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
       } else {
         const predicted =
           observation.predictedValue === null

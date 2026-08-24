@@ -1,6 +1,7 @@
 import {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
+  INCIDENT_ROOT_IMPACTS,
   MIND_MODEL_DIMENSIONS,
   OBSERVATION_CHANNELS,
   OUTLET_OPERATIONS,
@@ -52,6 +53,10 @@ const GOAL_SOURCES = new Set(['aspiration', 'need', 'obligation', 'scenario', 'w
 const RECOVERY_MODES = new Set<RecoveryMode>(['break', 'none', 'rest', 'sleep']);
 const TIME_RATE_ID_SET = new Set<string>(TIME_RATE_IDS);
 const HEIGHT_CLASS_SET = new Set<string>(HEIGHT_CLASSES);
+const INCIDENT_ROOT_IMPACT_SET = new Set<string>(INCIDENT_ROOT_IMPACTS);
+const INCIDENT_ATTRIBUTIONS = new Set(['ambiguous', 'nobody', 'other', 'self']);
+const INCIDENT_PUBLICITY = new Set(['private', 'public', 'witnessed']);
+const INCIDENT_VOLITIONS = new Set(['careless', 'deliberate', 'involuntary']);
 const MIND_MODEL_DIMENSION_SET = new Set<string>(MIND_MODEL_DIMENSIONS);
 const OBSERVATION_CHANNEL_SET = new Set<string>(OBSERVATION_CHANNELS);
 const OUTLET_OPERATION_SET = new Set<string>(OUTLET_OPERATIONS);
@@ -316,7 +321,44 @@ function validateNonzeroValueTurns(value: unknown, path: string): void {
 function validateNormDefinition(value: unknown, path: string): Record<string, unknown> {
   const norm = objectValue(value, path);
   stringValue(norm.label, `${path}.label`);
-  validateNonzeroValueTurns(norm.compatibilityTurns, `${path}.compatibilityTurns`);
+  validateValueTurns(norm.compatibilityTurns, `${path}.compatibilityTurns`);
+  const interpretations = arrayValue(norm.interpretations, `${path}.interpretations`);
+  if (interpretations.length === 0) {
+    throw new ScenarioValidationError(`${path}.interpretations`, 'expected at least one entry');
+  }
+  const rootImpacts = new Set<string>();
+  interpretations.forEach((entry, index) => {
+    const entryPath = `${path}.interpretations[${index}]`;
+    const interpretation = objectValue(entry, entryPath);
+    if (
+      typeof interpretation.rootImpact !== 'string' ||
+      !INCIDENT_ROOT_IMPACT_SET.has(interpretation.rootImpact)
+    ) {
+      throw new ScenarioValidationError(
+        `${entryPath}.rootImpact`,
+        'expected a known incident root impact',
+      );
+    }
+    if (rootImpacts.has(interpretation.rootImpact)) {
+      throw new ScenarioValidationError(`${entryPath}.rootImpact`, 'duplicate root impact');
+    }
+    rootImpacts.add(interpretation.rootImpact);
+    const identityStake = numberValue(
+      interpretation.identityStake,
+      `${entryPath}.identityStake`,
+      0,
+      1,
+    );
+    validateValueTurns(interpretation.turns, `${entryPath}.turns`);
+    if (
+      identityStake === 0 &&
+      !Object.values(objectValue(interpretation.turns, `${entryPath}.turns`)).some(
+        turn => turn !== 0,
+      )
+    ) {
+      throw new ScenarioValidationError(entryPath, 'expected turns or an identity stake');
+    }
+  });
   return norm;
 }
 
@@ -324,6 +366,7 @@ function validateSocialContractDefinition(value: unknown, path: string): Record<
   const contract = objectValue(value, path);
   stringValue(contract.label, `${path}.label`);
   stringValue(contract.summary, `${path}.summary`);
+  numberValue(contract.enforcementSeverity, `${path}.enforcementSeverity`, 0, 1);
   const norms = arrayValue(contract.norms, `${path}.norms`);
   if (norms.length === 0) {
     throw new ScenarioValidationError(`${path}.norms`, 'expected at least one norm');
@@ -583,7 +626,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 14) return file;
+  if (file.schemaVersion === 15) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -597,7 +640,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 10 &&
     file.schemaVersion !== 11 &&
     file.schemaVersion !== 12 &&
-    file.schemaVersion !== 13
+    file.schemaVersion !== 13 &&
+    file.schemaVersion !== 14
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -740,52 +784,86 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       delete placement.characterId;
     }
   }
-  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-    const placement = objectValue(placementValue, 'scenario.characters');
-    objectValue(placement.position, 'scenario.characters.position').layerId ??= 'surface';
+  if (sourceVersion < 14) {
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      objectValue(placement.position, 'scenario.characters.position').layerId ??= 'surface';
+    }
+    file.socialContractPlacements = [];
+    file.legacyLocalNorms = arrayValue(file.localNorms, 'scenario.localNorms');
+    delete file.localNorms;
+    for (const normValue of arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms')) {
+      const norm = objectValue(normValue, 'scenario.localNorms');
+      norm.address = {
+        kind: 'norm',
+        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+        resourceId: identifierValue(norm.id, 'scenario.localNorms.id'),
+      };
+      delete norm.id;
+    }
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      for (const perspectiveValue of arrayValue(
+        placement.normPerspectives,
+        'scenario.characters.normPerspectives',
+      )) {
+        const perspective = objectValue(perspectiveValue, 'scenario.characters.normPerspectives');
+        perspective.norm = {
+          kind: 'norm',
+          packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+          resourceId: identifierValue(
+            perspective.normId,
+            'scenario.characters.normPerspectives.normId',
+          ),
+        };
+        delete perspective.normId;
+      }
+    }
+    for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
+      const event = objectValue(eventValue, 'scenario.observationEvents');
+      if (event.eventType === 'norm') {
+        event.norm = {
+          kind: 'norm',
+          packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+          resourceId: identifierValue(event.normId, 'scenario.observationEvents.normId'),
+        };
+        delete event.normId;
+      }
+    }
   }
-  file.socialContractPlacements = [];
-  file.legacyLocalNorms = arrayValue(file.localNorms, 'scenario.localNorms');
-  delete file.localNorms;
-  for (const normValue of arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms')) {
-    const norm = objectValue(normValue, 'scenario.localNorms');
-    norm.address = {
-      kind: 'norm',
-      packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-      resourceId: identifierValue(norm.id, 'scenario.localNorms.id'),
-    };
-    delete norm.id;
-  }
-  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-    const placement = objectValue(placementValue, 'scenario.characters');
-    for (const perspectiveValue of arrayValue(
-      placement.normPerspectives,
-      'scenario.characters.normPerspectives',
+  if (sourceVersion < 15) {
+    file.incidentEvents = [];
+    for (const normValue of arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms')) {
+      const norm = objectValue(normValue, 'scenario.legacyLocalNorms');
+      norm.interpretations = [
+        {
+          identityStake: 0.5,
+          rootImpact: 'norm-violation',
+          turns: clone(norm.compatibilityTurns),
+        },
+      ];
+    }
+    for (const placementValue of arrayValue(
+      file.socialContractPlacements,
+      'scenario.socialContractPlacements',
     )) {
-      const perspective = objectValue(perspectiveValue, 'scenario.characters.normPerspectives');
-      perspective.norm = {
-        kind: 'norm',
-        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-        resourceId: identifierValue(
-          perspective.normId,
-          'scenario.characters.normPerspectives.normId',
-        ),
-      };
-      delete perspective.normId;
+      objectValue(placementValue, 'scenario.socialContractPlacements').enforcementPresence = 0;
+    }
+    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+      const placement = objectValue(placementValue, 'scenario.characters');
+      for (const perspectiveValue of arrayValue(
+        placement.normPerspectives,
+        'scenario.characters.normPerspectives',
+      )) {
+        const perspective = objectValue(perspectiveValue, 'scenario.characters.normPerspectives');
+        const member = perspective.member === true;
+        perspective.affiliated = member;
+        perspective.internalization = member ? 1 : 0;
+        delete perspective.member;
+      }
     }
   }
-  for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
-    const event = objectValue(eventValue, 'scenario.observationEvents');
-    if (event.eventType === 'norm') {
-      event.norm = {
-        kind: 'norm',
-        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-        resourceId: identifierValue(event.normId, 'scenario.observationEvents.normId'),
-      };
-      delete event.normId;
-    }
-  }
-  file.schemaVersion = 14;
+  file.schemaVersion = 15;
   return file;
 }
 
@@ -1169,21 +1247,40 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
     }) as CharacterProfileResourceFile;
   }
   if (address.kind === 'norm') {
-    schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
-    const norm = validateNormDefinition(file.norm, `${path}.norm`);
+    if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+      throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
+    }
+    const migrated = clone(file);
+    const normValue = objectValue(migrated.norm, `${path}.norm`);
+    if (file.schemaVersion === 1) {
+      validateNonzeroValueTurns(normValue.compatibilityTurns, `${path}.norm.compatibilityTurns`);
+      normValue.interpretations = [
+        {
+          identityStake: 0.5,
+          rootImpact: 'norm-violation',
+          turns: clone(normValue.compatibilityTurns),
+        },
+      ];
+    }
+    const norm = validateNormDefinition(normValue, `${path}.norm`);
     return clone({
       address: address as NormAddress,
       norm,
-      schemaVersion: 1,
+      schemaVersion: 2,
     }) as unknown as NormResourceFile;
   }
   if (address.kind === 'social-contract') {
-    schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
-    const contract = validateSocialContractDefinition(file.contract, `${path}.contract`);
+    if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+      throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
+    }
+    const migrated = clone(file);
+    const contractValue = objectValue(migrated.contract, `${path}.contract`);
+    if (file.schemaVersion === 1) contractValue.enforcementSeverity = 0.5;
+    const contract = validateSocialContractDefinition(contractValue, `${path}.contract`);
     return clone({
       address: address as SocialContractAddress,
       contract,
-      schemaVersion: 1,
+      schemaVersion: 2,
     }) as unknown as SocialContractResourceFile;
   }
   if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
@@ -1217,7 +1314,7 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 14);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 15);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -1301,6 +1398,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     const placement = objectValue(entry, path);
     identifierValue(placement.id, `${path}.id`);
     parseResourceAddress(placement.contract, `${path}.contract`, 'social-contract');
+    numberValue(placement.enforcementPresence, `${path}.enforcementPresence`, 0, 1);
     const scope = objectValue(placement.scope, `${path}.scope`);
     if (typeof scope.kind !== 'string' || !SOCIAL_CONTRACT_SCOPE_KIND_SET.has(scope.kind)) {
       throw new ScenarioValidationError(
@@ -1506,9 +1604,10 @@ export function parseScenario(value: unknown): ScenarioFile {
         const perspectivePath = `${path}.normPerspectives[${perspectiveIndex}]`;
         const perspective = objectValue(entry, perspectivePath);
         parseResourceAddress(perspective.norm, `${perspectivePath}.norm`, 'norm');
-        if (typeof perspective.member !== 'boolean') {
-          throw new ScenarioValidationError(`${perspectivePath}.member`, 'expected a boolean');
+        if (typeof perspective.affiliated !== 'boolean') {
+          throw new ScenarioValidationError(`${perspectivePath}.affiliated`, 'expected a boolean');
         }
+        numberValue(perspective.internalization, `${perspectivePath}.internalization`, 0, 1);
         numberValue(perspective.legibility, `${perspectivePath}.legibility`, 0, 1);
         return perspective;
       },
@@ -1834,6 +1933,120 @@ export function parseScenario(value: unknown): ScenarioFile {
     },
   );
   uniqueIds(observationEvents, 'scenario.observationEvents');
+
+  const incidentEvents = arrayValue(file.incidentEvents, 'scenario.incidentEvents').map(
+    (entry, index) => {
+      const path = `scenario.incidentEvents[${index}]`;
+      const event = objectValue(entry, path);
+      identifierValue(event.id, `${path}.id`);
+      identifierValue(event.affectedAgentId, `${path}.affectedAgentId`);
+      if (event.actorId !== null) identifierValue(event.actorId, `${path}.actorId`);
+      integerValue(event.atMinute, `${path}.atMinute`, 0, Number.MAX_SAFE_INTEGER);
+      stringValue(event.summary, `${path}.summary`);
+      if (typeof event.rootImpact !== 'string' || !INCIDENT_ROOT_IMPACT_SET.has(event.rootImpact)) {
+        throw new ScenarioValidationError(`${path}.rootImpact`, 'expected a known root impact');
+      }
+      if (typeof event.attribution !== 'string' || !INCIDENT_ATTRIBUTIONS.has(event.attribution)) {
+        throw new ScenarioValidationError(`${path}.attribution`, 'expected a known attribution');
+      }
+      if (typeof event.publicity !== 'string' || !INCIDENT_PUBLICITY.has(event.publicity)) {
+        throw new ScenarioValidationError(
+          `${path}.publicity`,
+          'expected private, witnessed, or public',
+        );
+      }
+      if (typeof event.volition !== 'string' || !INCIDENT_VOLITIONS.has(event.volition)) {
+        throw new ScenarioValidationError(`${path}.volition`, 'expected a known volition');
+      }
+      numberValue(event.magnitude, `${path}.magnitude`, Number.EPSILON, 1);
+      numberValue(event.audibleRadiusMeters, `${path}.audibleRadiusMeters`, 0, 10_000);
+      numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
+      numberValue(event.interpretationDifficulty, `${path}.interpretationDifficulty`, 0, 1);
+      const observerIds = arrayValue(event.observerIds, `${path}.observerIds`);
+      if (observerIds.length === 0) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'expected at least one observer');
+      }
+      observerIds.forEach((observerId, observerIndex) => {
+        identifierValue(observerId, `${path}.observerIds[${observerIndex}]`);
+      });
+      if (new Set(observerIds).size !== observerIds.length) {
+        throw new ScenarioValidationError(`${path}.observerIds`, 'duplicate agent identifier');
+      }
+      const context = objectValue(event.context, `${path}.context`);
+      if (context.locationId !== null) {
+        identifierValue(context.locationId, `${path}.context.locationId`);
+      }
+      for (const field of ['groupIds', 'institutionIds']) {
+        const ids = arrayValue(context[field], `${path}.context.${field}`);
+        ids.forEach((id, idIndex) => {
+          identifierValue(id, `${path}.context.${field}[${idIndex}]`);
+        });
+        if (new Set(ids).size !== ids.length) {
+          throw new ScenarioValidationError(`${path}.context.${field}`, 'duplicate identifier');
+        }
+      }
+      if (event.generation !== null) {
+        const generation = objectValue(event.generation, `${path}.generation`);
+        if (generation.algorithm !== 'verusim-incident-v1') {
+          throw new ScenarioValidationError(
+            `${path}.generation.algorithm`,
+            'expected verusim-incident-v1',
+          );
+        }
+        integerValue(generation.seed, `${path}.generation.seed`, 0, 0xffff_ffff);
+        const samplerStart = integerValue(
+          generation.samplerStart,
+          `${path}.generation.samplerStart`,
+          0,
+          Number.MAX_SAFE_INTEGER,
+        );
+        const samplerEnd = integerValue(
+          generation.samplerEnd,
+          `${path}.generation.samplerEnd`,
+          samplerStart,
+          Number.MAX_SAFE_INTEGER,
+        );
+        identifierValue(generation.templateId, `${path}.generation.templateId`);
+        const weights = arrayValue(
+          generation.eligibleWeights,
+          `${path}.generation.eligibleWeights`,
+        );
+        weights.forEach((weightValue, weightIndex) => {
+          const weightPath = `${path}.generation.eligibleWeights[${weightIndex}]`;
+          const weight = objectValue(weightValue, weightPath);
+          identifierValue(weight.agentId, `${weightPath}.agentId`);
+          numberValue(weight.weight, `${weightPath}.weight`, Number.EPSILON);
+        });
+        const draws = arrayValue(generation.draws, `${path}.generation.draws`);
+        if (samplerEnd !== samplerStart + draws.length) {
+          throw new ScenarioValidationError(
+            `${path}.generation.samplerEnd`,
+            'must equal samplerStart plus draw count',
+          );
+        }
+        draws.forEach((drawValue, drawIndex) => {
+          const drawPath = `${path}.generation.draws[${drawIndex}]`;
+          const draw = objectValue(drawValue, drawPath);
+          stringValue(draw.label, `${drawPath}.label`);
+          numberValue(draw.minimum, `${drawPath}.minimum`);
+          const maximum = numberValue(draw.maximum, `${drawPath}.maximum`);
+          if (maximum < (draw.minimum as number)) {
+            throw new ScenarioValidationError(`${drawPath}.maximum`, 'must not be below minimum');
+          }
+          integerValue(
+            draw.position,
+            `${drawPath}.position`,
+            samplerStart + drawIndex,
+            samplerStart + drawIndex,
+          );
+          numberValue(draw.unit, `${drawPath}.unit`, 0, 1);
+          numberValue(draw.value, `${drawPath}.value`, draw.minimum as number, maximum);
+        });
+      }
+      return event;
+    },
+  );
+  uniqueIds(incidentEvents, 'scenario.incidentEvents');
 
   const opportunities = arrayValue(
     file.behaviorOpportunities,

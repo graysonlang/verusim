@@ -25,6 +25,7 @@ import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { advanceCoping, resolveAppraisalEvent } from './coping.js';
 import { initializeHistoryDerivedState } from './history.js';
+import { resolveIncidentEvent } from './incident.js';
 import {
   createNarrativeState,
   prepareNarrativeAgency,
@@ -164,6 +165,12 @@ function initializeAgent(
   const destination = locationCenter(findLocation(environment, block.locationId));
   const arrived = sameLayerPosition(placement.position, destination);
   const formative = initializeHistoryDerivedState(profile);
+  const normInternalizations = Object.fromEntries(
+    placement.normPerspectives.map(perspective => [
+      `${perspective.norm.packageId}:${perspective.norm.kind}:${perspective.norm.resourceId}`,
+      perspective.internalization,
+    ]),
+  );
   const agent: SimulationAgent = {
     cascade: 'none',
     cascadeDwellUntilMinute: minute,
@@ -175,7 +182,13 @@ function initializeAgent(
       : `Walking to ${findLocation(environment, block.locationId).name}`,
     currentLocationId: arrived ? block.locationId : null,
     destination,
-    history: formative.history,
+    history: {
+      ...formative.history,
+      overrides: {
+        ...formative.history.overrides,
+        ...(placement.normPerspectives.length === 0 ? {} : { normInternalizations }),
+      },
+    },
     id: placement.instanceId,
     memories: formative.memories,
     narrative: null,
@@ -252,6 +265,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
       validatorClaimIds: [...dyad.validatorClaimIds],
     })),
     environment,
+    incidentRecords: [],
     intentions: [],
     minute: prepared.scenario.startMinute,
     narrativeRecords: [],
@@ -262,6 +276,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     reputations: [],
     resourceLock: prepared.resourceLock,
     resolvedDisclosureOpportunityIds: [],
+    resolvedIncidentEventIds: [],
     resolvedObservationEventIds: [],
     resolvedOpportunityIds: [],
     resolvedAppraisalEventIds: [],
@@ -499,6 +514,23 @@ export function createSimulationFromPreparedSnapshot(input: {
       );
     }
   });
+  const incidentEventIds = new Set(snapshot.scenario.incidentEvents.map(event => event.id));
+  snapshot.incidentRecords.forEach((record, index) => {
+    if (!incidentEventIds.has(record.eventId) || !agentIds.has(record.observerId)) {
+      throw new ScenarioValidationError(
+        `snapshot.incidentRecords[${index}]`,
+        'incident record must reference a snapshot agent and authored event',
+      );
+    }
+  });
+  snapshot.resolvedIncidentEventIds.forEach((eventId, index) => {
+    if (!incidentEventIds.has(eventId)) {
+      throw new ScenarioValidationError(
+        `snapshot.resolvedIncidentEventIds[${index}]`,
+        `unknown incident event "${eventId}"`,
+      );
+    }
+  });
   const relationshipEventIds = new Set(snapshot.scenario.relationshipEvents.map(event => event.id));
   snapshot.resolvedRelationshipEventIds.forEach((eventId, index) => {
     if (!relationshipEventIds.has(eventId)) {
@@ -727,6 +759,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     disclosureDecisions: snapshot.disclosureDecisions,
     disclosureItems: snapshot.disclosureItems,
     dyads: snapshot.dyads,
+    incidentRecords: snapshot.incidentRecords,
     intentions: snapshot.intentions,
     minute: snapshot.minute,
     narrativeRecords: snapshot.narrativeRecords,
@@ -735,6 +768,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     relationshipDecisions: snapshot.relationshipDecisions,
     reputations: snapshot.reputations,
     resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
+    resolvedIncidentEventIds: snapshot.resolvedIncidentEventIds,
     resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
     resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
     resolvedAppraisalEventIds: snapshot.resolvedAppraisalEventIds,
@@ -1086,6 +1120,13 @@ function advanceOneTick(state: SimulationState): SimulationState {
       !prepared.resolvedObservationEventIds.includes(event.id),
   );
   for (const event of dueObservationEvents) next = resolveObservationEvent(next, event);
+  const dueIncidentEvents = prepared.scenario.incidentEvents.filter(
+    event =>
+      event.atMinute > prepared.minute &&
+      event.atMinute <= nextMinute &&
+      !prepared.resolvedIncidentEventIds.includes(event.id),
+  );
+  for (const event of dueIncidentEvents) next = resolveIncidentEvent(next, event);
   const dueRelationshipEvents = prepared.scenario.relationshipEvents.filter(
     event =>
       event.atMinute > prepared.minute &&
