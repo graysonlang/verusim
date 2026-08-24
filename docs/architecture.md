@@ -81,7 +81,7 @@ They never rewrite the stored wide sidebar visibility or width, and crossing a r
 On handset widths, scenario identity and the essential transport remain visible in a two-row safe-area-aware header, the layer stack contracts to the active projection until explicitly opened, and roster selection reduces the sheet to a Canvas-revealing peek.
 Compact presentation keeps transport and day context in its sparse header.
 Its time-rate disclosure is icon-only, while derived day period and authored weather use full-bleed art and retain complete accessible names; handset presentation uses the same compact status art within its transport row.
-Handset controls use 40-pixel square targets, and the day information retains the ordinary workbench type size.
+Handset controls preserve 44-pixel square hit targets while centering primary chrome within a 36-pixel visual footprint, and the day information retains the ordinary workbench type size.
 The environment layer selector anchors to the Canvas lower-left in every mode.
 Compact and handset zoom anchors to the Canvas upper-right while the map scale remains lower-right and the layer and scale groups rise above an active handset sheet without changing camera or projection state.
 Handset zoom keeps the same hit target as other controls while presenting borderless value text.
