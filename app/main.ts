@@ -2466,10 +2466,17 @@ function createWorkbench(): HTMLElement {
   }
 
   createEffect(() => {
-    const nextUrl = workbenchUrlForState(window.location.href, {
-      rateId: playbackRateId(),
-      scenarioId: loadedBuiltInScenarioId(),
-    });
+    const nextUrl = workbenchUrlForState(
+      window.location.href,
+      {
+        rateId: playbackRateId(),
+        scenarioId: loadedBuiltInScenarioId(),
+      },
+      {
+        rateId: initialTimeRateForScenario(state().scenario, preferences()),
+        scenarioId: DEFAULT_BUILT_IN_SCENARIO.id,
+      },
+    );
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (nextUrl !== currentUrl) window.history.replaceState(window.history.state, '', nextUrl);
   });

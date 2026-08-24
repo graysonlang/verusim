@@ -16,6 +16,11 @@ export interface ActiveWorkbenchUrlState {
   scenarioId: string | null;
 }
 
+export interface DefaultWorkbenchUrlState {
+  rateId: TimeRateId;
+  scenarioId: string;
+}
+
 export function parseWorkbenchQuery(
   search: string,
   builtInScenarioIds: readonly string[],
@@ -36,11 +41,17 @@ export function parseWorkbenchQuery(
   };
 }
 
-export function workbenchUrlForState(currentUrl: string, state: ActiveWorkbenchUrlState): string {
+export function workbenchUrlForState(
+  currentUrl: string,
+  state: ActiveWorkbenchUrlState,
+  defaults: DefaultWorkbenchUrlState,
+): string {
   const url = new URL(currentUrl);
-  if (state.scenarioId === null) url.searchParams.delete(SCENARIO_QUERY_PARAMETER);
-  else url.searchParams.set(SCENARIO_QUERY_PARAMETER, state.scenarioId);
-  url.searchParams.set(RATE_QUERY_PARAMETER, String(playbackRateForId(state.rateId).rate));
+  if (state.scenarioId === null || state.scenarioId === defaults.scenarioId) {
+    url.searchParams.delete(SCENARIO_QUERY_PARAMETER);
+  } else url.searchParams.set(SCENARIO_QUERY_PARAMETER, state.scenarioId);
+  if (state.rateId === defaults.rateId) url.searchParams.delete(RATE_QUERY_PARAMETER);
+  else url.searchParams.set(RATE_QUERY_PARAMETER, String(playbackRateForId(state.rateId).rate));
   url.searchParams.delete(LEGACY_TIME_RATE_QUERY_PARAMETER);
   return `${url.pathname}${url.search}${url.hash}`;
 }

@@ -103,6 +103,7 @@ Handset zoom keeps the same hit target as other controls while presenting border
 Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Valid `scenario` and numeric `rate` URL query parameters override the built-in scenario and active startup rate, and changes to either selection replace those values in the current URL without adding history entries.
+The URL omits `scenario` for the default built-in scenario and omits `rate` when the active rate matches the loaded scenario's effective default, because either value is reconstructed without an override on reload.
 Unrelated query parameters and the fragment remain intact; loading a file-backed scenario removes `scenario` because its content cannot be reconstructed from a built-in identifier.
 Clock format and display units do not belong to scenario content.
 
