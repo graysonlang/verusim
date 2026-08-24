@@ -1113,17 +1113,13 @@ select {
   display: none;
 }
 
-.panel-header h2 {
+.panel-header h2,
+.activity-browser-heading h2 {
   margin: 0;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.11em;
   text-transform: uppercase;
-}
-
-.count {
-  color: var(--faint);
-  font-family: var(--mono);
 }
 
 input[type="search"] {
@@ -1625,11 +1621,7 @@ input[type="search"]::placeholder {
 }
 
 .activity-browser-heading h2 {
-  margin: 0;
   color: var(--text);
-  font-family: ui-serif, Georgia, serif;
-  font-size: 17px;
-  font-weight: 560;
 }
 
 .activity-count {

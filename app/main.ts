@@ -1113,6 +1113,7 @@ function createActivityInspector(): ActivityInspector {
   let currentClockFormat: ClockFormat = '12-hour';
 
   title.textContent = 'Activity';
+  title.dataset.testid = 'activity-title';
   count.dataset.testid = 'activity-count';
   count.setAttribute('aria-live', 'polite');
   filter.type = 'search';
@@ -1285,7 +1286,6 @@ function createWorkbench(): HTMLElement {
   const rosterHeader = element('div', 'panel-header');
   const rosterTitleWrap = element('div', 'sheet-drag-handle');
   const rosterTitle = element('h2');
-  const rosterCount = element('span', 'count');
   const rosterTitleControls = element('span', 'panel-title-controls');
   const rosterSheetToggle = button('', 'narrow-sheet-toggle');
   const searchInput = element('input');
@@ -1516,12 +1516,13 @@ function createWorkbench(): HTMLElement {
   zoomSelection.className = 'zoom-menu-item';
   zoomMenu.append(zoomForm, zoomActualSize, zoomFit, zoomSelection);
 
-  rosterTitle.textContent = 'Characters';
+  rosterTitle.textContent = 'Characters (0)';
+  rosterTitle.dataset.testid = 'roster-title';
   roster.id = 'character-roster';
   rosterTitleWrap.dataset.testid = 'roster-sheet-drag-handle';
   rosterSheetToggle.dataset.testid = 'roster-sheet-toggle';
   rosterSheetToggle.append(controlIcon('sheet-expand'));
-  rosterTitleControls.append(rosterCount, rosterSheetToggle);
+  rosterTitleControls.append(rosterSheetToggle);
   rosterTitleWrap.append(rosterTitle, rosterTitleControls);
   searchInput.type = 'search';
   searchInput.placeholder = 'Find a character';
@@ -2720,7 +2721,7 @@ function createWorkbench(): HTMLElement {
         .toLowerCase()
         .includes(query),
     );
-    rosterCount.textContent = String(filtered.length);
+    rosterTitle.textContent = `Characters (${filtered.length})`;
     const items = filtered.map(agent => {
       const item = button('', 'roster-item');
       const copy = element('span', 'roster-copy');
