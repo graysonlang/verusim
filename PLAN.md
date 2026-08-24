@@ -18,17 +18,46 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8A: authoring document graph and transactions.
-Establish the host-neutral in-memory document, identity, provenance, reference, dirty-state, and transactional edit boundary before adding Build workspace presentation.
+The active slice is Phase 8P1: event-boundary and trace-identity correctness.
+Close the two audit defects that can silently lose authored events or collide causal identities before beginning the authoring document graph.
 
 ### Current-focus non-goals
 
-- no changes to completed Phase 5, Phase 6, or Phase 7 algorithms
+- no change to event appraisal, consequence, or ordering semantics beyond the scenario-start boundary
+- no causal-trace retention redesign until Phase 9A
 - no behavior-model or evaluator-fidelity expansion
-- no draft mutation of a running simulation or its reset baseline
-- no package manager or remote dependency resolver
-- no filesystem, browser storage, database, or network dependency inside the engine
-- no Build workspace shell, specialized editor, store adapter, or pack writer until the document graph contract is green
+- no schema rewrite, authoring graph, Build workspace shell, or workbench refactor in this slice
+
+## Phase 8P — audit repair and authoring readiness
+
+Close the correctness and primary-path debt identified by the 2026-08-24 project audit before building authoring transactions over the existing formats.
+Keep this preflight narrow: repair observable defects first, then establish current-schema first-party content and documentation as the baseline consumed by Phase 8A.
+
+### Phase 8P implementation sequence
+
+#### Phase 8P1 — event boundaries and trace identity
+
+Define scenario-start behavior consistently for every authored event family.
+Reject runtime events earlier than the scenario start at their exact authored path, allow events exactly at the start to become due once during the first transition, and retain the existing resolved-event ledgers and event-specific evaluators.
+Replace intervention trace identifiers derived from the bounded trace length with a deterministic identity that cannot repeat when the trace window is saturated or when multiple interventions occur during one transition.
+
+Gate: a table-driven start-boundary fixture proves each event family either rejects a pre-start timestamp or resolves an exact-start event once, while a saturated trace accepts multiple same-tick interventions with distinct trace and memory identifiers and exact snapshot replay.
+
+#### Phase 8P2 — current-schema content and project documentation
+
+Rewrite every shipped scenario, character, environment, norm, and social-contract document to its current schema without changing semantic addresses or prepared behavior.
+Retain legacy migration coverage through a compact version matrix so migration is a compatibility path rather than the primary first-party read path, and make migration-order assumptions explicit in regression coverage.
+Bring the README feature inventory, active phase, and repository map through completed Phase 7, including generation, integration cadence, observation adapters, and cadence-save support.
+
+Gate: every first-party document parses without migration, its prepared scenarios and discriminating decisions remain byte-equivalent to the pre-rewrite catalog, every supported legacy version reaches the current boundary in the migration matrix, and the full repository gate remains green.
+
+Exit probes:
+
+- authored events earlier than scenario start fail at their indexed `atMinute` path, while exact-start events resolve once through their ordinary evaluator
+- saturated same-tick interventions retain distinct stable trace and memory identifiers across snapshot save and resume
+- every shipped content file declares the current schema version and no built-in scenario depends on migration to prepare
+- the migration matrix retains explicit coverage for every supported legacy version and reports malformed legacy elements at indexed paths
+- the README names the active phase and current generation, integration, cadence, observation, and persistence surfaces
 
 ## Phase 8 — integrated content authoring workbench
 
@@ -66,18 +95,21 @@ Gate: one separate-document project survives provenance-only relocation without 
 #### Phase 8B — authoritative preparation and revision isolation
 
 Add responsive incremental diagnostics over drafts, but make the existing migration, validation, duplicate detection, reference resolution, dependency closure, and preparation path the sole authority for a runnable revision.
-Give each successfully prepared draft revision a stable in-memory identity used to create both the simulation state and its reset baseline.
+Unify shared scenario and snapshot validation primitives, reject unknown authored keys, and validate prepared scenarios at the boundary rather than trusting a type discriminator alone.
+Give each successfully prepared draft revision a canonical content digest used to create both the simulation state and its reset baseline, and extend snapshot resource locks so an in-place edit at the same semantic address fails rather than replaying against changed content.
 Keep later draft edits isolated from that pair until an explicit apply operation prepares a new revision and restarts simulation.
 
-Gate: the separate-document fixture prepares equivalently through direct in-memory content and the authoring graph, an invalid authored path blocks transition, correcting it succeeds through the same boundary, and post-start edits leave the running state and reset baseline byte-equivalent.
+Gate: the separate-document fixture prepares equivalently through direct in-memory content and the authoring graph, unknown and invalid authored fields block transition at actionable paths, correcting them succeeds through the same boundary, post-start edits leave the running state and reset baseline byte-equivalent, and changing locked content without changing its semantic address rejects snapshot resume.
 
 #### Phase 8C — shared Build and Simulate application shell
 
+Before adding workspace ownership, extract the inspector renderer, icon and badge builders, and repeated menu controller from `app/main.ts` behind focused testable boundaries.
+Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
 Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
 Build retains its selected document, property selection, editor camera, dirty state, and undo history; Simulate retains only runtime state derived from the explicitly applied revision.
 Returning to Build must not import interventions, snapshot state, runtime selection, or camera state into the authored draft.
 
-Gate: repeated keyboard and pointer mode switches preserve both workspace states, and editing during Simulate remains impossible while editing the retained Build draft cannot mutate the live simulation.
+Gate: repeated keyboard and pointer mode switches preserve both workspace states, editing during Simulate remains impossible while editing the retained Build draft cannot mutate the live simulation, and live inspector updates preserve focused controls and scroll position without rebuilding unchanged sections.
 
 #### Phase 8D — specialized editors and shared problems surface
 
@@ -138,10 +170,12 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 #### Phase 9A — authoritative seconds and schema migration
 
+Before increasing evaluator cadence, centralize duplicated trace and memory bounds and define a retention contract that prevents one noisy agent from evicting every other agent's recent causal sources.
+Keep trace-entry identity independent from retention and preserve bounded snapshot size with explicit per-agent or indexed-window semantics rather than an accidental global FIFO.
 Revise the time-domain contract in the design and architecture, then make integer simulated seconds canonical for runtime state, authored event resolution, trace timestamps, deadlines, and cadence scheduling.
 Migrate legacy minute-based scenarios and snapshots by exact conversion, keep calendar and schedule authoring legible, and separate monotonic transition identity from elapsed simulation time.
 
-Gate: every legacy fixture migrates to exact second timestamps without changing its initial state or event order, and an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion.
+Gate: every legacy fixture migrates to exact second timestamps without changing its initial state or event order, an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion, and causal sources for a quiet observed agent survive a noisy neighbor across the documented retention window.
 
 #### Phase 9B — event-delimited advancement
 
@@ -162,8 +196,9 @@ Gate: a character walking from A to B is interrupted at second 20, commits the e
 Evolve cadence sessions from pending whole-minute ticks to pending logical duration and event boundaries.
 Let the host combine playback-rate and behavioral level-of-detail policy so high rates and distant agents use coarser scheduling while active engagement and discrete input impose immediate barriers.
 Coarse processing may batch exact substeps or jump across a proven event-free interval, but it may not skip a consequential event or select a behavior through a reduced-fidelity evaluator.
+Measure full-cadence and catch-up cost at representative cohort sizes, then add deterministic indexes only for hot paths whose linear scans prevent the selected cadence policy from keeping up.
 
-Gate: real-time adjacent, accelerated adjacent, location, settlement, and on-demand schedules all reach byte-equivalent authoritative state and causal traces at the same observation boundary, including a tier change and player input during pending work.
+Gate: real-time adjacent, accelerated adjacent, location, settlement, and on-demand schedules all reach byte-equivalent authoritative state and causal traces at the same observation boundary, including a tier change and player input during pending work, while the measured cohort fixture completes without dropping due work.
 
 #### Phase 9E — workbench integration and verification
 
@@ -186,7 +221,27 @@ Exit probes:
 Phase 9 does not add a reduced-fidelity evaluator, distance-gated authoritative state, general-purpose physics, collision response, combat timing, or runtime-random action selection.
 Those are separate phenomena and must not be smuggled into the time-domain migration.
 
+## Phase 10 — OTGW ensemble acceptance
+
+Turn the reference acceptance appendix into an executable long-range falsifier suite after the authoring and subminute cadence foundations are complete.
+Add a seeded ensemble runner with at least twenty distinct authored parameter and context variants per vignette, byte-equivalent replay for every repeated seed, and explicit PASS, SOFT FAIL, HARD FAIL, and INCONCLUSIVE grading that separates behavioral plausibility from observer legibility.
+
+Complete the remaining eight vignette fixtures through ordinary authored events, histories, environments, and shared mechanisms rather than scripting source outcomes.
+Sequence them by the mechanism each falsifier isolates, retain Endicott/Margueritte and Pottsfield as the first two anchors, and reconcile the remaining self-deception scope decision before encoding Wirt's narrative gap.
+Make the protected unavailability rate an explicit ensemble dimension and range check so playtesting cannot silently tune independent NPC business to zero.
+
+Gate: every vignette runs at least twenty distinct seeded variants without nominal falsifiers, repeated variants reproduce byte-equivalent state and traces, extreme-range failures grade separately from structural failures, and unreadable in-envelope behavior reports INCONCLUSIVE rather than being misclassified as a model failure.
+
+Exit probes:
+
+- the ensemble runner materializes distinct seeded authored variants without runtime-random action selection and replays each variant byte-equivalently
+- the falsifier harness localizes every failure to its implicated shared term and distinguishes nominal, extreme-range, and observer-legibility failures
+- all ten vignettes prepare and run through the ordinary content and simulation boundaries without per-character handlers or authored selected behavior
+- Wirt, Greg, Beatrice, the Woodsman, Endicott and Margueritte, Auntie Whispers, Lorna, Adelaide, Pottsfield, and the Beast each retain their documented discriminating assertion across the ensemble
+- unavailability remains visibly nonzero across nominal variants without making every NPC obstructive or unavailable on demand
+
 ## Decisions that can wait
 
 Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, and task-specific physical capability checks beyond the existing build contributions should stay documented but unimplemented until their prerequisite phase.
+Self-deception remains an explicit scope decision to reconcile before Phase 10 encodes Wirt, while unavailability calibration belongs to the Phase 10 ensemble and may not be silently omitted or tuned to zero.
 Premature fields would look authoritative while carrying no tested consequence.
