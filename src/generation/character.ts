@@ -19,10 +19,19 @@ import {
 } from '../model/types.js';
 import { parseResourceFile } from '../scenario/parse.js';
 import { initializeHistoryDerivedState } from '../simulation/history.js';
+import {
+  GenerationSampler,
+  cloneGenerated,
+  freezeGenerated,
+  validateGenerationRange,
+  validateGenerationSeed,
+  validateSamplerPosition,
+  type IntegerGenerationRange,
+  type NumericGenerationRange,
+  type RealizedGenerationDraw,
+} from './sampler.js';
 
 const GENERATOR_ALGORITHM = 'verusim-character-v1' as const;
-const UINT32_RANGE = 0x1_0000_0000;
-const UINT32_MAX = UINT32_RANGE - 1;
 const CASCADE_POSITIONS = ['freeze', 'fight', 'flight', 'fawn', 'flop'] as const;
 const CONSTITUTION_FIELDS = [
   'baselineArousal',
@@ -46,13 +55,6 @@ const EMPATHY_FIELDS = [
   'steepness',
   'threatSensitivity',
 ] as const;
-
-export interface NumericGenerationRange {
-  maximum: number;
-  minimum: number;
-}
-
-export interface IntegerGenerationRange extends NumericGenerationRange {}
 
 type PartialRanges<Shape> = Partial<Record<keyof Shape, NumericGenerationRange>>;
 
@@ -103,15 +105,6 @@ export interface CharacterGenerationRequest {
   packageId: string;
   profile: CharacterDefinition;
   role: CharacterRoleBundle;
-}
-
-export interface RealizedGenerationDraw {
-  id: string;
-  maximum: number;
-  minimum: number;
-  position: number;
-  unit: number;
-  value: number;
 }
 
 export interface GeneratedFormativeEventProvenance {
@@ -165,107 +158,16 @@ export interface GeneratedCharacterCohort {
   seed: number;
 }
 
-function clone<Value>(value: Value): Value {
-  return JSON.parse(JSON.stringify(value)) as Value;
-}
-
-function deepFreeze<Value>(value: Value): Value {
-  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return value;
-  Object.freeze(value);
-  for (const child of Object.values(value)) deepFreeze(child);
-  return value;
-}
-
 function validateIdentifier(value: string, path: string): void {
   if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(value)) {
     throw new TypeError(`${path} must be a lowercase semantic identifier`);
   }
 }
 
-function validateSeed(seed: number): void {
-  if (!Number.isInteger(seed) || seed < 0 || seed > UINT32_MAX) {
-    throw new RangeError(`seed must be an integer from 0 through ${UINT32_MAX}`);
-  }
-}
-
-function validateSamplerPosition(position: number): void {
-  if (!Number.isInteger(position) || position < 0 || position > UINT32_MAX) {
-    throw new RangeError(`samplerPosition must be an integer from 0 through ${UINT32_MAX}`);
-  }
-}
-
-function validateRange(
-  range: NumericGenerationRange,
-  path: string,
-  bounds: NumericGenerationRange,
-  integer = false,
-): void {
-  if (!Number.isFinite(range.minimum) || !Number.isFinite(range.maximum)) {
-    throw new TypeError(`${path} bounds must be finite numbers`);
-  }
-  if (range.minimum > range.maximum) {
-    throw new RangeError(`${path}.minimum must not exceed ${path}.maximum`);
-  }
-  if (range.minimum < bounds.minimum || range.maximum > bounds.maximum) {
-    throw new RangeError(`${path} must stay within ${bounds.minimum} through ${bounds.maximum}`);
-  }
-  if (integer && (!Number.isInteger(range.minimum) || !Number.isInteger(range.maximum))) {
-    throw new TypeError(`${path} bounds must be integers`);
-  }
-}
-
-function unitFor(seed: number, position: number): number {
-  let value = (seed + Math.imul(position + 1, 0x9e3779b9)) >>> 0;
-  value ^= value >>> 16;
-  value = Math.imul(value, 0x21f0aaad);
-  value ^= value >>> 15;
-  value = Math.imul(value, 0x735a2d97);
-  value ^= value >>> 15;
-  return (value >>> 0) / UINT32_RANGE;
-}
-
-class GenerationSampler {
-  readonly draws: RealizedGenerationDraw[] = [];
-  position: number;
-
-  constructor(
-    readonly seed: number,
-    position: number,
-  ) {
-    this.position = position;
-  }
-
-  number(id: string, range: NumericGenerationRange): RealizedGenerationDraw {
-    if (this.position > UINT32_MAX) throw new RangeError('generation sampler position overflow');
-    const position = this.position;
-    const unit = unitFor(this.seed, position);
-    const draw = {
-      id,
-      maximum: range.maximum,
-      minimum: range.minimum,
-      position,
-      unit,
-      value: range.minimum + (range.maximum - range.minimum) * unit,
-    };
-    this.position += 1;
-    this.draws.push(draw);
-    return draw;
-  }
-
-  integer(id: string, range: IntegerGenerationRange): RealizedGenerationDraw {
-    const draw = this.number(id, range);
-    draw.value = Math.min(
-      range.maximum,
-      range.minimum + Math.floor(draw.unit * (range.maximum - range.minimum + 1)),
-    );
-    return draw;
-  }
-}
-
 function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   validateIdentifier(role.id, 'role.id');
   if (role.label.trim() === '') throw new TypeError('role.label must not be empty');
-  validateRange(
+  validateGenerationRange(
     role.formativeEventCount,
     'role.formativeEventCount',
     { minimum: 1, maximum: 40 },
@@ -283,9 +185,9 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
     if (!(template.weight > 0) || !Number.isFinite(template.weight)) {
       throw new RangeError(`${path}.weight must be a positive finite number`);
     }
-    validateRange(template.age, `${path}.age`, { minimum: 0, maximum: ageYears }, true);
-    validateRange(template.turn, `${path}.turn`, { minimum: -1, maximum: 1 });
-    validateRange(template.copingPotential, `${path}.copingPotential`, {
+    validateGenerationRange(template.age, `${path}.age`, { minimum: 0, maximum: ageYears }, true);
+    validateGenerationRange(template.turn, `${path}.turn`, { minimum: -1, maximum: 1 });
+    validateGenerationRange(template.copingPotential, `${path}.copingPotential`, {
       minimum: 0,
       maximum: 1,
     });
@@ -296,7 +198,7 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   for (const capabilityId of CAPABILITY_IDS) {
     const range = ranges.capabilities?.[capabilityId];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.capabilities.${capabilityId}`, {
+      validateGenerationRange(range, `role.ranges.capabilities.${capabilityId}`, {
         minimum: 0,
         maximum: 1,
       });
@@ -305,7 +207,7 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   for (const position of CASCADE_POSITIONS) {
     const range = ranges.cascadePriors?.[position];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.cascadePriors.${position}`, {
+      validateGenerationRange(range, `role.ranges.cascadePriors.${position}`, {
         minimum: 0,
         maximum: 1,
       });
@@ -314,25 +216,28 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   for (const field of CONSTITUTION_FIELDS) {
     const range = ranges.constitution?.[field];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.constitution.${field}`, {
+      validateGenerationRange(range, `role.ranges.constitution.${field}`, {
         minimum: field === 'socialValence' ? -1 : 0,
         maximum: 1,
       });
     }
   }
   if (ranges.contractAdherence !== undefined) {
-    validateRange(ranges.contractAdherence, 'role.ranges.contractAdherence', {
+    validateGenerationRange(ranges.contractAdherence, 'role.ranges.contractAdherence', {
       minimum: 0,
       maximum: 1,
     });
   }
   if (ranges.comeliness !== undefined) {
-    validateRange(ranges.comeliness, 'role.ranges.comeliness', { minimum: 0, maximum: 1 });
+    validateGenerationRange(ranges.comeliness, 'role.ranges.comeliness', {
+      minimum: 0,
+      maximum: 1,
+    });
   }
   for (const field of DISCLOSURE_FIELDS) {
     const range = ranges.disclosure?.[field];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.disclosure.${field}`, {
+      validateGenerationRange(range, `role.ranges.disclosure.${field}`, {
         minimum: field === 'troughWidth' ? 0.01 : 0,
         maximum: 1,
       });
@@ -341,7 +246,7 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   for (const field of EMPATHY_FIELDS) {
     const range = ranges.empathy?.[field];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.empathy.${field}`, {
+      validateGenerationRange(range, `role.ranges.empathy.${field}`, {
         minimum: field === 'steepness' ? 0.01 : 0,
         maximum: field === 'steepness' ? 12 : 1,
       });
@@ -355,7 +260,7 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   for (const featureId of SOCIAL_FEATURE_IDS) {
     const range = ranges.empathy?.featureWeights?.[featureId];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.empathy.featureWeights.${featureId}`, {
+      validateGenerationRange(range, `role.ranges.empathy.featureWeights.${featureId}`, {
         minimum: 0,
         maximum: 4,
       });
@@ -364,7 +269,7 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
   for (const valueId of VALUE_IDS) {
     const range = ranges.valueWeights?.[valueId];
     if (range !== undefined) {
-      validateRange(range, `role.ranges.valueWeights.${valueId}`, {
+      validateGenerationRange(range, `role.ranges.valueWeights.${valueId}`, {
         minimum: 0,
         maximum: 2,
       });
@@ -378,7 +283,10 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
       if (marker.marker.trim() === '') throw new TypeError(`${path}.marker must not be empty`);
       if (markers.has(marker.marker)) throw new TypeError(`${path}.marker must be unique`);
       markers.add(marker.marker);
-      validateRange(marker.centrality, `${path}.centrality`, { minimum: 0, maximum: 1 });
+      validateGenerationRange(marker.centrality, `${path}.centrality`, {
+        minimum: 0,
+        maximum: 1,
+      });
     }
   }
   if (role.outletPreferences !== undefined) {
@@ -392,7 +300,7 @@ function validateRole(role: CharacterRoleBundle, ageYears: number): void {
         throw new TypeError(`${path}.operation must be unique`);
       }
       operations.add(preference.operation);
-      validateRange(preference.rank, `${path}.rank`, { minimum: 0, maximum: 1 });
+      validateGenerationRange(preference.rank, `${path}.rank`, { minimum: 0, maximum: 1 });
     }
   }
 }
@@ -547,7 +455,7 @@ function generatedResource(
   resource: CharacterProfileResourceFile;
 } {
   validateRole(request.role, request.profile.physical.ageYears);
-  const profile = clone(request.profile);
+  const profile = cloneGenerated(request.profile);
   profile.role = request.role.label;
   applyNumericRanges(profile, request.role, sampler);
   if (request.role.identity !== undefined) {
@@ -569,7 +477,7 @@ function generatedResource(
     }));
   }
   if (request.role.satisfierPreferences !== undefined) {
-    profile.satisfierPreferences = clone(request.role.satisfierPreferences);
+    profile.satisfierPreferences = cloneGenerated(request.role.satisfierPreferences);
   }
   const generatedEvents = generateFormativeEvents(request.role, sampler);
   profile.formativeEvents = generatedEvents.map(item => item.event);
@@ -599,7 +507,7 @@ function generatedResource(
     }
     return {
       dispositionEventId: record.eventId,
-      event: clone(generated.event),
+      event: cloneGenerated(generated.event),
       eventIndex,
       memoryId: memory.id,
       selectionDrawPosition: generated.selectionDrawPosition,
@@ -616,10 +524,10 @@ function generateWithSampler(
   const samplerStart = sampler.position;
   const drawStart = sampler.draws.length;
   const { eventProvenance, resource } = generatedResource(request, sampler);
-  return deepFreeze({
+  return freezeGenerated({
     generation: {
       algorithm: GENERATOR_ALGORITHM,
-      draws: clone(sampler.draws.slice(drawStart)),
+      draws: cloneGenerated(sampler.draws.slice(drawStart)),
       formativeEvents: eventProvenance,
       roleBundleId: request.role.id,
       samplerEnd: sampler.position,
@@ -633,7 +541,7 @@ function generateWithSampler(
 export function generateCharacterProfile(
   request: CharacterGenerationRequest & { samplerPosition?: number; seed: number },
 ): GeneratedCharacterProfile {
-  validateSeed(request.seed);
+  validateGenerationSeed(request.seed);
   const samplerPosition = request.samplerPosition ?? 0;
   validateSamplerPosition(samplerPosition);
   return generateWithSampler(request, new GenerationSampler(request.seed, samplerPosition));
@@ -684,7 +592,7 @@ export function characterBehaviorDistance(
 export function generateCharacterCohort(
   request: CohortGenerationRequest,
 ): GeneratedCharacterCohort {
-  validateSeed(request.seed);
+  validateGenerationSeed(request.seed);
   const samplerStart = request.samplerPosition ?? 0;
   validateSamplerPosition(samplerStart);
   if (
@@ -722,7 +630,7 @@ export function generateCharacterCohort(
       attempts.push({
         accepted: isAccepted,
         attempt,
-        draws: clone(candidate.generation.draws),
+        draws: cloneGenerated(candidate.generation.draws),
         nearestDistance,
         profileId: member.profile.profileId,
         samplerEnd: candidate.generation.samplerEnd,
@@ -741,7 +649,7 @@ export function generateCharacterCohort(
     }
   }
 
-  return deepFreeze({
+  return freezeGenerated({
     attempts,
     minimumSeparation: request.minimumSeparation,
     profiles,

@@ -18,17 +18,16 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5F: seeded cohort context and environment generation.
-Stagger recent-event timelines across the preceding years, materialize pre-contact dyad and mind-model seeds from explicit household and contact inputs, and generate immutable environment layouts through the ordinary resource-validation boundary.
-Every generated result retains its seed, sampler position, realized draws, and provenance so regeneration remains byte-equivalent.
+The active slice is Phase 5G: bounded baseline plasticity, format migration, and scenario validation tooling.
+Implement the remaining §14.4 history-derived writers over the Phase 5D sparse override boundary, with years-scale integrals, a hard adult rate cap, large-gap gating, age-sensitive plasticity, and genuine long-horizon movement for children.
+Ordinary adult runtime experience must remain below the write gate.
 
-Generated relationships and environments remain authored initial conditions rather than runtime discoveries.
-Candidate pools and topology inputs stay explicit so preparation and later packing never depend on an unbounded registry.
+Finish the Phase 5 format and authoring boundary with explicit generation-file migrations and validation reports that cover generated character, cohort-context, environment, and scenario content without creating a second parser or preparation path.
 
 ### Current-focus non-goals
 
-- no unrestricted adult drift or new §14.4 write path
-- no changes to the completed role-conditioned character generator
+- no unrestricted adult drift or constitutional writes
+- no changes to the completed generation algorithms
 - no Phase 6 incident, normative-interpretation, or somatic changes
 - no package manager, remote dependency resolver, authoring UI, or pack writer
 

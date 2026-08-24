@@ -409,6 +409,36 @@ The discriminating generation fixture uses one broad keeper region, three weight
 Regression coverage checks byte-equivalent replay, contiguous sampler positions, complete draw and event provenance, ordinary resource preparation, Phase 5D linkage, deep immutability, actual rejection, pairwise separation, and actionable invalid-input failures.
 No runtime or resource schema changes are introduced: generation is a pure authoring concern whose output remains a version 1 character-profile resource, and runtime randomness still never selects behavior.
 
+## Phase 5F — cohort context and environment generation
+
+Status: complete.
+
+Add deterministic authoring stages for recent cohort history, pre-contact directed dyads and mind models, and immutable environment layouts.
+Every stage consumes the same explicit seed and sampler-position contract established in Phase 5E, retains every realized draw and its provenance, and accepts an explicit bounded input set rather than consulting a registry.
+
+Recent-history generation shuffles deterministic cohort strata and places one realized formative event for each member within a disjoint interval across the authored preceding-years horizon.
+The resulting profile resources pass ordinary validation and the appended event crosses the Phase 5D disposition and memory boundary.
+
+Pre-contact generation consumes explicit directed household, occupational, and community contacts.
+Age, years known, encounter cadence, and evidence calibration determine observation count and estimate confidence; the subject's authored empathy and disclosure shapes supply the signal around which a confidence-scaled error is drawn.
+Household contacts require daily cadence and generate high kinship and familiarity, while every directed dyad retains independent stance, variance, exposure, reciprocity, similarity, and category inputs.
+
+Environment generation samples dimensions, normalized area and location bounds, cover, layer elevation, connectors, and traversal distance from an explicit topology blueprint.
+The materialized layout passes the ordinary version 3 environment-resource validator, including its cross-layer connectivity check, before becoming immutable authored content.
+
+Exit probes:
+
+- five cohort members receive recent events in distinct strata spanning a fifteen-year horizon rather than synchronizing just before scenario start
+- every appended event retains its selected template, age, years-before offset, disposition identifier, and memory identifier after ordinary profile validation
+- directed household, occupational, and community contacts produce byte-equivalent dyads and mind-model estimates from the same seed
+- household inputs require daily cadence and produce fixed-high kinship and familiarity without making relationship generation all-pairs
+- age and explicit contact history produce higher estimate confidence for long daily contact than for sparse recent community contact
+- a generated two-layer town passes ordinary resource-catalog validation, while removing its connector fails at the ordinary actionable connectivity path
+- repeated environment generation is byte-equivalent and a different seed changes realized geometry without changing the authored topology
+
+Regression coverage chains sampler positions across stages, checks distinct recent-event strata and Phase 5D links, validates generated dyads through the scenario parser, distinguishes household and sparse-community estimates, rejects malformed household cadence, verifies immutable layered resources, and rejects geometry ranges that could leave the generated layout.
+No storage schema changes are introduced: the stages materialize existing character-profile, scenario-dyad, and environment-layout shapes, and runtime creation and stepping remain sampler-free.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

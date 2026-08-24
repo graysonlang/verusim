@@ -25,6 +25,11 @@ export {
   generateCharacterCohort,
   generateCharacterProfile,
 } from './generation/character.js';
+export {
+  generatePrecontactDyads,
+  generateRecentCohortHistory,
+} from './generation/cohort-context.js';
+export { generateEnvironmentLayout } from './generation/environment.js';
 export type {
   CharacterGenerationProvenance,
   CharacterGenerationRequest,
@@ -34,13 +39,39 @@ export type {
   GeneratedCharacterCohort,
   GeneratedCharacterProfile,
   GeneratedFormativeEventProvenance,
-  IntegerGenerationRange,
-  NumericGenerationRange,
-  RealizedGenerationDraw,
   RoleFormativeEventTemplate,
   RoleIdentityMarker,
   RoleOutletPreference,
 } from './generation/character.js';
+export type {
+  CohortContextMember,
+  GeneratedPrecontactDyads,
+  GeneratedRecentCohortHistory,
+  PrecontactDyadProvenance,
+  PrecontactGenerationRequest,
+  PrecontactKind,
+  PrecontactSeedInput,
+  RecentCohortEventProvenance,
+  RecentCohortHistoryRequest,
+  RecentFormativeEventTemplate,
+} from './generation/cohort-context.js';
+export type {
+  EnvironmentAreaTemplate,
+  EnvironmentConnectorTemplate,
+  EnvironmentGenerationBlueprint,
+  EnvironmentGenerationProvenance,
+  EnvironmentGenerationRequest,
+  EnvironmentLayerTemplate,
+  EnvironmentLocationTemplate,
+  FractionalBoundsTemplate,
+  FractionalLayerPositionTemplate,
+  GeneratedEnvironmentLayout,
+} from './generation/environment.js';
+export type {
+  IntegerGenerationRange,
+  NumericGenerationRange,
+  RealizedGenerationDraw,
+} from './generation/sampler.js';
 export { deriveCharacterCheckpoint } from './model/history.js';
 export {
   DEFAULT_RESOURCE_PACKAGE_ID,

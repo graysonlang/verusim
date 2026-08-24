@@ -407,6 +407,19 @@ The output is deeply immutable authored content.
 Cohort generation may reject candidates below an authored normalized behavioral-distance floor, but every rejected attempt remains in provenance and consumes its place in the same sampler sequence.
 No sampling occurs while creating, stepping, serializing, or resuming a simulation.
 
+A second authoring stage can stagger one recent formative event per cohort member across disjoint strata in an explicit preceding-years horizon.
+It appends the realized event to the immutable profile in chronological order, revalidates the resource, and retains the Phase 5D disposition and memory links.
+This prevents a generated village from synchronizing every recent disruption immediately before scenario start without inventing runtime history.
+
+Pre-contact relationship generation consumes an explicit set of directed contacts rather than iterating all pairs.
+Household, occupational, and community contact kinds calibrate kinship and familiarity regions, while authored years known and encounter cadence combine with age and evidence calibration to derive observation count and mind-model confidence.
+The subject's empathy and disclosure shapes provide the estimated signal, and a confidence-scaled seeded error makes the stored directed estimate imperfect without granting privileged knowledge at runtime.
+The result is ordinary scenario dyad data and passes the same scenario validation as hand-authored seeds.
+
+Environment generation likewise consumes a complete authored topology blueprint.
+It may sample overall dimensions, fractional area and location bounds, objective cover, layer elevations, connector positions, and traversal distances, but it cannot discover layers, locations, affordances, or resource candidates from a registry.
+The materialized version 3 layout passes ordinary environment-resource validation, including layer connectivity, and becomes immutable before preparation.
+
 `deriveCharacterCheckpoint` materializes an independently valid earlier profile by retaining the stable `characterId`, constitutional base, and formative-event prefix while assigning an explicit new `profileId` and age.
 It never creates a runtime save or an overlay chain.
 
