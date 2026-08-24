@@ -1566,8 +1566,9 @@ function createWorkbench(): HTMLElement {
     indicatorStateLabels.set(kind, stateLabel);
     signalMenu.append(toggle);
   }
-  signalControls.setAttribute('aria-label', 'Field signals');
-  signalControls.append(signalMenuButton, zoomLevelButton, rightSidebarToggle);
+  rosterTitleControls.prepend(signalMenuButton);
+  signalControls.setAttribute('aria-label', 'Canvas and inspector controls');
+  signalControls.append(zoomLevelButton, rightSidebarToggle);
   header.append(fileActions, transport, signalControls);
   stage.append(canvas, layerSwitcher, characterHoverCard, worldScale);
 
@@ -2108,13 +2109,8 @@ function createWorkbench(): HTMLElement {
       const bounds = zoomLevelButton.getBoundingClientRect();
       const menuWidth = 202;
       zoomMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, bounds.right - menuWidth))}px`;
-      if (layoutMode() === 'wide') {
-        zoomMenu.style.top = `${bounds.bottom + 6}px`;
-        zoomMenu.style.bottom = 'auto';
-      } else {
-        zoomMenu.style.top = 'auto';
-        zoomMenu.style.bottom = `${Math.max(8, window.innerHeight - bounds.top + 6)}px`;
-      }
+      zoomMenu.style.top = `${bounds.bottom + 6}px`;
+      zoomMenu.style.bottom = 'auto';
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
       setScenarioMenuOpen(false);
@@ -2156,11 +2152,13 @@ function createWorkbench(): HTMLElement {
   }
 
   function setSignalMenuOpen(open: boolean, restoreFocus = false): void {
+    let triggerBounds: DOMRect | undefined;
     if (open) {
-      const bounds = signalMenuButton.getBoundingClientRect();
+      triggerBounds = signalMenuButton.getBoundingClientRect();
       const menuWidth = 202;
-      signalMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, bounds.right - menuWidth))}px`;
-      signalMenu.style.top = `${bounds.bottom + 6}px`;
+      signalMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, triggerBounds.right - menuWidth))}px`;
+      signalMenu.style.top = `${triggerBounds.bottom + 6}px`;
+      signalMenu.style.bottom = 'auto';
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
       setScenarioMenuOpen(false);
@@ -2170,6 +2168,17 @@ function createWorkbench(): HTMLElement {
     signalMenu.hidden = !open;
     signalMenuButton.setAttribute('aria-expanded', String(open));
     if (open) {
+      const bounds = triggerBounds ?? signalMenuButton.getBoundingClientRect();
+      const menuHeight = signalMenu.getBoundingClientRect().height;
+      const below = bounds.bottom + 6;
+      const above = bounds.top - menuHeight - 6;
+      const top =
+        below + menuHeight <= window.innerHeight - 8
+          ? below
+          : above >= 8
+            ? above
+            : Math.max(8, Math.min(window.innerHeight - menuHeight - 8, below));
+      signalMenu.style.top = `${top}px`;
       signalVerbosityButtons.get(indicatorSettings().verbosity)?.focus();
     } else if (restoreFocus) {
       signalMenuButton.focus();
