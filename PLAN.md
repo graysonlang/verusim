@@ -86,6 +86,7 @@ Gate: one separate-document project survives provenance-only relocation without 
 
 Add responsive incremental diagnostics over drafts, but make the existing migration, validation, duplicate detection, reference resolution, dependency closure, and preparation path the sole authority for a runnable revision.
 Unify shared scenario and snapshot validation primitives, reject unknown authored keys, and validate prepared scenarios at the boundary rather than trusting a type discriminator alone.
+Relocate snapshot cross-reference validation from the runtime constructor into table-driven validators beside snapshot parsing, and construct resumed simulation state without aliasing snapshot collections.
 Give each successfully prepared draft revision a canonical content digest used to create both the simulation state and its reset baseline, and extend snapshot resource locks so an in-place edit at the same semantic address fails rather than replaying against changed content.
 Keep later draft edits isolated from that pair until an explicit apply operation prepares a new revision and restarts simulation.
 
@@ -160,8 +161,9 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 #### Phase 9A — authoritative seconds and schema migration
 
-Before increasing evaluator cadence, centralize duplicated trace and memory bounds and define a retention contract that prevents one noisy agent from evicting every other agent's recent causal sources.
+Before increasing evaluator cadence, centralize duplicated trace and memory bounds and the repeated clamp and bounded-append helpers, then define a retention contract that prevents one noisy agent from evicting every other agent's recent causal sources.
 Keep trace-entry identity independent from retention and preserve bounded snapshot size with explicit per-agent or indexed-window semantics rather than an accidental global FIFO.
+Emit resource-cost trace terms in the fixed resource vocabulary order so authored JSON key order cannot reach trace output.
 Revise the time-domain contract in the design and architecture, then make integer simulated seconds canonical for runtime state, authored event resolution, trace timestamps, deadlines, and cadence scheduling.
 Migrate legacy minute-based scenarios and snapshots by exact conversion, keep calendar and schedule authoring legible, and separate monotonic transition identity from elapsed simulation time.
 

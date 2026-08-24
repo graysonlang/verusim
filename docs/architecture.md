@@ -67,6 +67,7 @@ Calendar formatting, display units, and playback speed are observer concerns.
 The built-in scenarios use one-minute ticks so movement, deadlines, recovery, and short interactions do not collapse into five-minute jumps.
 Discrete authored event times may equal but never precede the scenario start minute.
 The first transition includes that lower boundary, every later transition remains protected by the event family's resolved-identifier ledger, and all tick-dispatched event families share the same inclusive interval rule.
+Within one tick interval, due events resolve in a fixed family pipeline order and in authored order within each family rather than interleaving by authored minute; Phase 9 event-delimited advancement replaces this batching with resolution at exact event times.
 
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
@@ -406,6 +407,8 @@ Pain contributes attention load independently of perceived urgency, so severe pa
 
 Level-2 impairment filters agenda tasks and behavior candidates by their authored physical demand before ordinary appraisal.
 Level 3 cancels ordinary intentions, halts schedule movement, and permits only an explicitly self-directed behavior candidate without evaluating empathy, contract, narrative, or repercussion terms.
+While level 3 or above persists, the agent never counts as arrived at a destination, so schedule-based recovery and sleep consolidation are suspended until the preemption clears.
+Somatic events that fire during a transition re-run agenda preparation within that same transition; other event families influence planning at the next transition's preparation.
 Levels 4 and 5 have no movement or decision agency.
 Every restriction emits a first-class `gate` trace whose terms name only somatic state and removed actions.
 

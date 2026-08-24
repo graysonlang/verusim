@@ -17,6 +17,7 @@ If they conflict, flag and reconcile the conflict rather than silently choosing 
 - Proximity may gate sampling or presentation, never authoritative state.
 - Somatic levels 1–2 modify appraisal; levels 3+ gate it before social terms are evaluated. A preempting gate is a positive causal-trace event, not merely an absent term.
 - Authored content supplies facts, stakes, affordances, and direct consequences, never a selected behavior.
+- Identity and retention are separate contracts. Persistent identifiers are never derived from bounded collection length, eviction position, or presentation order.
 - New phenomena should compose shared mechanisms. Do not add per-character handlers or phenomenon-specific subsystems when the existing parameterization should explain the result.
 
 ## Hard rules
@@ -61,6 +62,8 @@ Completed phases, their exit probes, and settled phase decisions live in [COMPLE
 When a phase is complete and the verification gate is green, move its complete section wholesale from the plan to the completed record in the same commit.
 Do not leave the same phase active in both files.
 If completed scope is reopened, move that phase back to the plan before changing it, then return it to the completed record only after its new exit probes and the full gate pass.
+A bounded defect repair that leaves settled behavior unchanged may instead be recorded as a new repair slice with its own exit probes; changing a completed phase's contract still requires formally reopening that phase.
+When phase status or current capabilities change, update any README claims about the active phase and present capabilities in the same commit rather than leaving them stale.
 Keep retrospective additions concise and update both files whenever phase scope or status changes.
 For a newly completed or reopened phase, the completed record names the discriminating scenario or fixture, the regression coverage for its exit probes, snapshot replay evidence when persisted state changed, UI verification when presentation changed, and schema or migration boundaries when storage changed.
 Omit evidence categories that genuinely do not apply rather than adding placeholders.
@@ -76,10 +79,14 @@ Authoring discovery and packing are deterministic build concerns.
 They may not depend on filesystem enumeration order, absolute checkout paths, locale, timezone, host case sensitivity, or registration order.
 Directory paths organize source but never define semantic identity, and duplicate semantic addresses fail with actionable provenance instead of resolving by precedence or last-one-wins behavior.
 
+First-party content below `content/` declares the current schema version for its kind.
+Legacy schema versions exist only as migration fixtures, and a schema bump updates the shipped content and its migration matrix coverage in the same change.
+
 ### Behavioral changes
 
 Each implementation phase ends with a scenario that makes the wrong mechanism visibly fail.
 Harness assertions are ordinal rather than tied to calibration constants, and they inspect aftermath state when coincident actions could hide different mechanisms.
+Tests cited as evidence for migration, preparation, reference resolution, or resource locking must exercise the real preparation boundary; direct fixtures remain appropriate for isolated mechanism tests.
 Malformed content fails at an actionable authored path; do not add silent best-effort parsing.
 Record new unresolved design choices in the spec's open-decision sections rather than adding untested fields that appear authoritative.
 
