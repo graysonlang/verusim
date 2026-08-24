@@ -65,7 +65,9 @@ The built-in scenarios use one-minute ticks so movement, deadlines, recovery, an
 
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
+Each preset also carries that speed as one numeric rate in simulated seconds per real second, so real-time is `1`, one simulated minute per second is `60`, and one simulated hour per second is `3600`.
 Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
+The clock omits the Day 1 prefix and shows frame-projected seconds for rates below `60`; rates at or above `60` retain minute precision.
 While playback is active, the workbench computes one pure next-tick lookahead and projects only locomotion between the current and next authoritative positions at animation-frame resolution.
 The projection uses the same connector-aware route and meters-per-simulation-minute walking pace as the solver, reaches the exact next position at the tick boundary, and never enters snapshots, traces, behavioral evaluation, or other authoritative state.
 The neutral walking calibration is 80 meters per simulation minute, or about 1.33 meters per second, before authored physical-build effects.
@@ -97,7 +99,7 @@ Compact and handset zoom anchors to the Canvas upper-right while the map scale r
 Handset zoom keeps the same hit target as other controls while presenting borderless value text aligned to the Canvas edge.
 Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
-Valid `scenario` and `timeRate` URL query parameters override the built-in scenario and active startup rate, and changes to either selection replace those values in the current URL without adding history entries.
+Valid `scenario` and numeric `rate` URL query parameters override the built-in scenario and active startup rate, and changes to either selection replace those values in the current URL without adding history entries.
 Unrelated query parameters and the fragment remain intact; loading a file-backed scenario removes `scenario` because its content cannot be reconstructed from a built-in identifier.
 Clock format and display units do not belong to scenario content.
 

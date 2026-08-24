@@ -56,6 +56,7 @@ import {
   accumulatePlayback,
   formatWorkbenchTime,
   playbackRateForId,
+  playbackRateShowsSeconds,
   projectPlaybackMovement,
   type PlaybackRateId,
 } from './playback.js';
@@ -1244,7 +1245,7 @@ function createWorkbench(): HTMLElement {
   const [search, setSearch] = createSignal('');
   const [playing, setPlaying] = createSignal(false);
   const [playbackRateId, setPlaybackRateId] = createSignal<PlaybackRateId>(
-    initialQuery.timeRateId ?? initialTimeRateForScenario(initial.scenario, storedPreferences),
+    initialQuery.rateId ?? initialTimeRateForScenario(initial.scenario, storedPreferences),
   );
   const [preferences, setPreferences] = createSignal<ApplicationPreferences>(storedPreferences);
   const [leftSidebarLayout, setLeftSidebarLayout] = createSignal<SidebarLayout>({
@@ -1508,9 +1509,7 @@ function createWorkbench(): HTMLElement {
     const multiplier = element('small');
     label.textContent = rate.label;
     multiplier.textContent =
-      rate.id === 'real-time' || rate.label.endsWith('m/s')
-        ? `${Math.round(rate.simulatedMinutesPerSecond * 60)}x`
-        : '';
+      rate.id === 'real-time' || rate.label.endsWith('m/s') ? `${rate.rate}x` : '';
     control.dataset.rate = rate.id;
     control.dataset.testid = `time-rate-${rate.id}`;
     control.setAttribute('aria-checked', 'false');
@@ -2004,6 +2003,7 @@ function createWorkbench(): HTMLElement {
         'fahrenheit',
         'celsius',
         'time scale',
+        'rate',
       ],
       label: 'Settings...',
       run: () => openSettings(),
@@ -2453,8 +2453,8 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const nextUrl = workbenchUrlForState(window.location.href, {
+      rateId: playbackRateId(),
       scenarioId: loadedBuiltInScenarioId(),
-      timeRateId: playbackRateId(),
     });
     const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     if (nextUrl !== currentUrl) window.history.replaceState(window.history.state, '', nextUrl);
@@ -2618,16 +2618,6 @@ function createWorkbench(): HTMLElement {
       const stateLabel = scenarioMenuStateLabels.get(entry.id);
       if (stateLabel !== undefined) stateLabel.textContent = selected ? 'Loaded' : '';
     }
-    const formattedTime = formatWorkbenchTime(current.minute, currentPreferences.clockFormat);
-    const showingTick = showTickNumber();
-    time.textContent = showingTick ? `Tick ${current.tick}` : formattedTime;
-    time.setAttribute(
-      'aria-label',
-      showingTick
-        ? `Simulation tick ${current.tick}. Show clock time`
-        : `${formattedTime}. Show simulation tick`,
-    );
-    time.setAttribute('aria-pressed', String(showingTick));
     celestialIndicator.dataset.dayPeriod = dayPeriod;
     dayPeriodLabel.textContent = dayPeriodName;
     timeOfDay.title = `Time of day: ${dayPeriodName}`;
@@ -2641,6 +2631,28 @@ function createWorkbench(): HTMLElement {
       'aria-label',
       `Environment conditions: ${seasonName}, ${temperature}, ${weatherName}`,
     );
+  });
+
+  createEffect(() => {
+    const current = state();
+    const showingTick = showTickNumber();
+    const rate = playbackRateForId(playbackRateId());
+    const showSeconds = playbackRateShowsSeconds(rate);
+    const displayedMinute =
+      current.minute + (!showingTick && showSeconds ? playbackPreviewMinutes() : 0);
+    const formattedTime = formatWorkbenchTime(
+      displayedMinute,
+      preferences().clockFormat,
+      showSeconds,
+    );
+    time.textContent = showingTick ? `Tick ${current.tick}` : formattedTime;
+    time.setAttribute(
+      'aria-label',
+      showingTick
+        ? `Simulation tick ${current.tick}. Show clock time`
+        : `${formattedTime}. Show simulation tick`,
+    );
+    time.setAttribute('aria-pressed', String(showingTick));
   });
 
   createEffect(() => {

@@ -5,6 +5,7 @@ import {
   accumulatePlayback,
   formatWorkbenchTime,
   playbackRateForId,
+  playbackRateShowsSeconds,
   projectPlaybackMovement,
 } from '../app/playback.js';
 import scenario from '../content/scenarios/market-morning.json';
@@ -13,21 +14,27 @@ import { characters, environments } from './fixtures.js';
 
 describe('workbench playback', () => {
   it('formats the visible clock as 12-hour time', () => {
-    assert.equal(formatWorkbenchTime(0), 'Day 1, 12:00 am');
-    assert.equal(formatWorkbenchTime(960), 'Day 1, 4:00 pm');
+    assert.equal(formatWorkbenchTime(0), '12:00 am');
+    assert.equal(formatWorkbenchTime(960), '4:00 pm');
     assert.equal(formatWorkbenchTime(1445), 'Day 2, 12:05 am');
+    assert.equal(formatWorkbenchTime(470 + 7 / 60, '12-hour', true), '7:50:07 am');
   });
 
   it('formats the visible clock as 24-hour time when requested', () => {
-    assert.equal(formatWorkbenchTime(0, '24-hour'), 'Day 1, 00:00');
-    assert.equal(formatWorkbenchTime(960, '24-hour'), 'Day 1, 16:00');
+    assert.equal(formatWorkbenchTime(0, '24-hour'), '00:00');
+    assert.equal(formatWorkbenchTime(960, '24-hour'), '16:00');
     assert.equal(formatWorkbenchTime(1445, '24-hour'), 'Day 2, 00:05');
+    assert.equal(formatWorkbenchTime(1445.5, '24-hour', true), 'Day 2, 00:05:30');
   });
 
-  it('maps real-time and minute-per-second rates to simulated time', () => {
-    assert.equal(playbackRateForId('real-time').simulatedMinutesPerSecond, 1 / 60);
-    assert.equal(playbackRateForId('15x').simulatedMinutesPerSecond, 15 / 60);
-    assert.equal(playbackRateForId('60-minutes-per-second').simulatedMinutesPerSecond, 60);
+  it('expresses every rate as simulated seconds per real second', () => {
+    assert.equal(playbackRateForId('real-time').rate, 1);
+    assert.equal(playbackRateForId('1-minute-per-second').rate, 60);
+    assert.equal(playbackRateForId('60-minutes-per-second').rate, 3600);
+    assert.deepEqual(
+      PLAYBACK_RATES.map(rate => rate.rate),
+      [1, 2, 5, 10, 15, 60, 120, 300, 600, 1800, 3600],
+    );
     assert.deepEqual(
       PLAYBACK_RATES.map(rate => rate.label),
       [
@@ -44,6 +51,8 @@ describe('workbench playback', () => {
         '60 m/s',
       ],
     );
+    assert.equal(playbackRateShowsSeconds(playbackRateForId('15x')), true);
+    assert.equal(playbackRateShowsSeconds(playbackRateForId('1-minute-per-second')), false);
   });
 
   it('carries partial simulated minutes until a complete tick is available', () => {
