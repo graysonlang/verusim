@@ -78,6 +78,10 @@ Wide presentation begins at 1080 CSS pixels and retains the persisted resizable 
 Narrow panel identity and sheet extent are ephemeral presentation state.
 They never rewrite the stored wide sidebar visibility or width, and crossing a responsive boundary does not alter selection, camera, active environment projection, simulation state, or snapshot content.
 On handset widths, scenario identity and the essential transport remain visible in a two-row safe-area-aware header, the layer stack contracts to the active projection until explicitly opened, and roster selection reduces the sheet to a Canvas-revealing peek.
+Compact presentation removes transport and day context from the width-constrained header and projects them as one floating palette at the Canvas top.
+Its time-rate disclosure, derived day period, and authored weather retain complete accessible names while presenting only their compact glyphs; handset presentation uses the same compact glyphs within its transport row.
+The environment layer selector anchors to the Canvas lower-left in every mode.
+Compact and handset zoom anchors immediately above the map scale at the Canvas lower-right, and both narrow corner groups rise above an active handset sheet without changing camera or projection state.
 Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
