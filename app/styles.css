@@ -2630,10 +2630,10 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
 .app-shell[data-layout-mode="handset"] .scenario-info-button,
 .app-shell[data-layout-mode="handset"] .transport-button {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
 }
 
 .app-shell[data-layout-mode="handset"] .scenario-selector {
@@ -2645,7 +2645,7 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .scenario-menu-button {
   width: 100%;
   max-width: none;
-  min-height: 44px;
+  min-height: 40px;
 }
 
 .app-shell[data-layout-mode="handset"] .zoom-level-disclosure {
@@ -2654,35 +2654,28 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .time-rate-button,
 .app-shell[data-layout-mode="handset"] .simulation-time {
-  min-height: 44px;
+  min-height: 40px;
 }
 
 .app-shell[data-layout-mode="handset"] .time-rate-button {
-  width: 44px;
-  min-width: 44px;
+  width: 40px;
+  min-width: 40px;
 }
 
 .app-shell[data-layout-mode="handset"] .time-rate-disclosure {
-  height: 40px;
+  height: 38px;
 }
 
 .app-shell[data-layout-mode="handset"] .time-context {
   margin-left: 0;
 }
 
-.app-shell[data-layout-mode="handset"] .transport-button,
-.app-shell[data-layout-mode="handset"] .time-rate-button {
-  border: 2px solid transparent;
-  background-clip: padding-box;
-}
-
 .app-shell[data-layout-mode="handset"] .time-of-day,
 .app-shell[data-layout-mode="handset"] .environment-conditions {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  min-height: 44px;
-  border: 2px solid transparent;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
 }
 
 .app-shell[data-layout-mode="handset"] .celestial-indicator {
@@ -2731,6 +2724,13 @@ input[type="search"]::placeholder {
   padding-right: 8px;
 }
 
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+}
+
 .app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .panel-header {
   height: 58px;
   padding: 0 8px 0 12px;
@@ -2758,7 +2758,9 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .layer-button {
   min-width: 116px;
-  min-height: 44px;
+  height: 40px;
+  min-height: 40px;
+  padding: 3px 10px;
 }
 
 .app-shell[data-layout-mode="compact"] .world-scale,
@@ -2778,7 +2780,7 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .zoom-level-button {
-  min-height: 44px;
+  min-height: 40px;
   grid-template-columns: 1fr;
   border-color: transparent;
   background: transparent;
@@ -2786,7 +2788,7 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .zoom-level-value {
-  height: 42px;
+  height: 38px;
   justify-content: center;
 }
 
@@ -2796,7 +2798,7 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .signal-menu-item,
 .app-shell[data-layout-mode="handset"] .time-rate-menu-item,
 .app-shell[data-layout-mode="handset"] .zoom-menu-item {
-  min-height: 44px;
+  min-height: 40px;
 }
 
 .app-shell[data-layout-mode="compact"] .scenario-menu,
