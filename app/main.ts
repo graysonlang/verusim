@@ -103,7 +103,11 @@ import {
   DEFAULT_BUILT_IN_SCENARIO,
   type BuiltInScenario,
 } from './scenarios.js';
-import { workbenchActionForShortcut, workbenchEscapeAction } from './shortcuts.js';
+import {
+  canvasBackgroundAction,
+  workbenchActionForShortcut,
+  workbenchEscapeAction,
+} from './shortcuts.js';
 import { formatDistance, formatMovementSpeed, formatTemperature } from './units.js';
 import { parseWorkbenchQuery, workbenchUrlForState } from './url-state.js';
 import {
@@ -1823,8 +1827,18 @@ function createWorkbench(): HTMLElement {
     indicatorSettings,
     onHover: setWorldHover,
     onSelect: agentId => {
-      if (agentId === null) setSelectedAgentId(null);
-      else selectAgent(agentId, 'preserve');
+      if (agentId !== null) {
+        selectAgent(agentId, 'preserve');
+        return;
+      }
+      const backgroundAction = canvasBackgroundAction({
+        hasSelection: selectedAgentId() !== null,
+        isExterior: worldView.activeProjection().kind === 'exterior',
+      });
+      if (backgroundAction === 'clear-selection') setSelectedAgentId(null);
+      else if (backgroundAction === 'projection-exterior') {
+        worldView.setProjection(EXTERIOR_PROJECTION);
+      }
     },
     rosterHoverAgentId,
     selectedAgentId,

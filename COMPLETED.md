@@ -26,7 +26,7 @@ Exit probes:
 - with menus and dialogs closed, Escape clears selection first, selects Exterior next, and fits an already exterior unselected canvas last
 - Shift+backslash hides both sidebars when either is visible and shows both when neither is visible, while shifted square brackets independently toggle their corresponding sidebar
 - selecting an interior character on the Canvas follows that character to the appropriate layer without changing camera position or zoom, while selecting a roster card preserves zoom and centers only when the character is outside the current viewport
-- selecting the Canvas background only clears selection, and Shift+2 remains the explicit command that centers and zooms to the selected character
+- selecting the Canvas background clears a current selection first, a subsequent unselected background click returns a cutaway to Exterior without fitting, and Shift+2 remains the explicit command that centers and zooms to the selected character
 - hovering or keyboard-focusing a roster card transiently emphasizes its rendered Canvas marker without changing selection, projection, camera position, or zoom, and leaving the card clears that emphasis
 - shell widths at or above 1080 pixels retain the resizable desktop sidebars, widths from 700 through 1079 pixels use mutually exclusive edge drawers, and narrower widths use a mutually exclusive bottom sheet without horizontal page overflow
 - compact and handset panel state is ephemeral, never overwrites persisted wide-layout visibility or width, and resizing back to wide restores those preferences exactly without changing selection, camera, projection, or simulation state
@@ -53,9 +53,11 @@ Sidebar-layout regression coverage checks the 80-pixel close detent, 180-pixel o
 Responsive-layout regression coverage checks width classification, mutually exclusive narrow-panel toggles, handset peek transitions, next-action semantics, two-arrow icon paths, calculated and clamped snap heights, narrow Escape precedence, and preservation of desktop preferences as input-only state.
 Keyboard regression coverage checks physical punctuation codes, modifier exclusion, the Escape state machine, and clamped lowest-floor-to-Exterior traversal.
 World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit and covers visible and off-screen camera reveal decisions without coupling them to selection.
+Workbench action regression coverage checks that successive Canvas background clicks clear selection and return a cutaway to Exterior while leaving an already exterior unselected canvas unchanged.
 Agent-marker regression coverage distinguishes ordinary, roster-hovered, dimmed-hovered, and selected appearances so transient emphasis cannot displace selection priority.
 Document-shell regression coverage checks the device-width baseline, one-to-one initial and maximum scale, disabled user scaling, and edge-to-edge viewport fitting while the existing world-view gesture regression retains custom two-pointer Canvas zoom.
 Live browser verification, including the real-time movement, walking-calibration, URL-state, and projected-clock follow-ups, was unavailable because neither browser path had a reachable owner-run application and no isolated preview was authorized.
+The two-stage Canvas-background interaction follow-up had the same limitation: the in-app browser execution path was unavailable and the Playwright fallback could not reach the owner-run application.
 Isolated browser verification confirmed a moving character's expanded badge, tooltip, and accessibility label use one consistent feet-per-second value while stationary characters omit a zero rate.
 Follow-up isolated browser verification confirmed a fresh profile reclaims the hidden footer row, the menu action shows and hides the bar, and a visible choice survives reload.
 Isolated Chromium verification confirmed both pointer resize directions, close and open detents, custom-width visibility restoration, reload persistence, the three-state double-click cycle, accessible separator state, and the requested header-control placement without console errors.

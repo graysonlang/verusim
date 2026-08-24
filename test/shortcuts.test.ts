@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  canvasBackgroundAction,
   workbenchActionForShortcut,
   workbenchEscapeAction,
   zoomActionForShortcut,
@@ -44,6 +45,18 @@ describe('canvas zoom shortcuts', () => {
 });
 
 describe('workbench shortcuts', () => {
+  it('decays Canvas background clicks from selection to Exterior without fitting', () => {
+    assert.equal(
+      canvasBackgroundAction({ hasSelection: true, isExterior: false }),
+      'clear-selection',
+    );
+    assert.equal(
+      canvasBackgroundAction({ hasSelection: false, isExterior: false }),
+      'projection-exterior',
+    );
+    assert.equal(canvasBackgroundAction({ hasSelection: false, isExterior: true }), null);
+  });
+
   it('decays Escape from selection through exterior to fit', () => {
     assert.equal(
       workbenchEscapeAction({ hasOpenNarrowPanel: true, hasSelection: true, isExterior: false }),

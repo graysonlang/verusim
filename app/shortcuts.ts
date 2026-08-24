@@ -30,14 +30,23 @@ export type WorkbenchEscapeActionId =
   | 'fit-environment'
   | 'projection-exterior';
 
+export type CanvasBackgroundActionId = 'clear-selection' | 'projection-exterior' | null;
+
+export function canvasBackgroundAction(input: {
+  hasSelection: boolean;
+  isExterior: boolean;
+}): CanvasBackgroundActionId {
+  if (input.hasSelection) return 'clear-selection';
+  return input.isExterior ? null : 'projection-exterior';
+}
+
 export function workbenchEscapeAction(input: {
   hasOpenNarrowPanel: boolean;
   hasSelection: boolean;
   isExterior: boolean;
 }): WorkbenchEscapeActionId {
   if (input.hasOpenNarrowPanel) return 'close-narrow-panel';
-  if (input.hasSelection) return 'clear-selection';
-  return input.isExterior ? 'fit-environment' : 'projection-exterior';
+  return canvasBackgroundAction(input) ?? 'fit-environment';
 }
 
 export function zoomActionForShortcut(input: ShortcutInput): ZoomActionId | null {

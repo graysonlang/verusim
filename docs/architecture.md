@@ -131,7 +131,9 @@ With transient menus and dialogs closed, repeated Escape presses clear a selecte
 Shifted square brackets toggle the corresponding sidebar independently, while `|` hides both when either is visible and shows both when neither is visible.
 Canvas and roster character selection converge on selection and automatic projection to an interior character's layer while retaining distinct framing intents.
 A Canvas hit preserves camera position and zoom; a roster card preserves zoom and camera position when the character is visible, but centers an off-screen character.
-Selecting the Canvas background clears selection without changing the camera or projection, while Shift+2 remains the explicit center-and-zoom command.
+Selecting the Canvas background clears a current selection without changing the camera or projection.
+When no character is selected, a Canvas background click returns a cutaway to Exterior without fitting the camera; an unselected background click on Exterior is a no-op.
+Shift+2 remains the explicit center-and-zoom command.
 Roster pointer hover and keyboard focus feed a separate transient Canvas-marker emphasis projection; they do not alter selection, active layer, camera position, or zoom, and selected appearance retains priority.
 
 Current movement speed is a derived observation rather than additional mutable state.
