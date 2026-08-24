@@ -115,6 +115,77 @@ Exit probes:
 - exporting one selected scenario includes every transitive character, environment, norm, and social-contract dependency exactly once and excludes unrelated resources
 - keyboard and pointer workflows can switch modes, navigate documents, edit representative fields, inspect diagnostics, and apply a valid revision without trapping focus or losing draft state
 
+## Phase 9 — subminute reactive simulation and adaptive cadence
+
+Replace the one-minute tick as the authoritative reaction boundary with a canonical integer-second time domain and event-delimited advancement.
+Real-time, player-adjacent simulation must be able to accept an input, settle current movement, appraise the event, and change action within the same authored minute rather than projecting toward a result chosen for the next minute boundary.
+Minute-based schedules remain convenient authored content, but migration converts their times exactly into the canonical runtime domain and transition sequence identity remains separate from elapsed time.
+
+Extend the completed cadence-session model rather than adding another simulation path.
+Playback rate and behavioral level of detail jointly select how often the host requests and observes authoritative work: real-time adjacent agents use fine cadence, while high-rate or distant simulation may use coarser scheduling boundaries.
+Every boundary still invokes the same evaluator.
+A coarse interval must split at discrete event times, replay coupled behavior in deterministic order where interval equivalence is not proven, and use closed-form catch-up only for primitives whose result is exactly independent of partitioning.
+
+Represent active travel as an authoritative timed route segment with a pure position-at-time operation.
+An interruption settles the old segment at the event timestamp, commits that position and the causal event, cancels the remaining route, and starts any replacement route from the settled position.
+Canvas interpolation remains an observer-only smoothing layer and never becomes solver input.
+
+Player input, promotion to a more immediate cadence tier, explicit observation, snapshot creation, and scenario handoff are observation barriers.
+Each barrier flushes pending work to its exact logical time before exposing or mutating authoritative state.
+Playback rate remains host presentation and scheduling state rather than a behavioral input, so changing rates may change batching and wall-clock cost but not the state or causal trace observed at an equivalent simulation time.
+
+### Phase 9 implementation sequence
+
+#### Phase 9A — authoritative seconds and schema migration
+
+Revise the time-domain contract in the design and architecture, then make integer simulated seconds canonical for runtime state, authored event resolution, trace timestamps, deadlines, and cadence scheduling.
+Migrate legacy minute-based scenarios and snapshots by exact conversion, keep calendar and schedule authoring legible, and separate monotonic transition identity from elapsed simulation time.
+
+Gate: every legacy fixture migrates to exact second timestamps without changing its initial state or event order, and an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion.
+
+#### Phase 9B — event-delimited advancement
+
+Add an `advanceTo` boundary that progresses from the current logical time to a requested target while splitting at authored events, player inputs, evaluator wakeups, and other discrete deadlines.
+Parameterize continuous transitions by elapsed duration and preserve deterministic ordering for coincident events without allowing wall-clock frame timing to enter state.
+
+Gate: two events inside one authored minute resolve at their distinct second timestamps in stable order, and a player action changes the addressed NPC's authoritative appraisal and action before the former minute boundary.
+
+#### Phase 9C — interruptible timed movement
+
+Store enough timed route state to derive exact position at any event or observation boundary, including connector traversal between layers and interior/exterior transitions.
+Settling or interrupting movement must conserve traveled distance at authoritative walking pace and begin a replacement route from the settled position without reading the Canvas projection.
+
+Gate: a character walking from A to B is interrupted at second 20, commits the expected connector-aware route position, and redirects toward C without snapping to A or advancing toward the canceled destination.
+
+#### Phase 9D — playback and level-of-detail cadence policy
+
+Evolve cadence sessions from pending whole-minute ticks to pending logical duration and event boundaries.
+Let the host combine playback-rate and behavioral level-of-detail policy so high rates and distant agents use coarser scheduling while active engagement and discrete input impose immediate barriers.
+Coarse processing may batch exact substeps or jump across a proven event-free interval, but it may not skip a consequential event or select a behavior through a reduced-fidelity evaluator.
+
+Gate: real-time adjacent, accelerated adjacent, location, settlement, and on-demand schedules all reach byte-equivalent authoritative state and causal traces at the same observation boundary, including a tier change and player input during pending work.
+
+#### Phase 9E — workbench integration and verification
+
+Drive authoritative advancement from elapsed wall time and the selected numeric playback rate while retaining frame interpolation only between committed movement samples.
+Preserve fractional playback time through pause, resume, and rate changes, apply backpressure rather than dropping due work, and expose enough timing detail to diagnose solver cadence separately from render cadence.
+
+Gate: isolated browser verification runs the interruption fixture in real time, changes playback rate during travel, observes the redirected character continuously across projection changes, and reaches the same saved state and trace as accelerated and headless runs without console or network errors.
+
+Exit probes:
+
+- a player-originated event at second 20 interrupts an adjacent character within the same authored minute, settles the exact route position, and produces an inspectable appraisal and action trace before movement resumes
+- changing the interrupted character's destination starts a new connector-aware route from the settled authoritative position rather than either tick endpoint or the Canvas-interpolated position
+- advancing the same interval as sixty one-second requests, thirty two-second requests, one sixty-second request, and an event-delimited request produces byte-equivalent authoritative state and causal traces at the observation boundary
+- real-time, accelerated, location, settlement, and on-demand cadence policies process every consequential event in deterministic order while differing only in scheduling and observation frequency
+- player input, cadence promotion, explicit observation, snapshot creation, and scenario handoff flush pending work to their exact logical time before exposing or mutating state
+- changing playback rate or pausing and resuming preserves fractional logical time and visible movement continuity without making playback rate part of simulation state
+- a snapshot saved during active travel and pending coarse-cadence work resumes to the same route position, event order, decisions, and final trace as uninterrupted execution
+- legacy minute-based authored content and snapshots migrate exactly into the canonical second time domain with actionable validation for nonrepresentable or malformed timestamps
+
+Phase 9 does not add a reduced-fidelity evaluator, distance-gated authoritative state, general-purpose physics, collision response, combat timing, or runtime-random action selection.
+Those are separate phenomena and must not be smuggled into the time-domain migration.
+
 ## Decisions that can wait
 
 Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, and task-specific physical capability checks beyond the existing build contributions should stay documented but unimplemented until their prerequisite phase.
