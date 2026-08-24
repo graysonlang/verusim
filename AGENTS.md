@@ -98,9 +98,13 @@ npm run build       # esbuild, via esp's runner
 
 Formatting is Biome's job, not yours. Do not hand-format to match the surrounding code and do not argue with the formatter — run `npm run lint:fix` and take what it produces. The one thing worth knowing: `.vscode/launch_template.json` is deliberately excluded from Biome, because the `{{debug}}` placeholders in it are not valid JSON.
 
-### Do not start the dev server
+### Use an isolated preview server
 
-Do not run `npm run dev` or `npm run serve` for routine validation unless the user explicitly asks. The owner keeps the app open and refreshes it; a second server collides with that workflow, and a fresh browser window has no useful application state anyway.
+Do not run `npm run dev` or `npm run serve` for routine validation unless the user explicitly asks.
+Those commands belong to the owner's visible development workflow and use its automatically deduced port.
+
+For browser validation, an agent may start its own isolated preview without additional authorization by using `node scripts/build.mjs --serve --port=<agent-reserved-port> --sourcemap`.
+The port must be explicitly reserved for that agent rather than automatically selected, and the agent must navigate to the exact emitted URL and stop the preview when validation finishes.
 
 `npm run build` is the right check that something compiles.
 
@@ -120,7 +124,8 @@ The in-app browser and Playwright MCP are independent browser-control paths. Fai
 
 For browser-visible changes, try the `browser-use` skill against the owner's existing in-app browser session first. If that path is unavailable after completing the skill's required tool discovery, use the configured Playwright MCP server as the preferred fallback.
 
-Preserve the server rules above: do not start `npm run dev` or `npm run serve` merely for browser verification. Reuse the owner's current app when the browser can reach it. When the user expressly authorizes an isolated preview, use `node scripts/build.mjs --serve --port=<unused-explicit-port> --sourcemap`, navigate to the exact emitted URL, and stop the preview afterward.
+Preserve the server rules above: never start `npm run dev` or `npm run serve` merely for browser verification.
+Reuse the owner's current app when the browser can reach it; otherwise start an isolated preview on the agent's explicitly reserved port, navigate to the exact emitted URL, and stop the preview afterward.
 
 Start ordinary control inspection from a structured DOM or accessibility snapshot and prefer semantic roles, names, labels, or test IDs. Use screenshots for visual layout and Canvas results, not as the primary way to locate ordinary DOM controls. Canvas verification should combine application or DOM state, browser runtime evidence, and rendered pixels where each applies.
 
