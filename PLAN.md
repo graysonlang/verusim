@@ -18,30 +18,16 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 7: cadence and integration adapters.
-Expand the existing tell vocabulary into text and embodied projections over one unchanged causal trace, introduce deterministic cadence tiers over the full evaluator, add exact closed-form catch-up only where equivalence can be proved, and evaluate ORBIT-style low-stakes complementarity without making results cadence-dependent.
+The active slice is Phase 8: integrated content authoring workbench.
+Refactor the browser workbench into shared Build and Simulate workspaces over one in-memory authored document graph, with the existing preparation boundary remaining authoritative before simulation or export.
 
 ### Current-focus non-goals
 
-- no changes to completed Phase 5 or Phase 6 algorithms
-- no reduced-fidelity evaluator path
-- no approximation presented as exact catch-up
-- no observer-proximity effect on authoritative state
-- no Phase 8 authoring workspace
-- no package manager, remote dependency resolver, authoring UI, or pack writer
-
-## Phase 7 — cadence and integration adapters
-
-Expand the Phase 3 tell vocabulary into text observation, embodied observation, and save-game snapshot adapters.
-Introduce cadence tiers over the one evaluator and closed-form catch-up only where it is exact.
-Evaluate ORBIT-style complementarity as a cadence-independent rule for low-stakes exchange.
-
-Exit probes:
-
-- text and embodied views report different tells from one unchanged causal trace
-- full-cadence and tiered scheduling agree at observation boundaries for authoritative state
-- the same low-stakes exchange settles identically whether observed or off screen
-- chunk loading and time acceleration do not alter deterministic results
+- no changes to completed Phase 5, Phase 6, or Phase 7 algorithms
+- no behavior-model or evaluator-fidelity expansion
+- no draft mutation of a running simulation or its reset baseline
+- no package manager or remote dependency resolver
+- no filesystem, browser storage, database, or network dependency inside the engine
 
 ## Phase 8 — integrated content authoring workbench
 
@@ -78,5 +64,5 @@ Exit probes:
 
 ## Decisions that can wait
 
-Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, task-specific physical capability checks beyond the existing build contributions, and the low-stakes ORBIT threshold should stay documented but unimplemented until their prerequisite phase.
+Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, and task-specific physical capability checks beyond the existing build contributions should stay documented but unimplemented until their prerequisite phase.
 Premature fields would look authoritative while carrying no tested consequence.

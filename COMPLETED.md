@@ -530,6 +530,35 @@ Regression coverage exercises affiliation, internalization, legibility, enforcem
 Incident, display, and somatic aftermath state all resume and replay exactly from snapshots.
 Scenario schema versions 15, 16, and 17 introduce objective incidents and social interpretation, display events, and exact somatic sources respectively; snapshot versions 14, 15, and 16 persist their bounded aftermath state and migrate older versions to neutral additions without retroactive evaluation.
 
+## Phase 7 — cadence and integration adapters
+
+Status: complete.
+
+Expand the Phase 3 tell vocabulary into text observation, embodied observation, and save-game snapshot adapters.
+Introduce cadence tiers over the one evaluator and closed-form catch-up only where it is exact.
+Evaluate ORBIT-style complementarity as a cadence-independent rule for low-stakes exchange.
+
+Exit probes:
+
+- text and embodied views report different tells from one unchanged causal trace
+- full-cadence and tiered scheduling agree at observation boundaries for authoritative state
+- the same low-stakes exchange settles identically whether observed or off screen
+- chunk loading and time acceleration do not alter deterministic results
+
+The integration regression fixture projects prose tells and embodied attention, expression, motion, and posture from the same unchanged cascade trace, then restores both projections exactly from an ordinary save-game snapshot.
+Its cadence matrix advances the relationship fixture through adjacent, location, settlement, and on-demand schedules and compares complete authoritative snapshots at each observation boundary.
+Accelerated and one-tick scheduling remain byte-equivalent, while cadence-save resume preserves an off-screen chunk's pending ticks until an exact full-evaluator flush.
+
+The low-stakes exchange probe holds one greeting constant across observed and off-screen cadence, verifies complementary power and matched intimacy, and preserves habitual pull from existing directed relationship state.
+Stakes above `0.20` return to ordinary appraisal, while somatic level 3 or above emits a positive gate trace containing no social settlement terms.
+
+Regression coverage also proves that the only closed-form helper is an isolated finite constant-rate primitive with exact bounds; coupled simulation state conservatively replays discrete ticks.
+No scenario or simulation snapshot schema changes are introduced.
+Cadence-save schema version 1 embeds snapshot schema version 16 with a validated tier, policy, and pending-tick count, and resume crosses the ordinary prepared-resource or library compatibility boundary.
+
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 250 deterministic tests, including exact snapshot and cadence-save replay.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.
