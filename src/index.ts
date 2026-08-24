@@ -92,6 +92,39 @@ export type {
   NumericGenerationRange,
   RealizedGenerationDraw,
 } from './generation/sampler.js';
+export {
+  CADENCE_TIERS,
+  DEFAULT_CADENCE_POLICY,
+  cadenceLogicalTick,
+  catchUpConstantRate,
+  createCadenceSession,
+  flushCadence,
+  parseCadenceSave,
+  resumeCadenceSave,
+  retierCadence,
+  scheduleCadence,
+  serializeCadenceSave,
+} from './integration/cadence.js';
+export type {
+  CadencePolicy,
+  CadenceSaveFile,
+  CadenceSession,
+  CadenceTier,
+} from './integration/cadence.js';
+export {
+  projectEmbodiedObservation,
+  projectTextObservation,
+} from './integration/observation.js';
+export type {
+  EmbodiedObservationProjection,
+  TextObservationProjection,
+} from './integration/observation.js';
+export {
+  LOW_STAKES_EXCHANGE_MAX,
+  evaluateOrbitExchange,
+  resolveOrbitExchange,
+} from './integration/orbit.js';
+export type { LowStakesExchange, OrbitSettlement } from './integration/orbit.js';
 export { deriveCharacterCheckpoint } from './model/history.js';
 export {
   DEFAULT_RESOURCE_PACKAGE_ID,

@@ -39,6 +39,9 @@ Transitions are pure: the same state plus the same input produces the same resul
 Random variation is not a permitted source of action selection.
 If sampling is used for cohort or incident generation, its seed, sampler position, and realized event must become serializable inputs to the evaluator.
 
+`src/integration` owns host-facing cadence sessions, text and embodied observation projections, and bounded low-stakes exchange settlement.
+It composes the public scenario, snapshot, and simulation boundaries without importing browser, filesystem, network, or presentation framework APIs.
+
 `app` owns Solid signals, ordinary DOM construction, Canvas rendering, pointer gestures, file access, and downloads.
 It may display or edit simulation state but may not invent behavioral state.
 The workbench bundles the repository's authored scenarios into a title-bar catalog and presents their existing scenario summaries as hover and dialog information.
@@ -108,6 +111,34 @@ The simulation derives dawn, sunrise, morning, midday, afternoon, evening, sunse
 The workbench consumes that derived period and authored conditions for its clock context and Canvas palette; other adapters may project the same state as prose, lighting, or sound.
 The initial condition is static scenario truth.
 Dynamic weather must later become an explicit deterministic timeline or event with snapshot-persisted current state rather than renderer-side variation.
+
+## Integration cadence and observations
+
+Cadence is an integration schedule over one evaluator.
+A cadence session treats a prepared simulation chunk as the smallest coupled authoritative unit, retains committed state plus a whole pending-tick count, and uses adjacent, location, settlement, or on-demand scheduling.
+The default adjacent interval is one tick, location is five ticks, settlement is thirty ticks, and on-demand retains all ticks until a host flushes the chunk for observation or loading.
+Hosts may replace the two batched intervals with other validated positive integers without changing evaluator behavior.
+
+Every due or flushed tick passes through `advanceSimulation` in deterministic order.
+The session never uses a reduced-fidelity transition and changing tiers flushes pending work before adopting the new schedule.
+The committed tick plus pending ticks is the chunk's logical time, so time acceleration changes batching rather than the simulated result.
+
+Cadence-save schema version 1 wraps the ordinary snapshot schema with the tier, validated policy, and pending-tick count.
+Resume crosses the same prepared-resource or raw-library compatibility boundary as an ordinary snapshot, then preserves pending work until the next schedule or flush operation.
+The embedded simulation snapshot remains the authoritative save-game state; the cadence envelope adds integration scheduling state and does not change scenario truth.
+
+Closed-form catch-up is exposed only for an isolated clamped constant-rate primitive with finite, constant inputs across the interval.
+Coupled simulation state takes the conservative exact path and replays pending ticks because discrete events, changing schedules, and cross-agent effects prevent a general equivalence proof.
+
+Text and embodied observation projections consume the same live or snapshot-restored state and the same bounded causal-trace identifiers.
+Text projects summary-scale prose and visible tells, while embodied output projects action, attention, expression, motion, and posture.
+Both are pure observer adapters: they neither mutate the trace nor persist presentation-specific state.
+
+Low-stakes ORBIT settlement is likewise an integration rule rather than a cadence tier.
+It accepts normalized stakes through `0.20` only when the exchange has no direct world, value, resource, disclosure, norm, or authored consequence; all consequential exchanges return to ordinary appraisal.
+Power response is complementary, intimacy response is matched, and both are pulled toward habitual positions derived from directed relationship state.
+The same rule runs after full or delayed cadence, updates both directed stances, and records inspectable causal terms.
+Somatic level 3 or above preempts it before social evaluation and emits a positive gate trace.
 
 World coordinates are meters on named two-dimensional layers.
 An environment provides a designed extent shared by those layers, authored areas for observation, and explicit connectors between layers; the camera is not clamped to that extent.
@@ -582,13 +613,13 @@ Environment-layout resource and aggregate environment-library schema version 3 a
 Versions 1 and 2 migrate kind-based cover defaults; version 1 also migrates onto one `surface` layer with no connectors while retaining the earlier outlet-affordance compatibility default.
 Norm resource schema version 2 adds root-impact interpretations while migrating version 1 resources with an interpretation equivalent to their bounded norm-violation compatibility turns.
 Social-contract resource schema version 2 adds enforcement severity with a neutral migration default for version 1 resources.
-Scenario schema version 16 adds status-display events after version 15 added objective incident events, independent norm affiliation and internalization, and placement enforcement presence, version 14 added structured norm references and scoped social-contract placements, version 13 added layer-bearing character positions, and version 12 replaced path-era character and environment identifiers with semantic addresses.
-Explicit migrations preserve version 1 through 15 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, placing pre-layer positions on `surface`, moving the bounded inline norm shape into the explicit `legacyLocalNorms` compatibility field with default-package norm addresses, mapping the former membership bit to affiliation plus full or zero initial internalization, and installing no display events for pre-16 content.
-Native display scenarios use version 16, while version 14 and 15 repository scenarios migrate with no display inputs.
-Snapshot schema version 15 persists display exposures, resolutions, positional respect references, and resolved display identifiers after version 14 persisted incident records, resolved incident identifiers, and per-instance norm internalization, version 13 persisted baseline-plasticity accumulators and write records, version 12 added sparse history-derived overrides, formative disposition records, and linked memory provenance, version 11 persisted the version 14 scenario and transitive prepared resource lock, version 10 added layer-bearing positions and destinations, and version 9 added structured resource addresses and the initial exact lock.
+Scenario schema version 17 adds ambient and per-placement somatic sources, timed somatic events, and physical-demand metadata after version 16 added status-display events, version 15 added objective incident events, independent norm affiliation and internalization, and placement enforcement presence, version 14 added structured norm references and scoped social-contract placements, version 13 added layer-bearing character positions, and version 12 replaced path-era character and environment identifiers with semantic addresses.
+Explicit migrations preserve version 1 through 16 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, placing pre-layer positions on `surface`, moving the bounded inline norm shape into the explicit `legacyLocalNorms` compatibility field with default-package norm addresses, mapping the former membership bit to affiliation plus full or zero initial internalization, installing no display events for pre-16 content, and installing neutral somatic collections and demand metadata for pre-17 content.
+Native somatic scenarios use version 17, while earlier repository scenarios migrate with no somatic inputs.
+Snapshot schema version 16 persists exact somatic source ledgers, bounded observer records, resolved somatic identifiers, and somatic appraisal contributions after version 15 persisted display exposures, resolutions, positional respect references, and resolved display identifiers, version 14 persisted incident records, resolved incident identifiers, and per-instance norm internalization, version 13 persisted baseline-plasticity accumulators and write records, version 12 added sparse history-derived overrides, formative disposition records, and linked memory provenance, version 11 persisted the version 14 scenario and transitive prepared resource lock, version 10 added layer-bearing positions and destinations, and version 9 added structured resource addresses and the initial exact lock.
 Standalone snapshot parsing verifies sorted unique lock entries and every direct scenario dependency; prepared resume verifies the exact transitive lock because the external contract graph is available only at that boundary.
-Explicit snapshot migrations preserve versions 1 through 14, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules.
-Snapshots before version 12 receive an empty history override boundary rather than retroactively replaying formative events and changing saved behavior, snapshots before version 13 receive empty plasticity accumulators and records rather than retroactively integrating elapsed experience, snapshots before version 14 receive empty incident aftermath while deriving initial norm internalization from the migrated authored perspectives, and snapshots before version 15 receive empty display aftermath plus neutral positional state.
+Explicit snapshot migrations preserve versions 1 through 15, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules.
+Snapshots before version 12 receive an empty history override boundary rather than retroactively replaying formative events and changing saved behavior, snapshots before version 13 receive empty plasticity accumulators and records rather than retroactively integrating elapsed experience, snapshots before version 14 receive empty incident aftermath while deriving initial norm internalization from the migrated authored perspectives, snapshots before version 15 receive empty display aftermath plus neutral positional state, and snapshots before version 16 receive neutral exact somatic state without retroactive appraisal.
 Legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
@@ -600,4 +631,5 @@ Closed-form catch-up is permitted only for primitive accumulators whose transiti
 Intervals with discrete events step those events in deterministic order, while ambient conditions are integrated as piecewise-constant inputs rather than skipped.
 Derived aggregates such as allostatic load are recomputed from caught-up primitives instead of being integrated independently.
 Observer proximity may gate sampling or presentation but may not alter the state that makes an agent eligible.
-ORBIT-style complementarity may eventually become a low-stakes exchange rule at every cadence, but never a distance-dependent fallback evaluator.
+ORBIT-style complementarity is a low-stakes exchange rule at every cadence, never a distance-dependent fallback evaluator.
+It is bounded to stakes at or below `0.20` with no direct consequence fields; higher-stakes or consequential exchanges use ordinary appraisal.

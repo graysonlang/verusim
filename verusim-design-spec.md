@@ -1106,8 +1106,8 @@ Use as **bounds checks, not fit targets**. They tell you the shape of the distri
 | 5 | **Stance decay constant** | Fast → amnesiac NPCs, no cross-session arcs. Slow → one bad first meeting is permanent. Proposed middle: fast decay on stance, slow decay on a separate count of dyad rupture cycles, so patterns crystallize while a single bad day washes out. |
 | 6 | Add the **moral exclusion gate**? | Required for atrocity behavior from ordinary agents. Deliberate decision, not something to discover by accident. |
 | 7 | **Self-harm / suicide** in scope? | Structurally reachable — self-harm is a regulate/discharge outlet; suicide needs thwarted belonging + perceived burdensomeness (both computable) + acquired capability. If included, the design requirement is that accumulation be **visible in advance**; a threshold surprise reads as arbitrary and, in this subject matter, badly. |
-| 8 | **Observability surface** — text IF vs embodied world | Determines how much depth is worth simulating. Text gives interiority free (narrate the flinch, the pause, the unsaid thing). Embodied gives posture, proximity, pathing, choice of action, who they stand near — no narration channel. Unresolved; the model doesn't change either way, only how much of it pays off. |
-| 9 | ~~**NPC-to-NPC fidelity**~~ | **Partially resolved — §20.6.** No reduced-fidelity evaluator exists (LOD is cadence). ORBIT complementarity remains available as a cadence-independent shortcut for low-stakes exchange. Open: where the low-stakes threshold sits. |
+| 8 | ~~**Observability surface** — text IF vs embodied world~~ | **Resolved — §20.2. Both.** Text and embodied adapters project different tell vocabularies from the same unchanged causal trace. Save-game snapshots retain the source state and trace rather than persisting either presentation. |
+| 9 | ~~**NPC-to-NPC fidelity**~~ | **Resolved — §20.6.** No reduced-fidelity evaluator exists. ORBIT complementarity applies identically at every cadence only to exchanges with stakes at or below `0.20` and no direct world, value, resource, disclosure, norm, or authored consequence. Everything else uses ordinary appraisal. |
 | 10 | ~~**Incident base rate and magnitude distribution** (§12.5)~~ | **Resolved — §12.5.** Authored per-opportunity rate, depletion-weighted subjects, and a cubed magnitude draw produce a sparse long tail without a world-global incident clock. |
 | 11 | ~~**Which values are positional** (§6.5)~~ | **Resolved — §20.5.** Phase 6 makes respect positional, caps exact rivals at five, and propagates only net changes of at least `0.02`. Safety, competence, belonging, and autonomy remain absolute. |
 | 12 | ~~**Do incidents respect narrative?**~~ | **Resolved — §20.4. Yes.** Once the generator is a proximity sampler it already reads agent state, so reading narrative claims is the same lookup. Agents with a load-bearing contradicting claim become *preferred* subjects. |
@@ -1164,11 +1164,18 @@ This is the single most important engineering decision in this section, and it d
 | Tier | Tick cadence | Notes |
 |---|---|---|
 | Player-adjacent | every tick | full cadence |
-| Same location, not engaged | every N ticks | |
-| Same settlement | slow tick | |
+| Same location, not engaged | every 5 ticks by default | host policy may select another positive integer |
+| Same settlement | every 30 ticks by default | host policy may select another positive integer |
 | Off-screen | on demand only | see §20.3 |
 
 Cadence tiers are a **schedule**, not a set of code paths.
+The integration adapter schedules a prepared simulation chunk as the smallest coupled authoritative unit, accumulates whole pending ticks, and replays every due tick through the ordinary evaluator.
+The chunk's committed tick plus its pending count is its logical observation time.
+Changing tier first flushes the old boundary, and observing or loading an on-demand chunk flushes it before exposing authoritative state.
+
+Text and embodied observers are pure projections over that state and the same bounded source-trace identifiers.
+Text emits prose-scale state and visible tells; embodied output emits action, attention, expression, motion, and posture cues.
+Neither projection changes evaluation or enters snapshot state, and restoring the same snapshot reproduces both projections.
 
 ### 20.3 Catch-up on demand
 
@@ -1177,6 +1184,10 @@ Accumulating quantities do not need protection from degradation — they need **
 Store `last_evaluated_tick` and the primitive accrual inputs; integrate forward on promotion only across intervals containing no discrete events for that agent.
 If discrete events occurred, step them in deterministic order.
 Ambient conditions are piecewise-constant inputs across the interval and must be integrated rather than skipped, so an off-screen agent is not exempt from a famine or other shared pressure.
+
+The initial cadence adapter takes the conservative exact path for coupled simulation state: pending intervals replay through the full evaluator at their observation boundary.
+It exposes closed-form clamped constant-rate integration only for an isolated primitive whose rate and bounds are constant throughout the interval.
+No current aggregate state receives closed-form treatment merely because it looks continuous.
 
 Applies to:
 
@@ -1221,11 +1232,19 @@ Positional coupling is O(n²) if implemented naively. Three constraints:
 
 ### 20.6 NPC-to-NPC exchange
 
-Partially resolves open decision #9.
+Resolves open decision #9.
 
 Since LOD is cadence rather than fidelity, there is no reduced-fidelity dyadic evaluator. What remains available is **ORBIT complementarity** (§17.4) as a legitimate settlement rule *at any tier* — power corresponded, intimacy matched, both pulled toward habitual positions — for exchanges that do not need a full appraisal pass.
 
 Use it as a **cadence-independent shortcut for low-stakes exchange**, not as a distance-based approximation. The distinction matters: a low-stakes exchange resolves the same way whether or not the player is watching.
+
+The bounded rule accepts normalized stakes from `0` through `0.20` and bids on the power and intimacy axes from `-1` through `1`.
+The response corresponds to power, matches intimacy, and is pulled toward the responder's habitual dyadic stance and respect-relative position according to retained history and estimate confidence.
+Its settlement updates both directed stances and emits the bids, habitual positions, response, complementarity, and stance turn as causal terms.
+
+The rule is available only when the exchange has no direct world-fact, value, resource, disclosure, norm, or authored consequence.
+Higher stakes or any such consequence requires the ordinary appraisal evaluator.
+Somatic levels 3 and above preempt settlement before any social term is evaluated and produce a positive gate trace instead.
 
 ---
 
