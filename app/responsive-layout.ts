@@ -34,6 +34,11 @@ export const HANDSET_SHEET_PEEK_HEIGHT = 58;
 export const HANDSET_SHEET_HALF_RATIO = 0.54;
 export const HANDSET_SHEET_HALF_MAX_HEIGHT = 480;
 
+const HANDSET_SHEET_ICON_PATHS = {
+  contract: ['M13.25 2.75 9.5 6.5m0 0v-3m0 3h3', 'M2.75 13.25 6.5 9.5m0 0v3m0-3h-3'],
+  expand: ['M9.5 6.5l3.75-3.75m0 0h-3m3 0v3', 'M6.5 9.5l-3.75 3.75m0 0h3m-3 0v-3'],
+} as const satisfies Record<HandsetSheetAction, readonly [string, string]>;
+
 export function workbenchLayoutMode(width: number): WorkbenchLayoutMode {
   if (Number.isFinite(width) && width >= WIDE_LAYOUT_MIN_WIDTH) return 'wide';
   if (Number.isFinite(width) && width >= COMPACT_LAYOUT_MIN_WIDTH) return 'compact';
@@ -88,6 +93,10 @@ export function cycleHandsetSheetExtent(state: NarrowPanelState): NarrowPanelSta
 
 export function handsetSheetAction(extent: HandsetSheetExtent): HandsetSheetAction {
   return extent === 'full' ? 'contract' : 'expand';
+}
+
+export function handsetSheetIconPaths(action: HandsetSheetAction): readonly [string, string] {
+  return HANDSET_SHEET_ICON_PATHS[action];
 }
 
 export function handsetSheetHeights(shellHeight: number, fullHeight: number): HandsetSheetHeights {

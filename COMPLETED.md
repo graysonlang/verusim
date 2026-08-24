@@ -35,7 +35,7 @@ Exit probes:
 - the handset day-period tile retains its full-bleed art while matching the same 36-pixel bordered, six-pixel-radius control surface within its 44-pixel hit target
 - the handset level selector retains its regular grouped-control treatment within the same visual-size and hit-target split
 - dragging either handset sheet header previews a clamped height and snaps the roster or inspector to peek, half, or full on release without capturing interactive header controls
-- handset sheet corner controls show outward diagonal arrows and announce Expand from peek or half, then show inward diagonal arrows and announce Contract from full so the control describes its next action
+- handset sheet corner controls show two opposing outward diagonal arrows and announce Expand from peek or half, then show the matching two inward diagonal arrows and announce Contract from full so the control describes its next action
 - the signal verbosity and visibility selector occupies the character-roster title row rather than the application header
 - the character roster presents its current filtered count within the `Characters (n)` heading, while the Activity inspector uses the same compact uppercase `Activity (n)` hierarchy and reveals its filter field from a right-aligned header control
 - the layer selector occupies the Canvas lower-left in every mode, while compact and handset zoom occupies the Canvas upper-right and handset zoom presents right-aligned borderless value text without reducing its hit target
@@ -43,7 +43,7 @@ Exit probes:
 Movement-format regression coverage checks both metric and US display units without changing the meter source value.
 Preference regression coverage verifies defaults, field-level validation, legacy missing-field fallback, and the serialized device-local record.
 Sidebar-layout regression coverage checks the 80-pixel close detent, 180-pixel open detent, viewport clamp, retained-width visibility toggles, keyboard resizing, the three-state double-click cycle, and mixed-state paired visibility decay.
-Responsive-layout regression coverage checks width classification, mutually exclusive narrow-panel toggles, handset peek transitions, next-action semantics, calculated and clamped snap heights, narrow Escape precedence, and preservation of desktop preferences as input-only state.
+Responsive-layout regression coverage checks width classification, mutually exclusive narrow-panel toggles, handset peek transitions, next-action semantics, two-arrow icon paths, calculated and clamped snap heights, narrow Escape precedence, and preservation of desktop preferences as input-only state.
 Keyboard regression coverage checks physical punctuation codes, modifier exclusion, the Escape state machine, and clamped lowest-floor-to-Exterior traversal.
 World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit and covers visible and off-screen camera reveal decisions without coupling them to selection.
 Agent-marker regression coverage distinguishes ordinary, roster-hovered, dimmed-hovered, and selected appearances so transient emphasis cannot displace selection priority.

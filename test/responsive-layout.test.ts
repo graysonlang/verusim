@@ -8,6 +8,7 @@ import {
   effectivePanelVisibility,
   handsetSheetAction,
   handsetSheetHeights,
+  handsetSheetIconPaths,
   narrowPanelAfterRosterSelection,
   nearestHandsetSheetExtent,
   toggleNarrowPanel,
@@ -77,6 +78,17 @@ describe('responsive workbench layout', () => {
     assert.equal(handsetSheetAction('peek'), 'expand');
     assert.equal(handsetSheetAction('half'), 'expand');
     assert.equal(handsetSheetAction('full'), 'contract');
+  });
+
+  it('uses two opposing arrows for each handset sheet action', () => {
+    assert.deepEqual(handsetSheetIconPaths('expand'), [
+      'M9.5 6.5l3.75-3.75m0 0h-3m3 0v3',
+      'M6.5 9.5l-3.75 3.75m0 0h3m-3 0v-3',
+    ]);
+    assert.deepEqual(handsetSheetIconPaths('contract'), [
+      'M13.25 2.75 9.5 6.5m0 0v-3m0 3h3',
+      'M2.75 13.25 6.5 9.5m0 0v3m0-3h-3',
+    ]);
   });
 
   it('derives, clamps, and snaps handset sheet heights', () => {

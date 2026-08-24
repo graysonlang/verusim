@@ -2635,7 +2635,8 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .menu-button,
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
 .app-shell[data-layout-mode="handset"] .scenario-info-button,
-.app-shell[data-layout-mode="handset"] .transport-button {
+.app-shell[data-layout-mode="handset"] .transport-button,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle {
   width: var(--handset-hit-size);
   min-width: var(--handset-hit-size);
   height: var(--handset-hit-size);
@@ -2646,7 +2647,8 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
 .app-shell[data-layout-mode="handset"] .scenario-info-button,
 .app-shell[data-layout-mode="handset"] .transport-button,
-.app-shell[data-layout-mode="handset"] .time-rate-button {
+.app-shell[data-layout-mode="handset"] .time-rate-button,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle {
   position: relative;
   border: 0;
   background: transparent;
@@ -2655,7 +2657,8 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .menu-button::before,
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button::before,
 .app-shell[data-layout-mode="handset"] .transport-button::before,
-.app-shell[data-layout-mode="handset"] .time-rate-button::before {
+.app-shell[data-layout-mode="handset"] .time-rate-button::before,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle::before {
   position: absolute;
   z-index: 0;
   inset: var(--handset-control-inset);
@@ -2669,7 +2672,8 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .menu-button > *,
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button > *,
 .app-shell[data-layout-mode="handset"] .transport-button > *,
-.app-shell[data-layout-mode="handset"] .time-rate-button > * {
+.app-shell[data-layout-mode="handset"] .time-rate-button > *,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle > * {
   position: relative;
   z-index: 1;
 }
@@ -2677,21 +2681,24 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .menu-button:focus-visible,
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button:focus-visible,
 .app-shell[data-layout-mode="handset"] .transport-button:focus-visible,
-.app-shell[data-layout-mode="handset"] .time-rate-button:focus-visible {
+.app-shell[data-layout-mode="handset"] .time-rate-button:focus-visible,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle:focus-visible {
   outline: 0;
 }
 
 .app-shell[data-layout-mode="handset"] .menu-button:focus-visible::before,
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button:focus-visible::before,
 .app-shell[data-layout-mode="handset"] .transport-button:focus-visible::before,
-.app-shell[data-layout-mode="handset"] .time-rate-button:focus-visible::before {
+.app-shell[data-layout-mode="handset"] .time-rate-button:focus-visible::before,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle:focus-visible::before {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .app-shell[data-layout-mode="handset"] .menu-button:hover::before,
 .app-shell[data-layout-mode="handset"] .transport-button:hover::before,
-.app-shell[data-layout-mode="handset"] .time-rate-button:hover::before {
+.app-shell[data-layout-mode="handset"] .time-rate-button:hover::before,
+.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle:hover::before {
   border-color: var(--line-strong);
   background: var(--panel-hover);
 }
@@ -2821,13 +2828,6 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .panel-header {
   padding-top: 7px;
   padding-right: 8px;
-}
-
-.app-shell[data-layout-mode="handset"] .narrow-sheet-toggle {
-  width: var(--handset-hit-size);
-  min-width: var(--handset-hit-size);
-  height: var(--handset-hit-size);
-  min-height: var(--handset-hit-size);
 }
 
 .app-shell[data-layout-mode="handset"] .sheet-drag-handle {

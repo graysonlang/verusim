@@ -81,6 +81,7 @@ import {
   effectivePanelVisibility,
   handsetSheetAction,
   handsetSheetHeights,
+  handsetSheetIconPaths,
   narrowPanelAfterRosterSelection,
   toggleNarrowPanel,
   toggleNarrowPanelPair,
@@ -242,9 +243,9 @@ function controlIcon(
           : kind === 'close'
             ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
             : kind === 'sheet-expand'
-              ? 'M6.5 6.5 2.75 2.75m0 0h3m-3 0v3M9.5 6.5l3.75-3.75m0 0h-3m3 0v3M6.5 9.5l-3.75 3.75m0 0h3m-3 0v-3M9.5 9.5l3.75 3.75m0 0h-3m3 0v-3'
+              ? handsetSheetIconPaths('expand').join('')
               : kind === 'sheet-contract'
-                ? 'M2.75 2.75 6.5 6.5m0 0v-3m0 3h-3M13.25 2.75 9.5 6.5m0 0v-3m0 3h3M2.75 13.25 6.5 9.5m0 0v3m0-3h-3M13.25 13.25 9.5 9.5m0 0v3m0-3h3'
+                ? handsetSheetIconPaths('contract').join('')
                 : 'm4.5 6 3.5 3.5L11.5 6';
     path.setAttribute('d', pathData);
     path.setAttribute('fill', 'none');
