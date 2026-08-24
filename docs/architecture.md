@@ -397,6 +397,16 @@ Initialization applies constitutional reactivity and the same clamped value-char
 Each applied event produces an immutable disposition record and a linked formative memory with the authored resource path, profile identity, event index, and appraisal inputs.
 The reusable profile remains unchanged.
 
+Role-conditioned character generation is an authoring adapter over this boundary.
+A reusable role bundle defines continuous draw regions across behavioral subsystems plus categorical identity, satisfier, outlet, and weighted formative-event inputs; it is not a runtime class or behavior selector.
+Each numeric dimension consumes its own draw from one explicit deterministic sampler.
+The materialized profile passes ordinary character-resource validation, and its formative history passes the same initialization transition used by hand-authored profiles.
+
+Generated output retains the algorithm identifier, seed, sampler start and end positions, every realized draw, selected formative template, realized event, and linked disposition and memory identifiers.
+The output is deeply immutable authored content.
+Cohort generation may reject candidates below an authored normalized behavioral-distance floor, but every rejected attempt remains in provenance and consumes its place in the same sampler sequence.
+No sampling occurs while creating, stepping, serializing, or resuming a simulation.
+
 `deriveCharacterCheckpoint` materializes an independently valid earlier profile by retaining the stable `characterId`, constitutional base, and formative-event prefix while assigning an explicit new `profileId` and age.
 It never creates a runtime save or an overlay chain.
 

@@ -20,6 +20,27 @@ export {
   WEIGHT_CLASSES,
 } from './model/types.js';
 export type * from './model/types.js';
+export {
+  characterBehaviorDistance,
+  generateCharacterCohort,
+  generateCharacterProfile,
+} from './generation/character.js';
+export type {
+  CharacterGenerationProvenance,
+  CharacterGenerationRequest,
+  CharacterRoleBundle,
+  CohortGenerationAttempt,
+  CohortGenerationRequest,
+  GeneratedCharacterCohort,
+  GeneratedCharacterProfile,
+  GeneratedFormativeEventProvenance,
+  IntegerGenerationRange,
+  NumericGenerationRange,
+  RealizedGenerationDraw,
+  RoleFormativeEventTemplate,
+  RoleIdentityMarker,
+  RoleOutletPreference,
+} from './generation/character.js';
 export { deriveCharacterCheckpoint } from './model/history.js';
 export {
   DEFAULT_RESOURCE_PACKAGE_ID,

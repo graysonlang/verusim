@@ -383,6 +383,32 @@ Snapshot schema version 12 stores the new history state and preserves explicit m
 Browser validation could not run because the in-app browser control surface was unavailable and the Playwright fallback found no existing app at the owner's local address; repository rules prohibit starting a second server without explicit authorization.
 The inspector change is limited to resolving displayed history-derived values through the same effective-value accessors covered by regression tests, and the production build verifies that projection compiles.
 
+## Phase 5E — role-conditioned character and cohort generation
+
+Status: complete.
+
+Add a pure authoring-time generator whose reusable role bundles define continuous correlated regions across capabilities, cascade priors, constitutional gains, contract adherence, disclosure, empathy features, value weights, identity centralities, outlet ranks, satisfier flavors, and weighted formative-event pools.
+Each configured numeric dimension receives an independent seeded draw; the role labels a region rather than selecting behavior or creating a runtime class.
+
+Generated profiles cross ordinary character-resource validation and the Phase 5D formative-execution boundary before they are returned as deeply immutable authored outputs.
+Generation provenance retains the algorithm identifier, seed, sampler start and end positions, every realized draw, selected formative template, realized event, and its linked disposition and memory identifiers.
+
+Deterministic cohort generation uses rejection sampling over a normalized behavioral vector.
+It records accepted and rejected attempts, consumes one uninterrupted sampler sequence, and fails actionably when the requested separation cannot be achieved within the authored attempt bound.
+
+Exit probes:
+
+- regenerating one profile or cohort from the same seed and sampler position produces byte-equivalent resources and provenance
+- every configured role dimension is independently drawn inside its authored continuous range without selecting behavior
+- every realized formative event links to the ordinary Phase 5D disposition record and formative memory
+- generated character profiles pass the ordinary resource-catalog validation boundary and are immutable after materialization
+- a seven-character keeper cohort records rejected nearby draws before every accepted profile satisfies the authored minimum pairwise behavioral separation
+- malformed role ranges and unattainable cohort separation fail at their authoring boundary
+
+The discriminating generation fixture uses one broad keeper region, three weighted formative templates, and seven distinct profile identities.
+Regression coverage checks byte-equivalent replay, contiguous sampler positions, complete draw and event provenance, ordinary resource preparation, Phase 5D linkage, deep immutability, actual rejection, pairwise separation, and actionable invalid-input failures.
+No runtime or resource schema changes are introduced: generation is a pure authoring concern whose output remains a version 1 character-profile resource, and runtime randomness still never selects behavior.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

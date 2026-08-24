@@ -18,18 +18,17 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5E: seeded role-conditioned character and cohort generation.
-Define reusable role bundles as correlated draw regions rather than classes, draw formative histories as realized authored inputs, and materialize generated profiles through the Phase 5D checkpoint and formative-execution boundary.
-Every generated result must retain its seed, sampler position, realized draws, and event provenance so regeneration is byte-equivalent and unusual dispositions remain explainable.
+The active slice is Phase 5F: seeded cohort context and environment generation.
+Stagger recent-event timelines across the preceding years, materialize pre-contact dyad and mind-model seeds from explicit household and contact inputs, and generate immutable environment layouts through the ordinary resource-validation boundary.
+Every generated result retains its seed, sampler position, realized draws, and provenance so regeneration remains byte-equivalent.
 
-Add deterministic cohort stratification or rejection sampling so a small generated cast maintains meaningful separation across behavioral parameter space without bypassing ordinary validation or profile preparation.
-Generated outputs remain immutable authored content once materialized; runtime randomness still never selects behavior.
+Generated relationships and environments remain authored initial conditions rather than runtime discoveries.
+Candidate pools and topology inputs stay explicit so preparation and later packing never depend on an unbounded registry.
 
 ### Current-focus non-goals
 
-- no recent-event staggering, pre-contact relationship generation, or environment generation
 - no unrestricted adult drift or new §14.4 write path
-- no role classes, fixed trait labels, or generation-time behavior selection
+- no changes to the completed role-conditioned character generator
 - no Phase 6 incident, normative-interpretation, or somatic changes
 - no package manager, remote dependency resolver, authoring UI, or pack writer
 
