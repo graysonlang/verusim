@@ -66,6 +66,8 @@ The built-in scenarios use one-minute ticks so movement, deadlines, recovery, an
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
 Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
+While playback is active, the workbench computes one pure next-tick lookahead and projects only locomotion between the current and next authoritative positions at animation-frame resolution.
+The projection uses the same connector-aware route and meters-per-simulation-minute walking pace as the solver, reaches the exact next position at the tick boundary, and never enters snapshots, traces, behavioral evaluation, or other authoritative state.
 Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, Fahrenheit, a hidden status bar, and visible 250-pixel roster and 350-pixel inspector sidebars.
 Distance and temperature units are independent presentation choices; a stored preference from before that split preserves its former meter/Celsius or feet/Fahrenheit pairing until the user changes either field.
 A main-menu action shows or hides the status bar, persists that presentation choice locally, and removes or restores the footer grid row so hidden state does not reserve empty space.

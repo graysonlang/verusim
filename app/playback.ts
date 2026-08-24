@@ -1,4 +1,5 @@
-import type { TimeRateId } from '../src/model/types.js';
+import type { SimulationState, TimeRateId } from '../src/model/types.js';
+import { advanceLayerPosition } from '../src/simulation/navigation.js';
 import type { ClockFormat } from './preferences.js';
 
 export interface PlaybackRate {
@@ -26,6 +27,38 @@ export type PlaybackRateId = TimeRateId;
 export interface PlaybackAdvance {
   carriedMinutes: number;
   ticks: number;
+}
+
+export function projectPlaybackMovement(
+  state: SimulationState,
+  nextState: SimulationState,
+  partialTickMinutes: number,
+): SimulationState {
+  if (!Number.isFinite(partialTickMinutes) || partialTickMinutes < 0) {
+    throw new RangeError('partialTickMinutes must be a non-negative finite number');
+  }
+  if (partialTickMinutes > state.scenario.tickMinutes) {
+    throw new RangeError('partialTickMinutes cannot exceed the scenario tick cadence');
+  }
+  if (partialTickMinutes === 0) return state;
+  const nextAgents = new Map(nextState.agents.map(agent => [agent.id, agent]));
+  let changed = false;
+  const agents = state.agents.map(agent => {
+    const nextAgent = nextAgents.get(agent.id);
+    if (nextAgent === undefined) {
+      throw new RangeError(`Missing next-tick agent "${agent.id}"`);
+    }
+    const position = advanceLayerPosition(
+      state.environment,
+      agent.position,
+      nextAgent.position,
+      agent.walkingMetersPerMinute * partialTickMinutes,
+    );
+    if (position === agent.position) return agent;
+    changed = true;
+    return { ...agent, position };
+  });
+  return changed ? { ...state, agents } : state;
 }
 
 export function formatWorkbenchTime(minute: number, clockFormat: ClockFormat = '12-hour'): string {

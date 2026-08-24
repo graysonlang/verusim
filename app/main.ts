@@ -1,4 +1,4 @@
-import { createEffect, createRoot, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createRoot, createSignal, onCleanup } from 'solid-js';
 import {
   CAPABILITY_IDS,
   DAY_PERIOD_LABELS,
@@ -56,6 +56,7 @@ import {
   accumulatePlayback,
   formatWorkbenchTime,
   playbackRateForId,
+  projectPlaybackMovement,
   type PlaybackRateId,
 } from './playback.js';
 import {
@@ -1261,6 +1262,11 @@ function createWorkbench(): HTMLElement {
     DEFAULT_BUILT_IN_SCENARIO.id,
   );
   const [showTickNumber, setShowTickNumber] = createSignal(false);
+  const [playbackPreviewMinutes, setPlaybackPreviewMinutes] = createSignal(0);
+  const nextPlaybackState = createMemo(() => (playing() ? advanceSimulation(state(), 1) : state()));
+  const canvasState = createMemo(() =>
+    projectPlaybackMovement(state(), nextPlaybackState(), playbackPreviewMinutes()),
+  );
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
@@ -1815,7 +1821,7 @@ function createWorkbench(): HTMLElement {
     },
     rosterHoverAgentId,
     selectedAgentId,
-    state,
+    state: canvasState,
   });
   const commitLeftSidebarLayout = (layout: SidebarLayout): void => {
     if (!layout.visible) setRosterHoverAgentId(null);
@@ -2452,11 +2458,12 @@ function createWorkbench(): HTMLElement {
       control.classList.toggle('selected', selected);
       control.setAttribute('aria-checked', String(selected));
     }
+    setPlaybackPreviewMinutes(0);
     if (!isPlaying) return;
     let carriedMinutes = 0;
     let previousTime = performance.now();
-    const timer = window.setInterval(() => {
-      const currentTime = performance.now();
+    let animationFrame = 0;
+    const updatePlayback = (currentTime: number) => {
       const elapsedSeconds = Math.max(0, (currentTime - previousTime) / 1000);
       previousTime = currentTime;
       const result = accumulatePlayback(
@@ -2467,8 +2474,11 @@ function createWorkbench(): HTMLElement {
       );
       carriedMinutes = result.carriedMinutes;
       if (result.ticks > 0) advance(result.ticks);
-    }, 100);
-    onCleanup(() => window.clearInterval(timer));
+      setPlaybackPreviewMinutes(carriedMinutes);
+      animationFrame = window.requestAnimationFrame(updatePlayback);
+    };
+    animationFrame = window.requestAnimationFrame(updatePlayback);
+    onCleanup(() => window.cancelAnimationFrame(animationFrame));
   });
 
   createEffect(() => {

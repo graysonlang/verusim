@@ -5,7 +5,11 @@ import {
   accumulatePlayback,
   formatWorkbenchTime,
   playbackRateForId,
+  projectPlaybackMovement,
 } from '../app/playback.js';
+import scenario from '../content/scenarios/market-morning.json';
+import { advanceSimulation, createSimulation, navigationDistance } from '../src/index.js';
+import { characters, environments } from './fixtures.js';
 
 describe('workbench playback', () => {
   it('formats the visible clock as 12-hour time', () => {
@@ -51,6 +55,51 @@ describe('workbench playback', () => {
       carriedMinutes: 0,
       ticks: 1,
     });
+  });
+
+  it('projects each partial tick at the authoritative walking pace and endpoint', () => {
+    const beforeDeparture = advanceSimulation(
+      createSimulation({
+        characterLibrary: characters,
+        environmentLibrary: environments,
+        scenario,
+      }),
+      9,
+    );
+    const next = advanceSimulation(beforeDeparture, 1);
+    const currentMara = beforeDeparture.agents.find(agent => agent.id === 'mara');
+    const nextMara = next.agents.find(agent => agent.id === 'mara');
+    assert.ok(currentMara);
+    assert.ok(nextMara);
+    assert.ok(
+      navigationDistance(beforeDeparture.environment, currentMara.position, nextMara.position) > 0,
+    );
+
+    const halfway = projectPlaybackMovement(beforeDeparture, next, 0.5);
+    const halfwayMara = halfway.agents.find(agent => agent.id === 'mara');
+    assert.ok(halfwayMara);
+    assert.ok(
+      Math.abs(
+        navigationDistance(
+          beforeDeparture.environment,
+          currentMara.position,
+          halfwayMara.position,
+        ) -
+          currentMara.walkingMetersPerMinute * 0.5,
+      ) < 1e-9,
+    );
+    assert.deepEqual(
+      beforeDeparture.agents.find(agent => agent.id === 'mara'),
+      currentMara,
+    );
+
+    const endpoint = projectPlaybackMovement(beforeDeparture, next, 1);
+    assert.deepEqual(
+      endpoint.agents.map(agent => agent.position),
+      next.agents.map(agent => agent.position),
+    );
+    assert.equal(endpoint.minute, beforeDeparture.minute);
+    assert.equal(endpoint.tick, beforeDeparture.tick);
   });
 
   it('batches accelerated time according to the loaded scenario cadence', () => {

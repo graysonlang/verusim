@@ -16,6 +16,7 @@ Exit probes:
 
 - load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace
 - moving-character pace is presented as distance per second in the selected-character workbench while authored and authoritative locomotion remain meters per simulation minute
+- real-time playback projects movement at animation-frame resolution along the solver-selected route and authoritative walking pace, then reaches the exact solver position without drift when the whole tick commits
 - the status bar defaults to hidden without reserving an empty grid row, can be shown or hidden from the application menu, and persists only as a device-local presentation preference
 - each sidebar can be resized from its adjacent divider, snaps closed below a detent and open at its minimum, preserves its last expanded width through the header visibility control, and persists presentation state locally
 - double-clicking a custom-width divider restores its default, double-clicking at the default closes it, and double-clicking while closed reopens it at the default
@@ -42,6 +43,7 @@ Exit probes:
 - the layer selector occupies the Canvas lower-left in every mode, while compact and handset zoom occupies the Canvas upper-right and handset zoom presents right-aligned borderless value text without reducing its hit target
 
 Movement-format regression coverage checks both metric and US display units without changing the meter source value.
+Playback regression coverage checks a schedule-change departure at half-tick resolution, proves the projected distance equals walking pace multiplied by elapsed simulated time, and proves every projected endpoint equals the next authoritative solver position without changing current state, tick, or time.
 Preference regression coverage verifies defaults, field-level validation, legacy missing-field fallback, and the serialized device-local record.
 Sidebar-layout regression coverage checks the 80-pixel close detent, 180-pixel open detent, viewport clamp, retained-width visibility toggles, keyboard resizing, the three-state double-click cycle, and mixed-state paired visibility decay.
 Responsive-layout regression coverage checks width classification, mutually exclusive narrow-panel toggles, handset peek transitions, next-action semantics, two-arrow icon paths, calculated and clamped snap heights, narrow Escape precedence, and preservation of desktop preferences as input-only state.
@@ -49,7 +51,7 @@ Keyboard regression coverage checks physical punctuation codes, modifier exclusi
 World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit and covers visible and off-screen camera reveal decisions without coupling them to selection.
 Agent-marker regression coverage distinguishes ordinary, roster-hovered, dimmed-hovered, and selected appearances so transient emphasis cannot displace selection priority.
 Document-shell regression coverage checks the device-width baseline, one-to-one initial and maximum scale, disabled user scaling, and edge-to-edge viewport fitting while the existing world-view gesture regression retains custom two-pointer Canvas zoom.
-Live browser verification was unavailable because neither browser path had a reachable owner-run application and no isolated preview was authorized.
+Live browser verification, including the real-time movement follow-up, was unavailable because neither browser path had a reachable owner-run application and no isolated preview was authorized.
 Isolated browser verification confirmed a moving character's expanded badge, tooltip, and accessibility label use one consistent feet-per-second value while stationary characters omit a zero rate.
 Follow-up isolated browser verification confirmed a fresh profile reclaims the hidden footer row, the menu action shows and hides the bar, and a visible choice survives reload.
 Isolated Chromium verification confirmed both pointer resize directions, close and open detents, custom-width visibility restoration, reload persistence, the three-state double-click cycle, accessible separator state, and the requested header-control placement without console errors.
