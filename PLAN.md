@@ -18,8 +18,8 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8: integrated content authoring workbench.
-Refactor the browser workbench into shared Build and Simulate workspaces over one in-memory authored document graph, with the existing preparation boundary remaining authoritative before simulation or export.
+The active slice is Phase 8A: authoring document graph and transactions.
+Establish the host-neutral in-memory document, identity, provenance, reference, dirty-state, and transactional edit boundary before adding Build workspace presentation.
 
 ### Current-focus non-goals
 
@@ -28,6 +28,7 @@ Refactor the browser workbench into shared Build and Simulate workspaces over on
 - no draft mutation of a running simulation or its reset baseline
 - no package manager or remote dependency resolver
 - no filesystem, browser storage, database, or network dependency inside the engine
+- no Build workspace shell, specialized editor, store adapter, or pack writer until the document graph contract is green
 
 ## Phase 8 — integrated content authoring workbench
 
@@ -49,6 +50,58 @@ Let a downstream consumer supply documents in memory and receive validated chang
 
 Add dependency-aware project export and packing only at this authoring boundary.
 A pack starts from selected scenario roots, walks the same explicit dependency closure used by preparation, locks exact semantic resources and digests, deduplicates shared content, and excludes unrelated documents without treating directory placement as identity.
+
+### Phase 8 implementation sequence
+
+Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
+
+#### Phase 8A — authoring document graph and transactions
+
+Add a host-neutral in-memory authoring graph keyed by scenario identity or semantic resource address.
+Each document records its loaded baseline, mutable draft value, dirty state, source provenance, incoming and outgoing semantic references, and current diagnostics without treating its source path as identity.
+Represent edits as atomic transactions that can span multiple documents and restore byte-equivalent draft values, reference indexes, diagnostics, and dirty state through undo and redo.
+
+Gate: one separate-document project survives provenance-only relocation without changing editor identity or semantic references, while a multi-document reference edit and an environment-geometry edit round-trip byte-equivalently through undo and redo.
+
+#### Phase 8B — authoritative preparation and revision isolation
+
+Add responsive incremental diagnostics over drafts, but make the existing migration, validation, duplicate detection, reference resolution, dependency closure, and preparation path the sole authority for a runnable revision.
+Give each successfully prepared draft revision a stable in-memory identity used to create both the simulation state and its reset baseline.
+Keep later draft edits isolated from that pair until an explicit apply operation prepares a new revision and restarts simulation.
+
+Gate: the separate-document fixture prepares equivalently through direct in-memory content and the authoring graph, an invalid authored path blocks transition, correcting it succeeds through the same boundary, and post-start edits leave the running state and reset baseline byte-equivalent.
+
+#### Phase 8C — shared Build and Simulate application shell
+
+Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
+Build retains its selected document, property selection, editor camera, dirty state, and undo history; Simulate retains only runtime state derived from the explicitly applied revision.
+Returning to Build must not import interventions, snapshot state, runtime selection, or camera state into the authored draft.
+
+Gate: repeated keyboard and pointer mode switches preserve both workspace states, and editing during Simulate remains impossible while editing the retained Build draft cannot mutate the live simulation.
+
+#### Phase 8D — specialized editors and shared problems surface
+
+Add the content explorer, central form or spatial canvas, property and reference inspector, and shared problems panel.
+Provide specialized editing for character identities and age or continuity profiles, layered environment layouts, atomic norms, social-contract composition, and scenario placement and initial conditions.
+Keep raw JSON as an advanced view over the same transaction and draft rather than a second document model.
+
+Gate: keyboard and pointer workflows author representative fields in every document kind, navigate semantic references and diagnostics without trapping focus, and apply the valid revision to run the fixture without copied dependencies.
+
+#### Phase 8E — authoring-store ports and adapters
+
+Define the host-facing authoring-store port for deterministic document discovery, reads, and atomic change-set commits outside the engine.
+Implement a direct in-memory adapter for embedded consumers and an IndexedDB-backed browser adapter, with import and export remaining application concerns over the same graph.
+Neither adapter may change semantic identity, prepared content, validation results, or transaction boundaries.
+
+Gate: both adapters load and commit the same project and produce byte-equivalent documents, semantic addresses, diagnostics, and prepared scenarios after reload.
+
+#### Phase 8F — dependency-aware packing and integrated verification
+
+Add project export from selected scenario roots by reusing the authoritative dependency closure and exact resource locks.
+Deduplicate shared semantic resources, retain deterministic provenance, and exclude unrelated documents without inferring dependencies from directories or store enumeration order.
+Close the phase with the complete separate-document fixture, accessibility workflows, browser validation, deterministic replay, and the full verification gate.
+
+Gate: exporting one selected scenario includes every transitive character, environment, norm, and social-contract dependency exactly once, excludes unrelated resources, and prepares to the same runnable revision after round-trip import.
 
 Exit probes:
 
