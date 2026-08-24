@@ -600,7 +600,8 @@ Exit probes:
 
 Regression coverage adds `test/badges.test.ts` over the extracted formatters and location resolution using the default built-in scenario.
 No scenario, snapshot, or trace schema changes are introduced, and the incremental inspector-update work remains in Phase 8C.
-Browser validation could not run because no in-app browser bridge or Playwright MCP tool was available in the working session; the menu-controller rewrite preserves the prior positioning and focus logic verbatim inside per-menu hooks.
+Browser validation ran through Playwright MCP against an isolated preview: every header menu (main, scenario, time scale, signal display, and zoom) opens on pointer and keyboard input, focuses its selected item or input, positions at the same clamped coordinates as before, closes on Escape with focus restored to its trigger, closes on an outside pointer press, closes when a sibling menu opens, and survives a viewport resize while still open.
+The session recorded no console errors or warnings and no failed network requests.
 The full verification gate passes with 262 deterministic tests.
 
 ## Phase 1 decisions
