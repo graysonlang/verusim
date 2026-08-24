@@ -86,7 +86,7 @@ The centered surface retains the ordinary control's one-pixel stroke, six-pixel 
 The handset level selector applies the same split without layering a second frame over its grouped-control treatment.
 The environment layer selector anchors to the Canvas lower-left in every mode.
 Compact and handset zoom anchors to the Canvas upper-right while the map scale remains lower-right and the layer and scale groups rise above an active handset sheet without changing camera or projection state.
-Handset zoom keeps the same hit target as other controls while presenting borderless value text.
+Handset zoom keeps the same hit target as other controls while presenting borderless value text aligned to the Canvas edge.
 Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
