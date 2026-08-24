@@ -104,6 +104,7 @@ import {
 } from './scenarios.js';
 import { workbenchActionForShortcut, workbenchEscapeAction } from './shortcuts.js';
 import { formatDistance, formatMovementSpeed, formatTemperature } from './units.js';
+import { parseWorkbenchQuery, workbenchUrlForState } from './url-state.js';
 import {
   EXTERIOR_PROJECTION,
   createWorldView,
@@ -419,8 +420,8 @@ function movementBadge(
   return badge;
 }
 
-function createStarterSimulation(): SimulationState {
-  return createSimulation(DEFAULT_BUILT_IN_SCENARIO.prepared);
+function createStarterSimulation(entry: BuiltInScenario): SimulationState {
+  return createSimulation(entry.prepared);
 }
 
 const VALUE_LABELS: Record<ValueId, string> = {
@@ -1226,7 +1227,14 @@ function createActivityInspector(): ActivityInspector {
 }
 
 function createWorkbench(): HTMLElement {
-  const initial = createStarterSimulation();
+  const initialQuery = parseWorkbenchQuery(
+    window.location.search,
+    BUILT_IN_SCENARIOS.map(entry => entry.id),
+  );
+  const initialBuiltInScenario =
+    BUILT_IN_SCENARIOS.find(entry => entry.id === initialQuery.scenarioId) ??
+    DEFAULT_BUILT_IN_SCENARIO;
+  const initial = createStarterSimulation(initialBuiltInScenario);
   const storedPreferences = loadPreferences(localStorage);
   let loadedBaseline = initial;
   const [state, setState] = createSignal(initial);
@@ -1236,7 +1244,7 @@ function createWorkbench(): HTMLElement {
   const [search, setSearch] = createSignal('');
   const [playing, setPlaying] = createSignal(false);
   const [playbackRateId, setPlaybackRateId] = createSignal<PlaybackRateId>(
-    initialTimeRateForScenario(initial.scenario, storedPreferences),
+    initialQuery.timeRateId ?? initialTimeRateForScenario(initial.scenario, storedPreferences),
   );
   const [preferences, setPreferences] = createSignal<ApplicationPreferences>(storedPreferences);
   const [leftSidebarLayout, setLeftSidebarLayout] = createSignal<SidebarLayout>({
@@ -1259,7 +1267,7 @@ function createWorkbench(): HTMLElement {
   });
   const [handsetLayerMenuOpen, setHandsetLayerMenuOpen] = createSignal(false);
   const [loadedBuiltInScenarioId, setLoadedBuiltInScenarioId] = createSignal<string | null>(
-    DEFAULT_BUILT_IN_SCENARIO.id,
+    initialBuiltInScenario.id,
   );
   const [showTickNumber, setShowTickNumber] = createSignal(false);
   const [playbackPreviewMinutes, setPlaybackPreviewMinutes] = createSignal(0);
@@ -2442,6 +2450,15 @@ function createWorkbench(): HTMLElement {
       }
     }
   }
+
+  createEffect(() => {
+    const nextUrl = workbenchUrlForState(window.location.href, {
+      scenarioId: loadedBuiltInScenarioId(),
+      timeRateId: playbackRateId(),
+    });
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl !== currentUrl) window.history.replaceState(window.history.state, '', nextUrl);
+  });
 
   createEffect(() => {
     const isPlaying = playing();
