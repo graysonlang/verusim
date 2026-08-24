@@ -28,10 +28,28 @@ Make current-schema first-party content the baseline consumed by the authoring d
 - no behavior-model or evaluator-fidelity expansion
 - no authoring graph, Build workspace shell, or workbench refactor in this slice
 
+## Phase order
+
+Phases group work by theme, but slices are executed in this cross-phase order:
+
+1. Phase 8P2 — current-schema content
+2. Phase 8A — authoring document graph and transactions
+3. Phase 8B — authoritative preparation and revision isolation
+4. Phase 10A — ensemble runner and falsifier harness
+5. Phase 9A — authoritative seconds and schema migration
+6. Phases 8C through 8F — application shell, editors, store adapters, and packing
+7. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+8. Phase 10B — remaining acceptance vignettes
+
+Two dependencies drive the interleaving.
+Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
+Phase 10A is headless, needs only the seeded generation and two vignette fixtures that already exist, and retires the project's highest-stakes risk: that the behavioral model needs revision.
+Learning that before the workbench and editor investment is worth more than learning it after, so the harness runs before Phase 8's presentation slices and the remaining vignettes wait for the subminute time domain they depend on.
+
 ## Phase 8P — audit repair and authoring readiness
 
 Close the correctness and primary-path debt identified by the 2026-08-24 project audit before building authoring transactions over the existing formats.
-The event-boundary and trace-identity repair is recorded in COMPLETED.md; the remaining preflight establishes current-schema first-party content and documentation as the baseline consumed by Phase 8A.
+The event-boundary and trace-identity repair and the workbench modularization are recorded in COMPLETED.md; the remaining preflight establishes current-schema first-party content as the baseline consumed by Phase 8A.
 
 ### Phase 8P implementation sequence
 
@@ -71,6 +89,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
+Phases 8A and 8B are host-neutral and follow Phase 8P2 directly; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
 
 #### Phase 8A — authoring document graph and transactions
 
@@ -92,6 +111,7 @@ Gate: the separate-document fixture prepares equivalently through direct in-memo
 
 #### Phase 8C — shared Build and Simulate application shell
 
+This slice begins after Phase 10A and Phase 9A.
 The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
 Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
 Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
@@ -157,6 +177,8 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 ### Phase 9 implementation sequence
 
+Phase 9A runs after Phase 10A and before the Phase 8 presentation slices; Phases 9B through 9E follow Phase 8F.
+
 #### Phase 9A — authoritative seconds and schema migration
 
 Before increasing evaluator cadence, centralize duplicated trace and memory bounds and the repeated clamp and bounded-append helpers, then define a retention contract that prevents one noisy agent from evicting every other agent's recent causal sources.
@@ -213,14 +235,28 @@ Those are separate phenomena and must not be smuggled into the time-domain migra
 
 ## Phase 10 — OTGW ensemble acceptance
 
-Turn the reference acceptance appendix into an executable long-range falsifier suite after the authoring and subminute cadence foundations are complete.
+Turn the reference acceptance appendix into an executable long-range falsifier suite.
 Add a seeded ensemble runner with at least twenty distinct authored parameter and context variants per vignette, byte-equivalent replay for every repeated seed, and explicit PASS, SOFT FAIL, HARD FAIL, and INCONCLUSIVE grading that separates behavioral plausibility from observer legibility.
 
 Complete the remaining eight vignette fixtures through ordinary authored events, histories, environments, and shared mechanisms rather than scripting source outcomes.
 Sequence them by the mechanism each falsifier isolates, retain Endicott/Margueritte and Pottsfield as the first two anchors, and reconcile the remaining self-deception scope decision before encoding Wirt's narrative gap.
 Make the protected unavailability rate an explicit ensemble dimension and range check so playtesting cannot silently tune independent NPC business to zero.
 
-Gate: every vignette runs at least twenty distinct seeded variants without nominal falsifiers, repeated variants reproduce byte-equivalent state and traces, extreme-range failures grade separately from structural failures, and unreadable in-envelope behavior reports INCONCLUSIVE rather than being misclassified as a model failure.
+### Phase 10 implementation sequence
+
+#### Phase 10A — ensemble runner and falsifier harness
+
+Build the headless runner and grading harness over the two vignette fixtures that already exist, Endicott/Margueritte and Pottsfield, immediately after Phase 8B and before any workbench presentation work.
+The runner materializes distinct seeded authored variants through the existing generation adapters and the ordinary preparation boundary, replays each variant byte-equivalently, and grades every falsifier as PASS, SOFT FAIL, HARD FAIL, or INCONCLUSIVE while localizing each failure to its implicated shared term.
+Include the unavailability rate as an explicit ensemble dimension from the start so the range check exists before any vignette could be tuned around it.
+
+Gate: both anchor vignettes run at least twenty distinct seeded variants without nominal falsifiers, repeated variants reproduce byte-equivalent state and traces, extreme-range failures grade separately from structural failures, and unreadable in-envelope behavior reports INCONCLUSIVE rather than being misclassified as a model failure.
+
+#### Phase 10B — remaining acceptance vignettes
+
+After Phase 9E, author the remaining eight vignettes against the harness, sequenced by the mechanism each falsifier isolates, and reconcile the self-deception scope decision before encoding Wirt.
+
+Gate: every vignette meets the Phase 10A ensemble bar, and no vignette requires a per-character handler or authored selected behavior.
 
 Exit probes:
 
@@ -233,5 +269,5 @@ Exit probes:
 ## Decisions that can wait
 
 Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, and task-specific physical capability checks beyond the existing build contributions should stay documented but unimplemented until their prerequisite phase.
-Self-deception remains an explicit scope decision to reconcile before Phase 10 encodes Wirt, while unavailability calibration belongs to the Phase 10 ensemble and may not be silently omitted or tuned to zero.
+Self-deception remains an explicit scope decision to reconcile before Phase 10B encodes Wirt, while unavailability calibration belongs to the Phase 10A ensemble dimension and may not be silently omitted or tuned to zero.
 Premature fields would look authoritative while carrying no tested consequence.
