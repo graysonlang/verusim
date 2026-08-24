@@ -1,6 +1,5 @@
 import {
   VALUE_IDS,
-  type AgendaGoalSeed,
   type CharacterDefinition,
   type CharacterPlacement,
   type EnvironmentDefinition,
@@ -8,7 +7,6 @@ import {
   type MaskingDemand,
   type PreparedScenario,
   type RecoveryMode,
-  type ResourceAddress,
   type ResourceState,
   type ScheduleBlock,
   type SimulationAgent,

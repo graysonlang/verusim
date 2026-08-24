@@ -693,6 +693,26 @@ Existing snapshot replay coverage now asserts schema version 17.
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 281 deterministic tests.
 
+## Phase 10A — ensemble runner and falsifier harness
+
+Status: complete.
+
+Build the headless runner and grading harness over the two vignette fixtures that already exist, Endicott/Margueritte and Pottsfield, before any workbench presentation work.
+The runner materializes distinct seeded authored variants through the existing generation sampler and the ordinary preparation boundary, replays each variant byte-equivalently, and grades every falsifier as PASS, SOFT FAIL, HARD FAIL, or INCONCLUSIVE while localizing each failure to its implicated shared term.
+The unavailability rate is an explicit ensemble dimension from the start.
+
+Gate: both anchor vignettes run at least twenty distinct seeded variants without nominal falsifiers, repeated variants reproduce byte-equivalent state and traces, extreme-range failures grade separately from structural failures, and unreadable in-envelope behavior reports INCONCLUSIVE rather than being misclassified as a model failure.
+
+`src/acceptance/ensemble.ts` materializes each variant from one `GenerationSampler` - every dimension draw and the unavailability start are recorded with sampler positions and a content digest - runs it through `prepareScenario`, steps it tick by tick to measure unavailability, and re-runs it from the same prepared scenario to prove replay equivalence.
+`src/acceptance/vignettes.ts` encodes the two anchors: Endicott/Margueritte varies both estimated empathies, Endicott's estimate confidence, Margueritte's stance, and temperature, with falsifiers for suspicion-only accrual on ambiguous evidence and evidence-gated correction on the forced exchange; Pottsfield varies both norm internalizations, both stances, and temperature, with falsifiers for observer-relative interpretation and outsider opacity.
+Each vignette authors seeded independent business for one character after its discriminating events, and the protected unavailability range counts transit, engagement, and absence from the location the schedule opened at.
+
+The discriminating result is that the ensemble corrected an authored envelope: Margueritte's nominal estimated-empathy range initially reached 0.28, and five of twenty nominal seeds failed the correction falsifier because a prior above roughly 0.25 sits too close to the revealing observation to cross the evidence gate; the nominal range now ends at 0.24 and the finding is recorded beside the dimension.
+`test/ensemble.test.ts` proves both anchors run twenty nominal and five extreme variants with at least twenty distinct digests, every variant replays byte-equivalently, no nominal falsifier fails, every extreme run stays a SOFT FAIL at most with at least one bounding the envelope, removing the revealing event grades INCONCLUSIVE rather than HARD FAIL, repeated seeds reproduce identical variants and reports, and out-of-range seeds or unresolvable dimension paths are rejected.
+No scenario, snapshot, or resource schema changes are introduced; the harness imports no host APIs.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 288 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

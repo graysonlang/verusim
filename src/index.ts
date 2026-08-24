@@ -26,6 +26,26 @@ export {
   type AuthoringRevision,
   type RevisionSimulation,
 } from './authoring/revision.js';
+export {
+  ENSEMBLE_ALGORITHM,
+  gradeOutcome,
+  materializeVariant,
+  runEnsemble,
+  runVariant,
+  type EnsembleDimension,
+  type EnsembleOptions,
+  type EnsembleReport,
+  type EnsembleRun,
+  type EnsembleVariant,
+  type Falsifier,
+  type FalsifierGrade,
+  type FalsifierGradeRecord,
+  type FalsifierOutcome,
+  type FalsifierVerdict,
+  type VariantReport,
+  type VignetteDefinition,
+} from './acceptance/ensemble.js';
+export { endicottMarguerittevignette, pottsfieldVignette } from './acceptance/vignettes.js';
 export { canonicalJson, contentDigest } from './scenario/digest.js';
 export { validatePreparedScenario } from './scenario/prepare.js';
 export { validateSnapshotReferences } from './scenario/snapshot-references.js';

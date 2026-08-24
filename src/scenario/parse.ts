@@ -45,7 +45,6 @@ import {
   objectValue,
   stringValue,
   validateLayerPosition,
-  validatePoint,
 } from './primitives.js';
 
 export { ScenarioValidationError } from '../model/validation.js';

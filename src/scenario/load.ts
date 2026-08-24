@@ -3,11 +3,7 @@ import {
   createSimulationFromPrepared,
   createSimulationFromPreparedSnapshot,
 } from '../simulation/runtime.js';
-import {
-  isPreparedScenario,
-  prepareScenarioFromLibraries,
-  validatePreparedScenario,
-} from './prepare.js';
+import { prepareScenarioFromLibraries, validatePreparedScenario } from './prepare.js';
 import { parseSnapshot } from './snapshot.js';
 
 interface LegacyScenarioInput {

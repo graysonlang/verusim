@@ -17,7 +17,6 @@ import {
   objectValue,
   stringValue,
   validateLayerPosition,
-  validatePoint,
 } from './primitives.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);

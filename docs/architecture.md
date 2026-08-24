@@ -450,6 +450,14 @@ Aspiration opportunities supply desired world facts, stakes, and claim alignment
 Only invokers turn an eligible opportunity into a source-`aspiration` agenda goal, after which the Phase 2B bounded planner and intention machinery remain authoritative.
 Narrative records, distributed reputation, generated aspiration identifiers, claim overrides, and promotion state persist in snapshots and replay exactly.
 
+## Acceptance ensembles
+
+`src/acceptance` is the headless falsifier harness over the reference acceptance appendix.
+A vignette declares seeded dimensions - authored scenario paths with a nominal range and an optional extreme band - plus falsifiers that read ordinary runtime records and name the shared model term they implicate, and an unavailability contract that authors seeded independent business for one character and protects the measured share of agent-ticks spent in transit, engaged, or away from the location the schedule opened at.
+Every variant is materialized by one explicit `GenerationSampler` from its seed, recorded with its draws and sampler positions, digested, and prepared through the ordinary boundary, so the ensemble never introduces runtime randomness and repeating a seed reproduces the variant and its run byte for byte.
+Grading keeps three failure kinds apart: a falsifier failing on an in-envelope variant is a `HARD FAIL` of the model, one failing only where a dimension was pushed into its extreme band is a `SOFT FAIL` that bounds the envelope, and evidence that never materialized is `INCONCLUSIVE` rather than a verdict.
+Nominal ranges are therefore claims about the model's envelope, and the ensemble is the instrument that corrects them.
+
 ## Observability
 
 Player-facing integrations should show behavior and tells rather than raw meters.

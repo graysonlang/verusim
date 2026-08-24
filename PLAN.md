@@ -18,25 +18,24 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 10A: ensemble runner and falsifier harness.
-Build the headless seeded ensemble runner and four-way grading harness over the Endicott/Margueritte and Pottsfield fixtures before any workbench presentation work.
+The active slice is Phase 9A: authoritative seconds and schema migration.
+Centralize duplicated bounds and helpers, define the trace retention contract, then make integer simulated seconds canonical with exact migration of minute-based content and snapshots.
 
 ### Current-focus non-goals
 
-- no new vignette content beyond the two existing anchors
-- no changes to completed behavioral algorithms or evaluator fidelity
-- no runtime-random action selection; every variant is a seeded authored input
+- no event-delimited advancement, timed movement, or cadence policy changes; those are Phases 9B through 9D
+- no behavior-model or evaluator-fidelity expansion
 - no workbench presentation work
+- no reduced-fidelity evaluator or distance-gated authoritative state
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 10A — ensemble runner and falsifier harness
-2. Phase 9A — authoritative seconds and schema migration
-3. Phases 8C through 8F — application shell, editors, store adapters, and packing
-4. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
-5. Phase 10B — remaining acceptance vignettes
+1. Phase 9A — authoritative seconds and schema migration
+2. Phases 8C through 8F — application shell, editors, store adapters, and packing
+3. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+4. Phase 10B — remaining acceptance vignettes
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -67,11 +66,11 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A and 8B are recorded in COMPLETED.md; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
+Phases 8A and 8B are recorded in COMPLETED.md; Phases 8C through 8F begin only after Phase 9A; Phase 10A is recorded in COMPLETED.md so the shell and editors are built once over the canonical time domain.
 
 #### Phase 8C — shared Build and Simulate application shell
 
-This slice begins after Phase 10A and Phase 9A.
+This slice begins after Phase 9A.
 The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
 Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
 Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
@@ -137,7 +136,7 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 ### Phase 9 implementation sequence
 
-Phase 9A runs after Phase 10A and before the Phase 8 presentation slices; Phases 9B through 9E follow Phase 8F.
+Phase 9A runs before the Phase 8 presentation slices; Phases 9B through 9E follow Phase 8F.
 
 #### Phase 9A — authoritative seconds and schema migration
 
@@ -204,13 +203,7 @@ Make the protected unavailability rate an explicit ensemble dimension and range 
 
 ### Phase 10 implementation sequence
 
-#### Phase 10A — ensemble runner and falsifier harness
-
-Build the headless runner and grading harness over the two vignette fixtures that already exist, Endicott/Margueritte and Pottsfield, immediately after Phase 8B and before any workbench presentation work.
-The runner materializes distinct seeded authored variants through the existing generation adapters and the ordinary preparation boundary, replays each variant byte-equivalently, and grades every falsifier as PASS, SOFT FAIL, HARD FAIL, or INCONCLUSIVE while localizing each failure to its implicated shared term.
-Include the unavailability rate as an explicit ensemble dimension from the start so the range check exists before any vignette could be tuned around it.
-
-Gate: both anchor vignettes run at least twenty distinct seeded variants without nominal falsifiers, repeated variants reproduce byte-equivalent state and traces, extreme-range failures grade separately from structural failures, and unreadable in-envelope behavior reports INCONCLUSIVE rather than being misclassified as a model failure.
+Phase 10A is recorded in COMPLETED.md.
 
 #### Phase 10B — remaining acceptance vignettes
 
