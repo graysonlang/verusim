@@ -18,15 +18,15 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 6B: displays, observer-side habituation, and positional respect.
-Introduce objective status-display events over the shared perception boundary, derive admiration, envy, disdain, and indifference from observer state, and persist exact observer exposure plus the five-entry positional-respect boundary and `0.02` propagation deadband.
+The active slice is Phase 6C: somatic state, action restriction, and preemption.
+Introduce exact per-agent discomfort sources, independent pain and perceived urgency, steady-source habituation, graded impairment evidence, level-2 action restriction, the level-3 preempt gate, and level-4 incapacity as an observer-relative crowd stimulus.
 
 ### Current-focus non-goals
 
-- no changes to completed Phase 5 or Phase 6A generation and appraisal algorithms
-- no authored response, status verdict, or universal display valence
+- no changes to completed Phase 5, Phase 6A, or Phase 6B algorithms
+- no disease etiology, pathogen, transmission, or medical-treatment simulation
 - no reduced-fidelity evaluator path
-- no Phase 6C discomfort, pain, urgency, incapacity, or preemption fields
+- no authored crowd response or authoritative observer inference of somatic severity
 - no Phase 7 cadence or integration adapters
 - no package manager, remote dependency resolver, authoring UI, or pack writer
 
