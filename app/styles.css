@@ -99,7 +99,10 @@ select:focus-visible {
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --header-height: 58px;
+  --shell-height: 100dvh;
   --narrow-panel-height: 0px;
+  --narrow-panel-lift: 0px;
+  --canvas-corner-inset: max(12px, var(--safe-area-bottom));
   position: relative;
   display: grid;
   grid-template:
@@ -1457,8 +1460,8 @@ input[type="search"]::placeholder {
 .layer-switcher {
   position: absolute;
   z-index: 5;
-  top: 12px;
-  right: 12px;
+  bottom: 12px;
+  left: 12px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2424,13 +2427,32 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="compact"] .app-header {
-  grid-template-columns: minmax(240px, 1.2fr) max-content minmax(130px, 0.8fr);
+  grid-template:
+    "files signals" 1fr /
+    minmax(240px, 1fr) max-content;
 }
 
-.app-shell[data-layout-mode="compact"] .condition-season,
-.app-shell[data-layout-mode="compact"] .condition-weather,
-.app-shell[data-layout-mode="compact"] .condition-separator {
-  display: none;
+.app-shell[data-layout-mode="compact"] .file-actions {
+  grid-area: files;
+}
+
+.app-shell[data-layout-mode="compact"] .header-signals {
+  grid-area: signals;
+}
+
+.app-shell[data-layout-mode="compact"] .transport {
+  position: absolute;
+  z-index: 8;
+  top: calc(var(--header-height) + 12px);
+  left: 50%;
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid rgb(245 236 208 / 15%);
+  border-radius: 7px;
+  background: rgb(13 21 16 / 86%);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 32%);
+  backdrop-filter: blur(9px);
+  transform: translateX(-50%);
 }
 
 .app-shell[data-layout-mode="compact"] .roster,
@@ -2471,16 +2493,24 @@ input[type="search"]::placeholder {
   --header-height: calc(100px + var(--safe-area-top));
 }
 
+.app-shell[data-layout-mode="handset"]:not([data-narrow-panel="none"]) {
+  --narrow-panel-lift: var(--narrow-panel-height);
+}
+
 .app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] {
   --narrow-panel-height: 58px;
 }
 
 .app-shell[data-layout-mode="handset"][data-sheet-extent="half"] {
-  --narrow-panel-height: min(54%, 480px);
+  --narrow-panel-height: min(calc(var(--shell-height) * 0.54), 480px);
 }
 
 .app-shell[data-layout-mode="handset"][data-sheet-extent="full"] {
-  --narrow-panel-height: calc(100% - var(--header-height) - var(--status-bar-height));
+  --narrow-panel-height: calc(
+    var(--shell-height) -
+    var(--header-height) -
+    var(--status-bar-height)
+  );
 }
 
 .app-shell[data-layout-mode="handset"] .app-header {
@@ -2510,6 +2540,51 @@ input[type="search"]::placeholder {
   padding: 0 max(4px, var(--safe-area-right)) 0 max(4px, var(--safe-area-left));
 }
 
+.app-shell[data-layout-mode="compact"] .time-rate-button,
+.app-shell[data-layout-mode="handset"] .time-rate-button {
+  width: 30px;
+  min-width: 30px;
+  grid-template-columns: 1fr;
+}
+
+.app-shell[data-layout-mode="compact"] .time-rate-value,
+.app-shell[data-layout-mode="handset"] .time-rate-value {
+  display: none;
+}
+
+.app-shell[data-layout-mode="compact"] .time-rate-disclosure,
+.app-shell[data-layout-mode="handset"] .time-rate-disclosure {
+  border-left: 0;
+}
+
+.app-shell[data-layout-mode="compact"] .time-of-day,
+.app-shell[data-layout-mode="compact"] .environment-conditions,
+.app-shell[data-layout-mode="handset"] .time-of-day,
+.app-shell[data-layout-mode="handset"] .environment-conditions {
+  width: 30px;
+  min-width: 30px;
+  padding: 0;
+  justify-content: center;
+}
+
+.app-shell[data-layout-mode="compact"] .celestial-indicator,
+.app-shell[data-layout-mode="handset"] .celestial-indicator {
+  border-right: 0;
+}
+
+.app-shell[data-layout-mode="compact"] .day-period-label,
+.app-shell[data-layout-mode="compact"] .condition-season,
+.app-shell[data-layout-mode="compact"] .condition-temperature,
+.app-shell[data-layout-mode="compact"] .condition-weather,
+.app-shell[data-layout-mode="compact"] .condition-separator,
+.app-shell[data-layout-mode="handset"] .day-period-label,
+.app-shell[data-layout-mode="handset"] .condition-season,
+.app-shell[data-layout-mode="handset"] .condition-temperature,
+.app-shell[data-layout-mode="handset"] .condition-weather,
+.app-shell[data-layout-mode="handset"] .condition-separator {
+  display: none;
+}
+
 .app-shell[data-layout-mode="handset"] .menu-button,
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
 .app-shell[data-layout-mode="handset"] .scenario-info-button,
@@ -2533,9 +2608,7 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .signal-menu-button,
-.app-shell[data-layout-mode="handset"] .zoom-level-button,
-.app-shell[data-layout-mode="handset"] .time-of-day,
-.app-shell[data-layout-mode="handset"] .environment-conditions {
+.app-shell[data-layout-mode="handset"] .zoom-level-disclosure {
   display: none;
 }
 
@@ -2545,11 +2618,28 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .time-rate-button {
-  min-width: 76px;
+  width: 44px;
+  min-width: 44px;
+}
+
+.app-shell[data-layout-mode="handset"] .time-rate-disclosure {
+  height: 42px;
 }
 
 .app-shell[data-layout-mode="handset"] .time-context {
   margin-left: 0;
+}
+
+.app-shell[data-layout-mode="handset"] .simulation-time {
+  font-size: 10px;
+}
+
+.app-shell[data-layout-mode="handset"] .time-of-day,
+.app-shell[data-layout-mode="handset"] .environment-conditions {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
 }
 
 .app-shell[data-layout-mode="handset"] .roster,
@@ -2605,9 +2695,10 @@ input[type="search"]::placeholder {
   display: none;
 }
 
+.app-shell[data-layout-mode="compact"] .layer-switcher,
 .app-shell[data-layout-mode="handset"] .layer-switcher {
-  top: max(10px, var(--safe-area-top));
-  right: max(10px, var(--safe-area-right));
+  bottom: calc(var(--canvas-corner-inset) + var(--narrow-panel-lift));
+  left: max(12px, var(--safe-area-left));
 }
 
 .app-shell[data-layout-mode="handset"] .layer-switcher:not(.expanded) .layer-button:not(.selected) {
@@ -2619,13 +2710,34 @@ input[type="search"]::placeholder {
   min-height: 44px;
 }
 
+.app-shell[data-layout-mode="compact"] .world-scale,
 .app-shell[data-layout-mode="handset"] .world-scale {
   right: max(12px, var(--safe-area-right));
-  bottom: max(12px, var(--safe-area-bottom));
+  bottom: calc(var(--canvas-corner-inset) + var(--narrow-panel-lift));
 }
 
-.app-shell[data-layout-mode="handset"]:not([data-narrow-panel="none"]) .world-scale {
-  bottom: calc(var(--narrow-panel-height) + 12px);
+.app-shell[data-layout-mode="compact"] .zoom-level-button,
+.app-shell[data-layout-mode="handset"] .zoom-level-button {
+  position: absolute;
+  z-index: 7;
+  right: max(12px, var(--safe-area-right));
+  bottom: calc(
+    var(--status-bar-height) +
+    var(--canvas-corner-inset) +
+    var(--narrow-panel-lift) +
+    28px
+  );
+  box-shadow: 0 4px 16px rgb(0 0 0 / 28%);
+}
+
+.app-shell[data-layout-mode="handset"] .zoom-level-button {
+  min-height: 44px;
+  grid-template-columns: 1fr;
+}
+
+.app-shell[data-layout-mode="handset"] .zoom-level-value {
+  height: 42px;
+  justify-content: center;
 }
 
 .app-shell[data-layout-mode="handset"] .scenario-menu-item,

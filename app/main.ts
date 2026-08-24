@@ -1449,6 +1449,7 @@ function createWorkbench(): HTMLElement {
   time.dataset.testid = 'simulation-time';
   time.setAttribute('aria-pressed', 'false');
   timeOfDay.dataset.testid = 'time-of-day';
+  timeOfDay.setAttribute('role', 'img');
   timeOfDay.append(celestialIndicator, dayPeriodLabel);
   timeContext.append(time, timeOfDay);
   conditionSeparatorOne.textContent = '/';
@@ -1457,6 +1458,7 @@ function createWorkbench(): HTMLElement {
   conditionSeparatorTwo.setAttribute('aria-hidden', 'true');
   weatherGraphic.setAttribute('aria-hidden', 'true');
   environmentConditions.dataset.testid = 'environment-conditions';
+  environmentConditions.setAttribute('role', 'img');
   environmentConditions.append(
     weatherGraphic,
     conditionSeason,
@@ -1466,6 +1468,7 @@ function createWorkbench(): HTMLElement {
     conditionWeather,
   );
   transport.append(resetScenario, play, step, timeRateButton, timeContext, environmentConditions);
+  transport.dataset.testid = 'transport-palette';
 
   zoomLevelButton.dataset.testid = 'zoom-level-button';
   zoomLevelButton.setAttribute('aria-controls', 'zoom-menu');
@@ -2105,7 +2108,13 @@ function createWorkbench(): HTMLElement {
       const bounds = zoomLevelButton.getBoundingClientRect();
       const menuWidth = 202;
       zoomMenu.style.left = `${Math.max(8, Math.min(window.innerWidth - menuWidth - 8, bounds.right - menuWidth))}px`;
-      zoomMenu.style.top = `${bounds.bottom + 6}px`;
+      if (layoutMode() === 'wide') {
+        zoomMenu.style.top = `${bounds.bottom + 6}px`;
+        zoomMenu.style.bottom = 'auto';
+      } else {
+        zoomMenu.style.top = 'auto';
+        zoomMenu.style.bottom = `${Math.max(8, window.innerHeight - bounds.top + 6)}px`;
+      }
       appMenu.hidden = true;
       menuButton.setAttribute('aria-expanded', 'false');
       setScenarioMenuOpen(false);
@@ -2501,6 +2510,7 @@ function createWorkbench(): HTMLElement {
     time.setAttribute('aria-pressed', String(showingTick));
     celestialIndicator.dataset.dayPeriod = dayPeriod;
     dayPeriodLabel.textContent = dayPeriodName;
+    timeOfDay.title = `Time of day: ${dayPeriodName}`;
     timeOfDay.setAttribute('aria-label', `Time of day: ${dayPeriodName}`);
     conditionSeason.textContent = seasonName;
     conditionTemperature.textContent = temperature;
@@ -3215,7 +3225,10 @@ function createWorkbench(): HTMLElement {
   window.addEventListener('resize', onWindowResize);
   window.addEventListener('keydown', onKeyDown);
   const shellResizeObserver = new ResizeObserver(entries => {
-    const width = entries[0]?.contentRect.width ?? shell.clientWidth;
+    const bounds = entries[0]?.contentRect;
+    const width = bounds?.width ?? shell.clientWidth;
+    const height = bounds?.height ?? shell.clientHeight;
+    shell.style.setProperty('--shell-height', `${height}px`);
     setLayoutMode(workbenchLayoutMode(width));
   });
   shellResizeObserver.observe(shell);
