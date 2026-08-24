@@ -74,6 +74,7 @@ The dependency stack is intentionally small:
 - `src/scenario/` — resource and scenario parsing, preparation, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
 - `src/generation/` — seeded character, cohort, environment, and incident generation adapters
+- `src/authoring/` — host-neutral authoring document graph with transactional undo and redo
 - `src/integration/` — cadence sessions, observation projections, and exchange settlement
 - `content/` — authored character profiles, environment layouts, norms, social contracts, and scenarios addressed semantically, with a generated immutable catalog
 - `app/` — the browser workbench

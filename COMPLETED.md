@@ -652,6 +652,27 @@ Scenario, snapshot, and resource schema versions are unchanged; only shipped doc
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 269 deterministic tests.
 
+## Phase 8A — authoring document graph and transactions
+
+Status: complete.
+
+Add a host-neutral in-memory authoring graph keyed by scenario identity or semantic resource address.
+Each document records its loaded baseline, mutable draft value, dirty state, source provenance, incoming and outgoing semantic references, and current diagnostics without treating its source path as identity.
+Represent edits as atomic transactions that can span multiple documents and restore byte-equivalent draft values, reference indexes, diagnostics, and dirty state through undo and redo.
+
+Gate: one separate-document project survives provenance-only relocation without changing editor identity or semantic references, while a multi-document reference edit and an environment-geometry edit round-trip byte-equivalently through undo and redo.
+
+`src/authoring/graph.ts` derives every document identity from its value - a resource address key or `scenario:<id>` - and rejects two documents sharing one identity with both sources named.
+Outgoing references are indexed from the scenario environment, character profiles, norm perspectives, norm-typed observation events, social-contract placements, and social-contract norm lists; incoming references are the inverse index.
+Diagnostics compose the ordinary parsers, which now expose the failing authored path structurally on `ScenarioValidationError`, plus unresolved-reference and draft-identity-drift diagnostics; a draft that changes its own address is flagged rather than silently re-keyed, so renaming stays a separate operation.
+Transactions clone every draft on entry, refuse to edit one document twice, recompute dirty state against the baseline by canonical comparison, and record before and after drafts so undo and redo restore documents byte-for-byte.
+
+The discriminating fixture is the separate-document Pottsfield project: every built-in resource plus the Pottsfield scenario loaded through the graph.
+`test/authoring-graph.test.ts` proves provenance relocation leaves every non-provenance field identical, a transaction that repoints the harvest-customs contract at market courtesy while relabeling that norm updates both reference indexes and round-trips byte-equivalently, an environment-geometry edit round-trips the same way, and validation, unresolved-reference, and identity-drift diagnostics report authored paths.
+No scenario, snapshot, or resource schema changes are introduced; the graph imports no host APIs.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 275 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

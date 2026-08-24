@@ -18,29 +18,27 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8A: authoring document graph and transactions.
-Establish the host-neutral in-memory document, identity, provenance, reference, dirty-state, and transactional edit boundary before adding Build workspace presentation.
+The active slice is Phase 8B: authoritative preparation and revision isolation.
+Keep the existing preparation path the sole authority for a runnable revision, harden validation and locks, and isolate a prepared revision from later draft edits.
 
 ### Current-focus non-goals
 
 - no changes to completed Phase 5, Phase 6, or Phase 7 algorithms
 - no behavior-model or evaluator-fidelity expansion
 - no draft mutation of a running simulation or its reset baseline
-- no package manager or remote dependency resolver
 - no filesystem, browser storage, database, or network dependency inside the engine
-- no Build workspace shell, specialized editor, store adapter, or pack writer until the document graph contract is green
+- no Build workspace shell, specialized editor, store adapter, or pack writer in this slice
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 8A — authoring document graph and transactions
-2. Phase 8B — authoritative preparation and revision isolation
-3. Phase 10A — ensemble runner and falsifier harness
-4. Phase 9A — authoritative seconds and schema migration
-5. Phases 8C through 8F — application shell, editors, store adapters, and packing
-6. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
-7. Phase 10B — remaining acceptance vignettes
+1. Phase 8B — authoritative preparation and revision isolation
+2. Phase 10A — ensemble runner and falsifier harness
+3. Phase 9A — authoritative seconds and schema migration
+4. Phases 8C through 8F — application shell, editors, store adapters, and packing
+5. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+6. Phase 10B — remaining acceptance vignettes
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -71,15 +69,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A and 8B are host-neutral and come first; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
-
-#### Phase 8A — authoring document graph and transactions
-
-Add a host-neutral in-memory authoring graph keyed by scenario identity or semantic resource address.
-Each document records its loaded baseline, mutable draft value, dirty state, source provenance, incoming and outgoing semantic references, and current diagnostics without treating its source path as identity.
-Represent edits as atomic transactions that can span multiple documents and restore byte-equivalent draft values, reference indexes, diagnostics, and dirty state through undo and redo.
-
-Gate: one separate-document project survives provenance-only relocation without changing editor identity or semantic references, while a multi-document reference edit and an environment-geometry edit round-trip byte-equivalently through undo and redo.
+Phase 8A is recorded in COMPLETED.md; Phase 8B is host-neutral and comes first; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
 
 #### Phase 8B — authoritative preparation and revision isolation
 

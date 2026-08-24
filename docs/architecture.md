@@ -42,6 +42,9 @@ If sampling is used for cohort or incident generation, its seed, sampler positio
 `src/integration` owns host-facing cadence sessions, text and embodied observation projections, and bounded low-stakes exchange settlement.
 It composes the public scenario, snapshot, and simulation boundaries without importing browser, filesystem, network, or presentation framework APIs.
 
+`src/authoring` owns the host-neutral in-memory authoring graph: documents keyed by semantic identity rather than source path, each carrying its loaded baseline, current draft, dirty state, provenance, incoming and outgoing semantic references, and diagnostics, with atomic multi-document transactions and byte-equivalent undo and redo.
+It composes the ordinary parsers for diagnostics and imports no filesystem, browser storage, network, or presentation APIs; persistence and file access stay behind a later authoring-store port.
+
 `app` owns Solid signals, ordinary DOM construction, Canvas rendering, pointer gestures, file access, and downloads.
 It may display or edit simulation state but may not invent behavioral state.
 The workbench bundles the repository's authored scenarios into a title-bar catalog and presents their existing scenario summaries as hover and dialog information.

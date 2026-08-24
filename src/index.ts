@@ -3,6 +3,24 @@
 /* global __APP_VERSION__, __COMMIT_SHA__ */
 
 export {
+  applyTransaction,
+  createAuthoringGraph,
+  documentById,
+  documentIdentity,
+  redoTransaction,
+  relocateDocument,
+  scenarioDocumentId,
+  undoTransaction,
+  type AuthoringDiagnostic,
+  type AuthoringDocument,
+  type AuthoringDocumentKind,
+  type AuthoringEdit,
+  type AuthoringGraph,
+  type AuthoringHistoryEntry,
+  type AuthoringProvenance,
+  type AuthoringTransaction,
+} from './authoring/graph.js';
+export {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
   INCIDENT_ROOT_IMPACTS,
