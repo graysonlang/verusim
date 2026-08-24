@@ -72,16 +72,19 @@ A main-menu action shows or hides the status bar, persists that presentation cho
 The roster and inspector retain independent device-local visibility and expanded-width preferences; they are workbench presentation state and never enter scenarios, snapshots, or simulation transitions.
 Their adjacent separators remain available while closed, clamp dragging from a 180-pixel minimum through 25 percent of the viewport, and snap widths below an 80-pixel detent closed so the same gesture can close or reopen a panel.
 Double-clicking a custom-width separator restores its default, double-clicking at the default closes it, and double-clicking while closed opens it at the default.
-A roster visibility control sits directly after the main-menu control, while the inspector visibility control is the rightmost header action after canvas zoom.
+A roster visibility control sits directly after the main-menu control, while the inspector visibility control remains the rightmost header action.
+The signal verbosity and visibility selector lives in the character-roster title row so field-projection controls remain with the roster they summarize.
 The shell derives a `wide`, `compact`, or `handset` presentation from its own inline size rather than user-agent or device detection.
 Wide presentation begins at 1080 CSS pixels and retains the persisted resizable sidebars; compact presentation begins at 700 CSS pixels and projects one roster or inspector edge drawer over a full-width Canvas; handset presentation uses the same mutually exclusive auxiliary-panel state as a bottom sheet.
 Narrow panel identity and sheet extent are ephemeral presentation state.
 They never rewrite the stored wide sidebar visibility or width, and crossing a responsive boundary does not alter selection, camera, active environment projection, simulation state, or snapshot content.
 On handset widths, scenario identity and the essential transport remain visible in a two-row safe-area-aware header, the layer stack contracts to the active projection until explicitly opened, and roster selection reduces the sheet to a Canvas-revealing peek.
-Compact presentation removes transport and day context from the width-constrained header and projects them as one floating palette at the Canvas top.
-Its time-rate disclosure, derived day period, and authored weather retain complete accessible names while presenting only their compact glyphs; handset presentation uses the same compact glyphs within its transport row.
+Compact presentation keeps transport and day context in its sparse header.
+Its time-rate disclosure is icon-only, while derived day period and authored weather use full-bleed art and retain complete accessible names; handset presentation uses the same compact status art within its transport row.
+Handset controls preserve 44-pixel hit targets while visually reducing their chrome, and the day information retains the ordinary workbench type size.
 The environment layer selector anchors to the Canvas lower-left in every mode.
-Compact and handset zoom anchors immediately above the map scale at the Canvas lower-right, and both narrow corner groups rise above an active handset sheet without changing camera or projection state.
+Compact and handset zoom anchors to the Canvas upper-right while the map scale remains lower-right and the layer and scale groups rise above an active handset sheet without changing camera or projection state.
+Handset zoom keeps the same hit target as other controls while presenting borderless value text.
 Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
 A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
 Clock format and display units do not belong to scenario content.
