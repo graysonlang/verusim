@@ -2485,6 +2485,8 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] {
   --header-height: calc(100px + var(--safe-area-top));
+  --handset-control-size: 36px;
+  --handset-hit-size: 44px;
 }
 
 .app-shell[data-layout-mode="handset"]:not([data-narrow-panel="none"]) {
@@ -2630,10 +2632,12 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
 .app-shell[data-layout-mode="handset"] .scenario-info-button,
 .app-shell[data-layout-mode="handset"] .transport-button {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: var(--handset-hit-size);
+  min-width: var(--handset-hit-size);
+  height: var(--handset-hit-size);
+  min-height: var(--handset-hit-size);
+  border: 4px solid transparent;
+  background-clip: padding-box;
 }
 
 .app-shell[data-layout-mode="handset"] .scenario-selector {
@@ -2645,7 +2649,7 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .scenario-menu-button {
   width: 100%;
   max-width: none;
-  min-height: 40px;
+  min-height: var(--handset-hit-size);
 }
 
 .app-shell[data-layout-mode="handset"] .zoom-level-disclosure {
@@ -2654,16 +2658,18 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .time-rate-button,
 .app-shell[data-layout-mode="handset"] .simulation-time {
-  min-height: 40px;
+  min-height: var(--handset-hit-size);
 }
 
 .app-shell[data-layout-mode="handset"] .time-rate-button {
-  width: 40px;
-  min-width: 40px;
+  width: var(--handset-hit-size);
+  min-width: var(--handset-hit-size);
+  border: 4px solid transparent;
+  background-clip: padding-box;
 }
 
 .app-shell[data-layout-mode="handset"] .time-rate-disclosure {
-  height: 38px;
+  height: var(--handset-control-size);
 }
 
 .app-shell[data-layout-mode="handset"] .time-context {
@@ -2672,18 +2678,18 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .time-of-day,
 .app-shell[data-layout-mode="handset"] .environment-conditions {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: var(--handset-hit-size);
+  min-width: var(--handset-hit-size);
+  height: var(--handset-hit-size);
+  min-height: var(--handset-hit-size);
 }
 
 .app-shell[data-layout-mode="handset"] .celestial-indicator {
-  transform: scale(1.538);
+  transform: scale(1.385);
 }
 
 .app-shell[data-layout-mode="handset"] .weather-graphic {
-  transform: scale(2.222);
+  transform: scale(2);
 }
 
 .app-shell[data-layout-mode="handset"] .roster,
@@ -2725,10 +2731,10 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .narrow-sheet-toggle {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: var(--handset-hit-size);
+  min-width: var(--handset-hit-size);
+  height: var(--handset-hit-size);
+  min-height: var(--handset-hit-size);
 }
 
 .app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .panel-header {
@@ -2758,9 +2764,11 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .layer-button {
   min-width: 116px;
-  height: 40px;
-  min-height: 40px;
-  padding: 3px 10px;
+  height: var(--handset-hit-size);
+  min-height: var(--handset-hit-size);
+  padding: 0 10px;
+  border: 4px solid transparent;
+  background-clip: padding-box;
 }
 
 .app-shell[data-layout-mode="compact"] .world-scale,
@@ -2780,7 +2788,7 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .zoom-level-button {
-  min-height: 40px;
+  min-height: var(--handset-hit-size);
   grid-template-columns: 1fr;
   border-color: transparent;
   background: transparent;
@@ -2788,7 +2796,7 @@ input[type="search"]::placeholder {
 }
 
 .app-shell[data-layout-mode="handset"] .zoom-level-value {
-  height: 38px;
+  height: var(--handset-control-size);
   justify-content: center;
 }
 
@@ -2798,7 +2806,7 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .signal-menu-item,
 .app-shell[data-layout-mode="handset"] .time-rate-menu-item,
 .app-shell[data-layout-mode="handset"] .zoom-menu-item {
-  min-height: 40px;
+  min-height: var(--handset-hit-size);
 }
 
 .app-shell[data-layout-mode="compact"] .scenario-menu,
