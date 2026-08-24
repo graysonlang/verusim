@@ -625,6 +625,11 @@ Each witness computes their own `Δcharge` from their own norm weights and their
 - **Keep the positive tail** — windfalls, lucky finds, unearned kindness. The model already handles these correctly: per §6.2 a windfall does not reduce `variance`, so the lucky event feels good and does not fix a scarcity-shaped agent.
 - Incident sampling is scoped to the player's observation shell, but eligibility is derived from proximity-independent agent state; see §20.4.
 
+The Phase 6 sampler uses an authored per-opportunity base rate rather than a world-global clock.
+Subject weight rises continuously with resource depletion and allostatic load, while a cubed uniform magnitude draw supplies many small incidents and a sparse significant tail.
+The authored root-impact pool retains positive outcomes rather than deriving every incident from depletion.
+The realized seed, sampler interval, eligibility weights, selected subject and template, and magnitude become serializable event input before evaluation; runtime randomness never selects or resolves an incident.
+
 ### 12.6 Displays
 
 A **display** is a visible, attributable presentation change carrying a status claim — new clothing, jewelry, a tool, a scar. Same stimulus, opposite valence, computed entirely from observer parameters. One of the cleanest small tests of the architecture.
@@ -1103,10 +1108,10 @@ Use as **bounds checks, not fit targets**. They tell you the shape of the distri
 | 7 | **Self-harm / suicide** in scope? | Structurally reachable — self-harm is a regulate/discharge outlet; suicide needs thwarted belonging + perceived burdensomeness (both computable) + acquired capability. If included, the design requirement is that accumulation be **visible in advance**; a threshold surprise reads as arbitrary and, in this subject matter, badly. |
 | 8 | **Observability surface** — text IF vs embodied world | Determines how much depth is worth simulating. Text gives interiority free (narrate the flinch, the pause, the unsaid thing). Embodied gives posture, proximity, pathing, choice of action, who they stand near — no narration channel. Unresolved; the model doesn't change either way, only how much of it pays off. |
 | 9 | ~~**NPC-to-NPC fidelity**~~ | **Partially resolved — §20.6.** No reduced-fidelity evaluator exists (LOD is cadence). ORBIT complementarity remains available as a cadence-independent shortcut for low-stakes exchange. Open: where the low-stakes threshold sits. |
-| 10 | **Incident base rate and magnitude distribution** (§12.5) | Too low and the world is inert; too high and agents read as slapstick and nothing accumulates. Likely wants a long tail — many trivial, few significant — with the depletion coupling providing the clustering rather than the base rate. Now also scoped by the observation shell (§20.4), so the rate is per-shell, not per-world. |
-| 11 | **Which values are positional** (§6.5) | Respect is required. Safety and competence are optional and context-dependent. Belonging and autonomy should stay absolute. Also: reference group size cap and update tick rate — see §20.5. |
+| 10 | ~~**Incident base rate and magnitude distribution** (§12.5)~~ | **Resolved — §12.5.** Authored per-opportunity rate, depletion-weighted subjects, and a cubed magnitude draw produce a sparse long tail without a world-global incident clock. |
+| 11 | ~~**Which values are positional** (§6.5)~~ | **Resolved — §20.5.** Phase 6 makes respect positional, caps exact rivals at five, and propagates only net changes of at least `0.02`. Safety, competence, belonging, and autonomy remain absolute. |
 | 12 | ~~**Do incidents respect narrative?**~~ | **Resolved — §20.4. Yes.** Once the generator is a proximity sampler it already reads agent state, so reading narrative claims is the same lookup. Agents with a load-bearing contradicting claim become *preferred* subjects. |
-| 13 | **Observation shell radius and shape** (§20.4) | Too tight and incidents only fire in the player's face, which reads as staged. Too loose and it costs what off-screen generation would have. Probably wants to be audible/visible range rather than a fixed radius. |
+| 13 | ~~**Observation shell radius and shape** (§20.4)~~ | **Resolved — §20.4.** The shell is the union of current sight and hearing availability through ordinary spatial perception, not a fixed radius. |
 | 14 | **Unavailability rate** (§20.1) | How often should an NPC be preoccupied, mid-task, or uninterested? High enough to signal independent business, low enough not to obstruct play. The one parameter most at risk of being tuned to zero during playtesting. |
 
 ---
@@ -1194,6 +1199,10 @@ Incidents (§12.5) exist to be *observed*. Generating them off-screen is pure wa
 
 **Generator:** seed incidents within the player's observation shell, weighted by the state of the agents actually present.
 
+The observation shell is the union of agents currently available through the ordinary sight and hearing assessments from the reference observer.
+It has no separate fixed radius and inherits authored occlusion, acuity, fatigue, and environmental cover.
+This boundary selects candidates for sampling only; incident appraisal still uses the event's explicit observer set and ordinary perception.
+
 This stays honest because the **predisposition is real and proximity-independent**. The innkeeper is generated as depleted regardless of where the player is; the incident fires because he is near his limit, not because the player arrived. *Proximity gates the sampling, never the state.*
 
 > **Honesty test:** an incident must never fire on an agent whose state would not support it. Proximity determines whether we bother rolling — never whether the agent is the kind of person this happens to.
@@ -1258,6 +1267,10 @@ An explicit per-agent capability, because the cost difference is large.
 **Both use the identical evaluator.** Invokers have `narrative` populated; responders have it empty. Per Appendix A, §A.2.2, an agent with no self-story is a well-defined configuration, not a degenerate one — the extras are that configuration.
 
 **Promotion requires no rewrite.** If a background agent becomes story-relevant, populate the narrative field; they begin generating goals. Same agent, same accumulated history, now with an agenda.
+
+Phase 6 makes only respect positional.
+Each agent retains five exact reference entries, treats the remainder as ambient standing, and propagates only a net respect change whose magnitude reaches `0.02`.
+Safety and competence remain absolute until a discriminating context proves they need positional semantics; belonging and autonomy remain absolute by design.
 
 ### 21.4 Agenda and bounded causal planning
 
@@ -1464,11 +1477,11 @@ Persistent low-grade pain or illness should feed the **§6.1 deficit integral**,
 | Collapse as stimulus | rescue, freeze, flight, bystander non-response, competence-satisfier helpers | vary witness count → response probability falls as crowd grows, with no observer parameter changing |
 | Chronic malaise | apparent personality change, withdrawal, concealment from high-`E` others | long-duration low magnitude → deficit integral rises; baseline parameters unchanged |
 
-### 22.7 Open decisions
+### 22.7 Phase 6 decisions
 
 Decision 15 is resolved by §21.4: ordinary discomfort remedies compete as goals, while sufficiently urgent physical states preempt the agenda through the existing preempt ladder.
 
 | # | Decision | Notes |
 |---|---|---|
-| 16 | Is level 2 impairment **visible** to observers by default? | Affects whether the player can read injury without inspection, and whether NPCs offer help unprompted. |
-| 17 | Should discomfort sources be simulated per-agent or sampled from environment + activity? | Per-agent is exact and costs a ledger per NPC; sampling is nearly free and consistent with §20.4 proximity seeding. |
+| 16 | ~~Is level 2 impairment **visible** to observers by default?~~ | **Resolved.** Level 2 supplies a graded visible presentation to ordinary perception, but observers infer severity through their own evidence calibration rather than receiving the authoritative level. |
+| 17 | ~~Should discomfort sources be simulated per-agent or sampled from environment + activity?~~ | **Resolved.** Store an exact per-agent source ledger derived from authored environment, activity, and event inputs. Proximity may gate presentation and incident sampling, never whether discomfort exists. |

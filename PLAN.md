@@ -18,8 +18,8 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 6: world stimuli, social interpretation, and somatic state.
-Resolve the incident-sampling and somatic open decisions before fixing their storage contracts, then introduce objective incident facts and observer-side interpretation through the existing appraisal, social-contract, and causal-trace boundaries.
+The active slice is Phase 6A: objective incidents and social interpretation.
+Introduce seeded impact-signature incidents after the settled observation-shell decision, then replace the bounded common-turn norm fixture with active-contract interpretation, distinct affiliation and internalization, simultaneous conflicting conventional terms, identity stakes, and enforcement context.
 
 ### Current-focus non-goals
 
@@ -100,5 +100,5 @@ Exit probes:
 
 ## Decisions that can wait
 
-Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, incident rate and observation-shell shape, optional positional values, task-specific physical capability checks beyond the existing build contributions, the low-stakes ORBIT threshold, and the remaining somatic open decisions should stay documented but unimplemented until their prerequisite phase.
+Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, task-specific physical capability checks beyond the existing build contributions, and the low-stakes ORBIT threshold should stay documented but unimplemented until their prerequisite phase.
 Premature fields would look authoritative while carrying no tested consequence.
