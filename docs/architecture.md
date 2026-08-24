@@ -74,6 +74,7 @@ Their adjacent separators remain available while closed, clamp dragging from a 1
 Double-clicking a custom-width separator restores its default, double-clicking at the default closes it, and double-clicking while closed opens it at the default.
 A roster visibility control sits directly after the main-menu control, while the inspector visibility control remains the rightmost header action.
 The signal verbosity and visibility selector lives in the character-roster title row so field-projection controls remain with the roster they summarize.
+The roster's filtered count belongs to its `Characters (n)` heading rather than a detached title-row token, and the Activity inspector uses the same compact uppercase heading typography.
 The shell derives a `wide`, `compact`, or `handset` presentation from its own inline size rather than user-agent or device detection.
 Wide presentation begins at 1080 CSS pixels and retains the persisted resizable sidebars; compact presentation begins at 700 CSS pixels and projects one roster or inspector edge drawer over a full-width Canvas; handset presentation uses the same mutually exclusive auxiliary-panel state as a bottom sheet.
 Narrow panel identity and sheet extent are ephemeral presentation state.
