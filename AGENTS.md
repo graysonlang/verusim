@@ -104,6 +104,16 @@ Do not run `npm run dev` or `npm run serve` for routine validation unless the us
 
 `npm run build` is the right check that something compiles.
 
+### Browser validation
+
+For browser-visible changes, try the `browser-use` skill against the owner's existing in-app browser session first. If that path is unavailable after completing the skill's required tool discovery, use the configured Playwright MCP server as the preferred fallback.
+
+Preserve the server rules above: do not start `npm run dev` or `npm run serve` merely for browser verification. Reuse the owner's current app when the browser can reach it. When the user expressly authorizes an isolated preview, use `node scripts/build.mjs --serve --port=<unused-explicit-port> --sourcemap`, navigate to the exact emitted URL, and stop the preview afterward.
+
+Start ordinary control inspection from a structured DOM or accessibility snapshot and prefer semantic roles, names, labels, or test IDs. Use screenshots for visual layout and Canvas results, not as the primary way to locate ordinary DOM controls. Canvas verification should combine application or DOM state, browser runtime evidence, and rendered pixels where each applies.
+
+After load and interaction, inspect unexpected console errors and relevant failed network requests, including HTTP, WASM, worker, and asset failures. Wait for observable state rather than fixed sleeps. Report the exercised flow, assertions, console and network results, and visual checks; if browser validation was unavailable, say so explicitly.
+
 ### Where not to look
 
 When searching for source, skip generated and dependency directories — `www/`, `dist/`, `dist-tests/`, `node_modules/` — unless the user expressly asks you to inspect them. Hits there are stale copies of real source and will send you down the wrong path.
