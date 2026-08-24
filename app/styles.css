@@ -2485,6 +2485,7 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] {
   --header-height: calc(100px + var(--safe-area-top));
+  --handset-control-inset: 4px;
   --handset-control-size: 36px;
   --handset-hit-size: 44px;
 }
@@ -2636,8 +2637,84 @@ input[type="search"]::placeholder {
   min-width: var(--handset-hit-size);
   height: var(--handset-hit-size);
   min-height: var(--handset-hit-size);
-  border: 4px solid transparent;
-  background-clip: padding-box;
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button,
+.app-shell[data-layout-mode="handset"] .scenario-info-button,
+.app-shell[data-layout-mode="handset"] .transport-button,
+.app-shell[data-layout-mode="handset"] .time-rate-button {
+  position: relative;
+  border: 0;
+  background: transparent;
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button::before,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button::before,
+.app-shell[data-layout-mode="handset"] .transport-button::before,
+.app-shell[data-layout-mode="handset"] .time-rate-button::before {
+  position: absolute;
+  z-index: 0;
+  inset: var(--handset-control-inset);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-raised);
+  content: "";
+  pointer-events: none;
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button > *,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button > *,
+.app-shell[data-layout-mode="handset"] .transport-button > *,
+.app-shell[data-layout-mode="handset"] .time-rate-button > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button:focus-visible,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button:focus-visible,
+.app-shell[data-layout-mode="handset"] .transport-button:focus-visible,
+.app-shell[data-layout-mode="handset"] .time-rate-button:focus-visible {
+  outline: 0;
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button:focus-visible::before,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button:focus-visible::before,
+.app-shell[data-layout-mode="handset"] .transport-button:focus-visible::before,
+.app-shell[data-layout-mode="handset"] .time-rate-button:focus-visible::before {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-shell[data-layout-mode="handset"] .menu-button:hover::before,
+.app-shell[data-layout-mode="handset"] .transport-button:hover::before,
+.app-shell[data-layout-mode="handset"] .time-rate-button:hover::before {
+  border-color: var(--line-strong);
+  background: var(--panel-hover);
+}
+
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button::before {
+  border-color: transparent;
+  background: transparent;
+}
+
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button:hover::before,
+.app-shell[data-layout-mode="handset"] .sidebar-toggle-button.active::before {
+  border-color: var(--line);
+  background: rgb(255 255 255 / 4%);
+}
+
+.app-shell[data-layout-mode="handset"] .transport-button.primary::before {
+  border-color: var(--accent-deep);
+  background: var(--accent);
+}
+
+.app-shell[data-layout-mode="handset"] .transport-button.primary:hover::before {
+  background: #f5d67f;
+}
+
+.app-shell[data-layout-mode="handset"] .time-rate-button::before {
+  background: var(--panel-deep);
 }
 
 .app-shell[data-layout-mode="handset"] .scenario-selector {
@@ -2664,8 +2741,6 @@ input[type="search"]::placeholder {
 .app-shell[data-layout-mode="handset"] .time-rate-button {
   width: var(--handset-hit-size);
   min-width: var(--handset-hit-size);
-  border: 4px solid transparent;
-  background-clip: padding-box;
 }
 
 .app-shell[data-layout-mode="handset"] .time-rate-disclosure {
@@ -2764,11 +2839,7 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .layer-button {
   min-width: 116px;
-  height: var(--handset-hit-size);
   min-height: var(--handset-hit-size);
-  padding: 0 10px;
-  border: 4px solid transparent;
-  background-clip: padding-box;
 }
 
 .app-shell[data-layout-mode="compact"] .world-scale,
