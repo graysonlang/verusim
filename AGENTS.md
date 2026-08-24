@@ -104,6 +104,18 @@ Do not run `npm run dev` or `npm run serve` for routine validation unless the us
 
 `npm run build` is the right check that something compiles.
 
+### Playwright tool availability
+
+Do not infer whether Playwright MCP is available from memory, prior messages, the presence or absence of an in-app browser bridge, or other browser tools.
+
+When browser validation is required, attempt to invoke the Playwright MCP `browser_navigate` tool directly.
+
+If that invocation succeeds, continue browser validation with Playwright. Do not claim that Playwright MCP is unavailable merely because another browser mechanism, such as the in-app browser or Node REPL bridge, is unavailable.
+
+Only report Playwright MCP as unavailable if an attempted Playwright MCP tool invocation itself fails because the tool is absent or inaccessible.
+
+The in-app browser and Playwright MCP are independent browser-control paths. Failure of the in-app browser does not imply failure of Playwright MCP.
+
 ### Browser validation
 
 For browser-visible changes, try the `browser-use` skill against the owner's existing in-app browser session first. If that path is unavailable after completing the skill's required tool discovery, use the configured Playwright MCP server as the preferred fallback.
