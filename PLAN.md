@@ -18,15 +18,15 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 6A: objective incidents and social interpretation.
-Introduce seeded impact-signature incidents after the settled observation-shell decision, then replace the bounded common-turn norm fixture with active-contract interpretation, distinct affiliation and internalization, simultaneous conflicting conventional terms, identity stakes, and enforcement context.
+The active slice is Phase 6B: displays, observer-side habituation, and positional respect.
+Introduce objective status-display events over the shared perception boundary, derive admiration, envy, disdain, and indifference from observer state, and persist exact observer exposure plus the five-entry positional-respect boundary and `0.02` propagation deadband.
 
 ### Current-focus non-goals
 
-- no changes to completed Phase 5 generation or plasticity algorithms
-- no authored moral verdict or winning social contract
+- no changes to completed Phase 5 or Phase 6A generation and appraisal algorithms
+- no authored response, status verdict, or universal display valence
 - no reduced-fidelity evaluator path
-- no unresolved incident or somatic fields that appear authoritative
+- no Phase 6C discomfort, pain, urgency, incapacity, or preemption fields
 - no Phase 7 cadence or integration adapters
 - no package manager, remote dependency resolver, authoring UI, or pack writer
 
