@@ -5,6 +5,68 @@ Keep active and future work in [PLAN.md](PLAN.md), move a reopened phase back th
 Newly completed or reopened phase entries also summarize the evidence that closed the phase: discriminating scenarios or fixtures, regression coverage for exit probes, snapshot replay when persisted state changed, UI verification when presentation changed, and schema or migration boundaries when storage changed.
 Evidence categories that do not apply are omitted rather than recorded as placeholders.
 
+## Phase 0 — simulation substrate
+
+Status: complete.
+
+Establish versioned content files, reusable libraries, pure deterministic stepping, causal traces, state intervention, import/export, a pannable world view, roster navigation, inspection, and time transport.
+Implement the top-level action appraisal equation without guessing the deeper inputs.
+
+Exit probes:
+
+- load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace
+- moving-character pace is presented as distance per second in the selected-character workbench while authored and authoritative locomotion remain meters per simulation minute
+- the status bar defaults to hidden without reserving an empty grid row, can be shown or hidden from the application menu, and persists only as a device-local presentation preference
+- each sidebar can be resized from its adjacent divider, snaps closed below a detent and open at its minimum, preserves its last expanded width through the header visibility control, and persists presentation state locally
+- double-clicking a custom-width divider restores its default, double-clicking at the default closes it, and double-clicking while closed reopens it at the default
+- unmodified square brackets traverse a clamped lower-floor-to-Exterior projection sequence, while unmodified backslash selects Exterior directly
+- with menus and dialogs closed, Escape clears selection first, selects Exterior next, and fits an already exterior unselected canvas last
+- Shift+backslash hides both sidebars when either is visible and shows both when neither is visible, while shifted square brackets independently toggle their corresponding sidebar
+- selecting an interior character on the Canvas follows that character to the appropriate layer without changing camera position or zoom, while selecting a roster card preserves zoom and centers only when the character is outside the current viewport
+- selecting the Canvas background only clears selection, and Shift+2 remains the explicit command that centers and zooms to the selected character
+- hovering or keyboard-focusing a roster card transiently emphasizes its rendered Canvas marker without changing selection, projection, camera position, or zoom, and leaving the card clears that emphasis
+- shell widths at or above 1080 pixels retain the resizable desktop sidebars, widths from 700 through 1079 pixels use mutually exclusive edge drawers, and narrower widths use a mutually exclusive bottom sheet without horizontal page overflow
+- compact and handset panel state is ephemeral, never overwrites persisted wide-layout visibility or width, and resizing back to wide restores those preferences exactly without changing selection, camera, projection, or simulation state
+- handset presentation keeps scenario identity and essential transport visible in a two-row safe-area-aware header, collapses the layer stack to its active control until opened, and preserves 44-pixel hit targets while rendering primary square controls as centered 36-pixel elements
+- Escape closes an active narrow panel before entering the existing selection, Exterior, and fit sequence, while handset roster selection collapses the sheet to a Canvas-revealing peek state
+- compact presentation keeps transport and day context in the newly sparse header, using an icon-only rate disclosure and full-bleed day-period and weather art while leaving complete current values accessible
+- handset transport retains the normal day-information type size while rendering 36-pixel control chrome within 44-pixel hit targets
+- handset inner control surfaces retain the regular-mode one-pixel stroke, six-pixel corner radius, fill, and interaction states while only their surrounding hit area remains transparent
+- the handset level selector retains its regular grouped-control treatment within the same visual-size and hit-target split
+- the signal verbosity and visibility selector occupies the character-roster title row rather than the application header
+- the layer selector occupies the Canvas lower-left in every mode, while compact and handset zoom occupies the Canvas upper-right and handset zoom presents right-aligned borderless value text without reducing its hit target
+
+Movement-format regression coverage checks both metric and US display units without changing the meter source value.
+Preference regression coverage verifies defaults, field-level validation, legacy missing-field fallback, and the serialized device-local record.
+Sidebar-layout regression coverage checks the 80-pixel close detent, 180-pixel open detent, viewport clamp, retained-width visibility toggles, keyboard resizing, the three-state double-click cycle, and mixed-state paired visibility decay.
+Responsive-layout regression coverage checks width classification, mutually exclusive narrow-panel toggles, handset peek transitions, narrow Escape precedence, and preservation of desktop preferences as input-only state.
+Keyboard regression coverage checks physical punctuation codes, modifier exclusion, the Escape state machine, and clamped lowest-floor-to-Exterior traversal.
+World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit and covers visible and off-screen camera reveal decisions without coupling them to selection.
+Agent-marker regression coverage distinguishes ordinary, roster-hovered, dimmed-hovered, and selected appearances so transient emphasis cannot displace selection priority.
+Isolated browser verification confirmed a moving character's expanded badge, tooltip, and accessibility label use one consistent feet-per-second value while stationary characters omit a zero rate.
+Follow-up isolated browser verification confirmed a fresh profile reclaims the hidden footer row, the menu action shows and hides the bar, and a visible choice survives reload.
+Isolated Chromium verification confirmed both pointer resize directions, close and open detents, custom-width visibility restoration, reload persistence, the three-state double-click cycle, accessible separator state, and the requested header-control placement without console errors.
+Follow-up isolated Chromium verification confirmed the complete bracket and backslash projection sequence, all three Escape states, independent and paired sidebar shortcuts from mixed states, and the final visual layout without console errors.
+The character-framing Chromium pass selected a visible upstairs resident from the roster at the fitted 28% zoom, used Shift+2 to focus at 100%, centered a genuinely off-screen roster selection without changing that zoom, and repeated Canvas hits at the same panned point to prove that Canvas selection preserved camera position while following the correct layer.
+The pass completed without console errors; prior interaction verification covers Canvas-background deselection without a camera or projection change.
+The roster-hover Chromium pass hovered and keyboard-focused a nonselected upper-floor resident from Exterior at the fitted 28% zoom, confirmed that only the Canvas marker presentation changed, and observed pointer exit and blur restore the Canvas byte for byte without changing selection, projection, or zoom.
+The hover pass completed without console errors.
+An earlier responsive Chromium matrix covered wide, compact portrait and landscape, and 390×844 handset presentations without console errors or horizontal page overflow.
+It confirmed mutually exclusive drawers and sheets, safe-area-aware two-row transport, 44-pixel touch targets, collapsed layer disclosure, roster peek after selection, narrow Escape priority, ephemeral narrow state, restoration of wide preferences, and stable zoom and projection across responsive-only resizes.
+A follow-up responsive control-hierarchy Chromium pass covered 900- and 700-pixel compact widths plus 390×844 handset presentation.
+It confirmed header transport, icon-only rate disclosure, full-bleed day-period and weather art, ordinary day-information type size, tighter handset chrome inside 44-pixel hit targets, the roster-title signal selector, upper-right narrow zoom, borderless handset zoom, contained signal and zoom menus, and no console errors or horizontal overflow.
+An intermediate 390×844 handset Chromium pass measured the visible header, transport, rate, day-period, weather, zoom, layer, and roster-sheet controls at 40 pixels while retaining 12-pixel day information and full-bleed status art.
+It completed without console errors or horizontal overflow, and the layer and scale controls remained clear of the open roster sheet.
+A geometry-focused 390×844 handset Chromium pass independently measured 44-pixel interactive bounding boxes and centered 36-pixel padding-box or full-bleed art footprints across the header, transport, day-period, weather, layer, and zoom controls.
+The corrected pass retained 12-pixel day information, roster-sheet clearance, and freedom from console errors and horizontal overflow.
+The final regular-surface Chromium comparison matched handset menu and primary transport controls directly against regular-mode one-pixel strokes, six-pixel radii, fills, and state colors while preserving the 44-pixel hit and 36-pixel visual split.
+It also matched the handset level selector's padding, selected fill, parent stroke, radius, and background to regular mode without a second frame, console errors, or horizontal overflow.
+The final zoom-alignment Chromium pass preserved compact alignment at 900 pixels while placing the handset percentage against the right inset of its unchanged 44-pixel target at 390×844.
+The pass completed without console errors or horizontal overflow.
+The earlier geometry pass verified half-sheet clearance after resolving sheet height once against the observed shell rather than allowing percentage lengths to re-resolve against the shorter Canvas.
+The interaction pass also corrected scenario-menu focus restoration so a closed menu no longer consumes the next Escape press through its formerly focused hidden item.
+The unversioned device-local preference record accepts optional `showStatusBar`, `leftSidebarVisible`, `leftSidebarWidth`, `rightSidebarVisible`, and `rightSidebarWidth` fields; missing or malformed values migrate independently to presentation defaults, while scenario and snapshot schemas remain unchanged.
+
 ## Phase 1 — the highwayman vertical slice
 
 Status: complete.
