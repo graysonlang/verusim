@@ -2868,7 +2868,8 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .zoom-level-value {
   height: var(--handset-control-size);
-  justify-content: center;
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .app-shell[data-layout-mode="handset"] .scenario-menu-item,
