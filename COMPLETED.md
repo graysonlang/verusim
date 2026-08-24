@@ -585,6 +585,24 @@ No scenario, snapshot, or trace schema changes are introduced.
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 257 deterministic tests.
 
+## Phase 8P3 — workbench presentation modularization
+
+Status: complete.
+
+Extract the audit-identified presentation seams from `app/main.ts` behind focused module boundaries without changing behavior, layout, or schemas.
+The inspector renderer and activity inspector move to `app/inspector.ts`, icon builders to `app/icons.ts`, badge and label formatters to `app/badges.ts`, and shared DOM construction helpers to `app/dom.ts`.
+The five hand-rolled exclusive dropdown controllers collapse into one `app/menus.ts` menu group that owns the shared open, close, sibling-exclusion, positioning, and focus-restoration contract, with per-menu position and post-open hooks preserving each menu's placement and focus behavior.
+
+Exit probes:
+
+- `app/main.ts` retains only workbench composition and orchestration, reduced from 3,415 to 2,275 lines with no module-level presentation helpers remaining inside it
+- the extracted pure badge formatters gain direct regression coverage through the ordinary test bundle
+
+Regression coverage adds `test/badges.test.ts` over the extracted formatters and location resolution using the default built-in scenario.
+No scenario, snapshot, or trace schema changes are introduced, and the incremental inspector-update work remains in Phase 8C.
+Browser validation could not run because no in-app browser bridge or Playwright MCP tool was available in the working session; the menu-controller rewrite preserves the prior positioning and focus logic verbatim inside per-menu hooks.
+The full verification gate passes with 262 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

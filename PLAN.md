@@ -18,8 +18,8 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8P2: current-schema content and project documentation.
-Make current-schema first-party content and accurate project documentation the baseline consumed by the authoring document graph.
+The active slice is Phase 8P2: current-schema content.
+Make current-schema first-party content the baseline consumed by the authoring document graph.
 
 ### Current-focus non-goals
 
@@ -35,11 +35,10 @@ The event-boundary and trace-identity repair is recorded in COMPLETED.md; the re
 
 ### Phase 8P implementation sequence
 
-#### Phase 8P2 — current-schema content and project documentation
+#### Phase 8P2 — current-schema content
 
 Rewrite every shipped scenario, character, environment, norm, and social-contract document to its current schema without changing semantic addresses or prepared behavior.
 Retain legacy migration coverage through a compact version matrix so migration is a compatibility path rather than the primary first-party read path, and make migration-order assumptions explicit in regression coverage.
-Bring the README feature inventory, active phase, and repository map through completed Phase 7, including generation, integration cadence, observation adapters, and cadence-save support.
 
 Gate: every first-party document parses without migration, its prepared scenarios and discriminating decisions remain byte-equivalent to the pre-rewrite catalog, every supported legacy version reaches the current boundary in the migration matrix, and the full repository gate remains green.
 
@@ -47,7 +46,6 @@ Exit probes:
 
 - every shipped content file declares the current schema version and no built-in scenario depends on migration to prepare
 - the migration matrix retains explicit coverage for every supported legacy version and reports malformed legacy elements at indexed paths
-- the README names the active phase and current generation, integration, cadence, observation, and persistence surfaces
 
 ## Phase 8 — integrated content authoring workbench
 
@@ -94,7 +92,7 @@ Gate: the separate-document fixture prepares equivalently through direct in-memo
 
 #### Phase 8C — shared Build and Simulate application shell
 
-Before adding workspace ownership, extract the inspector renderer, icon and badge builders, and repeated menu controller from `app/main.ts` behind focused testable boundaries.
+The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
 Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
 Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
 Build retains its selected document, property selection, editor camera, dirty state, and undo history; Simulate retains only runtime state derived from the explicitly applied revision.
