@@ -16,7 +16,7 @@ Exit probes:
 
 - load the same scenario in a test and the browser, advance the same number of ticks, and obtain the same time, positions, value state, and trace
 - moving-character pace is presented as distance per second in the selected-character workbench while authored and authoritative locomotion remain meters per simulation minute
-- real-time playback projects movement at animation-frame resolution along the solver-selected route and authoritative walking pace, then reaches the exact solver position without drift when the whole tick commits
+- real-time playback projects movement at animation-frame resolution along the solver-selected route and authoritative walking pace, preserves fractional simulated time across pause, resume, and rate changes without moving backward, and reaches the exact solver position without drift when the whole tick commits
 - non-default numeric rate and built-in scenario selections are mirrored in URL query parameters and override startup defaults on reload, while values reconstructible from the default scenario or effective default rate are omitted along with the unreconstructible scenario parameter for file-backed content
 - the Day 1 clock omits its day prefix, rates below `60` show frame-projected seconds, and rates at or above `60` retain minute precision
 - the status bar defaults to hidden without reserving an empty grid row, can be shown or hidden from the application menu, and persists only as a device-local presentation preference
@@ -25,7 +25,7 @@ Exit probes:
 - unmodified square brackets traverse a clamped lower-floor-to-Exterior projection sequence, while unmodified backslash selects Exterior directly
 - with menus and dialogs closed, Escape clears selection first, selects Exterior next, and fits an already exterior unselected canvas last
 - Shift+backslash hides both sidebars when either is visible and shows both when neither is visible, while shifted square brackets independently toggle their corresponding sidebar
-- selecting an interior character on the Canvas follows that character to the appropriate layer without changing camera position or zoom, while selecting a roster card preserves zoom and centers only when the character is outside the current viewport
+- selecting an interior character on the Canvas follows that character to the appropriate layer without changing camera position or zoom, selecting a roster card preserves zoom and centers only when the character is outside the current viewport, and a selected character crossing layers or an interior/exterior boundary updates the projection without changing the camera
 - selecting the Canvas background clears a current selection first, a subsequent unselected background click returns a cutaway to Exterior without fitting, and Shift+2 remains the explicit command that centers and zooms to the selected character
 - hovering or keyboard-focusing a roster card transiently emphasizes its rendered Canvas marker without changing selection, projection, camera position, or zoom, and leaving the card clears that emphasis
 - shell widths at or above 1080 pixels retain the resizable desktop sidebars, widths from 700 through 1079 pixels use mutually exclusive edge drawers, and narrower widths use a mutually exclusive bottom sheet without horizontal page overflow
@@ -45,14 +45,14 @@ Exit probes:
 - the layer selector occupies the Canvas lower-left in every mode, while compact and handset zoom occupies the Canvas upper-right and handset zoom presents right-aligned borderless value text without reducing its hit target
 
 Movement-format regression coverage checks both metric and US display units without changing the meter source value.
-Playback regression coverage checks a schedule-change departure at partial-tick resolution, proves the projected distance equals walking pace multiplied by elapsed simulated time, and proves every projected endpoint equals the next authoritative solver position without changing current state, tick, or time.
+Playback regression coverage checks a schedule-change departure at partial-tick resolution, proves the projected distance equals walking pace multiplied by elapsed simulated time, carries that partial time across a rate change, and proves every projected endpoint equals the next authoritative solver position without changing current state, tick, or time.
 Walking calibration regression coverage fixes the neutral fallback at 80 meters per simulation minute and keeps the authored Alder's Edge cast between 1.3 and 1.4 meters per second after physical-build effects.
 URL-state regression coverage checks independent validation of scenario and numeric-rate overrides, compatibility canonicalization of the former identifier, preservation of unrelated query and fragment state, independent omission of default values, and removal of the unreconstructable file-backed scenario selection.
 Preference regression coverage verifies defaults, field-level validation, legacy missing-field fallback, and the serialized device-local record.
 Sidebar-layout regression coverage checks the 80-pixel close detent, 180-pixel open detent, viewport clamp, retained-width visibility toggles, keyboard resizing, the three-state double-click cycle, and mixed-state paired visibility decay.
 Responsive-layout regression coverage checks width classification, mutually exclusive narrow-panel toggles, handset peek transitions, next-action semantics, two-arrow icon paths, calculated and clamped snap heights, narrow Escape precedence, and preservation of desktop preferences as input-only state.
 Keyboard regression coverage checks physical punctuation codes, modifier exclusion, the Escape state machine, and clamped lowest-floor-to-Exterior traversal.
-World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit and covers visible and off-screen camera reveal decisions without coupling them to selection.
+World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit, covers visible and off-screen camera reveal decisions without coupling them to selection, and follows a selected character only when its layer or interior/exterior projection changes.
 Workbench action regression coverage checks that successive Canvas background clicks clear selection and return a cutaway to Exterior while leaving an already exterior unselected canvas unchanged.
 Agent-marker regression coverage distinguishes ordinary, roster-hovered, dimmed-hovered, and selected appearances so transient emphasis cannot displace selection priority.
 Document-shell regression coverage checks the device-width baseline, one-to-one initial and maximum scale, disabled user scaling, and edge-to-edge viewport fitting while the existing world-view gesture regression retains custom two-pointer Canvas zoom.
@@ -65,6 +65,8 @@ Isolated Chromium verification confirmed both pointer resize directions, close a
 Follow-up isolated Chromium verification confirmed the complete bracket and backslash projection sequence, all three Escape states, independent and paired sidebar shortcuts from mixed states, and the final visual layout without console errors.
 The character-framing Chromium pass selected a visible upstairs resident from the roster at the fitted 28% zoom, used Shift+2 to focus at 100%, centered a genuinely off-screen roster selection without changing that zoom, and repeated Canvas hits at the same panned point to prove that Canvas selection preserved camera position while following the correct layer.
 The pass completed without console errors; prior interaction verification covers Canvas-background deselection without a camera or projection change.
+The selected-transition and playback-continuity Chromium pass followed Mara from Upper Floors to Street Level after four solver steps, then changed active real-time playback from `1` to `2` while the projected clock remained exactly at `7:50:44 am` across the event and continued forward at the new rate.
+The pass combined accessible projection state with rendered Canvas inspection and completed without console errors or failed requests.
 The roster-hover Chromium pass hovered and keyboard-focused a nonselected upper-floor resident from Exterior at the fitted 28% zoom, confirmed that only the Canvas marker presentation changed, and observed pointer exit and blur restore the Canvas byte for byte without changing selection, projection, or zoom.
 The hover pass completed without console errors.
 An earlier responsive Chromium matrix covered wide, compact portrait and landscape, and 390×844 handset presentations without console errors or horizontal page overflow.

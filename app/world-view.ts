@@ -89,6 +89,33 @@ export function projectionAfterVerticalStep(
   return nextLayer === undefined ? EXTERIOR_PROJECTION : { kind: 'layer', layerId: nextLayer.id };
 }
 
+function projectionsEqual(left: WorldProjection, right: WorldProjection): boolean {
+  return (
+    left.kind === right.kind &&
+    (left.kind === 'exterior' || (right.kind === 'layer' && left.layerId === right.layerId))
+  );
+}
+
+export function projectionForAgent(
+  environment: EnvironmentDefinition,
+  agent: Pick<SimulationAgent, 'position'>,
+): WorldProjection {
+  const context = environmentSpatialContextAt(environment, agent.position);
+  return context.enclosure === 'interior'
+    ? { kind: 'layer', layerId: agent.position.layerId }
+    : EXTERIOR_PROJECTION;
+}
+
+export function projectionAfterSelectedAgentTransition(
+  previousAgentProjection: WorldProjection,
+  currentAgentProjection: WorldProjection,
+  activeProjection: WorldProjection,
+): WorldProjection {
+  return projectionsEqual(previousAgentProjection, currentAgentProjection)
+    ? activeProjection
+    : currentAgentProjection;
+}
+
 export interface AgentProjectionStyle {
   dimmed: boolean;
   level: number | null;
@@ -1011,6 +1038,8 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   let gestureCentroidStart = { x: 0, y: 0 };
   let gestureDistanceStart = 1;
   let projectedLayoutId = initialState.environment.layoutId;
+  let observedSelectedAgentId: string | null = null;
+  let observedSelectedAgentProjection: WorldProjection | null = null;
 
   function fit(): void {
     options.onHover(null);
@@ -1036,12 +1065,10 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   function followAgent(agentId: string): SimulationAgent | undefined {
     const agent = options.state().agents.find(candidate => candidate.id === agentId);
     if (agent === undefined) return undefined;
-    const context = environmentSpatialContextAt(options.state().environment, agent.position);
-    setActiveProjection(
-      context.enclosure === 'interior'
-        ? { kind: 'layer', layerId: agent.position.layerId }
-        : EXTERIOR_PROJECTION,
-    );
+    const projection = projectionForAgent(options.state().environment, agent);
+    observedSelectedAgentId = agentId;
+    observedSelectedAgentProjection = projection;
+    setActiveProjection(projection);
     options.onHover(null);
     return agent;
   }
@@ -1241,6 +1268,8 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     const projection = activeProjection();
     if (state.environment.layoutId !== projectedLayoutId) {
       projectedLayoutId = state.environment.layoutId;
+      observedSelectedAgentId = null;
+      observedSelectedAgentProjection = null;
       setActiveProjection(EXTERIOR_PROJECTION);
       return;
     }
@@ -1250,6 +1279,31 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     ) {
       setActiveProjection(EXTERIOR_PROJECTION);
       return;
+    }
+    const selectedAgent =
+      selectedAgentId === null
+        ? undefined
+        : state.agents.find(agent => agent.id === selectedAgentId);
+    const currentSelectedAgentProjection =
+      selectedAgent === undefined ? null : projectionForAgent(state.environment, selectedAgent);
+    if (selectedAgentId !== observedSelectedAgentId) {
+      observedSelectedAgentId = selectedAgentId;
+      observedSelectedAgentProjection = currentSelectedAgentProjection;
+    } else if (
+      observedSelectedAgentProjection !== null &&
+      currentSelectedAgentProjection !== null
+    ) {
+      const followedProjection = projectionAfterSelectedAgentTransition(
+        observedSelectedAgentProjection,
+        currentSelectedAgentProjection,
+        projection,
+      );
+      observedSelectedAgentProjection = currentSelectedAgentProjection;
+      if (!projectionsEqual(followedProjection, projection)) {
+        setActiveProjection(followedProjection);
+        options.onHover(null);
+        return;
+      }
     }
     viewportRevision();
     const width = Math.max(canvas.clientWidth, 1);

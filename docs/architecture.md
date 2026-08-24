@@ -70,6 +70,7 @@ Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
 Each preset also carries that speed as one numeric rate in simulated seconds per real second, so real-time is `1`, one simulated minute per second is `60`, and one simulated hour per second is `3600`.
 Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
+Fractional simulated time survives pause, resume, and active scale changes so changing playback controls cannot move the projected clock or movement backward; reset and scenario load clear that observer state.
 The clock omits the Day 1 prefix and shows frame-projected seconds for rates below `60`; rates at or above `60` retain minute precision.
 While playback is active, the workbench computes one pure next-tick lookahead and projects only locomotion between the current and next authoritative positions at animation-frame resolution.
 The projection uses the same connector-aware route and meters-per-simulation-minute walking pace as the solver, reaches the exact next position at the tick boundary, and never enters snapshots, traces, behavioral evaluation, or other authoritative state.
@@ -162,6 +163,7 @@ For keyboard traversal, authored layers form a clamped lowest-to-highest sequenc
 With transient menus and dialogs closed, repeated Escape presses clear a selected character, return a non-exterior canvas to Exterior, and then fit an already exterior unselected canvas.
 Shifted square brackets toggle the corresponding sidebar independently, while `|` hides both when either is visible and shows both when neither is visible.
 Canvas and roster character selection converge on selection and automatic projection to an interior character's layer while retaining distinct framing intents.
+While a character remains selected, crossing a layer or an interior/exterior boundary updates the active projection without changing the camera; manual projection choices remain intact until that visible context changes.
 A Canvas hit preserves camera position and zoom; a roster card preserves zoom and camera position when the character is visible, but centers an off-screen character.
 Selecting the Canvas background clears a current selection without changing the camera or projection.
 When no character is selected, a Canvas background click returns a cutaway to Exterior without fitting the camera; an unselected background click on Exterior is a no-op.

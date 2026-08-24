@@ -66,6 +66,18 @@ describe('workbench playback', () => {
     });
   });
 
+  it('carries partial simulated time across playback rate changes', () => {
+    const realTime = accumulatePlayback(0, 30, playbackRateForId('real-time'), 1);
+    assert.deepEqual(realTime, {
+      carriedMinutes: 0.5,
+      ticks: 0,
+    });
+    assert.deepEqual(accumulatePlayback(realTime.carriedMinutes, 15, playbackRateForId('2x'), 1), {
+      carriedMinutes: 0,
+      ticks: 1,
+    });
+  });
+
   it('projects each partial tick at the authoritative walking pace and endpoint', () => {
     const beforeDeparture = advanceSimulation(
       createSimulation({

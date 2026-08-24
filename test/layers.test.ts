@@ -5,7 +5,9 @@ import { BUILT_IN_SCENARIOS } from '../app/scenarios.js';
 import {
   EXTERIOR_PROJECTION,
   agentProjectionStyle,
+  projectionAfterSelectedAgentTransition,
   projectionAfterVerticalStep,
+  projectionForAgent,
 } from '../app/world-view.js';
 import {
   advanceSimulation,
@@ -183,6 +185,39 @@ describe('layered environments', () => {
       EXTERIOR_PROJECTION,
     );
     assert.deepEqual(projectionAfterVerticalStep(environment, EXTERIOR_PROJECTION, 'lower'), upper);
+  });
+
+  it('follows a selected character only when their visible projection changes', () => {
+    const state = townState();
+    const mara = state.agents.find(agent => agent.id === 'mara');
+    assert.ok(mara);
+    const upper = projectionForAgent(state.environment, mara);
+    assert.deepEqual(upper, { kind: 'layer', layerId: 'upper' });
+
+    const manualExterior = projectionAfterSelectedAgentTransition(
+      upper,
+      upper,
+      EXTERIOR_PROJECTION,
+    );
+    assert.equal(manualExterior, EXTERIOR_PROJECTION);
+
+    const arrived = advanceSimulation(state, 4).agents.find(agent => agent.id === 'mara');
+    assert.ok(arrived);
+    const surfaceInterior = projectionForAgent(state.environment, arrived);
+    assert.deepEqual(surfaceInterior, { kind: 'layer', layerId: 'surface' });
+    assert.deepEqual(
+      projectionAfterSelectedAgentTransition(upper, surfaceInterior, EXTERIOR_PROJECTION),
+      surfaceInterior,
+    );
+
+    const exterior = projectionForAgent(state.environment, {
+      position: { layerId: 'surface', x: 150, y: 80 },
+    });
+    assert.equal(exterior, EXTERIOR_PROJECTION);
+    assert.equal(
+      projectionAfterSelectedAgentTransition(surfaceInterior, exterior, surfaceInterior),
+      EXTERIOR_PROJECTION,
+    );
   });
 
   it('keeps inactive interior characters visible but dimmed with their relative level', () => {

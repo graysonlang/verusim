@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createRoot, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createMemo, createRoot, createSignal, onCleanup, untrack } from 'solid-js';
 import {
   CAPABILITY_IDS,
   DAY_PERIOD_LABELS,
@@ -1959,6 +1959,7 @@ function createWorkbench(): HTMLElement {
 
   function resetLoadedScenario(): void {
     setPlaying(false);
+    setPlaybackPreviewMinutes(0);
     setRosterHoverAgentId(null);
     setState(loadedBaseline);
     setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
@@ -1973,6 +1974,7 @@ function createWorkbench(): HTMLElement {
   ): void {
     loadedBaseline = loaded;
     setPlaying(false);
+    setPlaybackPreviewMinutes(0);
     setRosterHoverAgentId(null);
     setState(loaded);
     setPlaybackRateId(initialTimeRateForScenario(loaded.scenario, preferences()));
@@ -2496,9 +2498,8 @@ function createWorkbench(): HTMLElement {
       control.classList.toggle('selected', selected);
       control.setAttribute('aria-checked', String(selected));
     }
-    setPlaybackPreviewMinutes(0);
     if (!isPlaying) return;
-    let carriedMinutes = 0;
+    let carriedMinutes = untrack(playbackPreviewMinutes);
     let previousTime = performance.now();
     let animationFrame = 0;
     const updatePlayback = (currentTime: number) => {
