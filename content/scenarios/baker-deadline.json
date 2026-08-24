@@ -39,7 +39,7 @@
       "label": "Sell the market bread",
       "source": "obligation",
       "activationMinute": 600,
-      "deadlineMinute": 645,
+      "deadlineMinute": 640,
       "urgencyHorizonMinutes": 60,
       "commitment": 0.92,
       "desired": [
@@ -190,7 +190,7 @@
       "locationId": "market-square",
       "durationMinutes": 5,
       "availableFromMinute": null,
-      "availableUntilMinute": 645,
+      "availableUntilMinute": 640,
       "preconditions": [
         {
           "factId": "bread-on-hand",
@@ -251,7 +251,7 @@
         "x": 77,
         "y": 62
       },
-      "walkingMetersPerMinute": 18,
+      "walkingMetersPerMinute": 82,
       "schedule": [
         {
           "startMinute": 0,

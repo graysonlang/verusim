@@ -75,7 +75,13 @@ describe('workbench playback', () => {
       navigationDistance(beforeDeparture.environment, currentMara.position, nextMara.position) > 0,
     );
 
-    const halfway = projectPlaybackMovement(beforeDeparture, next, 0.5);
+    const tickDistance = navigationDistance(
+      beforeDeparture.environment,
+      currentMara.position,
+      nextMara.position,
+    );
+    const partialTickMinutes = tickDistance / currentMara.walkingMetersPerMinute / 2;
+    const halfway = projectPlaybackMovement(beforeDeparture, next, partialTickMinutes);
     const halfwayMara = halfway.agents.find(agent => agent.id === 'mara');
     assert.ok(halfwayMara);
     assert.ok(
@@ -85,7 +91,7 @@ describe('workbench playback', () => {
           currentMara.position,
           halfwayMara.position,
         ) -
-          currentMara.walkingMetersPerMinute * 0.5,
+          currentMara.walkingMetersPerMinute * partialTickMinutes,
       ) < 1e-9,
     );
     assert.deepEqual(

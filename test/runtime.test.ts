@@ -117,13 +117,13 @@ describe('simulation runtime', () => {
     });
     const arrived = describeAgent({ ...mara, destination: { ...mara.position } });
     assert.equal(moving.movementMetersPerMinute, mara.walkingMetersPerMinute);
-    assert.equal(moving.movementSpeedClass, 'plodding');
+    assert.equal(moving.movementSpeedClass, 'walking');
     assert.equal(arrived.movementMetersPerMinute, 0);
     assert.equal(arrived.movementSpeedClass, 'still');
 
     const tomas = starterSimulation().agents.find(agent => agent.id === 'tomas');
     assert.ok(tomas);
-    assert.ok(Math.abs(tomas.walkingMetersPerMinute - 17 * 1.04 * 0.94) < 1e-12);
+    assert.ok(Math.abs(tomas.walkingMetersPerMinute - 83 * 1.04 * 0.94) < 1e-12);
   });
 
   it('lets depleted social battery impair otherwise neutral mood', () => {

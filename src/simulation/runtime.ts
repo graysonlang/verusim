@@ -30,7 +30,7 @@ import {
   prepareNarrativeAgency,
   resolveNarrativeEvent,
 } from './narrative.js';
-import { applyBuildToWalkingPace } from './physical.js';
+import { DEFAULT_WALKING_METERS_PER_MINUTE, applyBuildToWalkingPace } from './physical.js';
 import {
   advanceLayerPosition,
   locationCenter,
@@ -185,7 +185,7 @@ function initializeAgent(
     schedule: placement.schedule.map(scheduleBlock => ({ ...scheduleBlock })),
     values: initialValues(profile, placement),
     walkingMetersPerMinute: applyBuildToWalkingPace(
-      placement.walkingMetersPerMinute ?? 16,
+      placement.walkingMetersPerMinute ?? DEFAULT_WALKING_METERS_PER_MINUTE,
       profile.physical.build,
     ),
   };

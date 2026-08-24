@@ -1,8 +1,18 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { applyBuildToWalkingPace, deriveBuildEffects } from '../src/index.js';
+import {
+  DEFAULT_WALKING_METERS_PER_MINUTE,
+  applyBuildToWalkingPace,
+  deriveBuildEffects,
+} from '../src/index.js';
 
 describe('physical build effects', () => {
+  it('calibrates the neutral walking pace to an ordinary human walk', () => {
+    assert.equal(DEFAULT_WALKING_METERS_PER_MINUTE, 80);
+    assert.ok(DEFAULT_WALKING_METERS_PER_MINUTE / 60 >= 1.3);
+    assert.ok(DEFAULT_WALKING_METERS_PER_MINUTE / 60 <= 1.4);
+  });
+
   it('keeps an average build neutral', () => {
     assert.deepEqual(deriveBuildEffects({ heightClass: 'average', weightClass: 'average' }), {
       grossStrengthModifier: 0,

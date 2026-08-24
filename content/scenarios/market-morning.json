@@ -29,7 +29,7 @@
         "x": 65,
         "y": 89
       },
-      "walkingMetersPerMinute": 18,
+      "walkingMetersPerMinute": 82,
       "schedule": [
         {
           "startMinute": 0,
@@ -95,7 +95,7 @@
         "x": 164,
         "y": 93
       },
-      "walkingMetersPerMinute": 17,
+      "walkingMetersPerMinute": 83,
       "schedule": [
         {
           "startMinute": 0,
@@ -169,7 +169,7 @@
         "x": 92.5,
         "y": 25
       },
-      "walkingMetersPerMinute": 16,
+      "walkingMetersPerMinute": 79,
       "schedule": [
         {
           "startMinute": 0,
@@ -235,7 +235,7 @@
         "x": 139,
         "y": 25.5
       },
-      "walkingMetersPerMinute": 20,
+      "walkingMetersPerMinute": 80,
       "schedule": [
         {
           "startMinute": 0,
@@ -309,7 +309,7 @@
         "x": 76.5,
         "y": 108
       },
-      "walkingMetersPerMinute": 15,
+      "walkingMetersPerMinute": 78,
       "schedule": [
         {
           "startMinute": 0,

@@ -95,7 +95,11 @@ export {
   formatSimulationTime,
 } from './simulation/observe.js';
 export type { MovementSpeedClass } from './simulation/observe.js';
-export { applyBuildToWalkingPace, deriveBuildEffects } from './simulation/physical.js';
+export {
+  DEFAULT_WALKING_METERS_PER_MINUTE,
+  applyBuildToWalkingPace,
+  deriveBuildEffects,
+} from './simulation/physical.js';
 export type { BuildEffects } from './simulation/physical.js';
 export { resolveObservationEvent } from './simulation/prediction.js';
 export { resolveNormObservationEvent } from './simulation/norms.js';

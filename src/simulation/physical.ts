@@ -12,6 +12,8 @@ export interface BuildEffects {
   walkingPaceMultiplier: number;
 }
 
+export const DEFAULT_WALKING_METERS_PER_MINUTE = 80;
+
 const HEIGHT_CONTRIBUTIONS: Record<HeightClass, BuildClassContribution> = {
   average: { grossStrength: 0, movementMultiplier: 1, physicalPresence: 0 },
   short: { grossStrength: -0.08, movementMultiplier: 0.97, physicalPresence: -0.12 },
