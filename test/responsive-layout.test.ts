@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   DEFAULT_NARROW_PANEL_STATE,
+  clampHandsetSheetHeight,
   closeNarrowPanel,
   cycleHandsetSheetExtent,
   effectivePanelVisibility,
+  handsetSheetAction,
+  handsetSheetHeights,
   narrowPanelAfterRosterSelection,
+  nearestHandsetSheetExtent,
   toggleNarrowPanel,
   toggleNarrowPanelPair,
   workbenchLayoutMode,
@@ -66,6 +70,33 @@ describe('responsive workbench layout', () => {
       activePanel: null,
       extent: 'full',
       lastPanel: 'roster',
+    });
+  });
+
+  it('describes the next sheet action instead of its current extent', () => {
+    assert.equal(handsetSheetAction('peek'), 'expand');
+    assert.equal(handsetSheetAction('half'), 'expand');
+    assert.equal(handsetSheetAction('full'), 'contract');
+  });
+
+  it('derives, clamps, and snaps handset sheet heights', () => {
+    const extents = handsetSheetHeights(844, 744);
+    assert.equal(extents.full, 744);
+    assert.equal(extents.peek, 58);
+    assert.ok(Math.abs(extents.half - 455.76) < 1e-9);
+    assert.equal(clampHandsetSheetHeight(20, extents), 58);
+    assert.equal(clampHandsetSheetHeight(900, extents), 744);
+    assert.equal(nearestHandsetSheetExtent(80, extents), 'peek');
+    assert.equal(nearestHandsetSheetExtent(400, extents), 'half');
+    assert.equal(nearestHandsetSheetExtent(700, extents), 'full');
+  });
+
+  it('keeps sheet extents ordered in short or malformed viewports', () => {
+    assert.deepEqual(handsetSheetHeights(80, 40), { full: 58, half: 58, peek: 58 });
+    assert.deepEqual(handsetSheetHeights(Number.NaN, Number.NaN), {
+      full: 58,
+      half: 58,
+      peek: 58,
     });
   });
 });

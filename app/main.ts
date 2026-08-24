@@ -30,6 +30,7 @@ import {
 } from '../src/index.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
 import { activityFeed } from './activity.js';
+import { bindHandsetSheetDrag } from './handset-sheet.js';
 import indexPath from './index.html';
 import './styles.css';
 import {
@@ -77,6 +78,8 @@ import {
   closeNarrowPanel,
   cycleHandsetSheetExtent,
   effectivePanelVisibility,
+  handsetSheetAction,
+  handsetSheetHeights,
   narrowPanelAfterRosterSelection,
   toggleNarrowPanel,
   toggleNarrowPanelPair,
@@ -173,7 +176,16 @@ function sidebarIcon(side: 'left' | 'right'): SVGSVGElement {
 }
 
 function controlIcon(
-  kind: 'chevron' | 'close' | 'info' | 'pause' | 'play' | 'reset' | 'step',
+  kind:
+    | 'chevron'
+    | 'close'
+    | 'info'
+    | 'pause'
+    | 'play'
+    | 'reset'
+    | 'sheet-contract'
+    | 'sheet-expand'
+    | 'step',
 ): SVGSVGElement {
   const namespace = 'http://www.w3.org/2000/svg';
   const icon = document.createElementNS(namespace, 'svg');
@@ -225,7 +237,11 @@ function controlIcon(
         ? 'M13 5V2.5l-1.65 1.65A5.25 5.25 0 1 0 13.2 10'
         : kind === 'close'
           ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
-          : 'm4.5 6 3.5 3.5L11.5 6';
+          : kind === 'sheet-expand'
+            ? 'M6.5 6.5 2.75 2.75m0 0h3m-3 0v3M9.5 6.5l3.75-3.75m0 0h-3m3 0v3M6.5 9.5l-3.75 3.75m0 0h3m-3 0v-3M9.5 9.5l3.75 3.75m0 0h-3m3 0v-3'
+            : kind === 'sheet-contract'
+              ? 'M2.75 2.75 6.5 6.5m0 0v-3m0 3h-3M13.25 2.75 9.5 6.5m0 0v-3m0 3h3M2.75 13.25 6.5 9.5m0 0v3m0-3h-3M13.25 13.25 9.5 9.5m0 0v3m0-3h3'
+              : 'm4.5 6 3.5 3.5L11.5 6';
     path.setAttribute('d', pathData);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', 'currentColor');
@@ -1267,7 +1283,7 @@ function createWorkbench(): HTMLElement {
   const roster = element('aside', 'roster');
   const leftSidebarResize = element('div', 'sidebar-resize-handle left-sidebar-resize');
   const rosterHeader = element('div', 'panel-header');
-  const rosterTitleWrap = element('div');
+  const rosterTitleWrap = element('div', 'sheet-drag-handle');
   const rosterTitle = element('h2');
   const rosterCount = element('span', 'count');
   const rosterTitleControls = element('span', 'panel-title-controls');
@@ -1283,7 +1299,7 @@ function createWorkbench(): HTMLElement {
   const worldScaleRule = element('span', 'world-scale-rule');
   const inspector = element('aside', 'inspector');
   const rightSidebarResize = element('div', 'sidebar-resize-handle right-sidebar-resize');
-  const inspectorNarrowHeader = element('header', 'inspector-narrow-header');
+  const inspectorNarrowHeader = element('header', 'inspector-narrow-header sheet-drag-handle');
   const inspectorNarrowTitle = element('h2');
   const inspectorSheetToggle = button('', 'narrow-sheet-toggle');
   const inspectorContent = element('div', 'inspector-content');
@@ -1502,8 +1518,9 @@ function createWorkbench(): HTMLElement {
 
   rosterTitle.textContent = 'Characters';
   roster.id = 'character-roster';
+  rosterTitleWrap.dataset.testid = 'roster-sheet-drag-handle';
   rosterSheetToggle.dataset.testid = 'roster-sheet-toggle';
-  rosterSheetToggle.append(controlIcon('chevron'));
+  rosterSheetToggle.append(controlIcon('sheet-expand'));
   rosterTitleControls.append(rosterCount, rosterSheetToggle);
   rosterTitleWrap.append(rosterTitle, rosterTitleControls);
   searchInput.type = 'search';
@@ -1573,9 +1590,10 @@ function createWorkbench(): HTMLElement {
   stage.append(canvas, layerSwitcher, characterHoverCard, worldScale);
 
   inspector.id = 'character-inspector';
+  inspectorNarrowHeader.dataset.testid = 'inspector-sheet-drag-handle';
   inspectorNarrowTitle.textContent = 'Inspector';
   inspectorSheetToggle.dataset.testid = 'inspector-sheet-toggle';
-  inspectorSheetToggle.append(controlIcon('chevron'));
+  inspectorSheetToggle.append(controlIcon('sheet-expand'));
   inspectorNarrowHeader.append(inspectorNarrowTitle, inspectorSheetToggle);
   inspector.append(inspectorNarrowHeader, inspectorContent);
   leftSidebarResize.dataset.testid = 'left-sidebar-resize';
@@ -1823,6 +1841,26 @@ function createWorkbench(): HTMLElement {
   inspectorSheetToggle.addEventListener('click', () =>
     setNarrowPanelState(cycleHandsetSheetExtent),
   );
+  const currentHandsetSheetHeights = () =>
+    handsetSheetHeights(shell.getBoundingClientRect().height, stage.getBoundingClientRect().height);
+  const previewHandsetSheetHeight = (height: number | null): void => {
+    if (height === null) shell.style.removeProperty('--narrow-panel-height');
+    else shell.style.setProperty('--narrow-panel-height', `${height}px`);
+  };
+  const bindSheetDrag = (panel: NarrowPanelId, handle: HTMLElement, panelElement: HTMLElement) =>
+    bindHandsetSheetDrag({
+      active: () => layoutMode() === 'handset' && narrowPanelState().activePanel === panel,
+      commit: extent =>
+        setNarrowPanelState(current =>
+          current.activePanel === panel ? { ...current, extent } : current,
+        ),
+      currentHeight: () => panelElement.getBoundingClientRect().height,
+      extents: currentHandsetSheetHeights,
+      handle,
+      preview: previewHandsetSheetHeight,
+    });
+  const unbindRosterSheetDrag = bindSheetDrag('roster', rosterTitleWrap, roster);
+  const unbindInspectorSheetDrag = bindSheetDrag('inspector', inspectorNarrowHeader, inspector);
   let renderedLayerSignature = '';
 
   function selectAgent(
@@ -2561,7 +2599,9 @@ function createWorkbench(): HTMLElement {
     const rightWidth = mode === 'wide' && rightLayout.visible ? rightLayout.width : 0;
     const leftMaximum = Math.max(leftLayout.width, sidebarMaximumWidth(window.innerWidth));
     const rightMaximum = Math.max(rightLayout.width, sidebarMaximumWidth(window.innerWidth));
-    const sheetAction = narrow.extent === 'full' ? 'Reduce' : 'Expand';
+    const sheetAction = handsetSheetAction(narrow.extent);
+    const sheetActionLabel = sheetAction === 'contract' ? 'Contract' : 'Expand';
+    const sheetActionIcon = sheetAction === 'contract' ? 'sheet-contract' : 'sheet-expand';
 
     shell.dataset.layoutMode = mode;
     shell.dataset.narrowPanel = narrow.activePanel ?? 'none';
@@ -2576,12 +2616,14 @@ function createWorkbench(): HTMLElement {
     rightSidebarResize.tabIndex = visibility.resizable ? 0 : -1;
     rosterSheetToggle.hidden = mode !== 'handset';
     inspectorSheetToggle.hidden = mode !== 'handset';
-    rosterSheetToggle.classList.toggle('expanded', narrow.extent === 'full');
-    inspectorSheetToggle.classList.toggle('expanded', narrow.extent === 'full');
-    rosterSheetToggle.setAttribute('aria-label', `${sheetAction} character roster`);
-    inspectorSheetToggle.setAttribute('aria-label', `${sheetAction} character inspector`);
-    rosterSheetToggle.title = `${sheetAction} character roster`;
-    inspectorSheetToggle.title = `${sheetAction} character inspector`;
+    rosterSheetToggle.dataset.sheetAction = sheetAction;
+    inspectorSheetToggle.dataset.sheetAction = sheetAction;
+    rosterSheetToggle.replaceChildren(controlIcon(sheetActionIcon));
+    inspectorSheetToggle.replaceChildren(controlIcon(sheetActionIcon));
+    rosterSheetToggle.setAttribute('aria-label', `${sheetActionLabel} character roster`);
+    inspectorSheetToggle.setAttribute('aria-label', `${sheetActionLabel} character inspector`);
+    rosterSheetToggle.title = `${sheetActionLabel} character roster`;
+    inspectorSheetToggle.title = `${sheetActionLabel} character inspector`;
 
     leftSidebarToggle.classList.toggle('active', visibility.roster);
     leftSidebarToggle.setAttribute('aria-pressed', String(visibility.roster));
@@ -3242,6 +3284,8 @@ function createWorkbench(): HTMLElement {
   });
   shellResizeObserver.observe(shell);
   onCleanup(() => {
+    unbindRosterSheetDrag();
+    unbindInspectorSheetDrag();
     unbindLeftSidebarResize();
     unbindRightSidebarResize();
     leftSidebarToggle.removeEventListener('click', onLeftSidebarToggle);

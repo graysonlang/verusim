@@ -4,6 +4,13 @@ export const WIDE_LAYOUT_MIN_WIDTH = 1080;
 export type WorkbenchLayoutMode = 'compact' | 'handset' | 'wide';
 export type NarrowPanelId = 'inspector' | 'roster';
 export type HandsetSheetExtent = 'full' | 'half' | 'peek';
+export type HandsetSheetAction = 'contract' | 'expand';
+
+export interface HandsetSheetHeights {
+  full: number;
+  half: number;
+  peek: number;
+}
 
 export interface NarrowPanelState {
   activePanel: NarrowPanelId | null;
@@ -22,6 +29,10 @@ export const DEFAULT_NARROW_PANEL_STATE: NarrowPanelState = Object.freeze({
   extent: 'half',
   lastPanel: 'roster',
 });
+
+export const HANDSET_SHEET_PEEK_HEIGHT = 58;
+export const HANDSET_SHEET_HALF_RATIO = 0.54;
+export const HANDSET_SHEET_HALF_MAX_HEIGHT = 480;
 
 export function workbenchLayoutMode(width: number): WorkbenchLayoutMode {
   if (Number.isFinite(width) && width >= WIDE_LAYOUT_MIN_WIDTH) return 'wide';
@@ -73,4 +84,39 @@ export function cycleHandsetSheetExtent(state: NarrowPanelState): NarrowPanelSta
   if (state.activePanel === null) return state;
   if (state.extent === 'peek') return { ...state, extent: 'half' };
   return { ...state, extent: state.extent === 'half' ? 'full' : 'half' };
+}
+
+export function handsetSheetAction(extent: HandsetSheetExtent): HandsetSheetAction {
+  return extent === 'full' ? 'contract' : 'expand';
+}
+
+export function handsetSheetHeights(shellHeight: number, fullHeight: number): HandsetSheetHeights {
+  const full = Math.max(
+    HANDSET_SHEET_PEEK_HEIGHT,
+    Number.isFinite(fullHeight) ? fullHeight : HANDSET_SHEET_PEEK_HEIGHT,
+  );
+  const availableShellHeight = Number.isFinite(shellHeight) ? shellHeight : full;
+  const half = Math.max(
+    HANDSET_SHEET_PEEK_HEIGHT,
+    Math.min(full, HANDSET_SHEET_HALF_MAX_HEIGHT, availableShellHeight * HANDSET_SHEET_HALF_RATIO),
+  );
+  return { full, half, peek: HANDSET_SHEET_PEEK_HEIGHT };
+}
+
+export function clampHandsetSheetHeight(height: number, extents: HandsetSheetHeights): number {
+  const candidate = Number.isFinite(height) ? height : extents.half;
+  return Math.min(extents.full, Math.max(extents.peek, candidate));
+}
+
+export function nearestHandsetSheetExtent(
+  height: number,
+  extents: HandsetSheetHeights,
+): HandsetSheetExtent {
+  const clamped = clampHandsetSheetHeight(height, extents);
+  const candidates: HandsetSheetExtent[] = ['peek', 'half', 'full'];
+  return candidates.reduce((nearest, candidate) =>
+    Math.abs(extents[candidate] - clamped) < Math.abs(extents[nearest] - clamped)
+      ? candidate
+      : nearest,
+  );
 }

@@ -1113,14 +1113,6 @@ select {
   display: none;
 }
 
-.narrow-sheet-toggle .control-icon {
-  transition: transform 140ms ease;
-}
-
-.narrow-sheet-toggle.expanded .control-icon {
-  transform: rotate(180deg);
-}
-
 .panel-header h2 {
   margin: 0;
   font-size: 11px;
@@ -2761,6 +2753,21 @@ input[type="search"]::placeholder {
 
 .app-shell[data-layout-mode="handset"] .celestial-indicator {
   transform: scale(1.385);
+  border-radius: 4.33px;
+}
+
+.app-shell[data-layout-mode="handset"] .time-of-day {
+  position: relative;
+  overflow: visible;
+}
+
+.app-shell[data-layout-mode="handset"] .time-of-day::after {
+  position: absolute;
+  inset: var(--handset-control-inset);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  content: "";
+  pointer-events: none;
 }
 
 .app-shell[data-layout-mode="handset"] .weather-graphic {
@@ -2810,6 +2817,16 @@ input[type="search"]::placeholder {
   min-width: var(--handset-hit-size);
   height: var(--handset-hit-size);
   min-height: var(--handset-hit-size);
+}
+
+.app-shell[data-layout-mode="handset"] .sheet-drag-handle {
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.app-shell[data-layout-mode="handset"] .sheet-drag-handle.dragging {
+  cursor: ns-resize;
 }
 
 .app-shell[data-layout-mode="handset"][data-sheet-extent="peek"] .panel-header {
