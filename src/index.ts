@@ -21,6 +21,15 @@ export {
   type AuthoringTransaction,
 } from './authoring/graph.js';
 export {
+  prepareRevision,
+  startRevision,
+  type AuthoringRevision,
+  type RevisionSimulation,
+} from './authoring/revision.js';
+export { canonicalJson, contentDigest } from './scenario/digest.js';
+export { validatePreparedScenario } from './scenario/prepare.js';
+export { validateSnapshotReferences } from './scenario/snapshot-references.js';
+export {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
   INCIDENT_ROOT_IMPACTS,

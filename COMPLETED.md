@@ -673,6 +673,26 @@ No scenario, snapshot, or resource schema changes are introduced; the graph impo
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 275 deterministic tests.
 
+## Phase 8B — authoritative preparation and revision isolation
+
+Status: complete.
+
+Keep the existing migration, validation, duplicate detection, reference resolution, dependency closure, and preparation path the sole authority for a runnable revision.
+Unify the shared scenario and snapshot validation primitives, reject unknown authored keys, validate prepared scenarios at the boundary, relocate snapshot cross-reference validation beside snapshot parsing, give each prepared revision a canonical content digest, and extend snapshot resource locks so an in-place edit at the same semantic address fails rather than replaying against changed content.
+
+Gate: the separate-document fixture prepares equivalently through direct in-memory content and the authoring graph, unknown and invalid authored fields block transition at actionable paths, correcting them succeeds through the same boundary, post-start edits leave the running state and reset baseline byte-equivalent, and changing locked content without changing its semantic address rejects snapshot resume.
+
+`src/authoring/revision.ts` is the only path from drafts to a runnable simulation: it builds the ordinary catalog from resource drafts, prepares the scenario draft through `prepareScenario`, and digests the result, so the graph cannot bypass preparation.
+`src/scenario/primitives.ts` replaces the drifted private copies in both parsers; `knownKeys` rejects unknown fields at the scenario, placement, schedule-block, and resource-file levels with `unknown field` at the authored path.
+`src/scenario/digest.ts` provides sorted-key canonical JSON and a 64-bit FNV-1a digest without host crypto, and `validatePreparedScenario` replaces the discriminator sniff at the loading boundary.
+`src/scenario/snapshot-references.ts` holds the relocated cross-reference checks as an ordered validator table, shrinking the runtime constructor from roughly 540 lines to state assembly over deep-copied collections.
+
+Snapshot schema version 17 adds `resourceLock.digest`; versions 1 through 16 migrate with a null digest and resume without the content check, which is recorded in the architecture.
+`test/revision.test.ts` proves the Pottsfield project prepares identically through the graph and direct content, an invalid field and an unknown field each block preparation at their authored path while the corrected draft prepares to the same value, a started revision and its baseline stay byte-equivalent across later draft edits until a new revision is prepared with a different digest, a snapshot resumes exactly against its own revision but is rejected at `snapshot.resourceLock.digest` against content edited in place, a pre-17 snapshot still resumes, and forged prepared scenarios fail structurally.
+Existing snapshot replay coverage now asserts schema version 17.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 281 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

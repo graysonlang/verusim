@@ -21,6 +21,7 @@ import {
   type SomaticSourceSeed,
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
+import { validateSnapshotReferences } from '../scenario/snapshot-references.js';
 import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
@@ -32,7 +33,6 @@ import {
   advanceSomaticState,
   applySomaticResourceTax,
   createSomaticState,
-  isDerivedSomaticState,
   resolveSomaticEvent,
   somaticActivityLabel,
 } from './somatic.js';
@@ -103,27 +103,6 @@ const RECOVERY_RATES_PER_HOUR: Record<RecoveryMode, ResourceState> = {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
-}
-
-function sameAddress(left: ResourceAddress, right: ResourceAddress): boolean {
-  return (
-    left.kind === right.kind &&
-    left.packageId === right.packageId &&
-    left.resourceId === right.resourceId
-  );
-}
-
-function sameResourceLock(
-  left: readonly ResourceAddress[],
-  right: readonly ResourceAddress[],
-): boolean {
-  return (
-    left.length === right.length &&
-    left.every((address, index) => {
-      const candidate = right[index];
-      return candidate !== undefined && sameAddress(address, candidate);
-    })
-  );
 }
 
 function findLocation(environment: EnvironmentDefinition, locationId: string): LocationDefinition {
@@ -234,23 +213,6 @@ function initializeAgent(
   };
 }
 
-function goalSeedSignature(goal: AgendaGoalSeed): string {
-  return JSON.stringify({
-    activationMinute: goal.activationMinute,
-    actorId: goal.actorId,
-    claimExpressions: goal.claimExpressions,
-    commitment: goal.commitment,
-    deadlineMinute: goal.deadlineMinute,
-    desired: goal.desired,
-    failureTurns: goal.failureTurns,
-    id: goal.id,
-    label: goal.label,
-    source: goal.source,
-    successTurns: goal.successTurns,
-    urgencyHorizonMinutes: goal.urgencyHorizonMinutes,
-  });
-}
-
 export function createSimulationFromPrepared(prepared: PreparedScenario): SimulationState {
   const environment = prepared.environment;
   const agents = prepared.characters.map(({ placement, profile }) =>
@@ -352,93 +314,11 @@ export function createSimulationFromPreparedSnapshot(input: {
 }): SimulationState {
   const snapshot = input.snapshot;
   const base = createSimulationFromPrepared(input.prepared);
-  if (!sameAddress(snapshot.environment, base.scenario.environment)) {
-    throw new ScenarioValidationError(
-      'snapshot.environment',
-      'must match the prepared environment layout',
-    );
-  }
-  if (!sameResourceLock(snapshot.resourceLock.resources, base.resourceLock.resources)) {
-    throw new ScenarioValidationError(
-      'snapshot.resourceLock',
-      'must match the prepared resource lock',
-    );
-  }
+  validateSnapshotReferences({ base, snapshot });
   const baseAgents = new Map(base.agents.map(agent => [agent.id, agent]));
-  if (snapshot.agents.length !== base.agents.length) {
-    throw new ScenarioValidationError(
-      'snapshot.agents',
-      'must contain exactly the scenario agent instances',
-    );
-  }
-  const locationIds = new Set(base.environment.locations.map(location => location.id));
-  const layerIds = new Set(base.environment.layers.map(layer => layer.id));
-  const agents = snapshot.agents.map((saved, index) => {
+  const agents = snapshot.agents.map(saved => {
     const agent = baseAgents.get(saved.id);
-    if (agent === undefined) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].id`,
-        `unknown agent "${saved.id}"`,
-      );
-    }
-    const placement = base.scenario.characters.find(item => item.instanceId === saved.id);
-    if (placement === undefined || !sameAddress(saved.profile, placement.profile)) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].profile`,
-        `expected character profile "${agent.profile.profileId}"`,
-      );
-    }
-    if (saved.currentLocationId !== null && !locationIds.has(saved.currentLocationId)) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].currentLocationId`,
-        `unknown location "${saved.currentLocationId}"`,
-      );
-    }
-    if (!layerIds.has(saved.position.layerId)) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].position.layerId`,
-        `unknown layer "${saved.position.layerId}"`,
-      );
-    }
-    if (!layerIds.has(saved.destination.layerId)) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].destination.layerId`,
-        `unknown layer "${saved.destination.layerId}"`,
-      );
-    }
-    saved.schedule.forEach((block, blockIndex) => {
-      if (!locationIds.has(block.locationId)) {
-        throw new ScenarioValidationError(
-          `snapshot.agents[${index}].schedule[${blockIndex}].locationId`,
-          `unknown location "${block.locationId}"`,
-        );
-      }
-    });
-    if (
-      saved.history.formativeRecords.length > 0 &&
-      JSON.stringify(saved.history.formativeRecords) !==
-        JSON.stringify(agent.history.formativeRecords)
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].history.formativeRecords`,
-        'must match formative execution for the prepared character profile',
-      );
-    }
-    const empathyOverride = saved.history.overrides.empathy;
-    const effectiveFloor = empathyOverride?.floor ?? agent.profile.empathy.floor;
-    const effectiveCeiling = empathyOverride?.ceiling ?? agent.profile.empathy.ceiling;
-    if (effectiveCeiling < effectiveFloor) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].history.overrides.empathy.ceiling`,
-        'expected effective ceiling at or above effective floor',
-      );
-    }
-    if (!isDerivedSomaticState(saved.somatic)) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].somatic`,
-        'must match its exact sorted somatic source ledger',
-      );
-    }
+    if (agent === undefined) throw new Error('Validated snapshot agents exist in the base state');
     return {
       cascade: saved.cascade,
       cascadeDwellUntilMinute: saved.cascadeDwellUntilMinute,
@@ -478,414 +358,41 @@ export function createSimulationFromPreparedSnapshot(input: {
       walkingMetersPerMinute: saved.walkingMetersPerMinute,
     };
   });
-  const agentIds = new Set(agents.map(agent => agent.id));
-  const outletAffordanceIds = new Set(base.environment.outletAffordances.map(item => item.id));
-  snapshot.agents.forEach((saved, index) => {
-    if (saved.cascadeTargetId !== null && !agentIds.has(saved.cascadeTargetId)) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].cascadeTargetId`,
-        `unknown agent "${saved.cascadeTargetId}"`,
-      );
-    }
-    if (
-      saved.currentOutlet !== null &&
-      !outletAffordanceIds.has(saved.currentOutlet.affordanceId)
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.agents[${index}].currentOutlet.affordanceId`,
-        `unknown outlet affordance "${saved.currentOutlet.affordanceId}"`,
-      );
-    }
-    if (saved.narrative !== null) {
-      const profileClaimIds = new Set(
-        agents[index]?.profile.narrativeClaims.map(claim => claim.id),
-      );
-      if (
-        saved.narrative.claims.length !== profileClaimIds.size ||
-        saved.narrative.claims.some(claim => !profileClaimIds.has(claim.id))
-      ) {
-        throw new ScenarioValidationError(
-          `snapshot.agents[${index}].narrative.claims`,
-          'must contain exactly the character narrative claims',
-        );
-      }
-    }
-    saved.positionalRespect.references.forEach((reference, referenceIndex) => {
-      if (!agentIds.has(reference.subjectId) || reference.subjectId === saved.id) {
-        throw new ScenarioValidationError(
-          `snapshot.agents[${index}].positionalRespect.references[${referenceIndex}].subjectId`,
-          'positional reference must name another snapshot agent',
-        );
-      }
-    });
-  });
-  snapshot.dyads.forEach((dyad, index) => {
-    if (!agentIds.has(dyad.observerId) || !agentIds.has(dyad.subjectId)) {
-      throw new ScenarioValidationError(
-        `snapshot.dyads[${index}]`,
-        'dyad must reference snapshot agents',
-      );
-    }
-  });
-  const observationEvents = new Map(
-    snapshot.scenario.observationEvents.map(event => [event.id, event]),
-  );
-  const observationEventIds = new Set(observationEvents.keys());
-  snapshot.observations.forEach((observation, index) => {
-    const event = observationEvents.get(observation.eventId);
-    if (
-      !agentIds.has(observation.observerId) ||
-      !agentIds.has(observation.subjectId) ||
-      event === undefined
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.observations[${index}]`,
-        'observation must reference snapshot agents and an authored event',
-      );
-    }
-    if (event.eventType !== observation.eventType) {
-      throw new ScenarioValidationError(
-        `snapshot.observations[${index}].eventType`,
-        'must match the authored observation event type',
-      );
-    }
-  });
-  snapshot.resolvedObservationEventIds.forEach((eventId, index) => {
-    if (!observationEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedObservationEventIds[${index}]`,
-        `unknown observation event "${eventId}"`,
-      );
-    }
-  });
-  const incidentEventIds = new Set(snapshot.scenario.incidentEvents.map(event => event.id));
-  snapshot.incidentRecords.forEach((record, index) => {
-    if (!incidentEventIds.has(record.eventId) || !agentIds.has(record.observerId)) {
-      throw new ScenarioValidationError(
-        `snapshot.incidentRecords[${index}]`,
-        'incident record must reference a snapshot agent and authored event',
-      );
-    }
-  });
-  snapshot.resolvedIncidentEventIds.forEach((eventId, index) => {
-    if (!incidentEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedIncidentEventIds[${index}]`,
-        `unknown incident event "${eventId}"`,
-      );
-    }
-  });
-  const displayEventIds = new Set(snapshot.scenario.displayEvents.map(event => event.id));
-  const displayIds = new Set(snapshot.scenario.displayEvents.map(event => event.displayId));
-  snapshot.displayRecords.forEach((record, index) => {
-    if (
-      !displayEventIds.has(record.eventId) ||
-      !agentIds.has(record.wearerId) ||
-      record.appraisals.some(
-        appraisal => appraisal.eventId !== record.eventId || !agentIds.has(appraisal.observerId),
-      )
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.displayRecords[${index}]`,
-        'display record must reference snapshot agents and an authored event',
-      );
-    }
-  });
-  snapshot.displayExposures.forEach((exposure, index) => {
-    if (!agentIds.has(exposure.observerId) || !displayIds.has(exposure.displayId)) {
-      throw new ScenarioValidationError(
-        `snapshot.displayExposures[${index}]`,
-        'display exposure must reference a snapshot agent and authored display',
-      );
-    }
-  });
-  snapshot.resolvedDisplayEventIds.forEach((eventId, index) => {
-    if (!displayEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedDisplayEventIds[${index}]`,
-        `unknown display event "${eventId}"`,
-      );
-    }
-  });
-  const somaticEventIds = new Set(snapshot.scenario.somaticEvents.map(event => event.id));
-  snapshot.somaticRecords.forEach((record, index) => {
-    if (
-      !somaticEventIds.has(record.eventId) ||
-      !agentIds.has(record.subjectId) ||
-      record.observations.some(
-        observation =>
-          observation.eventId !== record.eventId ||
-          observation.subjectId !== record.subjectId ||
-          !agentIds.has(observation.observerId),
-      )
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.somaticRecords[${index}]`,
-        'somatic record must reference snapshot agents and an authored event',
-      );
-    }
-  });
-  snapshot.resolvedSomaticEventIds.forEach((eventId, index) => {
-    if (!somaticEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedSomaticEventIds[${index}]`,
-        `unknown somatic event "${eventId}"`,
-      );
-    }
-  });
-  const relationshipEventIds = new Set(snapshot.scenario.relationshipEvents.map(event => event.id));
-  snapshot.resolvedRelationshipEventIds.forEach((eventId, index) => {
-    if (!relationshipEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedRelationshipEventIds[${index}]`,
-        `unknown relationship event "${eventId}"`,
-      );
-    }
-  });
-  const relationshipRequestIds = new Set(
-    snapshot.scenario.relationshipRequests.map(request => request.id),
-  );
-  snapshot.resolvedRelationshipRequestIds.forEach((requestId, index) => {
-    if (!relationshipRequestIds.has(requestId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedRelationshipRequestIds[${index}]`,
-        `unknown relationship request "${requestId}"`,
-      );
-    }
-  });
-  snapshot.relationshipDecisions.forEach((decision, index) => {
-    if (!agentIds.has(decision.requesterId) || !agentIds.has(decision.responderId)) {
-      throw new ScenarioValidationError(
-        `snapshot.relationshipDecisions[${index}]`,
-        'relationship decision must reference snapshot agents',
-      );
-    }
-  });
-  const appraisalEventIds = new Set(snapshot.scenario.appraisalEvents.map(event => event.id));
-  snapshot.resolvedAppraisalEventIds.forEach((eventId, index) => {
-    if (!appraisalEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedAppraisalEventIds[${index}]`,
-        `unknown appraisal event "${eventId}"`,
-      );
-    }
-  });
-  snapshot.appraisalRecords.forEach((record, index) => {
-    if (!agentIds.has(record.agentId) || !appraisalEventIds.has(record.eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.appraisalRecords[${index}]`,
-        'appraisal record must reference a snapshot agent and authored event',
-      );
-    }
-  });
-  const narrativeEventIds = new Set(snapshot.scenario.narrativeEvents.map(event => event.id));
-  snapshot.resolvedNarrativeEventIds.forEach((eventId, index) => {
-    if (!narrativeEventIds.has(eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedNarrativeEventIds[${index}]`,
-        `unknown narrative event "${eventId}"`,
-      );
-    }
-  });
-  snapshot.narrativeRecords.forEach((record, index) => {
-    if (!agentIds.has(record.actorId) || !narrativeEventIds.has(record.eventId)) {
-      throw new ScenarioValidationError(
-        `snapshot.narrativeRecords[${index}]`,
-        'narrative record must reference a snapshot agent and authored event',
-      );
-    }
-  });
-  const reputationGroupIds = new Set(snapshot.scenario.reputationGroups.map(group => group.id));
-  snapshot.reputations.forEach((reputation, index) => {
-    if (
-      !agentIds.has(reputation.subjectId) ||
-      reputation.sourceIds.some(sourceId => !agentIds.has(sourceId)) ||
-      (reputation.audienceType === 'agent' && !agentIds.has(reputation.audienceId)) ||
-      (reputation.audienceType === 'group' && !reputationGroupIds.has(reputation.audienceId))
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.reputations[${index}]`,
-        'reputation must reference snapshot agents and an authored audience',
-      );
-    }
-  });
-  const aspirationOpportunityIds = new Set(
-    snapshot.scenario.aspirationOpportunities.map(opportunity => opportunity.id),
-  );
-  snapshot.resolvedAspirationOpportunityIds.forEach((opportunityId, index) => {
-    if (!aspirationOpportunityIds.has(opportunityId)) {
-      throw new ScenarioValidationError(
-        `snapshot.resolvedAspirationOpportunityIds[${index}]`,
-        `unknown aspiration opportunity "${opportunityId}"`,
-      );
-    }
-  });
-  snapshot.disclosureItems.forEach((item, index) => {
-    if (!agentIds.has(item.ownerId) || item.knownByIds.some(id => !agentIds.has(id))) {
-      throw new ScenarioValidationError(
-        `snapshot.disclosureItems[${index}]`,
-        'disclosure item must reference snapshot agents',
-      );
-    }
-  });
-  const scenarioGoals = new Map(snapshot.scenario.agendaGoals.map(goal => [goal.id, goal]));
-  const aspirationGoals = new Map(
-    snapshot.scenario.aspirationOpportunities
-      .filter(opportunity => snapshot.resolvedAspirationOpportunityIds.includes(opportunity.id))
-      .map(opportunity => [opportunity.id, opportunity]),
-  );
-  if (snapshot.agendaGoals.length !== scenarioGoals.size + aspirationGoals.size) {
-    throw new ScenarioValidationError(
-      'snapshot.agendaGoals',
-      'must contain exactly the authored and generated aspiration goals',
-    );
-  }
-  snapshot.agendaGoals.forEach((goal, index) => {
-    const scenarioGoal = scenarioGoals.get(goal.id);
-    const aspiration = aspirationGoals.get(goal.id);
-    const aspirationMatches =
-      aspiration !== undefined &&
-      goal.source === 'aspiration' &&
-      goal.actorId === aspiration.actorId &&
-      goal.activationMinute >= aspiration.atMinute &&
-      goal.commitment === aspiration.commitment &&
-      goal.deadlineMinute === aspiration.deadlineMinute &&
-      JSON.stringify(goal.claimExpressions) === JSON.stringify(aspiration.claimExpressions) &&
-      JSON.stringify(goal.desired) === JSON.stringify(aspiration.desired) &&
-      JSON.stringify(goal.failureTurns) === JSON.stringify(aspiration.failureTurns) &&
-      goal.label === aspiration.label &&
-      JSON.stringify(goal.successTurns) === JSON.stringify(aspiration.successTurns) &&
-      goal.urgencyHorizonMinutes === aspiration.urgencyHorizonMinutes;
-    if (
-      (scenarioGoal === undefined || goalSeedSignature(goal) !== goalSeedSignature(scenarioGoal)) &&
-      !aspirationMatches
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.agendaGoals[${index}]`,
-        'goal seed must match authored scenario or resolved aspiration opportunity',
-      );
-    }
-    const resolved = goal.status === 'completed' || goal.status === 'failed';
-    if (resolved !== (goal.resolvedMinute !== null)) {
-      throw new ScenarioValidationError(
-        `snapshot.agendaGoals[${index}].resolvedMinute`,
-        'must be present exactly when the goal is resolved',
-      );
-    }
-  });
-  const scenarioFactIds = new Set(snapshot.scenario.worldFacts.map(fact => fact.id));
-  if (
-    snapshot.worldFacts.length !== snapshot.scenario.worldFacts.length ||
-    snapshot.worldFacts.some(fact => !scenarioFactIds.has(fact.id))
-  ) {
-    throw new ScenarioValidationError(
-      'snapshot.worldFacts',
-      'must contain exactly the scenario world facts',
-    );
-  }
-  const tasks = new Map(snapshot.scenario.taskOperators.map(task => [task.id, task]));
-  const plans = new Map(snapshot.plans.map(plan => [plan.id, plan]));
-  if (plans.size !== snapshot.plans.length) {
-    throw new ScenarioValidationError('snapshot.plans', 'duplicate plan identifier');
-  }
-  const planActors = new Set<string>();
-  snapshot.plans.forEach((plan, index) => {
-    const goal = snapshot.agendaGoals.find(candidate => candidate.id === plan.goalId);
-    if (goal === undefined || goal.actorId !== plan.actorId || !agentIds.has(plan.actorId)) {
-      throw new ScenarioValidationError(
-        `snapshot.plans[${index}]`,
-        'plan must belong to a snapshot agent and goal',
-      );
-    }
-    if (planActors.has(plan.actorId)) {
-      throw new ScenarioValidationError(
-        `snapshot.plans[${index}].actorId`,
-        'an agent may have only one active plan',
-      );
-    }
-    planActors.add(plan.actorId);
-    plan.taskIds.forEach((taskId, taskIndex) => {
-      const task = tasks.get(taskId);
-      if (task === undefined || !task.actorIds.includes(plan.actorId)) {
-        throw new ScenarioValidationError(
-          `snapshot.plans[${index}].taskIds[${taskIndex}]`,
-          'task must be available to the plan actor',
-        );
-      }
-    });
-  });
-  const intentionActors = new Set<string>();
-  snapshot.intentions.forEach((intention, index) => {
-    const plan = plans.get(intention.planId);
-    if (
-      plan === undefined ||
-      plan.actorId !== intention.actorId ||
-      plan.goalId !== intention.goalId ||
-      plan.taskIds[0] !== intention.taskId
-    ) {
-      throw new ScenarioValidationError(
-        `snapshot.intentions[${index}]`,
-        'intention must match the first task of its active plan',
-      );
-    }
-    if (intentionActors.has(intention.actorId)) {
-      throw new ScenarioValidationError(
-        `snapshot.intentions[${index}].actorId`,
-        'an agent may have only one active intention',
-      );
-    }
-    intentionActors.add(intention.actorId);
-  });
-  if (snapshot.plans.length !== snapshot.intentions.length) {
-    throw new ScenarioValidationError(
-      'snapshot.intentions',
-      'each active plan must have exactly one intention',
-    );
-  }
-  snapshot.agendaDecisions.forEach((decision, index) => {
-    if (!agentIds.has(decision.actorId)) {
-      throw new ScenarioValidationError(
-        `snapshot.agendaDecisions[${index}].actorId`,
-        `unknown agent "${decision.actorId}"`,
-      );
-    }
-  });
-
   return {
     ...base,
-    appraisalRecords: snapshot.appraisalRecords,
-    agendaDecisions: snapshot.agendaDecisions,
-    agendaGoals: snapshot.agendaGoals,
+    appraisalRecords: structuredClone(snapshot.appraisalRecords),
+    agendaDecisions: structuredClone(snapshot.agendaDecisions),
+    agendaGoals: structuredClone(snapshot.agendaGoals),
     agents,
-    decisions: snapshot.decisions,
-    disclosureDecisions: snapshot.disclosureDecisions,
-    disclosureItems: snapshot.disclosureItems,
-    displayExposures: snapshot.displayExposures,
-    displayRecords: snapshot.displayRecords,
-    dyads: snapshot.dyads,
-    incidentRecords: snapshot.incidentRecords,
-    intentions: snapshot.intentions,
+    decisions: structuredClone(snapshot.decisions),
+    disclosureDecisions: structuredClone(snapshot.disclosureDecisions),
+    disclosureItems: structuredClone(snapshot.disclosureItems),
+    displayExposures: structuredClone(snapshot.displayExposures),
+    displayRecords: structuredClone(snapshot.displayRecords),
+    dyads: structuredClone(snapshot.dyads),
+    incidentRecords: structuredClone(snapshot.incidentRecords),
+    intentions: structuredClone(snapshot.intentions),
     minute: snapshot.minute,
-    narrativeRecords: snapshot.narrativeRecords,
-    observations: snapshot.observations,
-    plans: snapshot.plans,
-    relationshipDecisions: snapshot.relationshipDecisions,
-    reputations: snapshot.reputations,
-    resolvedDisclosureOpportunityIds: snapshot.resolvedDisclosureOpportunityIds,
-    resolvedDisplayEventIds: snapshot.resolvedDisplayEventIds,
-    resolvedIncidentEventIds: snapshot.resolvedIncidentEventIds,
-    resolvedObservationEventIds: snapshot.resolvedObservationEventIds,
-    resolvedOpportunityIds: snapshot.resolvedOpportunityIds,
-    resolvedAppraisalEventIds: snapshot.resolvedAppraisalEventIds,
-    resolvedAspirationOpportunityIds: snapshot.resolvedAspirationOpportunityIds,
-    resolvedNarrativeEventIds: snapshot.resolvedNarrativeEventIds,
-    resolvedRelationshipEventIds: snapshot.resolvedRelationshipEventIds,
-    resolvedRelationshipRequestIds: snapshot.resolvedRelationshipRequestIds,
-    resolvedSomaticEventIds: snapshot.resolvedSomaticEventIds,
-    somaticRecords: snapshot.somaticRecords,
+    narrativeRecords: structuredClone(snapshot.narrativeRecords),
+    observations: structuredClone(snapshot.observations),
+    plans: structuredClone(snapshot.plans),
+    relationshipDecisions: structuredClone(snapshot.relationshipDecisions),
+    reputations: structuredClone(snapshot.reputations),
+    resolvedDisclosureOpportunityIds: structuredClone(snapshot.resolvedDisclosureOpportunityIds),
+    resolvedDisplayEventIds: structuredClone(snapshot.resolvedDisplayEventIds),
+    resolvedIncidentEventIds: structuredClone(snapshot.resolvedIncidentEventIds),
+    resolvedObservationEventIds: structuredClone(snapshot.resolvedObservationEventIds),
+    resolvedOpportunityIds: structuredClone(snapshot.resolvedOpportunityIds),
+    resolvedAppraisalEventIds: structuredClone(snapshot.resolvedAppraisalEventIds),
+    resolvedAspirationOpportunityIds: structuredClone(snapshot.resolvedAspirationOpportunityIds),
+    resolvedNarrativeEventIds: structuredClone(snapshot.resolvedNarrativeEventIds),
+    resolvedRelationshipEventIds: structuredClone(snapshot.resolvedRelationshipEventIds),
+    resolvedRelationshipRequestIds: structuredClone(snapshot.resolvedRelationshipRequestIds),
+    resolvedSomaticEventIds: structuredClone(snapshot.resolvedSomaticEventIds),
+    somaticRecords: structuredClone(snapshot.somaticRecords),
     tick: snapshot.tick,
-    trace: snapshot.trace,
-    worldFacts: snapshot.worldFacts,
+    trace: structuredClone(snapshot.trace),
+    worldFacts: structuredClone(snapshot.worldFacts),
     worldRevision: snapshot.worldRevision,
   };
 }

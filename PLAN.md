@@ -18,27 +18,25 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8B: authoritative preparation and revision isolation.
-Keep the existing preparation path the sole authority for a runnable revision, harden validation and locks, and isolate a prepared revision from later draft edits.
+The active slice is Phase 10A: ensemble runner and falsifier harness.
+Build the headless seeded ensemble runner and four-way grading harness over the Endicott/Margueritte and Pottsfield fixtures before any workbench presentation work.
 
 ### Current-focus non-goals
 
-- no changes to completed Phase 5, Phase 6, or Phase 7 algorithms
-- no behavior-model or evaluator-fidelity expansion
-- no draft mutation of a running simulation or its reset baseline
-- no filesystem, browser storage, database, or network dependency inside the engine
-- no Build workspace shell, specialized editor, store adapter, or pack writer in this slice
+- no new vignette content beyond the two existing anchors
+- no changes to completed behavioral algorithms or evaluator fidelity
+- no runtime-random action selection; every variant is a seeded authored input
+- no workbench presentation work
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 8B — authoritative preparation and revision isolation
-2. Phase 10A — ensemble runner and falsifier harness
-3. Phase 9A — authoritative seconds and schema migration
-4. Phases 8C through 8F — application shell, editors, store adapters, and packing
-5. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
-6. Phase 10B — remaining acceptance vignettes
+1. Phase 10A — ensemble runner and falsifier harness
+2. Phase 9A — authoritative seconds and schema migration
+3. Phases 8C through 8F — application shell, editors, store adapters, and packing
+4. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+5. Phase 10B — remaining acceptance vignettes
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -69,17 +67,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phase 8A is recorded in COMPLETED.md; Phase 8B is host-neutral and comes first; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
-
-#### Phase 8B — authoritative preparation and revision isolation
-
-Add responsive incremental diagnostics over drafts, but make the existing migration, validation, duplicate detection, reference resolution, dependency closure, and preparation path the sole authority for a runnable revision.
-Unify shared scenario and snapshot validation primitives, reject unknown authored keys, and validate prepared scenarios at the boundary rather than trusting a type discriminator alone.
-Relocate snapshot cross-reference validation from the runtime constructor into table-driven validators beside snapshot parsing, and construct resumed simulation state without aliasing snapshot collections.
-Give each successfully prepared draft revision a canonical content digest used to create both the simulation state and its reset baseline, and extend snapshot resource locks so an in-place edit at the same semantic address fails rather than replaying against changed content.
-Keep later draft edits isolated from that pair until an explicit apply operation prepares a new revision and restarts simulation.
-
-Gate: the separate-document fixture prepares equivalently through direct in-memory content and the authoring graph, unknown and invalid authored fields block transition at actionable paths, correcting them succeeds through the same boundary, post-start edits leave the running state and reset baseline byte-equivalent, and changing locked content without changing its semantic address rejects snapshot resume.
+Phases 8A and 8B are recorded in COMPLETED.md; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
 
 #### Phase 8C — shared Build and Simulate application shell
 

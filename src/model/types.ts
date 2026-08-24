@@ -511,6 +511,8 @@ export interface ContentSource {
 }
 
 export interface ResourceLock {
+  /** Canonical content digest of every locked resource, or null for snapshots saved before digests existed. */
+  digest: string | null;
   resources: readonly ResourceAddress[];
 }
 
@@ -1662,7 +1664,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipRequestIds: string[];
   resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 16;
+  schemaVersion: 17;
   somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;

@@ -8,6 +8,17 @@ import {
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
 import { parseResourceAddress, parseScenario, resourceAddressKey } from './parse.js';
+import {
+  arrayValue,
+  clone,
+  integerValue,
+  legacyRecoveryMode,
+  numberValue,
+  objectValue,
+  stringValue,
+  validateLayerPosition,
+  validatePoint,
+} from './primitives.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
 const BASELINE_PLASTICITY_MECHANISMS = new Set([
@@ -95,68 +106,6 @@ const NARRATIVE_DISPOSITIONS = new Set([
   'status-lowering',
   'wore-in',
 ]);
-
-function clone<Value>(value: Value): Value {
-  return JSON.parse(JSON.stringify(value)) as Value;
-}
-
-function legacyRecoveryMode(activity: unknown): RecoveryMode {
-  if (typeof activity !== 'string') return 'none';
-  const normalized = activity.trim().toLowerCase();
-  return normalized === 'sleeping' || normalized === 'sleep' ? 'sleep' : 'none';
-}
-
-function objectValue(value: unknown, path: string): Record<string, unknown> {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    throw new ScenarioValidationError(path, 'expected an object');
-  }
-  return value as Record<string, unknown>;
-}
-
-function arrayValue(value: unknown, path: string): unknown[] {
-  if (!Array.isArray(value)) throw new ScenarioValidationError(path, 'expected an array');
-  return value;
-}
-
-function stringValue(value: unknown, path: string): string {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new ScenarioValidationError(path, 'expected a non-empty string');
-  }
-  return value;
-}
-
-function numberValue(
-  value: unknown,
-  path: string,
-  minimum = Number.NEGATIVE_INFINITY,
-  maximum = Number.POSITIVE_INFINITY,
-): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    throw new ScenarioValidationError(path, 'expected a finite number');
-  }
-  if (value < minimum || value > maximum) {
-    throw new ScenarioValidationError(path, `expected a number from ${minimum} through ${maximum}`);
-  }
-  return value;
-}
-
-function integerValue(value: unknown, path: string, minimum = 0): number {
-  const result = numberValue(value, path, minimum, Number.MAX_SAFE_INTEGER);
-  if (!Number.isInteger(result)) throw new ScenarioValidationError(path, 'expected an integer');
-  return result;
-}
-
-function validatePoint(value: unknown, path: string): void {
-  const point = objectValue(value, path);
-  numberValue(point.x, `${path}.x`);
-  numberValue(point.y, `${path}.y`);
-}
-
-function validateLayerPosition(value: unknown, path: string): void {
-  const point = objectValue(value, path);
-  validatePoint(point, path);
-  stringValue(point.layerId, `${path}.layerId`);
-}
 
 function validateValueState(value: unknown, path: string): void {
   const state = objectValue(value, path);
@@ -1450,7 +1399,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 13 &&
     file.schemaVersion !== 14 &&
     file.schemaVersion !== 15 &&
-    file.schemaVersion !== 16
+    file.schemaVersion !== 16 &&
+    file.schemaVersion !== 17
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1689,7 +1639,11 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       record.somaticThreatContribution = 0;
     }
   }
-  file.schemaVersion = 16;
+  if (sourceVersion < 17) {
+    const lock = objectValue(file.resourceLock, 'snapshot.resourceLock');
+    lock.digest = null;
+  }
+  file.schemaVersion = 17;
   return file;
 }
 
@@ -1698,7 +1652,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 16) {
+  if (file.schemaVersion !== 17) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1717,6 +1671,11 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   const lockedResources = arrayValue(resourceLock.resources, 'snapshot.resourceLock.resources').map(
     (address, index) => parseResourceAddress(address, `snapshot.resourceLock.resources[${index}]`),
   );
+  const lockDigest =
+    resourceLock.digest === null
+      ? null
+      : stringValue(resourceLock.digest, 'snapshot.resourceLock.digest');
+  resourceLock.digest = lockDigest;
   const lockKeys = lockedResources.map(resourceAddressKey);
   if (new Set(lockKeys).size !== lockKeys.length) {
     throw new ScenarioValidationError(

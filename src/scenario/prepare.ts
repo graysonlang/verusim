@@ -1,3 +1,5 @@
+import { contentDigest } from './digest.js';
+import { arrayValue, objectValue } from './primitives.js';
 import type {
   AuthoredResource,
   CharacterLibraryFile,
@@ -24,6 +26,7 @@ import {
   parseScenario,
   resourceAddressKey,
   ScenarioValidationError,
+  parseResourceAddress,
 } from './parse.js';
 import { validateReferences } from './references.js';
 
@@ -193,6 +196,7 @@ export function prepareScenario(input: {
   const scenario = parseScenario(input.scenario);
   const resources = resolvedCatalogResources(scenario, input.catalog);
   const lock: ResourceLock = {
+    digest: contentDigest(resources),
     resources: resources.map(resource => cloneAddress(resource.address)),
   };
   const characterFiles = resources.filter(
@@ -308,9 +312,57 @@ export function dependencyClosure(prepared: PreparedScenario): readonly Resource
 }
 
 export function isPreparedScenario(value: unknown): value is PreparedScenario {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    (value as { type?: unknown }).type === 'verusim-prepared-scenario'
+  try {
+    validatePreparedScenario(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Validate a prepared scenario's structure at the boundary instead of trusting its discriminator. */
+export function validatePreparedScenario(value: unknown): PreparedScenario {
+  const path = 'prepared';
+  const file = objectValue(value, path);
+  if (file.type !== 'verusim-prepared-scenario') {
+    throw new ScenarioValidationError(`${path}.type`, 'expected a prepared scenario');
+  }
+  if (file.schemaVersion !== 2) {
+    throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
+  }
+  const scenario = objectValue(file.scenario, `${path}.scenario`);
+  if (scenario.schemaVersion !== 17) {
+    throw new ScenarioValidationError(
+      `${path}.scenario.schemaVersion`,
+      'unsupported schema version',
+    );
+  }
+  const placements = arrayValue(scenario.characters, `${path}.scenario.characters`);
+  const characters = arrayValue(file.characters, `${path}.characters`);
+  if (characters.length !== placements.length) {
+    throw new ScenarioValidationError(
+      `${path}.characters`,
+      'must resolve exactly the scenario character placements',
+    );
+  }
+  objectValue(file.environment, `${path}.environment`);
+  arrayValue(file.norms, `${path}.norms`);
+  arrayValue(file.socialContracts, `${path}.socialContracts`);
+  const lock = objectValue(file.resourceLock, `${path}.resourceLock`);
+  if (typeof lock.digest !== 'string' || lock.digest.length === 0) {
+    throw new ScenarioValidationError(`${path}.resourceLock.digest`, 'expected a content digest');
+  }
+  const keys = arrayValue(lock.resources, `${path}.resourceLock.resources`).map((address, index) =>
+    resourceAddressKey(parseResourceAddress(address, `${path}.resourceLock.resources[${index}]`)),
   );
+  if (
+    new Set(keys).size !== keys.length ||
+    JSON.stringify(keys) !== JSON.stringify([...keys].sort())
+  ) {
+    throw new ScenarioValidationError(
+      `${path}.resourceLock.resources`,
+      'expected sorted unique resource addresses',
+    );
+  }
+  return value as PreparedScenario;
 }

@@ -3,7 +3,11 @@ import {
   createSimulationFromPrepared,
   createSimulationFromPreparedSnapshot,
 } from '../simulation/runtime.js';
-import { isPreparedScenario, prepareScenarioFromLibraries } from './prepare.js';
+import {
+  isPreparedScenario,
+  prepareScenarioFromLibraries,
+  validatePreparedScenario,
+} from './prepare.js';
 import { parseSnapshot } from './snapshot.js';
 
 interface LegacyScenarioInput {
@@ -24,7 +28,8 @@ interface LegacySnapshotInput {
 }
 
 export function createSimulation(input: PreparedScenario | LegacyScenarioInput): SimulationState {
-  const prepared = isPreparedScenario(input) ? input : prepareScenarioFromLibraries(input);
+  const prepared =
+    'type' in input ? validatePreparedScenario(input) : prepareScenarioFromLibraries(input);
   return createSimulationFromPrepared(prepared);
 }
 
@@ -34,7 +39,7 @@ export function createSimulationFromSnapshot(
   const snapshot = parseSnapshot(input.snapshot);
   const prepared =
     'prepared' in input
-      ? input.prepared
+      ? validatePreparedScenario(input.prepared)
       : prepareScenarioFromLibraries({
           characterLibrary: input.characterLibrary,
           environmentLibrary: input.environmentLibrary,

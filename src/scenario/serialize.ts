@@ -70,7 +70,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     resolvedRelationshipRequestIds: state.resolvedRelationshipRequestIds,
     resolvedSomaticEventIds: state.resolvedSomaticEventIds,
     scenario: state.scenario,
-    schemaVersion: 16,
+    schemaVersion: 17,
     somaticRecords: state.somaticRecords,
     tick: state.tick,
     trace: state.trace,
