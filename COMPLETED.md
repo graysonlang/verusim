@@ -292,6 +292,7 @@ Exit probes:
 - layer-bearing travel, destination, and position state resume exactly from a snapshot
 - a layout with an unconnected authored floor fails at an actionable content path
 - Exterior is the default projection and renders roofs over enclosed structures with outdoor ground visible
+- Exterior retains authored location labels from the surface layer while upper-floor and cellar labels remain exclusive to their cutaway projections
 - layer controls occupy the canvas's upper-right corner, listing Exterior first and authored floors beneath it from highest to lowest elevation
 - a selected floor peels away its roofs, shows its interior floors and walls, and retains muted exterior ground and inactive structures as spatial context
 - overlapping inactive footprints receive one uniform scrim rather than cumulative per-object transparency, while the active floor remains above it
@@ -302,7 +303,7 @@ Exit probes:
 Environment-layout resource and aggregate environment-library schema version 3 add objective enclosure and independent cover channels after version 2 added layers and connectors; versions 1 and 2 retain explicit migrations and version 1 content moves onto a single `surface` layer.
 Scenario schema version 13 adds layer-bearing character placements and preserves migrations from versions 1 through 12.
 Snapshot schema version 10 persists layer-bearing positions and destinations and preserves migrations from versions 1 through 9.
-Regression coverage exercises connector routing, cross-floor spatial separation, malformed enclosure and cover, projection order and character prominence, schema migration, and exact snapshot replay.
+Regression coverage exercises connector routing, cross-floor spatial separation, malformed enclosure and cover, projection order, surface and cutaway location-label visibility, character prominence, schema migration, and exact snapshot replay.
 Isolated browser verification confirmed the default roof-on Exterior view, the descending vertical control stack, active upper-floor and cellar walls and floors, muted town context, and dimmed off-level character markers with relative-level badges.
 Follow-up isolated browser verification confirmed a uniform context scrim in both upper-floor and cellar cutaways, without overlap-dependent darkening, while selected rooms and walls remained prominent above it.
 Latest isolated browser verification confirmed the full Alder's Edge selector stack sits 12 pixels from the canvas's top and right edges and still changes the active cutaway projection.

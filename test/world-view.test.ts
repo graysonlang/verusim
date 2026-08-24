@@ -6,6 +6,8 @@ import {
   cameraRevealingPoint,
   cameraForGesture,
   CSS_PIXELS_PER_METER_AT_100_PERCENT,
+  EXTERIOR_PROJECTION,
+  locationLabelVisibleInProjection,
   scaleBarForZoom,
   worldPaletteFor,
 } from '../app/world-view.js';
@@ -136,6 +138,29 @@ describe('world view scale', () => {
         assert.ok(building.height <= 40, `${building.id} is ${building.height} meters deep`);
       }
     }
+  });
+});
+
+describe('location label projections', () => {
+  const town = environments.environments.find(
+    environment => environment.layoutId === 'alders-edge-town',
+  );
+
+  assert.ok(town);
+  const market = town.locations.find(location => location.id === 'market-square');
+  const guestRooms = town.locations.find(location => location.id === 'wayfarer-guest-rooms');
+  assert.ok(market);
+  assert.ok(guestRooms);
+
+  it('shows surface labels in the exterior projection', () => {
+    assert.equal(locationLabelVisibleInProjection(town, market, EXTERIOR_PROJECTION), true);
+    assert.equal(locationLabelVisibleInProjection(town, guestRooms, EXTERIOR_PROJECTION), false);
+  });
+
+  it('continues to show only labels on the active cutaway layer', () => {
+    const upperProjection = { kind: 'layer', layerId: 'upper' } as const;
+    assert.equal(locationLabelVisibleInProjection(town, market, upperProjection), false);
+    assert.equal(locationLabelVisibleInProjection(town, guestRooms, upperProjection), true);
   });
 });
 

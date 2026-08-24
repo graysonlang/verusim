@@ -3,6 +3,7 @@ import type {
   EnvironmentArea,
   EnvironmentDefinition,
   LayerPosition,
+  LocationDefinition,
   Point,
   Season,
   SimulationAgent,
@@ -113,6 +114,18 @@ export function agentsOnLayer(
   layerId: string,
 ): readonly SimulationAgent[] {
   return agents.filter(agent => agent.position.layerId === layerId);
+}
+
+export function locationLabelVisibleInProjection(
+  environment: Pick<EnvironmentDefinition, 'layers'>,
+  location: Pick<LocationDefinition, 'layerId'>,
+  projection: WorldProjection,
+): boolean {
+  const visibleLayerId =
+    projection.kind === 'layer'
+      ? projection.layerId
+      : environment.layers.find(layer => layer.elevationMeters === 0)?.id;
+  return location.layerId === visibleLayerId;
 }
 
 const AREA_COLORS: Record<EnvironmentArea['kind'], string> = {
@@ -889,7 +902,7 @@ function drawWorld(
 
   if (screenPixelsPerMeter >= LOCATION_LABEL_MIN_PIXELS_PER_METER) {
     for (const location of state.environment.locations) {
-      if (projection.kind !== 'layer' || location.layerId !== projection.layerId) continue;
+      if (!locationLabelVisibleInProjection(state.environment, location, projection)) continue;
       context.fillStyle = 'rgb(255 250 226 / 72%)';
       context.font = `600 ${10 / screenPixelsPerMeter}px ui-sans-serif, system-ui, sans-serif`;
       context.textAlign = 'center';
