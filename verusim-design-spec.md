@@ -730,6 +730,10 @@ The initial `membership` term is Boolean and the result is clamped per value.
 This is a bounded Phase 2C authoring surface analogous to the atomic opportunity boundary: it lets deterministic fixtures supply a direct common turn signature before Phase 6 incidents derive observer turns from root-impact signatures.
 It must not be mistaken for objective moral truth.
 
+Atomic norm definitions are reusable addressed resources.
+Social-contract resources compose references to those norms, while scenarios place one or more contracts into explicit location, institution, group, or event scopes independently of physical layout.
+Placement is additive context: it does not choose a winning contract, establish priority, infer membership, or change this bounded appraisal equation before Phase 6 consumes the scopes.
+
 **Membership and legibility are independent.** Membership determines whether the local compatibility term participates in appraisal.
 Legibility records whether the observer has enough local knowledge to identify the basis of the norm and runs through evidence calibration as explicit domain support.
 A nonmember may understand a rule and reject it; a member may follow an internalized rule without being able to explain it.

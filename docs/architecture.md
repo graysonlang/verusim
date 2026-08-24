@@ -285,7 +285,9 @@ Local norm events are a discriminated extension of the event-driven observation 
 They share the same authored timing, subject position, observer list, sight or hearing channel, interpretation difficulty, and resolved-event ledger as mind-model observations.
 An observer must perceive the objective event before any normative appraisal occurs.
 
-Scenario-local norm definitions supply compatibility value turns, while each character placement supplies an explicit perspective containing independent `member` and `legibility` fields.
+Resolved norm resources supply compatibility value turns, while each character placement supplies an explicit perspective containing the norm's semantic address plus independent `member` and `legibility` fields.
+The scenario reaches those norms through one or more placed social contracts; preparation resolves that graph before simulation, and the evaluator reads the prepared immutable norm collection without resource access.
+The migrated `legacyLocalNorms` collection preserves version 1 through 13 scenario behavior but is not the native version 14 authoring path.
 Missing perspectives fail at the authored observer path rather than silently becoming outsider defaults.
 Membership decides whether the norm's compatibility turns modify the event's common baseline turns.
 Legibility supplies domain support to an evidence-calibration check and records Pass when the observer has no knowledge of the rationale; it does not gate an internalized member appraisal or alter a nonmember's baseline turn.
@@ -359,10 +361,10 @@ Somatic preemption will emit a first-class `gate` entry before ordinary appraisa
 ## Content identity and preparation
 
 Phase 5 separates the organization of authored resources from their logical identity.
-Character and environment definitions should live in independently validated documents, preferably one resource per file, while directories group related settings, casts, fixtures, or packages for authors.
+Character, environment, norm, and social-contract definitions live in independently validated documents, preferably one resource per file, while directories group related settings, casts, fixtures, or packages for authors.
 The directory path and file name are discovery metadata rather than an address, so reorganizing the source tree does not invalidate a scenario.
 Repository-authored resources and scenarios share one `content/` tree.
-Character profiles, environment layouts, and future reusable kinds occupy ordinary organizational branches, while `content/scenarios/` is reserved for scenario documents.
+Character profiles, environment layouts, norms, social contracts, and future reusable kinds occupy ordinary organizational branches, while `content/scenarios/` is reserved for scenario documents.
 Scenarios are preparation roots rather than reusable addressed resources: they select semantic dependencies but are not owned by, nested inside, or registered with those dependencies.
 
 A resource address is a structured semantic key.
@@ -387,10 +389,18 @@ Weather, season, temperature, occupancy, and other situational conditions remain
 Named layers, their authored elevations, areas, locations, and connectors belong to the immutable layout.
 A richer multi-floor realization can therefore retain the place's `environmentId` while using a distinct `layoutId`; layer names are not a substitute for layout identity.
 
+Norm identity is the complete semantic resource address rather than a scenario-local string.
+An atomic norm definition supplies the label and compatibility turns consumed by the bounded Phase 2C evaluator.
+A social-contract resource supplies a labeled coherent bundle of exact norm addresses without copying those definitions.
+
+Scenarios place social-contract addresses through authored placement records whose scope is exactly one location, institution, group, or event identifier.
+Location scopes validate against the resolved environment layout; the other scope identifiers remain explicit scenario context until their Phase 6 consumers land.
+Placements are retained in authored order and may overlap or repeat a contract across scopes, while dependency resolution deduplicates the addressed contract and norm resources without selecting a winner or priority.
+
 ### Preparation boundary
 
 Content acquisition, migration, validation, and reference resolution finish before deterministic simulation begins.
-The public boundary is a prepared scenario containing the parsed scenario, resolved character placements, resolved environment, and a lock of the semantic resource identities used to construct it.
+The public boundary is a prepared scenario containing the parsed scenario, resolved character placements, resolved environment, resolved norms and social contracts, and a lock of the semantic resource identities used to construct it.
 The simulation subsystem receives that prepared value and performs no file access, resource registration, enumeration, asynchronous lookup, or directory traversal while creating, stepping, or resuming state.
 
 The acquisition adapter has one required operation:
@@ -420,7 +430,8 @@ const prepared = prepareScenario({ scenario, catalog });
 const state = createSimulation(prepared);
 ```
 
-Both paths converge on the same migration, validation, duplicate detection, and reference-resolution implementation.
+Both paths converge on the same migration, validation, duplicate detection, transitive dependency closure, and reference-resolution implementation.
+Preparation starts from scenario-selected character profiles, environment layout, and placed social contracts, then walks each contract's norm references exactly once in semantic address order.
 The existing raw-library simulation entry point may remain as a compatibility wrapper during migration, but it must delegate to preparation rather than making the simulation subsystem a loader.
 Snapshot resume receives the same prepared content and verifies its resource lock before restoring situational state.
 
@@ -430,7 +441,7 @@ The repository generator discovers resource documents below `content/` in code-u
 Tests and builds reject a stale generated catalog.
 Traversal is an authoring and build concern only; deployed consumers are never required to expose a filesystem or reproduce the repository tree.
 
-A future packer starts from selected scenario addresses and walks their explicit resource dependency graph.
+A future packer starts from selected scenario roots and reuses their explicit resource dependency graph.
 It emits the transitive closure, deduplicates shared resources by semantic key and locked digest, and excludes unrelated characters, profiles, environments, and assets.
 Population generators and other dynamic selectors must declare their candidate pools as dependencies so packing never relies on an unbounded runtime registry.
 The workbench may bundle a catalog containing every authored resource, while a downstream game can supply a minimal prepacked closure through the same preparation boundary.
@@ -438,8 +449,9 @@ The workbench may bundle a catalog containing every authored resource, while a d
 ## Storage contracts
 
 Files use strict, versioned JSON and stable string identifiers.
-Character-profile resource files use schema version 1, environment-layout resource files use schema version 2, and both carry a structured package, kind, and resource identifier address independent of their source path.
-Scenarios reference those semantic addresses rather than copying character or environment definitions.
+Character-profile, norm, and social-contract resource files use schema version 1, while environment-layout resource files use schema version 3.
+Every resource carries a structured package, kind, and resource identifier address independent of its source path.
+Scenarios reference character profiles, environment layouts, and placed social contracts by semantic address; social contracts reference norms the same way.
 Runtime validation rejects duplicate identifiers, missing references, malformed numeric ranges, and schedules that refer to unknown locations.
 
 Schedule blocks and task operators carry an explicit `recoveryMode` of `none`, `break`, `rest`, or `sleep`.
@@ -460,10 +472,12 @@ The legacy character-library schema version 7 compatibility adapter replaces ver
 Its explicit migrations preserve versions 1 through 6, using neutral capability defaults where versions 1 through 3 expressed no distinction, an unspecified average physical profile where versions before 5 expressed no physical data, neutral coping defaults where version 6 data was absent, and stable structured claim defaults for the earlier narrative strings.
 Environment-layout resource and aggregate environment-library schema version 3 add explicit area enclosure and independent hearing, overhead, and sight cover channels after version 2 added named layers, layer-bearing areas and locations, and explicit connectors.
 Versions 1 and 2 migrate kind-based cover defaults; version 1 also migrates onto one `surface` layer with no connectors while retaining the earlier outlet-affordance compatibility default.
-Scenario schema version 13 adds a layer identifier to every character position after version 12 replaced path-era character and environment identifiers with structured character-profile and environment-layout addresses.
-Explicit migrations preserve version 1 through 12 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, and placing pre-layer positions on `surface`.
-Snapshot schema version 10 persists layer-bearing positions and destinations after version 9 added structured resource addresses and the exact prepared resource lock.
-Explicit snapshot migrations preserve versions 1 through 9, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, and supply recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
+Scenario schema version 14 adds structured norm references and scoped social-contract placements after version 13 added layer-bearing character positions and version 12 replaced path-era character and environment identifiers with semantic addresses.
+Explicit migrations preserve version 1 through 13 scenarios by supplying missing behavioral collections, mapping schedules and tasks from before version 5 onto explicit recovery modes, supplying neutral spring conditions where versions before 6 expressed no atmosphere, supplying empty observation inputs plus neutral suspicion where version 7 data was absent, marking version 7 observation events as mind-model events while supplying empty norm content, supplying empty relationship inputs plus neutral exposure debt where version 9 data was absent, supplying empty appraisal inputs plus neutral drain data where version 10 data was absent, making older placements responders with neutral narrative collections where version 11 data was absent, mapping legacy references into the default `verusim` package, placing pre-layer positions on `surface`, and moving the bounded inline norm shape into the explicit `legacyLocalNorms` compatibility field with default-package norm addresses.
+Native version 14 repository scenarios keep `legacyLocalNorms` empty and acquire reusable norms through placed social contracts.
+Snapshot schema version 11 persists the version 14 scenario and transitive prepared resource lock after version 10 added layer-bearing positions and destinations and version 9 added structured resource addresses and the initial exact lock.
+Standalone snapshot parsing verifies sorted unique lock entries and every direct scenario dependency; prepared resume verifies the exact transitive lock because the external contract graph is available only at that boundary.
+Explicit snapshot migrations preserve versions 1 through 10, place pre-layer positions and destinations on `surface`, verify legacy character and environment identifiers while constructing the lock, migrate retained norm observation identifiers to semantic keys, and supply recovery and drain semantics for older saved schedules; legacy string causes become provenance-marked legacy terms rather than being silently reinterpreted.
 Silent best-effort parsing is intentionally excluded because it makes regression fixtures ambiguous.
 
 ## Performance boundary

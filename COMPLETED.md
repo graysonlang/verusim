@@ -308,6 +308,37 @@ Isolated browser verification confirmed the default roof-on Exterior view, the d
 Follow-up isolated browser verification confirmed a uniform context scrim in both upper-floor and cellar cutaways, without overlap-dependent darkening, while selected rooms and walls remained prominent above it.
 Latest isolated browser verification confirmed the full Alder's Edge selector stack sits 12 pixels from the canvas's top and right edges and still changes the active cutaway projection.
 
+## Phase 5C — reusable norms and social contracts
+
+Status: complete.
+
+Promote atomic norm definitions and coherent social-contract bundles into independently validated resource documents using the Phase 5A catalog and preparation boundary.
+Let scenarios place contracts into explicit location, institution, group, or event scopes independently of the selected environment layout, with dependency closure walking contract-to-norm references exactly once.
+
+This slice closes the Phase 5 sharing and placement probes for norms and social contracts after Phase 5B established layered environment topology and its expanded reference town.
+The same contract is reusable without copying its norms, the same physical layout accepts different social-context placements, and multiple contracts coexist without selecting a winner.
+The bounded Phase 2C observer-relative appraisal equation is unchanged; Phase 6 still owns affiliation, internalization, enforcement, incident interpretation, shame, and conflicting-contract behavioral contributions.
+
+Exit probes:
+
+- moving norm and social-contract documents within an authoring tree leaves their semantic identities and prepared scenarios unchanged
+- Pottsfield and Pottsfield Charter Day share one harvest contract and its norm without copying either definition while placing that contract in different social scopes over the same environment layout
+- location, institution, group, and event scopes remain explicit scenario data, with malformed location placement failing at its authored path
+- two contracts coexist over one institution while repeated placements resolve each contract and norm exactly once and expose no priority or winner field
+- generated-catalog and exact-address source preparation produce equivalent transitive resolved content, and each dependency is read once before simulation
+- dependency closure includes every referenced character profile, environment layout, social contract, and norm once while excluding unrelated resources
+- a missing transitive norm fails at the social contract's authored reference path
+- snapshot resume verifies the exact transitive prepared resource lock
+
+The repository adds two atomic Pottsfield norm documents, two social-contract bundles, and Pottsfield Charter Day as the discriminating coexistence fixture.
+Regression coverage exercises resource relocation, independent document validation, shared-contract reuse, all four scope kinds, overlapping contracts, transitive catalog and source preparation, closure deduplication and exclusion, actionable failures, legacy inline-norm migration, unchanged observer-relative appraisal, and exact snapshot replay.
+Scenario schema version 14 adds semantic norm references and scoped social-contract placements while migrating the version 1 through 13 inline norm shape into the explicit `legacyLocalNorms` compatibility field.
+Native version 14 repository scenarios leave that field empty.
+Prepared-scenario schema version 2 carries resolved immutable norm and social-contract collections, while snapshot schema version 11 preserves the version 14 scenario and verifies the transitive resource lock at prepared resume.
+
+Browser validation could not run because neither the owner's in-app browser control surface nor an existing Playwright-reachable local app was available, and repository rules prohibit starting a second server without explicit authorization.
+The slice changes no layout or interaction design; the build and scenario-catalog regressions cover compilation and built-in scenario loading.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

@@ -13,11 +13,12 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation has completed Phase 0 through Phase 4, Phase 5A resource preparation, and Phase 5B layered environment topology; reusable norm and social-contract resources are next in Phase 5C.
+The current implementation has completed Phase 0 through Phase 4 and Phase 5A through Phase 5C; history-derived instance state and formative-event execution are next in Phase 5D.
 It includes:
 
-- independently versioned JSON character-profile and environment-layout resources plus versioned scenarios
-- structured semantic resource addresses, a generated immutable repository catalog, deterministic dependency closures, and an acquisition-neutral prepared-scenario boundary
+- independently versioned JSON character-profile, environment-layout, norm, and social-contract resources plus versioned scenarios
+- structured semantic resource addresses, a generated immutable repository catalog, transitive deterministic dependency closures, and an acquisition-neutral prepared-scenario boundary
+- scenario-owned social-contract placements over explicit location, institution, group, and event scopes, independent of physical layout
 - layered environment layouts with explicit stairs, ramps, and ladders; connector-aware schedule and agenda travel; floor-separated spatial perception; objective enclosure and overhead cover; and roof-on exterior plus contextual cutaway workbench views
 - Alder's Edge Town, a compact reference settlement with agricultural edges, civic and religious spaces, trades, commerce, river infrastructure, upper-floor homes, cellars, storage, a crypt, and a watch cell
 - deterministic simulation stepping, schedule-based movement, ambient value turns, and bounded trace history
@@ -27,7 +28,7 @@ It includes:
 - directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
 - authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
 - event-driven social observations, spatial perception gates, one-level directed mind models, accumulated prediction error and suspicion, evidence-gated correction, and the Endicott/Margueritte acceptance fixture
-- observer-relative local norms, relationship momentum and consolidation, accumulation and coping, and narrative-driven agency
+- reusable observer-relative norms, coexisting social contracts, relationship momentum and consolidation, accumulation and coping, and narrative-driven agency
 - immutable authored scenarios separated from resource-locked versioned live snapshots with exact dyad, exposure, decision, and trace resume
 - a Solid-reactive, vanilla-DOM browser workbench with a bundled scenario catalog, scenario summaries, a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and independent distance and temperature settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, prediction inspection, and trace inspection
 - tests that use the same scenario loading and stepping path as the workbench
@@ -59,7 +60,7 @@ The dependency stack is intentionally small:
 - `src/model/` — shared serializable types and model constants
 - `src/scenario/` — resource and scenario parsing, preparation, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
-- `content/` — the authored tree: reusable character profiles and environment layouts plus scenario roots that reference them by semantic address
+- `content/` — the authored tree: reusable character profiles, environment layouts, norms, and social contracts plus scenario roots that reference them by semantic address
 - `content/catalog.generated.ts` — deterministic repository catalog generated from the authoring tree
 - `app/` — the browser workbench
 - `test/` — regression tests over the headless runtime

@@ -18,21 +18,20 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5C: reusable norms and social contracts.
-Promote atomic norm definitions and coherent social-contract bundles into independently validated resource documents using the Phase 5A catalog and preparation boundary.
-Let scenarios place contracts into explicit location, institution, group, or event scopes independently of the selected environment layout, with dependency closure walking contract-to-norm references exactly once.
+The active slice is Phase 5D: history-derived instance state and formative-event execution.
+Move the remaining mutable history-derived character content behind a sparse per-instance override boundary so runtime change never mutates a reusable profile or every instance that references it.
+Run structured formative events through the same deterministic update rules that consume ordinary runtime causes, retaining event provenance in the resulting disposition and memory state.
 
-This slice closes the Phase 5 sharing and placement probes for norms and social contracts after Phase 5B established layered environment topology and its expanded reference town.
-The same contract must be reusable without copying its norms, the same physical layout must accept different social-context placements, and multiple contracts must be able to coexist without selecting a winner.
+This slice establishes the safe write boundary required before later generation and rare §14.4 change can land.
+It should also make age or continuity profiles explicit checkpoints of one stable character identity and the relevant prefix of one formative history where the authored data supports that derivation.
 
 ### Current-focus non-goals
 
-- no population or formative-event generation
-- no role bundles, cohort stratification, pre-contact relationship generation, or environment generation
-- no Phase 6 changes to normative interpretation, affiliation, internalization, enforcement, shame, or behavior
-- no conversion of Pottsfield's bounded common-turn fixture into incident truth
-- no contract priority, winning-culture selection, or implicit scope precedence
-- no package manager, remote dependency resolver, archive format, authoring UI, or pack writer
+- no population generation, role bundles, or cohort stratification
+- no recent-event staggering, pre-contact relationship generation, or environment generation
+- no unrestricted adult drift or new §14.4 write path before the sparse override boundary is proven
+- no Phase 6 incident, normative-interpretation, or somatic changes
+- no package manager, remote dependency resolver, authoring UI, or pack writer
 
 ## Phase 5 — authoring and population generation
 
