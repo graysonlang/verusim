@@ -18,39 +18,17 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 6C: somatic state, action restriction, and preemption.
-Introduce exact per-agent discomfort sources, independent pain and perceived urgency, steady-source habituation, graded impairment evidence, level-2 action restriction, the level-3 preempt gate, and level-4 incapacity as an observer-relative crowd stimulus.
+The active slice is Phase 7: cadence and integration adapters.
+Expand the existing tell vocabulary into text and embodied projections over one unchanged causal trace, introduce deterministic cadence tiers over the full evaluator, add exact closed-form catch-up only where equivalence can be proved, and evaluate ORBIT-style low-stakes complementarity without making results cadence-dependent.
 
 ### Current-focus non-goals
 
-- no changes to completed Phase 5, Phase 6A, or Phase 6B algorithms
-- no disease etiology, pathogen, transmission, or medical-treatment simulation
+- no changes to completed Phase 5 or Phase 6 algorithms
 - no reduced-fidelity evaluator path
-- no authored crowd response or authoritative observer inference of somatic severity
-- no Phase 7 cadence or integration adapters
+- no approximation presented as exact catch-up
+- no observer-proximity effect on authoritative state
+- no Phase 8 authoring workspace
 - no package manager, remote dependency resolver, authoring UI, or pack writer
-
-## Phase 6 — world stimuli, social interpretation, and somatic state
-
-Implement incident impact signatures, displays and observer-side habituation, positional respect, discomfort and pain, perceived urgency, action-set restriction, and somatic preemption.
-Replace the bounded common-turn norm fixture with objective event facts or impact handles that every active social contract can interpret without supplying privileged moral truth.
-Separate a character's affiliation, legibility, and history-derived internalization of a convention, and keep all three distinct from anticipated enforcement, hostility, empathy, social distance, and threat.
-Let conflicting contracts contribute simultaneous inspectable appraisal and repercussion terms rather than selecting a winning culture or applying priority overrides.
-Social contracts supply conventional evaluations, identity stakes, and enforcement context; ordinary value, narrative, audience, and action appraisal machinery remains responsible for dissent, compliance, shame, and behavior.
-Resolve incident sampling and somatic open decisions before fixing their storage contracts.
-
-Exit probes:
-
-- one ambiguous incident produces divergent observer readings without privileged ground truth
-- the same character and objective event produce different normative pressure when only the active social context changes
-- two members of one social contract diverge because personal values and internalization differ without changing the shared convention
-- a knowledgeable nonmember, an opaque conforming member, and a legible dissenting member remain distinct
-- conflicting social contracts preserve separate causal terms and neither silently overrides the other
-- convention violation produces shame only through identity and estimated audience appraisal, while anticipated enforcement can produce compliance without agreement
-- one display produces admiration, envy, disdain, and indifference from different observers
-- ambient discomfort hastens cascade descent without changing empathy or value weights
-- pain and perceived urgency vary independently across four behavior profiles
-- emergency preemption removes ordinary actions, while incapacity turns the agent into a stimulus for heterogeneous crowd responses
 
 ## Phase 7 — cadence and integration adapters
 

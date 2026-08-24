@@ -497,6 +497,39 @@ Exit probes:
 The discriminating regression uses the same high-gap five-year signals against age-10 and age-38 realizations while a below-threshold twenty-year adult exposure proves the drift-mush guard.
 Coverage also checks the adult rate bound, confirmation-stiffened integrals, deterministic replay, all three targets, constitutional immutability, malformed snapshot rejection, generated-project migration and immutability, exact prepared equivalence, closure reporting, and actionable resource and dependency failures.
 
+## Phase 6 — world stimuli, social interpretation, and somatic state
+
+Status: complete.
+
+Implement incident impact signatures, displays and observer-side habituation, positional respect, discomfort and pain, perceived urgency, action-set restriction, and somatic preemption.
+Replace the bounded common-turn norm fixture with objective event facts or impact handles that every active social contract can interpret without supplying privileged moral truth.
+Separate a character's affiliation, legibility, and history-derived internalization of a convention, and keep all three distinct from anticipated enforcement, hostility, empathy, social distance, and threat.
+Let conflicting contracts contribute simultaneous inspectable appraisal and repercussion terms rather than selecting a winning culture or applying priority overrides.
+Social contracts supply conventional evaluations, identity stakes, and enforcement context; ordinary value, narrative, audience, and action appraisal machinery remains responsible for dissent, compliance, shame, and behavior.
+Resolve incident sampling and somatic open decisions before fixing their storage contracts.
+
+Exit probes:
+
+- one ambiguous incident produces divergent observer readings without privileged ground truth
+- the same character and objective event produce different normative pressure when only the active social context changes
+- two members of one social contract diverge because personal values and internalization differ without changing the shared convention
+- a knowledgeable nonmember, an opaque conforming member, and a legible dissenting member remain distinct
+- conflicting social contracts preserve separate causal terms and neither silently overrides the other
+- convention violation produces shame only through identity and estimated audience appraisal, while anticipated enforcement can produce compliance without agreement
+- one display produces admiration, envy, disdain, and indifference from different observers
+- ambient discomfort hastens cascade descent without changing empathy or value weights
+- pain and perceived urgency vary independently across four behavior profiles
+- emergency preemption removes ordinary actions, while incapacity turns the agent into a stimulus for heterogeneous crowd responses
+
+The discriminating incident fixture holds one objective ambiguous event constant while friend and rival models infer different attribution, then varies only contract scope to change pressure and preserves simultaneous conflicting contract terms.
+The display fixture derives admiration, envy, disdain, and indifference from one status event, proves observer and wearer habituation, and checks the five-reference positional-respect bound plus exact propagation deadband.
+The somatic fixture sweeps four independent pain and urgency profiles, contrasts steady and fluctuating discomfort, makes ambient attention tax cross the cascade boundary without changing empathy or value weights, removes a demanding level-2 action before appraisal, and proves that an emergency gate contains no social term.
+Its incapacity variant derives help and freeze from different observers, lowers the same observer's help drive as witness count rises, exposes only observer-inferred severity, and prevents further schedule movement.
+
+Regression coverage exercises affiliation, internalization, legibility, enforcement, personal-value dissent, identity-bound shame, nonmember knowledge, ambiguous attribution, generated incident provenance, status-marker relevance, positional propagation, exact somatic source aggregation, graded evidence calibration, action and agenda restriction, no-agency preemption, crowd heterogeneity, and deterministic causal traces.
+Incident, display, and somatic aftermath state all resume and replay exactly from snapshots.
+Scenario schema versions 15, 16, and 17 introduce objective incidents and social interpretation, display events, and exact somatic sources respectively; snapshot versions 14, 15, and 16 persist their bounded aftermath state and migrate older versions to neutral additions without retroactive evaluation.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.
