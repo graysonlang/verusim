@@ -1,5 +1,6 @@
 import { VALUE_IDS, type SimulationAgent, type ValueId } from '../model/types.js';
 import { allostaticLoadFor } from './coping.js';
+import { effectiveValueWeight } from './history.js';
 
 const VALUE_LABELS: Record<ValueId, string> = {
   safety: 'safety',
@@ -70,7 +71,7 @@ export function describeAgent(agent: SimulationAgent): AgentObservation {
 
   for (const valueId of VALUE_IDS) {
     const state = agent.values[valueId];
-    const weight = agent.profile.values[valueId].weight;
+    const weight = effectiveValueWeight(agent, valueId);
     const pressure = weight * (Math.max(0, -state.charge) + state.deficitIntegral);
     if (pressure > dominantPressure) {
       dominantPressure = pressure;

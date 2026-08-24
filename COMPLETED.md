@@ -342,6 +342,39 @@ Prepared-scenario schema version 2 carries resolved immutable norm and social-co
 Browser validation could not run because neither the owner's in-app browser control surface nor an existing Playwright-reachable local app was available, and repository rules prohibit starting a second server without explicit authorization.
 The slice changes no layout or interaction design; the build and scenario-catalog regressions cover compilation and built-in scenario loading.
 
+## Phase 5D — history-derived instance state and formative-event execution
+
+Status: complete.
+
+Move every mutable history-derived character field behind a sparse per-instance override boundary while retaining immutable reusable profiles and generation-fixed constitutional gains.
+Run chronological formative events through the shared constitutional reactivity and clamped value-turn transition, accumulate their retained salience into instance-owned value-weight dispositions, and retain linked provenance in disposition records and formative memories.
+Materialize earlier age profiles as independently valid checkpoints over one stable character identity and the appropriate formative-event prefix.
+
+This slice establishes the safe write boundary required before role-conditioned generation and rare §14.4 baseline change.
+It does not add an adult drift writer, population generation, pre-contact relationship generation, or any Phase 6 mechanism.
+
+Exit probes:
+
+- two instances can resolve different sparse history-derived overrides without mutating their shared reusable profile or each other
+- formative positive and negative turns use the same constitutional scaling and clamped charge transition as ordinary runtime causes
+- every applied formative event leaves an immutable disposition record and a linked memory carrying the exact profile, authored path, event index, age, attribution, coping potential, value, and turn provenance
+- Mara's age-16 checkpoint retains the flood event and its safety disposition while excluding the adult competence event that distinguishes her age-38 checkpoint
+- deriving an age checkpoint preserves stable character identity and constitutional content while producing an independently valid explicit profile
+- repeated formative execution produces byte-equivalent history state and memories
+- snapshot resume preserves overrides, disposition records, and memory provenance exactly, while version 1 through 11 migration installs an empty boundary instead of retroactively changing saved behavior
+- malformed formative chronology and snapshot override values fail at actionable authored paths
+
+The implementation centralizes value-turn scaling and charge transitions so appraisal, agenda, norm, narrative, and formative paths no longer maintain duplicate update rules.
+Runtime readers and the workbench inspector resolve value weights, cascade priors, contract adherence, disclosure and empathy envelopes, identity markers, outlet rankings, and satisfier preferences from the immutable profile plus sparse instance overrides.
+Narrative claims remain on their already-settled Phase 4 instance boundary.
+
+The discriminating regression fixture derives Mara Vale at ages 16 and 38 from the same character identity: both checkpoints retain the age-11 flood and equal safety disposition, while only the adult checkpoint retains the age-24 competence event and its higher effective competence weight.
+Coverage also exercises all effective-value accessors, profile immutability, deterministic replay, exact snapshot resume, version 11 migration, event-memory linkage, and malformed-state rejection.
+Snapshot schema version 12 stores the new history state and preserves explicit migrations from versions 1 through 11 without changing the character-profile resource schema.
+
+Browser validation could not run because the in-app browser control surface was unavailable and the Playwright fallback found no existing app at the owner's local address; repository rules prohibit starting a second server without explicit authorization.
+The inspector change is limited to resolving displayed history-derived values through the same effective-value accessors covered by regression tests, and the production build verifies that projection compiles.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

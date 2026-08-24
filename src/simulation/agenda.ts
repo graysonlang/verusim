@@ -14,15 +14,16 @@ import {
   type TaskOperator,
   type TraceEntry,
   type ValueMap,
-  type ValueState,
   type WorldFact,
 } from '../model/types.js';
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
+import { effectiveContractAdherence } from './history.js';
 import { claimExpressionPayoff } from './narrative.js';
 import { locationCenter, navigationDistance, sameLayerPosition } from './navigation.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_AGENDA_DECISIONS = 80;
 const MAX_MEMORIES = 16;
@@ -95,17 +96,6 @@ function subtractTurns(
   const result: Partial<ValueMap<number>> = {};
   for (const valueId of VALUE_IDS) result[valueId] = (left[valueId] ?? 0) - (right[valueId] ?? 0);
   return result;
-}
-
-function applyTurns(agent: SimulationAgent, turns: Partial<ValueMap<number>>): SimulationAgent {
-  const values = {} as ValueMap<ValueState>;
-  for (const valueId of VALUE_IDS) {
-    values[valueId] = {
-      ...agent.values[valueId],
-      charge: clamp(agent.values[valueId].charge + (turns[valueId] ?? 0), -1, 1),
-    };
-  }
-  return { ...agent, values };
 }
 
 function taskLocationCenter(state: SimulationState, locationId: string): LayerPosition {
@@ -283,7 +273,7 @@ function planCandidates(
       contractViolation += task.contractViolation;
     }
     const taskAppraisal = appraiseAction({
-      contractViolationCost: agent.profile.contractAdherence * contractViolation,
+      contractViolationCost: effectiveContractAdherence(agent) * contractViolation,
       impacts: [{ empathy: selfEmpathy, subjectId: agent.id, turns: taskTurns }],
       narrativeExpression: claimExpressionPayoff(agent, taskExpressions),
       repercussionCost: 0,
@@ -291,7 +281,7 @@ function planCandidates(
     });
     const combinedTurns = addTurns(goalTurns, taskTurns);
     const appraisal = appraiseAction({
-      contractViolationCost: agent.profile.contractAdherence * contractViolation,
+      contractViolationCost: effectiveContractAdherence(agent) * contractViolation,
       impacts: [{ empathy: selfEmpathy, subjectId: agent.id, turns: combinedTurns }],
       narrativeExpression: claimExpressionPayoff(agent, [
         ...goal.claimExpressions,
@@ -353,7 +343,7 @@ function resolveGoal(
       candidate.id === goal.id ? { ...candidate, resolvedMinute: state.minute, status } : candidate,
     ),
     agents: state.agents.map(candidate =>
-      candidate.id === agent.id ? applyTurns(candidate, turns) : candidate,
+      candidate.id === agent.id ? applyAgentValueTurns(candidate, turns) : candidate,
     ),
     intentions: state.intentions.filter(intention => intention.goalId !== goal.id),
     plans: state.plans.filter(plan => plan.goalId !== goal.id),
@@ -780,7 +770,11 @@ function completeTask(
     ...state,
     agents: state.agents.map(candidate =>
       candidate.id === agent.id
-        ? { ...applyTurns(candidate, task.valueTurns), currentActivity: task.label, resources }
+        ? {
+            ...applyAgentValueTurns(candidate, task.valueTurns),
+            currentActivity: task.label,
+            resources,
+          }
         : candidate,
     ),
     agendaGoals: state.agendaGoals.map(goal =>

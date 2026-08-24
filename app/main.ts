@@ -11,6 +11,12 @@ import {
   dayPeriodAtMinute,
   describeAgent,
   deriveBuildEffects,
+  effectiveContractAdherence,
+  effectiveDisclosure,
+  effectiveEmpathy,
+  effectiveIdentity,
+  effectiveOutletPreferences,
+  effectiveValueWeight,
   evaluateEavesdropping,
   evaluateProximity,
   evaluateSpatialPerception,
@@ -616,7 +622,6 @@ function renderInspector(
   const values = makeSection('Value state', 'Live intervention');
   for (const valueId of VALUE_IDS) {
     const stateValue = agent.values[valueId];
-    const disposition = agent.profile.values[valueId];
     const field = element('label', 'range-field');
     const heading = element('span', 'range-heading');
     const label = element('span');
@@ -631,7 +636,7 @@ function renderInspector(
     input.step = '0.01';
     input.value = String(stateValue.charge);
     input.setAttribute('aria-label', `${VALUE_LABELS[valueId]} charge`);
-    detail.textContent = `weight ${disposition.weight.toFixed(2)} / deficit ${stateValue.deficitIntegral.toFixed(2)} / variance ${stateValue.variance.toFixed(2)}`;
+    detail.textContent = `weight ${effectiveValueWeight(agent, valueId).toFixed(2)} / deficit ${stateValue.deficitIntegral.toFixed(2)} / variance ${stateValue.variance.toFixed(2)}`;
     heading.append(label, output);
     field.append(heading, input, detail);
     input.addEventListener('change', () => {
@@ -670,7 +675,7 @@ function renderInspector(
     ['Current outlet', agent.currentOutlet?.label ?? 'None'],
     [
       'Outlet operation',
-      agent.currentOutlet?.operation ?? agent.profile.outletPreferences[0]?.operation ?? 'None',
+      agent.currentOutlet?.operation ?? effectiveOutletPreferences(agent)[0]?.operation ?? 'None',
     ],
     [
       'Outlet history',
@@ -716,15 +721,17 @@ function renderInspector(
 
   const evaluationShape = makeSection('Evaluation shape', 'History-derived');
   const evaluationGrid = element('dl', 'definition-grid');
+  const empathy = effectiveEmpathy(agent);
+  const disclosureEnvelope = effectiveDisclosure(agent);
   for (const [label, value] of [
-    ['Empathy floor', agent.profile.empathy.floor],
-    ['Empathy ceiling', agent.profile.empathy.ceiling],
-    ['Envelope steepness', agent.profile.empathy.steepness],
-    ['Threat sensitivity', agent.profile.empathy.threatSensitivity],
-    ['Disclosure intimate safety', agent.profile.disclosure.intimateSafety],
-    ['Disclosure stranger safety', agent.profile.disclosure.strangerSafety],
-    ['Disclosure trough depth', agent.profile.disclosure.troughDepth],
-    ['Contract adherence', agent.profile.contractAdherence],
+    ['Empathy floor', empathy.floor],
+    ['Empathy ceiling', empathy.ceiling],
+    ['Envelope steepness', empathy.steepness],
+    ['Threat sensitivity', empathy.threatSensitivity],
+    ['Disclosure intimate safety', disclosureEnvelope.intimateSafety],
+    ['Disclosure stranger safety', disclosureEnvelope.strangerSafety],
+    ['Disclosure trough depth', disclosureEnvelope.troughDepth],
+    ['Contract adherence', effectiveContractAdherence(agent)],
   ] as const) {
     const term = element('dt');
     const definition = element('dd');
@@ -838,7 +845,7 @@ function renderInspector(
 
   const identity = makeSection('Identity and narrative');
   const markers = element('div', 'marker-list');
-  for (const item of agent.profile.identity) {
+  for (const item of effectiveIdentity(agent)) {
     const marker = element('span', 'marker');
     marker.textContent = `${item.marker} ${Math.round(item.centrality * 100)}`;
     markers.append(marker);

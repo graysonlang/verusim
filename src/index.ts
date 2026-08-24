@@ -20,6 +20,7 @@ export {
   WEIGHT_CLASSES,
 } from './model/types.js';
 export type * from './model/types.js';
+export { deriveCharacterCheckpoint } from './model/history.js';
 export {
   DEFAULT_RESOURCE_PACKAGE_ID,
   parseCharacterLibrary,
@@ -61,9 +62,25 @@ export { evaluateEmpathy } from './simulation/empathy.js';
 export {
   advanceCoping,
   allostaticLoadFor,
-  reactiveValueTurns,
   resolveAppraisalEvent,
 } from './simulation/coping.js';
+export {
+  effectiveCascadePrior,
+  effectiveContractAdherence,
+  effectiveDisclosure,
+  effectiveEmpathy,
+  effectiveIdentity,
+  effectiveOutletPreferences,
+  effectiveSatisfierPreferences,
+  effectiveValueWeight,
+  initializeHistoryDerivedState,
+} from './simulation/history.js';
+export {
+  applyAgentValueTurns,
+  applyValueTurns,
+  reactiveValueTurn,
+  reactiveValueTurns,
+} from './simulation/value-turn.js';
 export {
   advanceSimulation,
   createSimulationFromPrepared,

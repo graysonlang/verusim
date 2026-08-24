@@ -1,22 +1,21 @@
-import {
-  VALUE_IDS,
-  type ActionCandidate,
-  type BehaviorOpportunity,
-  type CandidateEvaluation,
-  type DecisionRecord,
-  type RepercussionEvaluation,
-  type RuntimeMemory,
-  type SimulationAgent,
-  type SimulationState,
-  type TraceEntry,
-  type ValueMap,
-  type ValueState,
+import type {
+  ActionCandidate,
+  BehaviorOpportunity,
+  CandidateEvaluation,
+  DecisionRecord,
+  RepercussionEvaluation,
+  RuntimeMemory,
+  SimulationAgent,
+  SimulationState,
+  TraceEntry,
 } from '../model/types.js';
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
+import { effectiveContractAdherence } from './history.js';
 import { claimExpressionPayoff } from './narrative.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_DECISIONS = 80;
 const MAX_MEMORIES = 16;
@@ -94,7 +93,7 @@ function evaluateCandidate(
   );
   const repercussion = evaluateRepercussion(state, opportunity, candidate);
   const appraisal = appraiseAction({
-    contractViolationCost: actor.profile.contractAdherence * candidate.contractViolation,
+    contractViolationCost: effectiveContractAdherence(actor) * candidate.contractViolation,
     impacts: candidate.impacts.map((impact, index) => ({
       empathy: empathy[index]?.empathy ?? 0,
       subjectId: impact.subjectId,
@@ -139,17 +138,6 @@ export function evaluateOpportunity(
   };
 }
 
-function applyTurns(agent: SimulationAgent, turns: Partial<ValueMap<number>>): SimulationAgent {
-  const values = {} as ValueMap<ValueState>;
-  for (const valueId of VALUE_IDS) {
-    values[valueId] = {
-      ...agent.values[valueId],
-      charge: clamp(agent.values[valueId].charge + (turns[valueId] ?? 0), -1, 1),
-    };
-  }
-  return { ...agent, values };
-}
-
 function appraisalTrace(
   state: SimulationState,
   opportunity: BehaviorOpportunity,
@@ -171,6 +159,7 @@ function appraisalTrace(
         appraisal.turnFelt,
         `${actorSource}.values`,
         `${actorSource}.profile.values`,
+        `${actorSource}.history.overrides.valueWeights`,
         `${candidateSource}.impacts`,
         `${candidateSource}.empathy`,
       ),
@@ -184,6 +173,7 @@ function appraisalTrace(
         'contract-violation-cost',
         appraisal.contractViolationCost,
         `${actorSource}.profile.contractAdherence`,
+        `${actorSource}.history.overrides.contractAdherence`,
         `${candidateSource}.contractViolation`,
       ),
       traceTerm(
@@ -199,8 +189,10 @@ function appraisalTrace(
           `empathy:${evaluation.subjectId}`,
           evaluation.empathy,
           `${actorSource}.profile.empathy`,
+          `${actorSource}.history.overrides.empathy`,
           `${candidateSource}.impacts.${evaluation.subjectId}`,
           `agents.${evaluation.subjectId}.profile.identity`,
+          `agents.${evaluation.subjectId}.history.overrides.identity`,
         ),
       ),
     ],
@@ -226,7 +218,7 @@ export function resolveOpportunity(
   let agents = state.agents;
   for (const impact of selectedCandidate.impacts) {
     agents = agents.map(agent =>
-      agent.id === impact.subjectId ? applyTurns(agent, impact.turns) : agent,
+      agent.id === impact.subjectId ? applyAgentValueTurns(agent, impact.turns) : agent,
     );
   }
 
@@ -252,7 +244,9 @@ export function resolveOpportunity(
   agents = agents.map(agent => {
     if (agent.id !== opportunity.actorId) return agent;
     const withRemorse =
-      remorse === 0 ? agent : applyTurns(agent, { fairness: -remorse, respect: -remorse * 0.35 });
+      remorse === 0
+        ? agent
+        : applyAgentValueTurns(agent, { fairness: -remorse, respect: -remorse * 0.35 });
     return {
       ...withRemorse,
       currentActivity: selectedCandidate.label,

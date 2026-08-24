@@ -13,9 +13,15 @@ import {
   type TraceEntry,
   type ValueId,
   type ValueMap,
-  type ValueState,
 } from '../model/types.js';
+import {
+  effectiveCascadePrior,
+  effectiveOutletPreferences,
+  effectiveSatisfierPreferences,
+  effectiveValueWeight,
+} from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { applyValueTurns, reactiveValueTurns } from './value-turn.js';
 
 const MAX_APPRAISAL_RECORDS = 120;
 const MAX_MEMORIES = 16;
@@ -54,35 +60,9 @@ export function allostaticLoadFor(agent: SimulationAgent): number {
   return clamp(pressure / VALUE_IDS.length, 0, 1);
 }
 
-export function reactiveValueTurns(
-  agent: SimulationAgent,
-  turns: Partial<ValueMap<number>>,
-): Partial<ValueMap<number>> {
-  const result: Partial<ValueMap<number>> = {};
-  for (const valueId of VALUE_IDS) {
-    const turn = turns[valueId];
-    if (turn !== undefined) result[valueId] = turn * agent.profile.constitution.reactivity;
-  }
-  return result;
-}
-
-function applyTurns(
-  values: ValueMap<ValueState>,
-  turns: Partial<ValueMap<number>>,
-): ValueMap<ValueState> {
-  const next = {} as ValueMap<ValueState>;
-  for (const valueId of VALUE_IDS) {
-    next[valueId] = {
-      ...values[valueId],
-      charge: clamp(values[valueId].charge + (turns[valueId] ?? 0), -1, 1),
-    };
-  }
-  return next;
-}
-
 function mobilizedPosition(agent: SimulationAgent, event: AppraisalEvent): CascadePosition {
   if (event.believedLeverage && event.exitAvailable) {
-    return agent.profile.cascadePriors.fight >= agent.profile.cascadePriors.flight
+    return effectiveCascadePrior(agent, 'fight') >= effectiveCascadePrior(agent, 'flight')
       ? 'fight'
       : 'flight';
   }
@@ -148,7 +128,7 @@ export function resolveAppraisalEvent(
 ): SimulationState {
   const agent = agentFor(state, event.agentId);
   const appliedTurns = reactiveValueTurns(agent, event.turns);
-  const values = applyTurns(agent.values, appliedTurns);
+  const values = applyValueTurns(agent.values, appliedTurns);
   const turned = { ...agent, values };
   const allostaticLoad = allostaticLoadFor(turned);
   const effectiveCoping = clamp(
@@ -282,7 +262,7 @@ function dominantDeficit(agent: SimulationAgent): { pressure: number; valueId: V
   let pressure = Number.NEGATIVE_INFINITY;
   for (const candidate of VALUE_IDS) {
     const candidatePressure =
-      agent.values[candidate].deficitIntegral * agent.profile.values[candidate].weight;
+      agent.values[candidate].deficitIntegral * effectiveValueWeight(agent, candidate);
     if (candidatePressure > pressure) {
       pressure = candidatePressure;
       valueId = candidate;
@@ -302,7 +282,7 @@ function outletUseFor(agent: SimulationAgent, affordanceId: string): OutletUseSt
 }
 
 function matchingSatisfier(agent: SimulationAgent, affordance: OutletAffordance) {
-  return agent.profile.satisfierPreferences.find(
+  return effectiveSatisfierPreferences(agent).find(
     preference =>
       preference.valueId === affordance.targetValueId &&
       preference.flavor === affordance.satisfierFlavor,
@@ -310,7 +290,7 @@ function matchingSatisfier(agent: SimulationAgent, affordance: OutletAffordance)
 }
 
 function outletScore(agent: SimulationAgent, affordance: OutletAffordance): number {
-  const preference = agent.profile.outletPreferences.find(
+  const preference = effectiveOutletPreferences(agent).find(
     candidate => candidate.operation === affordance.operation,
   );
   if (preference === undefined) return Number.NEGATIVE_INFINITY;

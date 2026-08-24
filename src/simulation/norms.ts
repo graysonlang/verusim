@@ -10,12 +10,12 @@ import {
   type SimulationState,
   type TraceEntry,
   type ValueMap,
-  type ValueState,
 } from '../model/types.js';
 import { resolveAgentCapabilityCheck } from './capability.js';
 import { effectiveValueWeights } from './salience.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_OBSERVATIONS = 120;
 const MAX_TRACE_ENTRIES = 240;
@@ -99,17 +99,6 @@ function subjectiveTurns(
 function weightedTurn(agent: SimulationAgent, turns: Partial<ValueMap<number>>): number {
   const weights = effectiveValueWeights(agent);
   return VALUE_IDS.reduce((total, valueId) => total + weights[valueId] * (turns[valueId] ?? 0), 0);
-}
-
-function applyTurns(agent: SimulationAgent, turns: Partial<ValueMap<number>>): SimulationAgent {
-  const values = {} as ValueMap<ValueState>;
-  for (const valueId of VALUE_IDS) {
-    values[valueId] = {
-      ...agent.values[valueId],
-      charge: clamp(agent.values[valueId].charge + (turns[valueId] ?? 0), -1, 1),
-    };
-  }
-  return { ...agent, values };
 }
 
 function observationTrace(
@@ -314,7 +303,9 @@ function resolveForObserver(
   return {
     ...state,
     agents: state.agents.map(candidate =>
-      candidate.id === observerId ? applyTurns(candidate, turns.subjectiveTurns) : candidate,
+      candidate.id === observerId
+        ? applyAgentValueTurns(candidate, turns.subjectiveTurns)
+        : candidate,
     ),
     observations: appendBounded(state.observations, record, MAX_OBSERVATIONS),
     trace,

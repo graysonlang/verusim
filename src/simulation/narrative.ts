@@ -9,11 +9,10 @@ import type {
   NarrativeState,
   SimulationAgent,
   SimulationState,
-  ValueMap,
-  ValueState,
 } from '../model/types.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
+import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_NARRATIVE_RECORDS = 120;
 const MAX_REPUTATIONS = 160;
@@ -221,19 +220,6 @@ function resolveClaimEvidence(state: SimulationState, event: NarrativeEvent): Si
   return addRecord(next, event, agent.id, claim.id, disposition, regulationCost);
 }
 
-function applyValueTurn(agent: SimulationAgent, valueId: keyof ValueMap<ValueState>, turn: number) {
-  return {
-    ...agent,
-    values: {
-      ...agent.values,
-      [valueId]: {
-        ...agent.values[valueId],
-        charge: clamp(agent.values[valueId].charge + turn, -1, 1),
-      },
-    },
-  };
-}
-
 function resolveSelfDeprecation(state: SimulationState, event: NarrativeEvent): SimulationState {
   if (event.eventType !== 'self-deprecation-agreement') return state;
   let agent = agentFor(state, event.actorId);
@@ -259,7 +245,9 @@ function resolveSelfDeprecation(state: SimulationState, event: NarrativeEvent): 
     };
   } else if (agent.values.respect.deficitIntegral >= 0.45 || claim.confidence > 0.5) {
     disposition = 'fishing';
-    agent = applyValueTurn(agent, 'respect', -0.25 * agent.profile.constitution.reactivity);
+    agent = applyAgentValueTurns(agent, {
+      respect: -0.25 * agent.profile.constitution.reactivity,
+    });
   } else {
     disposition = 'genuine';
   }

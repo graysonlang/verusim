@@ -229,6 +229,56 @@ export interface FormativeEvent {
   value: ValueId;
 }
 
+export type HistoryDerivedEmpathyOverride = Partial<Omit<EmpathyEnvelope, 'featureWeights'>> & {
+  featureWeights?: Partial<SocialFeatureMap>;
+};
+
+export interface HistoryDerivedOverrides {
+  cascadePriors?: Partial<CascadePriorMap>;
+  contractAdherence?: number;
+  disclosure?: Partial<DisclosureEnvelope>;
+  empathy?: HistoryDerivedEmpathyOverride;
+  identity?: IdentityMarker[];
+  outletPreferences?: OutletPreference[];
+  satisfierPreferences?: SatisfierPreference[];
+  valueWeights?: Partial<ValueMap<number>>;
+}
+
+export interface FormativeDispositionRecord {
+  age: number;
+  appliedTurn: number;
+  attribution: string | null;
+  authoredTurn: number;
+  copingPotential: number;
+  eventId: string;
+  eventIndex: number;
+  memoryId: string;
+  previousCharge: number;
+  previousWeight: number;
+  profileId: string;
+  resultingCharge: number;
+  resultingWeight: number;
+  source: string;
+  valueId: ValueId;
+}
+
+export interface HistoryDerivedState {
+  formativeRecords: FormativeDispositionRecord[];
+  overrides: HistoryDerivedOverrides;
+}
+
+export interface FormativeMemoryProvenance {
+  age: number;
+  attribution: string | null;
+  copingPotential: number;
+  eventId: string;
+  eventIndex: number;
+  profileId: string;
+  source: string;
+  turn: number;
+  valueId: ValueId;
+}
+
 export interface EmpathyEnvelope {
   ceiling: number;
   featureWeights: SocialFeatureMap;
@@ -824,6 +874,7 @@ export interface RuntimeMemory {
   emotionalTurn?: number;
   id: string;
   minute: number;
+  provenance?: FormativeMemoryProvenance;
   subjectId?: string;
   summary: string;
   type:
@@ -863,6 +914,7 @@ export interface SimulationAgent {
   currentActivity: string;
   currentLocationId: string | null;
   destination: LayerPosition;
+  history: HistoryDerivedState;
   id: string;
   memories: RuntimeMemory[];
   narrative: NarrativeState | null;
@@ -1261,6 +1313,7 @@ export interface SimulationAgentSnapshot {
   currentActivity: string;
   currentLocationId: string | null;
   destination: LayerPosition;
+  history: HistoryDerivedState;
   id: string;
   memories: RuntimeMemory[];
   narrative: NarrativeState | null;
@@ -1300,7 +1353,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 11;
+  schemaVersion: 12;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

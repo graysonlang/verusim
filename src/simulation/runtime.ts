@@ -10,7 +10,6 @@ import {
   type RecoveryMode,
   type ResourceAddress,
   type ResourceState,
-  type RuntimeMemory,
   type ScheduleBlock,
   type SimulationAgent,
   type SimulationSnapshotFile,
@@ -25,6 +24,7 @@ import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { advanceCoping, resolveAppraisalEvent } from './coping.js';
+import { initializeHistoryDerivedState } from './history.js';
 import {
   createNarrativeState,
   prepareNarrativeAgency,
@@ -153,15 +153,6 @@ function initialValues(
   return result;
 }
 
-function initialMemories(profile: CharacterDefinition): RuntimeMemory[] {
-  return profile.formativeEvents.map((event, index) => ({
-    id: `formative:${profile.profileId}:${index}`,
-    minute: -1,
-    summary: event.summary,
-    type: 'formative',
-  }));
-}
-
 function initializeAgent(
   profile: CharacterDefinition,
   placement: CharacterPlacement,
@@ -171,6 +162,7 @@ function initializeAgent(
   const block = activeScheduleBlock(placement.schedule, minute);
   const destination = locationCenter(findLocation(environment, block.locationId));
   const arrived = sameLayerPosition(placement.position, destination);
+  const formative = initializeHistoryDerivedState(profile);
   const agent: SimulationAgent = {
     cascade: 'none',
     cascadeDwellUntilMinute: minute,
@@ -182,8 +174,9 @@ function initializeAgent(
       : `Walking to ${findLocation(environment, block.locationId).name}`,
     currentLocationId: arrived ? block.locationId : null,
     destination,
+    history: formative.history,
     id: placement.instanceId,
-    memories: initialMemories(profile),
+    memories: formative.memories,
     narrative: null,
     outletHistory: [],
     position: { ...placement.position },
@@ -377,6 +370,25 @@ export function createSimulationFromPreparedSnapshot(input: {
         );
       }
     });
+    if (
+      saved.history.formativeRecords.length > 0 &&
+      JSON.stringify(saved.history.formativeRecords) !==
+        JSON.stringify(agent.history.formativeRecords)
+    ) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].history.formativeRecords`,
+        'must match formative execution for the prepared character profile',
+      );
+    }
+    const empathyOverride = saved.history.overrides.empathy;
+    const effectiveFloor = empathyOverride?.floor ?? agent.profile.empathy.floor;
+    const effectiveCeiling = empathyOverride?.ceiling ?? agent.profile.empathy.ceiling;
+    if (effectiveCeiling < effectiveFloor) {
+      throw new ScenarioValidationError(
+        `snapshot.agents[${index}].history.overrides.empathy.ceiling`,
+        'expected effective ceiling at or above effective floor',
+      );
+    }
     return {
       cascade: saved.cascade,
       cascadeDwellUntilMinute: saved.cascadeDwellUntilMinute,
@@ -386,8 +398,15 @@ export function createSimulationFromPreparedSnapshot(input: {
       currentActivity: saved.currentActivity,
       currentLocationId: saved.currentLocationId,
       destination: { ...saved.destination },
+      history: {
+        formativeRecords: saved.history.formativeRecords.map(record => ({ ...record })),
+        overrides: structuredClone(saved.history.overrides),
+      },
       id: saved.id,
-      memories: saved.memories.map(memory => ({ ...memory })),
+      memories: saved.memories.map(memory => ({
+        ...memory,
+        ...(memory.provenance === undefined ? {} : { provenance: { ...memory.provenance } }),
+      })),
       narrative:
         saved.narrative === null
           ? null

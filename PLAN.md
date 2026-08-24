@@ -18,18 +18,18 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 5D: history-derived instance state and formative-event execution.
-Move the remaining mutable history-derived character content behind a sparse per-instance override boundary so runtime change never mutates a reusable profile or every instance that references it.
-Run structured formative events through the same deterministic update rules that consume ordinary runtime causes, retaining event provenance in the resulting disposition and memory state.
+The active slice is Phase 5E: seeded role-conditioned character and cohort generation.
+Define reusable role bundles as correlated draw regions rather than classes, draw formative histories as realized authored inputs, and materialize generated profiles through the Phase 5D checkpoint and formative-execution boundary.
+Every generated result must retain its seed, sampler position, realized draws, and event provenance so regeneration is byte-equivalent and unusual dispositions remain explainable.
 
-This slice establishes the safe write boundary required before later generation and rare §14.4 change can land.
-It should also make age or continuity profiles explicit checkpoints of one stable character identity and the relevant prefix of one formative history where the authored data supports that derivation.
+Add deterministic cohort stratification or rejection sampling so a small generated cast maintains meaningful separation across behavioral parameter space without bypassing ordinary validation or profile preparation.
+Generated outputs remain immutable authored content once materialized; runtime randomness still never selects behavior.
 
 ### Current-focus non-goals
 
-- no population generation, role bundles, or cohort stratification
 - no recent-event staggering, pre-contact relationship generation, or environment generation
-- no unrestricted adult drift or new §14.4 write path before the sparse override boundary is proven
+- no unrestricted adult drift or new §14.4 write path
+- no role classes, fixed trait labels, or generation-time behavior selection
 - no Phase 6 incident, normative-interpretation, or somatic changes
 - no package manager, remote dependency resolver, authoring UI, or pack writer
 

@@ -9,6 +9,7 @@ import {
   type SocialFeatureMap,
   type TraceEntry,
 } from '../model/types.js';
+import { effectiveDisclosure } from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { repriceExposureFor } from './relationship.js';
 
@@ -47,7 +48,7 @@ function disclosureSafety(state: SimulationState, ownerId: string, audienceId: s
     SOCIAL_FEATURE_IDS.reduce((total, featureId) => total + features[featureId], 0) /
     SOCIAL_FEATURE_IDS.length;
   const distance = 1 - meanAffinity;
-  const envelope = owner.profile.disclosure;
+  const envelope = effectiveDisclosure(owner);
   const baseline = envelope.intimateSafety * (1 - distance) + envelope.strangerSafety * distance;
   const offset = (distance - envelope.troughPosition) / envelope.troughWidth;
   const trough = envelope.troughDepth * Math.exp(-0.5 * offset * offset);
@@ -146,6 +147,7 @@ function appraisalTrace(
           `disclosure-safety:${audience.audienceId}`,
           audience.disclosureSafety,
           `agents.${opportunity.ownerId}.profile.disclosure`,
+          `agents.${opportunity.ownerId}.history.overrides.disclosure`,
           `dyads.${opportunity.ownerId}:${audience.audienceId}.features`,
         ),
         traceTerm(

@@ -4,6 +4,7 @@ import {
   type SimulationState,
   type SocialFeatureMap,
 } from '../model/types.js';
+import { effectiveEmpathy } from './history.js';
 
 const DISTANT_FEATURES: SocialFeatureMap = {
   category: 0,
@@ -28,7 +29,7 @@ export function evaluateEmpathy(
   const subject = state.agents.find(agent => agent.id === subjectId);
   if (subject === undefined) throw new RangeError(`Unknown empathy subject "${subjectId}"`);
 
-  const envelope = observer.profile.empathy;
+  const envelope = effectiveEmpathy(observer);
   const threatLoad = clamp(perceivedThreat * envelope.threatSensitivity, 0, 1);
   let features: SocialFeatureMap;
   let distance: number;

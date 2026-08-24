@@ -10,6 +10,7 @@ import type {
   SocialFeatureMap,
   TraceEntry,
 } from '../model/types.js';
+import { effectiveDisclosure, effectiveEmpathy } from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
 
 const MAX_MEMORIES = 16;
@@ -41,8 +42,8 @@ function agentFor(state: SimulationState, agentId: string): SimulationAgent {
 }
 
 export function projectedDyad(observer: SimulationAgent, subjectId: string): DyadState {
-  const empathy = observer.profile.empathy;
-  const disclosure = observer.profile.disclosure;
+  const empathy = effectiveEmpathy(observer);
+  const disclosure = effectiveDisclosure(observer);
   return {
     behaviorVariance: 0,
     estimateConfidence: 0.1,

@@ -13,7 +13,7 @@ The full behavioral model is specified in [verusim-design-spec.md](verusim-desig
 
 ## Current slice
 
-The current implementation has completed Phase 0 through Phase 4 and Phase 5A through Phase 5C; history-derived instance state and formative-event execution are next in Phase 5D.
+The current implementation has completed Phase 0 through Phase 4 and Phase 5A through Phase 5D; seeded role-conditioned character and cohort generation are next in Phase 5E.
 It includes:
 
 - independently versioned JSON character-profile, environment-layout, norm, and social-contract resources plus versioned scenarios
@@ -22,6 +22,7 @@ It includes:
 - layered environment layouts with explicit stairs, ramps, and ladders; connector-aware schedule and agenda travel; floor-separated spatial perception; objective enclosure and overhead cover; and roof-on exterior plus contextual cutaway workbench views
 - Alder's Edge Town, a compact reference settlement with agricultural edges, civic and religious spaces, trades, commerce, river infrastructure, upper-floor homes, cellars, storage, a crypt, and a watch cell
 - deterministic simulation stepping, schedule-based movement, ambient value turns, and bounded trace history
+- sparse per-instance history-derived overrides, deterministic formative-event execution with linked provenance, and explicit age checkpoints over stable character identity
 - environment-authored behavioral opportunities with character-dependent action selection
 - nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
 - highwayman road and town-square fixtures covering the first ordinal behavioral factorial

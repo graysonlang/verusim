@@ -897,6 +897,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
       );
       uniqueIds(narrativeClaims, `${path}.narrativeClaims`);
 
+      let previousFormativeAge = -1;
       arrayValue(character.formativeEvents, `${path}.formativeEvents`).forEach(
         (entry, eventIndex) => {
           const eventPath = `${path}.formativeEvents[${eventIndex}]`;
@@ -908,6 +909,13 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
               'expected an age at or before the current character age',
             );
           }
+          if (eventAge < previousFormativeAge) {
+            throw new ScenarioValidationError(
+              `${eventPath}.age`,
+              'expected formative events in chronological order',
+            );
+          }
+          previousFormativeAge = eventAge;
           if (event.attribution !== null)
             stringValue(event.attribution, `${eventPath}.attribution`);
           numberValue(event.copingPotential, `${eventPath}.copingPotential`, 0, 1);

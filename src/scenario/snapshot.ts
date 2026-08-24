@@ -1,5 +1,6 @@
 import {
   OUTLET_OPERATIONS,
+  SOCIAL_FEATURE_IDS,
   VALUE_IDS,
   type RecoveryMode,
   type ResourceAddress,
@@ -175,6 +176,186 @@ function validateMaskingDemand(value: unknown, path: string): void {
   }
 }
 
+function validateHistoryOverrides(value: unknown, path: string): void {
+  const overrides = objectValue(value, path);
+  if (overrides.cascadePriors !== undefined) {
+    const priors = objectValue(overrides.cascadePriors, `${path}.cascadePriors`);
+    for (const [position, prior] of Object.entries(priors)) {
+      if (!['freeze', 'fight', 'flight', 'fawn', 'flop'].includes(position)) {
+        throw new ScenarioValidationError(`${path}.cascadePriors.${position}`, 'unknown cascade');
+      }
+      numberValue(prior, `${path}.cascadePriors.${position}`, 0, 1);
+    }
+  }
+  if (overrides.contractAdherence !== undefined) {
+    numberValue(overrides.contractAdherence, `${path}.contractAdherence`, 0, 1);
+  }
+  if (overrides.disclosure !== undefined) {
+    const disclosure = objectValue(overrides.disclosure, `${path}.disclosure`);
+    for (const [field, amount] of Object.entries(disclosure)) {
+      if (
+        ![
+          'intimateSafety',
+          'strangerSafety',
+          'troughDepth',
+          'troughPosition',
+          'troughWidth',
+        ].includes(field)
+      ) {
+        throw new ScenarioValidationError(`${path}.disclosure.${field}`, 'unknown field');
+      }
+      numberValue(amount, `${path}.disclosure.${field}`, field === 'troughWidth' ? 0.01 : 0, 1);
+    }
+  }
+  if (overrides.empathy !== undefined) {
+    const empathy = objectValue(overrides.empathy, `${path}.empathy`);
+    for (const [field, amount] of Object.entries(empathy)) {
+      if (field === 'featureWeights') {
+        const weights = objectValue(amount, `${path}.empathy.featureWeights`);
+        for (const [featureId, weight] of Object.entries(weights)) {
+          if (!(SOCIAL_FEATURE_IDS as readonly string[]).includes(featureId)) {
+            throw new ScenarioValidationError(
+              `${path}.empathy.featureWeights.${featureId}`,
+              'unknown social feature',
+            );
+          }
+          numberValue(weight, `${path}.empathy.featureWeights.${featureId}`, 0, 4);
+        }
+        continue;
+      }
+      if (!['ceiling', 'floor', 'selfPosition', 'steepness', 'threatSensitivity'].includes(field)) {
+        throw new ScenarioValidationError(`${path}.empathy.${field}`, 'unknown field');
+      }
+      numberValue(
+        amount,
+        `${path}.empathy.${field}`,
+        field === 'steepness' ? 0.01 : 0,
+        field === 'steepness' ? 12 : 1,
+      );
+    }
+  }
+  if (overrides.identity !== undefined) {
+    arrayValue(overrides.identity, `${path}.identity`).forEach((entryValue, index) => {
+      const entryPath = `${path}.identity[${index}]`;
+      const entry = objectValue(entryValue, entryPath);
+      stringValue(entry.marker, `${entryPath}.marker`);
+      numberValue(entry.centrality, `${entryPath}.centrality`, 0, 1);
+    });
+  }
+  if (overrides.outletPreferences !== undefined) {
+    const operations = new Set<string>();
+    const preferences = arrayValue(overrides.outletPreferences, `${path}.outletPreferences`);
+    if (preferences.length === 0) {
+      throw new ScenarioValidationError(`${path}.outletPreferences`, 'expected at least one item');
+    }
+    preferences.forEach((entryValue, index) => {
+      const entryPath = `${path}.outletPreferences[${index}]`;
+      const entry = objectValue(entryValue, entryPath);
+      if (typeof entry.operation !== 'string' || !OUTLET_OPERATION_SET.has(entry.operation)) {
+        throw new ScenarioValidationError(`${entryPath}.operation`, 'unknown outlet operation');
+      }
+      if (operations.has(entry.operation)) {
+        throw new ScenarioValidationError(`${entryPath}.operation`, 'duplicate outlet operation');
+      }
+      operations.add(entry.operation);
+      numberValue(entry.rank, `${entryPath}.rank`, 0, 1);
+    });
+  }
+  if (overrides.satisfierPreferences !== undefined) {
+    arrayValue(overrides.satisfierPreferences, `${path}.satisfierPreferences`).forEach(
+      (entryValue, index) => {
+        const entryPath = `${path}.satisfierPreferences[${index}]`;
+        const entry = objectValue(entryValue, entryPath);
+        if (
+          typeof entry.valueId !== 'string' ||
+          !(VALUE_IDS as readonly string[]).includes(entry.valueId)
+        ) {
+          throw new ScenarioValidationError(`${entryPath}.valueId`, 'unknown value identifier');
+        }
+        stringValue(entry.flavor, `${entryPath}.flavor`);
+        if (entry.type !== 'deficit' && entry.type !== 'surplus') {
+          throw new ScenarioValidationError(`${entryPath}.type`, 'expected deficit or surplus');
+        }
+      },
+    );
+  }
+  if (overrides.valueWeights !== undefined) {
+    const weights = objectValue(overrides.valueWeights, `${path}.valueWeights`);
+    for (const [valueId, weight] of Object.entries(weights)) {
+      if (!(VALUE_IDS as readonly string[]).includes(valueId)) {
+        throw new ScenarioValidationError(
+          `${path}.valueWeights.${valueId}`,
+          'unknown value identifier',
+        );
+      }
+      numberValue(weight, `${path}.valueWeights.${valueId}`, 0, 2);
+    }
+  }
+}
+
+function validateFormativeProvenance(value: unknown, path: string): Record<string, unknown> {
+  const provenance = objectValue(value, path);
+  integerValue(provenance.age, `${path}.age`, 0);
+  if (provenance.attribution !== null) {
+    stringValue(provenance.attribution, `${path}.attribution`);
+  }
+  numberValue(provenance.copingPotential, `${path}.copingPotential`, 0, 1);
+  stringValue(provenance.eventId, `${path}.eventId`);
+  integerValue(provenance.eventIndex, `${path}.eventIndex`);
+  stringValue(provenance.profileId, `${path}.profileId`);
+  stringValue(provenance.source, `${path}.source`);
+  numberValue(provenance.turn, `${path}.turn`, -1, 1);
+  if (
+    typeof provenance.valueId !== 'string' ||
+    !(VALUE_IDS as readonly string[]).includes(provenance.valueId)
+  ) {
+    throw new ScenarioValidationError(`${path}.valueId`, 'unknown value identifier');
+  }
+  return provenance;
+}
+
+function validateHistoryState(value: unknown, path: string): Map<string, Record<string, unknown>> {
+  const history = objectValue(value, path);
+  validateHistoryOverrides(history.overrides, `${path}.overrides`);
+  const byMemoryId = new Map<string, Record<string, unknown>>();
+  const eventIds = new Set<string>();
+  arrayValue(history.formativeRecords, `${path}.formativeRecords`).forEach((entryValue, index) => {
+    const entryPath = `${path}.formativeRecords[${index}]`;
+    const entry = objectValue(entryValue, entryPath);
+    integerValue(entry.age, `${entryPath}.age`, 0);
+    numberValue(entry.appliedTurn, `${entryPath}.appliedTurn`, -1, 1);
+    if (entry.attribution !== null) stringValue(entry.attribution, `${entryPath}.attribution`);
+    numberValue(entry.authoredTurn, `${entryPath}.authoredTurn`, -1, 1);
+    numberValue(entry.copingPotential, `${entryPath}.copingPotential`, 0, 1);
+    const eventId = stringValue(entry.eventId, `${entryPath}.eventId`);
+    if (eventIds.has(eventId)) {
+      throw new ScenarioValidationError(`${entryPath}.eventId`, 'duplicate formative event');
+    }
+    eventIds.add(eventId);
+    integerValue(entry.eventIndex, `${entryPath}.eventIndex`);
+    const memoryId = stringValue(entry.memoryId, `${entryPath}.memoryId`);
+    if (byMemoryId.has(memoryId)) {
+      throw new ScenarioValidationError(`${entryPath}.memoryId`, 'duplicate formative memory');
+    }
+    for (const field of ['previousCharge', 'resultingCharge']) {
+      numberValue(entry[field], `${entryPath}.${field}`, -1, 1);
+    }
+    for (const field of ['previousWeight', 'resultingWeight']) {
+      numberValue(entry[field], `${entryPath}.${field}`, 0, 2);
+    }
+    stringValue(entry.profileId, `${entryPath}.profileId`);
+    stringValue(entry.source, `${entryPath}.source`);
+    if (
+      typeof entry.valueId !== 'string' ||
+      !(VALUE_IDS as readonly string[]).includes(entry.valueId)
+    ) {
+      throw new ScenarioValidationError(`${entryPath}.valueId`, 'unknown value identifier');
+    }
+    byMemoryId.set(memoryId, entry);
+  });
+  return byMemoryId;
+}
+
 function validateAgent(value: unknown, path: string): void {
   const agent = objectValue(value, path);
   stringValue(agent.id, `${path}.id`);
@@ -238,6 +419,7 @@ function validateAgent(value: unknown, path: string): void {
       }
     });
   }
+  const formativeRecords = validateHistoryState(agent.history, `${path}.history`);
   numberValue(agent.walkingMetersPerMinute, `${path}.walkingMetersPerMinute`, 0.1, 500);
 
   const resources = objectValue(agent.resources, `${path}.resources`);
@@ -296,6 +478,33 @@ function validateAgent(value: unknown, path: string): void {
     if (memory.subjectId !== undefined) stringValue(memory.subjectId, `${memoryPath}.subjectId`);
     if (memory.emotionalTurn !== undefined) {
       numberValue(memory.emotionalTurn, `${memoryPath}.emotionalTurn`, -1, 1);
+    }
+    if (memory.provenance !== undefined) {
+      if (memory.type !== 'formative') {
+        throw new ScenarioValidationError(
+          `${memoryPath}.provenance`,
+          'only formative memories carry formative provenance',
+        );
+      }
+      const provenance = validateFormativeProvenance(memory.provenance, `${memoryPath}.provenance`);
+      const record = formativeRecords.get(memory.id as string);
+      if (
+        record === undefined ||
+        record.eventId !== provenance.eventId ||
+        record.age !== provenance.age ||
+        record.attribution !== provenance.attribution ||
+        record.authoredTurn !== provenance.turn ||
+        record.copingPotential !== provenance.copingPotential ||
+        record.eventIndex !== provenance.eventIndex ||
+        record.profileId !== provenance.profileId ||
+        record.source !== provenance.source ||
+        record.valueId !== provenance.valueId
+      ) {
+        throw new ScenarioValidationError(
+          `${memoryPath}.provenance`,
+          'must match the linked formative disposition record',
+        );
+      }
     }
   });
 }
@@ -860,7 +1069,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 8 &&
     file.schemaVersion !== 9 &&
     file.schemaVersion !== 10 &&
-    file.schemaVersion !== 11
+    file.schemaVersion !== 11 &&
+    file.schemaVersion !== 12
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1017,7 +1227,19 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       if (event?.eventType === 'norm') observation.normId = resourceAddressKey(event.norm);
     }
   }
-  file.schemaVersion = 11;
+  if (sourceVersion < 12) {
+    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
+      const agent = objectValue(agentValue, 'snapshot.agents');
+      agent.history = {
+        formativeRecords: [],
+        overrides: {},
+      };
+      for (const memoryValue of arrayValue(agent.memories, 'snapshot.agents.memories')) {
+        delete objectValue(memoryValue, 'snapshot.agents.memories').provenance;
+      }
+    }
+  }
+  file.schemaVersion = 12;
   return file;
 }
 
@@ -1026,7 +1248,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 11) {
+  if (file.schemaVersion !== 12) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
