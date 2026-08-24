@@ -105,7 +105,9 @@ The environment layer selector anchors to the Canvas lower-left in every mode.
 Compact and handset zoom anchors to the Canvas upper-right while the map scale remains lower-right and the layer and scale groups rise above an active handset sheet without changing camera or projection state.
 Handset zoom keeps the same hit target as other controls while presenting borderless value text aligned to the Canvas edge.
 Escape closes an active narrow panel before continuing through the ordinary selection, Exterior, and fit sequence.
-A scenario may provide `initialTimeRate` as a workbench startup hint; loading it selects that active rate without changing the saved application default.
+A scenario may provide `initialTimeRate` as a workbench startup hint.
+The initial workbench load uses that hint or the saved application default; later scenario loads apply an explicit hint but otherwise retain the active rate.
+Neither path changes the saved application default.
 Valid `scenario` and numeric `rate` URL query parameters override the built-in scenario and active startup rate, and changes to either selection replace those values in the current URL without adding history entries.
 The URL omits `scenario` for the default built-in scenario and omits `rate` when the active rate matches the loaded scenario's effective default, because either value is reconstructed without an override on reload.
 Unrelated query parameters and the fragment remain intact; loading a file-backed scenario removes `scenario` because its content cannot be reconstructed from a built-in identifier.

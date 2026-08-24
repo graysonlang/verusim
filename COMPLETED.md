@@ -88,6 +88,18 @@ The earlier geometry pass verified half-sheet clearance after resolving sheet he
 The interaction pass also corrected scenario-menu focus restoration so a closed menu no longer consumes the next Escape press through its formerly focused hidden item.
 The unversioned device-local preference record accepts optional `showStatusBar`, `leftSidebarVisible`, `leftSidebarWidth`, `rightSidebarVisible`, and `rightSidebarWidth` fields; missing or malformed values migrate independently to presentation defaults, while scenario and snapshot schemas remain unchanged.
 
+### Repair slice — scenario-switch time-rate continuity
+
+Later scenario loads retain the active workbench time rate unless the incoming scenario explicitly declares `initialTimeRate`.
+Initial startup still uses the scenario hint or saved application default, and changing the active rate does not rewrite that preference.
+
+Exit probe:
+
+- selecting a non-default rate and switching between scenarios without authored rate hints preserves the active rate, while a scenario with `initialTimeRate` replaces it
+
+Preference regression coverage distinguishes startup fallback from later scenario activation and exercises both the retained-rate and explicit-override branches.
+Isolated headless Chromium verification selected `15x`, switched from Market Morning to Alder's Edge Town, and retained both the `15x` control state and numeric URL rate without console errors or failed non-static requests.
+
 ## Phase 1 — the highwayman vertical slice
 
 Status: complete.

@@ -56,6 +56,7 @@ import {
   initialTimeRateForScenario,
   loadPreferences,
   savePreferences,
+  timeRateAfterScenarioLoad,
   type ApplicationPreferences,
   type TemperatureUnit,
 } from './preferences.js';
@@ -615,7 +616,7 @@ function createWorkbench(): HTMLElement {
   }
   defaultTimeRateLabel.append(defaultTimeRateCopy, defaultTimeRateSelect);
   defaultTimeRateNote.textContent =
-    'Applied now and used when a loaded scenario does not specify an initial time rate.';
+    'Applied now and used at startup when a scenario does not specify an initial time rate.';
   simulationSettings.append(simulationLegend, defaultTimeRateLabel, defaultTimeRateNote);
 
   const clockSettings = element('fieldset', 'settings-group');
@@ -875,7 +876,7 @@ function createWorkbench(): HTMLElement {
     setPlaybackPreviewMinutes(0);
     setRosterHoverAgentId(null);
     setState(loaded);
-    setPlaybackRateId(initialTimeRateForScenario(loaded.scenario, preferences()));
+    setPlaybackRateId(activeTimeRate => timeRateAfterScenarioLoad(loaded.scenario, activeTimeRate));
     setSelectedAgentId(loaded.agents[0]?.id ?? null);
     setLoadedBuiltInScenarioId(builtInScenarioId);
     resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;

@@ -60,6 +60,13 @@ export function initialTimeRateForScenario(
   return scenario.initialTimeRate ?? preferences.defaultTimeRate;
 }
 
+export function timeRateAfterScenarioLoad(
+  scenario: Pick<ScenarioFile, 'initialTimeRate'>,
+  activeTimeRate: TimeRateId,
+): TimeRateId {
+  return scenario.initialTimeRate ?? activeTimeRate;
+}
+
 export function parsePreferences(raw: unknown): ApplicationPreferences {
   if (typeof raw !== 'object' || raw === null) return { ...DEFAULT_APPLICATION_PREFERENCES };
   const record = raw as Record<string, unknown>;

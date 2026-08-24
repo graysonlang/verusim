@@ -7,6 +7,7 @@ import {
   loadPreferences,
   parsePreferences,
   savePreferences,
+  timeRateAfterScenarioLoad,
 } from '../app/preferences.js';
 import { formatDistance, formatMovementSpeed, formatTemperature } from '../app/units.js';
 
@@ -82,6 +83,14 @@ describe('application preferences', () => {
     assert.equal(preferences.clockFormat, '24-hour');
     assert.equal(preferences.distanceUnit, 'feet');
     assert.equal(preferences.temperatureUnit, 'celsius');
+  });
+
+  it('retains the active time rate across scenario loads unless the scenario overrides it', () => {
+    assert.equal(timeRateAfterScenarioLoad({}, '15x'), '15x');
+    assert.equal(
+      timeRateAfterScenarioLoad({ initialTimeRate: '10-minutes-per-second' }, '15x'),
+      '10-minutes-per-second',
+    );
   });
 
   it('survives unreadable storage and persists a device-local JSON record', () => {
