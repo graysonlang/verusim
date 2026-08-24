@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "kind": "norm",
+    "packageId": "verusim",
+    "resourceId": "pottsfield-harvest-observance"
+  },
+  "norm": {
+    "label": "The harvest observance preserves a fair communal order",
+    "compatibilityTurns": {
+      "fairness": 0.8
+    }
+  }
+}

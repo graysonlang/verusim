@@ -1,23 +1,27 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { environments, normCharacters } from './fixtures.js';
+import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import scenario from '../content/scenarios/pottsfield.json';
 import {
   advanceSimulation,
+  createResourceCatalog,
   createSimulation,
   createSimulationFromSnapshot,
   parseScenario,
+  prepareScenario,
   serializeSnapshot,
   type NormObservationRecord,
   type ObservationRecord,
 } from '../src/index.js';
 
+const catalog = createResourceCatalog(BUILT_IN_RESOURCES);
+
+function preparePottsfield(input: unknown = scenario) {
+  return prepareScenario({ catalog, scenario: input });
+}
+
 function createPottsfieldSimulation(input: unknown = scenario) {
-  return createSimulation({
-    characterLibrary: normCharacters,
-    environmentLibrary: environments,
-    scenario: input,
-  });
+  return createSimulation(preparePottsfield(input));
 }
 
 function normRecord(observations: ObservationRecord[], observerId: string): NormObservationRecord {
@@ -125,8 +129,7 @@ describe('local norm appraisal', () => {
     const initial = createPottsfieldSimulation();
     const snapshot = serializeSnapshot(initial);
     const resumed = createSimulationFromSnapshot({
-      characterLibrary: normCharacters,
-      environmentLibrary: environments,
+      prepared: preparePottsfield(),
       snapshot,
     });
     const continuous = advanceSimulation(initial, 1);

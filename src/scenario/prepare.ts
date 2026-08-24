@@ -5,13 +5,16 @@ import type {
   ContentSource,
   EnvironmentLayoutResourceFile,
   EnvironmentLibraryFile,
+  NormResourceFile,
   PreparedScenario,
   ResourceAddress,
   ResourceCatalog,
   ResourceCatalogEntry,
+  ResourceFile,
   ResourceLock,
   ScenarioContent,
   ScenarioFile,
+  SocialContractResourceFile,
 } from '../model/types.js';
 import {
   DEFAULT_RESOURCE_PACKAGE_ID,
@@ -97,12 +100,70 @@ export function createResourceCatalogFromLibraries(input: {
   ]);
 }
 
-function requiredAddresses(scenario: ScenarioFile): ResourceAddress[] {
-  const byKey = new Map<string, ResourceAddress>();
-  for (const address of [scenario.environment, ...scenario.characters.map(item => item.profile)]) {
-    byKey.set(resourceAddressKey(address), cloneAddress(address));
+interface ResourceRequirement {
+  address: ResourceAddress;
+  path: string;
+}
+
+function compareRequirements(left: ResourceRequirement, right: ResourceRequirement): number {
+  return compareAddresses(left.address, right.address);
+}
+
+function directRequirements(scenario: ScenarioFile): ResourceRequirement[] {
+  const byKey = new Map<string, ResourceRequirement>();
+  const add = (address: ResourceAddress, path: string) => {
+    const key = resourceAddressKey(address);
+    if (!byKey.has(key)) byKey.set(key, { address: cloneAddress(address), path });
+  };
+  add(scenario.environment, 'scenario.environment');
+  scenario.characters.forEach((item, index) => {
+    add(item.profile, `scenario.characters[${index}].profile`);
+  });
+  scenario.socialContractPlacements.forEach((item, index) => {
+    add(item.contract, `scenario.socialContractPlacements[${index}].contract`);
+  });
+  return [...byKey.values()].sort(compareRequirements);
+}
+
+function resourceRequirements(resource: ResourceFile, source: string): ResourceRequirement[] {
+  if (!('contract' in resource)) return [];
+  return resource.contract.norms.map((address, index) => ({
+    address: cloneAddress(address),
+    path: `${source}.contract.norms[${index}]`,
+  }));
+}
+
+function resolvedCatalogResources(
+  scenario: ScenarioFile,
+  catalog: ResourceCatalog,
+): ResourceFile[] {
+  const entries = catalogEntries(catalog);
+  const resolved = new Map<string, ResourceFile>();
+  const pending = directRequirements(scenario);
+  const pendingKeys = new Set(pending.map(item => resourceAddressKey(item.address)));
+  while (pending.length > 0) {
+    const requirement = pending.shift();
+    if (requirement === undefined) break;
+    const key = resourceAddressKey(requirement.address);
+    pendingKeys.delete(key);
+    if (resolved.has(key)) continue;
+    const entry = entries.get(key);
+    if (entry === undefined) {
+      throw new ScenarioValidationError(requirement.path, `unknown resource "${key}"`);
+    }
+    resolved.set(key, entry.resource);
+    for (const dependency of resourceRequirements(entry.resource, entry.source)) {
+      const dependencyKey = resourceAddressKey(dependency.address);
+      if (!resolved.has(dependencyKey) && !pendingKeys.has(dependencyKey)) {
+        pending.push(dependency);
+        pendingKeys.add(dependencyKey);
+      }
+    }
+    pending.sort(compareRequirements);
   }
-  return [...byKey.values()].sort(compareAddresses);
+  return [...resolved.values()].sort((left, right) =>
+    compareAddresses(left.address, right.address),
+  );
 }
 
 function catalogEntries(catalog: ResourceCatalog): Map<string, ResourceCatalogEntry> {
@@ -114,18 +175,10 @@ export function prepareScenario(input: {
   scenario: unknown;
 }): PreparedScenario {
   const scenario = parseScenario(input.scenario);
-  const entries = catalogEntries(input.catalog);
-  const lock: ResourceLock = { resources: requiredAddresses(scenario) };
-  const resources = lock.resources.map(address => {
-    const entry = entries.get(resourceAddressKey(address));
-    if (entry === undefined) {
-      throw new ScenarioValidationError(
-        address.kind === 'character-profile' ? 'scenario.characters' : 'scenario.environment',
-        `unknown resource "${resourceAddressKey(address)}"`,
-      );
-    }
-    return entry.resource;
-  });
+  const resources = resolvedCatalogResources(scenario, input.catalog);
+  const lock: ResourceLock = {
+    resources: resources.map(resource => cloneAddress(resource.address)),
+  };
   const characterFiles = resources.filter(
     (resource): resource is CharacterProfileResourceFile =>
       resource.address.kind === 'character-profile',
@@ -133,6 +186,13 @@ export function prepareScenario(input: {
   const environmentFiles = resources.filter(
     (resource): resource is EnvironmentLayoutResourceFile =>
       resource.address.kind === 'environment-layout',
+  );
+  const normFiles = resources.filter(
+    (resource): resource is NormResourceFile => resource.address.kind === 'norm',
+  );
+  const socialContractFiles = resources.filter(
+    (resource): resource is SocialContractResourceFile =>
+      resource.address.kind === 'social-contract',
   );
   const content: ScenarioContent = {
     characterLibrary: {
@@ -143,7 +203,9 @@ export function prepareScenario(input: {
       environments: environmentFiles.map(resource => resource.layout),
       schemaVersion: 3,
     } satisfies EnvironmentLibraryFile,
+    norms: normFiles,
     scenario,
+    socialContracts: socialContractFiles,
   };
   validateReferences(content);
   const profiles = new Map(
@@ -159,12 +221,22 @@ export function prepareScenario(input: {
       throw new Error('Validated resources contain every character profile');
     return { placement, profile };
   });
+  const resolvedNorms = [
+    ...normFiles,
+    ...scenario.legacyLocalNorms.map(({ address, ...norm }) => ({
+      address,
+      norm,
+      schemaVersion: 1 as const,
+    })),
+  ].sort((left, right) => compareAddresses(left.address, right.address));
   return deepFreeze({
     characters,
     environment: environmentFile.layout,
+    norms: resolvedNorms,
     resourceLock: lock,
     scenario,
-    schemaVersion: 1,
+    schemaVersion: 2,
+    socialContracts: socialContractFiles,
     type: 'verusim-prepared-scenario',
   });
 }
@@ -175,11 +247,31 @@ export async function prepareScenarioFromSource(input: {
 }): Promise<PreparedScenario> {
   const scenario = parseScenario(input.scenario);
   const resources: AuthoredResource[] = [];
-  for (const address of requiredAddresses(scenario)) {
+  const resolved = new Set<string>();
+  const pending = directRequirements(scenario);
+  const pendingKeys = new Set(pending.map(item => resourceAddressKey(item.address)));
+  while (pending.length > 0) {
+    const requirement = pending.shift();
+    if (requirement === undefined) break;
+    const address = requirement.address;
+    const key = resourceAddressKey(address);
+    pendingKeys.delete(key);
+    if (resolved.has(key)) continue;
+    const value = await input.source.read(address);
+    const resource = parseResourceFile(value, key);
     resources.push({
-      source: resourceAddressKey(address),
-      value: await input.source.read(address),
+      source: key,
+      value,
     });
+    resolved.add(key);
+    for (const dependency of resourceRequirements(resource, key)) {
+      const dependencyKey = resourceAddressKey(dependency.address);
+      if (!resolved.has(dependencyKey) && !pendingKeys.has(dependencyKey)) {
+        pending.push(dependency);
+        pendingKeys.add(dependencyKey);
+      }
+    }
+    pending.sort(compareRequirements);
   }
   return prepareScenario({ catalog: createResourceCatalog(resources), scenario });
 }

@@ -11,7 +11,12 @@ export type ValueId = (typeof VALUE_IDS)[number];
 
 export type ValueMap<Value> = { [Key in ValueId]: Value };
 
-export const RESOURCE_KINDS = ['character-profile', 'environment-layout'] as const;
+export const RESOURCE_KINDS = [
+  'character-profile',
+  'environment-layout',
+  'norm',
+  'social-contract',
+] as const;
 
 export type ResourceKind = (typeof RESOURCE_KINDS)[number];
 
@@ -27,6 +32,14 @@ export interface CharacterProfileAddress extends ResourceAddress {
 
 export interface EnvironmentLayoutAddress extends ResourceAddress {
   kind: 'environment-layout';
+}
+
+export interface NormAddress extends ResourceAddress {
+  kind: 'norm';
+}
+
+export interface SocialContractAddress extends ResourceAddress {
+  kind: 'social-contract';
 }
 
 export const SOCIAL_FEATURE_IDS = [
@@ -357,7 +370,34 @@ export interface EnvironmentLayoutResourceFile {
   schemaVersion: 3;
 }
 
-export type ResourceFile = CharacterProfileResourceFile | EnvironmentLayoutResourceFile;
+export interface NormDefinition {
+  compatibilityTurns: Partial<ValueMap<number>>;
+  label: string;
+}
+
+export interface NormResourceFile {
+  address: NormAddress;
+  norm: NormDefinition;
+  schemaVersion: 1;
+}
+
+export interface SocialContractDefinition {
+  label: string;
+  norms: NormAddress[];
+  summary: string;
+}
+
+export interface SocialContractResourceFile {
+  address: SocialContractAddress;
+  contract: SocialContractDefinition;
+  schemaVersion: 1;
+}
+
+export type ResourceFile =
+  | CharacterProfileResourceFile
+  | EnvironmentLayoutResourceFile
+  | NormResourceFile
+  | SocialContractResourceFile;
 
 export interface AuthoredResource {
   source: string;
@@ -453,7 +493,7 @@ export interface NarrativeClaimOverride {
 export interface NormPerspective {
   legibility: number;
   member: boolean;
-  normId: string;
+  norm: NormAddress;
 }
 
 export type DyadMode = 'courteous' | 'contesting' | 'guarded' | 'ruptured' | 'warm';
@@ -547,16 +587,30 @@ export interface NormObservationEvent extends ObservationEventBase {
   baselineTurns: Partial<ValueMap<number>>;
   compatibility: number;
   eventType: 'norm';
-  normId: string;
+  norm: NormAddress;
   summary: string;
 }
 
 export type ObservationEvent = MindModelObservationEvent | NormObservationEvent;
 
-export interface LocalNorm {
-  compatibilityTurns: Partial<ValueMap<number>>;
+export interface LegacyLocalNorm extends NormDefinition {
+  address: NormAddress;
+}
+
+export const SOCIAL_CONTRACT_SCOPE_KINDS = ['event', 'group', 'institution', 'location'] as const;
+
+export type SocialContractScopeKind = (typeof SOCIAL_CONTRACT_SCOPE_KINDS)[number];
+
+export type SocialContractScope =
+  | { eventId: string; kind: 'event' }
+  | { groupId: string; kind: 'group' }
+  | { institutionId: string; kind: 'institution' }
+  | { kind: 'location'; locationId: string };
+
+export interface SocialContractPlacement {
+  contract: SocialContractAddress;
   id: string;
-  label: string;
+  scope: SocialContractScope;
 }
 
 export interface WorldFact {
@@ -750,13 +804,14 @@ export interface ScenarioFile {
   environmentConditions: EnvironmentConditions;
   id: string;
   initialTimeRate?: TimeRateId;
-  localNorms: LocalNorm[];
+  legacyLocalNorms: LegacyLocalNorm[];
   narrativeEvents: NarrativeEvent[];
   observationEvents: ObservationEvent[];
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 13;
+  schemaVersion: 14;
+  socialContractPlacements: SocialContractPlacement[];
   startMinute: number;
   summary: string;
   taskOperators: TaskOperator[];
@@ -893,6 +948,7 @@ export interface SimulationState {
   intentions: TaskIntention[];
   minute: number;
   narrativeRecords: NarrativeRecord[];
+  norms: readonly NormResourceFile[];
   observations: ObservationRecord[];
   plans: AgendaPlan[];
   relationshipDecisions: RelationshipDecisionRecord[];
@@ -907,6 +963,7 @@ export interface SimulationState {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
+  socialContracts: readonly SocialContractResourceFile[];
   tick: number;
   trace: CausalTrace;
   worldFacts: WorldFact[];
@@ -947,7 +1004,9 @@ export interface AppraisalRecord {
 export interface ScenarioContent {
   characterLibrary: CharacterLibraryFile;
   environmentLibrary: EnvironmentLibraryFile;
+  norms: NormResourceFile[];
   scenario: ScenarioFile;
+  socialContracts: SocialContractResourceFile[];
 }
 
 export interface PreparedCharacterPlacement {
@@ -958,9 +1017,11 @@ export interface PreparedCharacterPlacement {
 export interface PreparedScenario {
   characters: readonly PreparedCharacterPlacement[];
   environment: EnvironmentDefinition;
+  norms: readonly NormResourceFile[];
   resourceLock: ResourceLock;
   scenario: ScenarioFile;
-  schemaVersion: 1;
+  schemaVersion: 2;
+  socialContracts: readonly SocialContractResourceFile[];
   type: 'verusim-prepared-scenario';
 }
 
@@ -1239,7 +1300,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipEventIds: string[];
   resolvedRelationshipRequestIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 10;
+  schemaVersion: 11;
   tick: number;
   trace: CausalTrace;
   type: 'verusim-snapshot';

@@ -1,36 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_SCENARIOS, DEFAULT_BUILT_IN_SCENARIO } from '../app/scenarios.js';
-import {
-  characters,
-  copingCharacters,
-  copingEnvironments,
-  environments,
-  highwaymanCharacters,
-  highwaymanEnvironments,
-  mindModelCharacters,
-  normCharacters,
-} from './fixtures.js';
 import { createSimulation } from '../src/index.js';
-
-const characterLibrary = {
-  characters: [
-    ...characters.characters,
-    ...copingCharacters.characters,
-    ...highwaymanCharacters.characters,
-    ...mindModelCharacters.characters,
-    ...normCharacters.characters,
-  ],
-  schemaVersion: 5,
-};
-const environmentLibrary = {
-  environments: [
-    ...environments.environments,
-    ...copingEnvironments.environments,
-    ...highwaymanEnvironments.environments,
-  ],
-  schemaVersion: 2,
-};
 
 describe('built-in scenario catalog', () => {
   it('provides the complete authored scenario set with stable identities', () => {
@@ -43,6 +14,7 @@ describe('built-in scenario catalog', () => {
         'disclosure-audience',
         'endicott-margueritte',
         'pottsfield',
+        'pottsfield-charter-day',
         'relationship-momentum',
         'innkeeper-coping',
         'cascade-room',
@@ -52,16 +24,12 @@ describe('built-in scenario catalog', () => {
       ],
     );
     assert.equal(DEFAULT_BUILT_IN_SCENARIO.id, 'market-morning');
-    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 12);
+    assert.equal(new Set(BUILT_IN_SCENARIOS.map(entry => entry.id)).size, 13);
   });
 
   it('loads every included asset through the regular simulation path', () => {
     for (const entry of BUILT_IN_SCENARIOS) {
-      const state = createSimulation({
-        characterLibrary,
-        environmentLibrary,
-        scenario: entry.scenario,
-      });
+      const state = createSimulation(entry.prepared);
       assert.equal(state.scenario.id, entry.id);
       assert.equal(state.scenario.title, entry.title);
       assert.equal(state.scenario.summary, entry.summary);

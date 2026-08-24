@@ -4,8 +4,10 @@ import {
   MIND_MODEL_DIMENSIONS,
   OBSERVATION_CHANNELS,
   OUTLET_OPERATIONS,
+  RESOURCE_KINDS,
   SEASON_IDS,
   SEX_IDS,
+  SOCIAL_CONTRACT_SCOPE_KINDS,
   SOCIAL_FEATURE_IDS,
   TIME_RATE_IDS,
   VALUE_IDS,
@@ -19,11 +21,15 @@ import {
   type EnvironmentLayoutResourceFile,
   type EnvironmentLibraryFile,
   type EnvironmentConnectorKind,
+  type NormAddress,
+  type NormResourceFile,
   type RecoveryMode,
   type ResourceAddress,
   type ResourceFile,
   type ResourceKind,
   type ScenarioFile,
+  type SocialContractAddress,
+  type SocialContractResourceFile,
   type ValueId,
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
@@ -53,8 +59,10 @@ const REINFORCEMENT_SCHEDULES = new Set(['fixed', 'variable-ratio']);
 const SATISFIER_TYPES = new Set(['deficit', 'surplus']);
 const AGENCY_MODES = new Set(['invoker', 'responder']);
 const NARRATIVE_CLAIM_KINDS = new Set(['affirm', 'deny', 'deserve']);
+const RESOURCE_KIND_SET = new Set<string>(RESOURCE_KINDS);
 const SEASON_ID_SET = new Set<string>(SEASON_IDS);
 const SEX_ID_SET = new Set<string>(SEX_IDS);
+const SOCIAL_CONTRACT_SCOPE_KIND_SET = new Set<string>(SOCIAL_CONTRACT_SCOPE_KINDS);
 const WEATHER_ID_SET = new Set<string>(WEATHER_IDS);
 const WEIGHT_CLASS_SET = new Set<string>(WEIGHT_CLASSES);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -145,13 +153,13 @@ export function parseResourceAddress(
   const address = objectValue(value, path);
   const packageId = identifierValue(address.packageId, `${path}.packageId`);
   const resourceId = identifierValue(address.resourceId, `${path}.resourceId`);
-  if (address.kind !== 'character-profile' && address.kind !== 'environment-layout') {
+  if (typeof address.kind !== 'string' || !RESOURCE_KIND_SET.has(address.kind)) {
     throw new ScenarioValidationError(`${path}.kind`, 'expected a known resource kind');
   }
   if (expectedKind !== undefined && address.kind !== expectedKind) {
     throw new ScenarioValidationError(`${path}.kind`, `expected ${expectedKind}`);
   }
-  return { kind: address.kind, packageId, resourceId };
+  return { kind: address.kind as ResourceKind, packageId, resourceId };
 }
 
 export function resourceAddressKey(address: ResourceAddress): string {
@@ -303,6 +311,33 @@ function validateNonzeroValueTurns(value: unknown, path: string): void {
   if (!Object.values(turns).some(turn => turn !== 0)) {
     throw new ScenarioValidationError(path, 'expected at least one non-zero value turn');
   }
+}
+
+function validateNormDefinition(value: unknown, path: string): Record<string, unknown> {
+  const norm = objectValue(value, path);
+  stringValue(norm.label, `${path}.label`);
+  validateNonzeroValueTurns(norm.compatibilityTurns, `${path}.compatibilityTurns`);
+  return norm;
+}
+
+function validateSocialContractDefinition(value: unknown, path: string): Record<string, unknown> {
+  const contract = objectValue(value, path);
+  stringValue(contract.label, `${path}.label`);
+  stringValue(contract.summary, `${path}.summary`);
+  const norms = arrayValue(contract.norms, `${path}.norms`);
+  if (norms.length === 0) {
+    throw new ScenarioValidationError(`${path}.norms`, 'expected at least one norm');
+  }
+  const normKeys = new Set<string>();
+  norms.forEach((norm, index) => {
+    const address = parseResourceAddress(norm, `${path}.norms[${index}]`, 'norm');
+    const key = resourceAddressKey(address);
+    if (normKeys.has(key)) {
+      throw new ScenarioValidationError(`${path}.norms[${index}]`, 'duplicate norm reference');
+    }
+    normKeys.add(key);
+  });
+  return contract;
 }
 
 function validateResourceCosts(value: unknown, path: string): void {
@@ -548,7 +583,7 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 13) return file;
+  if (file.schemaVersion === 14) return file;
   if (
     file.schemaVersion !== 1 &&
     file.schemaVersion !== 2 &&
@@ -561,7 +596,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 9 &&
     file.schemaVersion !== 10 &&
     file.schemaVersion !== 11 &&
-    file.schemaVersion !== 12
+    file.schemaVersion !== 12 &&
+    file.schemaVersion !== 13
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -708,7 +744,48 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     const placement = objectValue(placementValue, 'scenario.characters');
     objectValue(placement.position, 'scenario.characters.position').layerId ??= 'surface';
   }
-  file.schemaVersion = 13;
+  file.socialContractPlacements = [];
+  file.legacyLocalNorms = arrayValue(file.localNorms, 'scenario.localNorms');
+  delete file.localNorms;
+  for (const normValue of arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms')) {
+    const norm = objectValue(normValue, 'scenario.localNorms');
+    norm.address = {
+      kind: 'norm',
+      packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+      resourceId: identifierValue(norm.id, 'scenario.localNorms.id'),
+    };
+    delete norm.id;
+  }
+  for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
+    const placement = objectValue(placementValue, 'scenario.characters');
+    for (const perspectiveValue of arrayValue(
+      placement.normPerspectives,
+      'scenario.characters.normPerspectives',
+    )) {
+      const perspective = objectValue(perspectiveValue, 'scenario.characters.normPerspectives');
+      perspective.norm = {
+        kind: 'norm',
+        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+        resourceId: identifierValue(
+          perspective.normId,
+          'scenario.characters.normPerspectives.normId',
+        ),
+      };
+      delete perspective.normId;
+    }
+  }
+  for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
+    const event = objectValue(eventValue, 'scenario.observationEvents');
+    if (event.eventType === 'norm') {
+      event.norm = {
+        kind: 'norm',
+        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
+        resourceId: identifierValue(event.normId, 'scenario.observationEvents.normId'),
+      };
+      delete event.normId;
+    }
+  }
+  file.schemaVersion = 14;
   return file;
 }
 
@@ -1083,6 +1160,24 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
       schemaVersion: 1,
     }) as CharacterProfileResourceFile;
   }
+  if (address.kind === 'norm') {
+    schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
+    const norm = validateNormDefinition(file.norm, `${path}.norm`);
+    return clone({
+      address: address as NormAddress,
+      norm,
+      schemaVersion: 1,
+    }) as unknown as NormResourceFile;
+  }
+  if (address.kind === 'social-contract') {
+    schemaVersion(file.schemaVersion, `${path}.schemaVersion`, 1);
+    const contract = validateSocialContractDefinition(file.contract, `${path}.contract`);
+    return clone({
+      address: address as SocialContractAddress,
+      contract,
+      schemaVersion: 1,
+    }) as unknown as SocialContractResourceFile;
+  }
   if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
     throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
   }
@@ -1114,7 +1209,7 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 13);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 14);
   identifierValue(file.id, 'scenario.id');
   stringValue(file.title, 'scenario.title');
   stringValue(file.summary, 'scenario.summary');
@@ -1172,15 +1267,44 @@ export function parseScenario(value: unknown): ScenarioFile {
     }
   }
 
-  const localNorms = arrayValue(file.localNorms, 'scenario.localNorms').map((entry, index) => {
-    const path = `scenario.localNorms[${index}]`;
-    const norm = objectValue(entry, path);
-    identifierValue(norm.id, `${path}.id`);
-    stringValue(norm.label, `${path}.label`);
-    validateNonzeroValueTurns(norm.compatibilityTurns, `${path}.compatibilityTurns`);
-    return norm;
+  const legacyLocalNorms = arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms').map(
+    (entry, index) => {
+      const path = `scenario.legacyLocalNorms[${index}]`;
+      const norm = objectValue(entry, path);
+      parseResourceAddress(norm.address, `${path}.address`, 'norm');
+      validateNormDefinition(norm, path);
+      return norm;
+    },
+  );
+  const localNormKeys = legacyLocalNorms.map(norm =>
+    resourceAddressKey(
+      parseResourceAddress(norm.address, 'scenario.legacyLocalNorms.address', 'norm'),
+    ),
+  );
+  if (new Set(localNormKeys).size !== localNormKeys.length) {
+    throw new ScenarioValidationError('scenario.legacyLocalNorms', 'duplicate norm address');
+  }
+
+  const socialContractPlacements = arrayValue(
+    file.socialContractPlacements,
+    'scenario.socialContractPlacements',
+  ).map((entry, index) => {
+    const path = `scenario.socialContractPlacements[${index}]`;
+    const placement = objectValue(entry, path);
+    identifierValue(placement.id, `${path}.id`);
+    parseResourceAddress(placement.contract, `${path}.contract`, 'social-contract');
+    const scope = objectValue(placement.scope, `${path}.scope`);
+    if (typeof scope.kind !== 'string' || !SOCIAL_CONTRACT_SCOPE_KIND_SET.has(scope.kind)) {
+      throw new ScenarioValidationError(
+        `${path}.scope.kind`,
+        'expected event, group, institution, or location',
+      );
+    }
+    const scopeField = `${scope.kind}Id`;
+    identifierValue(scope[scopeField], `${path}.scope.${scopeField}`);
+    return placement;
   });
-  uniqueIds(localNorms, 'scenario.localNorms');
+  uniqueIds(socialContractPlacements, 'scenario.socialContractPlacements');
 
   const worldFacts = arrayValue(file.worldFacts, 'scenario.worldFacts').map((entry, index) => {
     const path = `scenario.worldFacts[${index}]`;
@@ -1373,15 +1497,22 @@ export function parseScenario(value: unknown): ScenarioFile {
       (entry, perspectiveIndex) => {
         const perspectivePath = `${path}.normPerspectives[${perspectiveIndex}]`;
         const perspective = objectValue(entry, perspectivePath);
-        identifierValue(perspective.normId, `${perspectivePath}.normId`);
+        parseResourceAddress(perspective.norm, `${perspectivePath}.norm`, 'norm');
         if (typeof perspective.member !== 'boolean') {
           throw new ScenarioValidationError(`${perspectivePath}.member`, 'expected a boolean');
         }
         numberValue(perspective.legibility, `${perspectivePath}.legibility`, 0, 1);
-        return { ...perspective, id: perspective.normId };
+        return perspective;
       },
     );
-    uniqueIds(normPerspectives, `${path}.normPerspectives`);
+    const perspectiveKeys = normPerspectives.map(perspective =>
+      resourceAddressKey(
+        parseResourceAddress(perspective.norm, `${path}.normPerspectives.norm`, 'norm'),
+      ),
+    );
+    if (new Set(perspectiveKeys).size !== perspectiveKeys.length) {
+      throw new ScenarioValidationError(`${path}.normPerspectives`, 'duplicate norm perspective');
+    }
 
     const schedule = arrayValue(placement.schedule, `${path}.schedule`).map(
       (entry, scheduleIndex) => {
@@ -1673,7 +1804,7 @@ export function parseScenario(value: unknown): ScenarioFile {
         numberValue(event.diagnosticity, `${path}.diagnosticity`, 0, 1);
         numberValue(event.observedValue, `${path}.observedValue`, 0, 1);
       } else {
-        identifierValue(event.normId, `${path}.normId`);
+        parseResourceAddress(event.norm, `${path}.norm`, 'norm');
         stringValue(event.summary, `${path}.summary`);
         validateValueTurns(event.baselineTurns, `${path}.baselineTurns`);
         const compatibility = numberValue(event.compatibility, `${path}.compatibility`, -1, 1);

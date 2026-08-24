@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "kind": "social-contract",
+    "packageId": "verusim",
+    "resourceId": "pottsfield-harvest-customs"
+  },
+  "contract": {
+    "label": "Pottsfield harvest customs",
+    "summary": "Shared observances that frame the harvest as a communal obligation.",
+    "norms": [
+      {
+        "kind": "norm",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-harvest-observance"
+      }
+    ]
+  }
+}

@@ -9,6 +9,7 @@ import innkeeperCoping from '../content/scenarios/innkeeper-coping.json';
 import marketMorning from '../content/scenarios/market-morning.json';
 import narrativeAgency from '../content/scenarios/narrative-agency.json';
 import pottsfield from '../content/scenarios/pottsfield.json';
+import pottsfieldCharterDay from '../content/scenarios/pottsfield-charter-day.json';
 import relationshipMomentum from '../content/scenarios/relationship-momentum.json';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import {
@@ -48,6 +49,7 @@ export const BUILT_IN_SCENARIOS: readonly BuiltInScenario[] = [
   disclosureAudience,
   endicottMargueritte,
   pottsfield,
+  pottsfieldCharterDay,
   relationshipMomentum,
   innkeeperCoping,
   cascadeRoom,

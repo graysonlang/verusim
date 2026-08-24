@@ -20,6 +20,10 @@ import resource18 from './environments/coping/coping-inn.json';
 import resource19 from './environments/coping/coping-storehouse.json';
 import resource20 from './environments/coping/coping-yard.json';
 import resource21 from './environments/highwayman/old-king-road.json';
+import resource22 from './norms/pottsfield/harvest-observance.json';
+import resource23 from './norms/pottsfield/market-courtesy.json';
+import resource24 from './social-contracts/pottsfield/harvest-customs.json';
+import resource25 from './social-contracts/pottsfield/market-customs.json';
 import type { AuthoredResource } from '../src/model/types.js';
 
 export const BUILT_IN_RESOURCES: readonly AuthoredResource[] = Object.freeze([
@@ -110,5 +114,21 @@ export const BUILT_IN_RESOURCES: readonly AuthoredResource[] = Object.freeze([
   Object.freeze({
     source: 'content/environments/highwayman/old-king-road.json',
     value: resource21,
+  }),
+  Object.freeze({
+    source: 'content/norms/pottsfield/harvest-observance.json',
+    value: resource22,
+  }),
+  Object.freeze({
+    source: 'content/norms/pottsfield/market-courtesy.json',
+    value: resource23,
+  }),
+  Object.freeze({
+    source: 'content/social-contracts/pottsfield/harvest-customs.json',
+    value: resource24,
+  }),
+  Object.freeze({
+    source: 'content/social-contracts/pottsfield/market-customs.json',
+    value: resource25,
   }),
 ]);

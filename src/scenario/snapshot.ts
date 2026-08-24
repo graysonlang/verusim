@@ -859,7 +859,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 7 &&
     file.schemaVersion !== 8 &&
     file.schemaVersion !== 9 &&
-    file.schemaVersion !== 10
+    file.schemaVersion !== 10 &&
+    file.schemaVersion !== 11
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1005,7 +1006,18 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       objectValue(agent.destination, 'snapshot.agents.destination').layerId = 'surface';
     }
   }
-  file.schemaVersion = 10;
+  if (sourceVersion < 11) {
+    const scenario = parseScenario(file.scenario);
+    file.scenario = scenario;
+    const events = new Map(scenario.observationEvents.map(event => [event.id, event]));
+    for (const observationValue of arrayValue(file.observations, 'snapshot.observations')) {
+      const observation = objectValue(observationValue, 'snapshot.observations');
+      if (observation.eventType !== 'norm') continue;
+      const event = events.get(stringValue(observation.eventId, 'snapshot.observations.eventId'));
+      if (event?.eventType === 'norm') observation.normId = resourceAddressKey(event.norm);
+    }
+  }
+  file.schemaVersion = 11;
   return file;
 }
 
@@ -1014,7 +1026,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 10) {
+  if (file.schemaVersion !== 11) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1040,14 +1052,25 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
       'duplicate resource address',
     );
   }
-  const expectedKeys = [scenario.environment, ...scenario.characters.map(item => item.profile)]
+  const sortedLockKeys = [...lockKeys].sort();
+  if (JSON.stringify(lockKeys) !== JSON.stringify(sortedLockKeys)) {
+    throw new ScenarioValidationError(
+      'snapshot.resourceLock.resources',
+      'must use semantic address order',
+    );
+  }
+  const expectedKeys = [
+    scenario.environment,
+    ...scenario.characters.map(item => item.profile),
+    ...scenario.socialContractPlacements.map(item => item.contract),
+  ]
     .map(resourceAddressKey)
     .filter((key, index, keys) => keys.indexOf(key) === index)
     .sort();
-  if (JSON.stringify(lockKeys) !== JSON.stringify(expectedKeys)) {
+  if (expectedKeys.some(key => !lockKeys.includes(key))) {
     throw new ScenarioValidationError(
       'snapshot.resourceLock.resources',
-      'must contain exactly the scenario resource dependencies in semantic order',
+      'must contain every direct scenario resource dependency',
     );
   }
   integerValue(file.minute, 'snapshot.minute');

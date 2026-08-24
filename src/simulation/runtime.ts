@@ -261,6 +261,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     intentions: [],
     minute: prepared.scenario.startMinute,
     narrativeRecords: [],
+    norms: prepared.norms,
     observations: [],
     plans: [],
     relationshipDecisions: [],
@@ -275,6 +276,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     resolvedRelationshipEventIds: [],
     resolvedRelationshipRequestIds: [],
     scenario: prepared.scenario,
+    socialContracts: prepared.socialContracts,
     tick: 0,
     trace: createTrace([
       {

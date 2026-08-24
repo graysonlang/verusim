@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 14,
   "id": "pottsfield",
   "title": "Pottsfield",
   "summary": "Residents and a visitor read the same harvest observance through opposite value turns while the local rationale remains opaque to the outsider.",
@@ -10,12 +10,18 @@
     "temperatureCelsius": 11,
     "weather": "overcast"
   },
-  "localNorms": [
+  "legacyLocalNorms": [],
+  "socialContractPlacements": [
     {
-      "id": "harvest-observance",
-      "label": "The harvest observance preserves a fair communal order",
-      "compatibilityTurns": {
-        "fairness": 0.8
+      "id": "market-harvest-customs",
+      "contract": {
+        "kind": "social-contract",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-harvest-customs"
+      },
+      "scope": {
+        "kind": "location",
+        "locationId": "market-square"
       }
     }
   ],
@@ -74,7 +80,11 @@
       "atMinute": 601,
       "subjectId": "reeve",
       "observerIds": ["resident", "visitor"],
-      "normId": "harvest-observance",
+      "norm": {
+        "kind": "norm",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-harvest-observance"
+      },
       "summary": "the reeve completed the silent harvest rite",
       "baselineTurns": {
         "fairness": -0.4
@@ -95,11 +105,16 @@
       "instanceId": "reeve",
       "position": {
         "x": 112,
-        "y": 72.5
+        "y": 72.5,
+        "layerId": "surface"
       },
       "normPerspectives": [
         {
-          "normId": "harvest-observance",
+          "norm": {
+            "kind": "norm",
+            "packageId": "verusim",
+            "resourceId": "pottsfield-harvest-observance"
+          },
           "member": true,
           "legibility": 1
         }
@@ -126,11 +141,16 @@
       "instanceId": "resident",
       "position": {
         "x": 112,
-        "y": 72.5
+        "y": 72.5,
+        "layerId": "surface"
       },
       "normPerspectives": [
         {
-          "normId": "harvest-observance",
+          "norm": {
+            "kind": "norm",
+            "packageId": "verusim",
+            "resourceId": "pottsfield-harvest-observance"
+          },
           "member": true,
           "legibility": 1
         }
@@ -157,11 +177,16 @@
       "instanceId": "visitor",
       "position": {
         "x": 112,
-        "y": 72.5
+        "y": 72.5,
+        "layerId": "surface"
       },
       "normPerspectives": [
         {
-          "normId": "harvest-observance",
+          "norm": {
+            "kind": "norm",
+            "packageId": "verusim",
+            "resourceId": "pottsfield-harvest-observance"
+          },
           "member": false,
           "legibility": 0
         }

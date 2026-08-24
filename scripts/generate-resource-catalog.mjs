@@ -6,7 +6,12 @@ const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)
 const CONTENT_ROOT = path.join(REPOSITORY_ROOT, 'content');
 const SCENARIO_ROOT = path.join(CONTENT_ROOT, 'scenarios');
 const OUTPUT_PATH = path.join(REPOSITORY_ROOT, 'content', 'catalog.generated.ts');
-const RESOURCE_KINDS = new Set(['character-profile', 'environment-layout']);
+const RESOURCE_KINDS = new Set([
+  'character-profile',
+  'environment-layout',
+  'norm',
+  'social-contract',
+]);
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /** @param {string} directory @returns {Promise<string[]>} */

@@ -1,6 +1,7 @@
 import {
   VALUE_IDS,
-  type LocalNorm,
+  type NormAddress,
+  type NormDefinition,
   type NormObservationEvent,
   type NormObservationRecord,
   type NormPerspective,
@@ -34,23 +35,31 @@ function agentFor(state: SimulationState, agentId: string): SimulationAgent {
   return agent;
 }
 
-function normFor(state: SimulationState, normId: string): LocalNorm {
-  const norm = state.scenario.localNorms.find(candidate => candidate.id === normId);
-  if (norm === undefined) throw new RangeError(`Unknown local norm "${normId}"`);
-  return norm;
+function normKey(address: NormAddress): string {
+  return `${address.packageId}:${address.kind}:${address.resourceId}`;
+}
+
+function normFor(state: SimulationState, address: NormAddress): NormDefinition {
+  const key = normKey(address);
+  const resource = state.norms.find(candidate => normKey(candidate.address) === key);
+  if (resource === undefined) throw new RangeError(`Unknown norm resource "${key}"`);
+  return resource.norm;
 }
 
 function perspectiveFor(
   state: SimulationState,
   observerId: string,
-  normId: string,
+  norm: NormAddress,
 ): NormPerspective {
   const placement = state.scenario.characters.find(
     candidate => candidate.instanceId === observerId,
   );
-  const perspective = placement?.normPerspectives.find(candidate => candidate.normId === normId);
+  const key = normKey(norm);
+  const perspective = placement?.normPerspectives.find(
+    candidate => normKey(candidate.norm) === key,
+  );
   if (perspective === undefined) {
-    throw new RangeError(`Missing local norm perspective for "${observerId}" and "${normId}"`);
+    throw new RangeError(`Missing norm perspective for "${observerId}" and "${key}"`);
   }
   return perspective;
 }
@@ -67,7 +76,7 @@ function sensoryFor(event: NormObservationEvent, state: SimulationState, observe
 
 function subjectiveTurns(
   event: NormObservationEvent,
-  norm: LocalNorm,
+  norm: NormDefinition,
   member: boolean,
 ): {
   compatibilityTurns: Partial<ValueMap<number>>;
@@ -111,6 +120,7 @@ function observationTrace(
   perceptionTerms: TraceEntry['terms'],
 ): TraceEntry {
   const perceived = sensory.available;
+  const key = normKey(event.norm);
   return {
     agentId: observer.id,
     id: `${state.tick}:${event.id}:${observer.id}:observation`,
@@ -123,7 +133,7 @@ function observationTrace(
     terms: [
       traceTerm('event', event.id, `scenario.observationEvents.${event.id}`),
       traceTerm('event-type', event.eventType, `scenario.observationEvents.${event.id}.eventType`),
-      traceTerm('norm', event.normId, `scenario.observationEvents.${event.id}.normId`),
+      traceTerm('norm', key, `scenario.observationEvents.${event.id}.norm`),
       traceTerm('channel', event.channel, `scenario.observationEvents.${event.id}.channel`),
       ...perceptionTerms,
       traceTerm('perception-strength', sensory.strength, `simulation.spatial.${event.channel}`),
@@ -140,6 +150,7 @@ function missedRecord(
   perspective: NormPerspective,
   perceptionStrength: number,
 ): NormObservationRecord {
+  const key = normKey(event.norm);
   return {
     baselineTurns: { ...event.baselineTurns },
     channel: event.channel,
@@ -152,7 +163,7 @@ function missedRecord(
     legibilityMargin: null,
     member: perspective.member,
     minute: state.minute,
-    normId: event.normId,
+    normId: key,
     observerId,
     outcome: 'missed',
     perceptionStrength,
@@ -176,7 +187,8 @@ function appraisalTrace(
       : record.subjectiveTurn > 0
         ? 'positive'
         : 'negative';
-  const perspectiveSource = `scenario.characters.${record.observerId}.normPerspectives.${event.normId}`;
+  const key = normKey(event.norm);
+  const perspectiveSource = `scenario.characters.${record.observerId}.normPerspectives.${key}`;
   return {
     agentId: record.observerId,
     id: `${state.tick}:${event.id}:${record.observerId}:norm-appraisal`,
@@ -185,7 +197,7 @@ function appraisalTrace(
     selection: null,
     summary: `${observer.profile.name} derived a ${direction} turn from ${event.summary.toLowerCase()}`,
     terms: [
-      traceTerm('norm', event.normId, `scenario.localNorms.${event.normId}`),
+      traceTerm('norm', key, `resources.${key}.norm`),
       traceTerm('member', record.member, `${perspectiveSource}.member`),
       traceTerm('legibility', record.legibility, `${perspectiveSource}.legibility`),
       ...capabilityTerms,
@@ -214,7 +226,7 @@ function appraisalTrace(
             traceTerm(
               `compatibility:${valueId}`,
               compatibility,
-              `scenario.localNorms.${event.normId}.compatibilityTurns.${valueId}`,
+              `resources.${key}.norm.compatibilityTurns.${valueId}`,
               `${perspectiveSource}.member`,
             ),
           );
@@ -236,7 +248,7 @@ function resolveForObserver(
   observerId: string,
 ): SimulationState {
   const observer = agentFor(state, observerId);
-  const perspective = perspectiveFor(state, observerId, event.normId);
+  const perspective = perspectiveFor(state, observerId, event.norm);
   const { perception, sensory } = sensoryFor(event, state, observerId);
   let trace = appendTrace(
     state.trace,
@@ -255,7 +267,8 @@ function resolveForObserver(
     };
   }
 
-  const norm = normFor(state, event.normId);
+  const norm = normFor(state, event.norm);
+  const key = normKey(event.norm);
   const legibility = resolveAgentCapabilityCheck(observer, {
     applicable: true,
     capabilityId: 'evidenceCalibration',
@@ -265,7 +278,7 @@ function resolveForObserver(
     modifiers: [
       {
         id: 'local-norm-legibility',
-        source: `scenario.characters.${observerId}.normPerspectives.${event.normId}.legibility`,
+        source: `scenario.characters.${observerId}.normPerspectives.${key}.legibility`,
         value: perspective.legibility * 0.6,
       },
     ],
@@ -284,7 +297,7 @@ function resolveForObserver(
     legibilityMargin: legibility.margin,
     member: perspective.member,
     minute: state.minute,
-    normId: event.normId,
+    normId: key,
     observerId,
     outcome: 'appraised',
     perceptionStrength: sensory.strength,

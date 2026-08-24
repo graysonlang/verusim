@@ -19,6 +19,7 @@ import {
   prepareScenario,
   serializeSnapshot,
   relativeLayerLevel,
+  resourceAddressKey,
   setAgentResource,
   setAgentValueCharge,
   setWorldFactAmount,
@@ -970,8 +971,8 @@ function renderInspector(
       const subject = state.agents.find(candidate => candidate.id === observation.subjectId);
       outcome.textContent = observation.outcome;
       if (observation.eventType === 'norm') {
-        const norm = state.scenario.localNorms.find(
-          candidate => candidate.id === observation.normId,
+        const norm = state.norms.find(
+          candidate => resourceAddressKey(candidate.address) === observation.normId,
         );
         const turnDetails = VALUE_IDS.flatMap(valueId => {
           const baseline = observation.baselineTurns[valueId] ?? 0;
@@ -983,7 +984,7 @@ function renderInspector(
                 `${valueId} ${baseline.toFixed(2)} baseline ${compatibility >= 0 ? '+' : ''}${compatibility.toFixed(2)} local = ${subjective.toFixed(2)}`,
               ];
         }).join(' / ');
-        copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${norm?.label ?? observation.normId}`;
+        copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${norm?.norm.label ?? observation.normId}`;
         terms.textContent = `${observation.member ? 'member' : 'nonmember'} / legibility ${observation.legibility.toFixed(2)} (${observation.legibilityBand ?? 'n/a'}) / felt ${observation.subjectiveTurn?.toFixed(3) ?? 'not perceived'} / ${turnDetails || 'no value turn'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
       } else {
         const predicted =

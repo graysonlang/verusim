@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "kind": "norm",
+    "packageId": "verusim",
+    "resourceId": "pottsfield-market-courtesy"
+  },
+  "norm": {
+    "label": "Market disagreements leave room for continued exchange",
+    "compatibilityTurns": {
+      "belonging": 0.25,
+      "fairness": 0.35
+    }
+  }
+}

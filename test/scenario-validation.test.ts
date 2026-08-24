@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import {
   characters,
   copingCharacters,
@@ -16,13 +17,17 @@ import cascadeScenario from '../content/scenarios/cascade-room.json';
 import narrativeScenario from '../content/scenarios/narrative-agency.json';
 import {
   advanceSimulation,
+  createResourceCatalog,
   createSimulation,
   parseCharacterLibrary,
   parseEnvironmentLibrary,
   parseScenario,
   parseSnapshot,
+  prepareScenario,
   serializeSnapshot,
 } from '../src/index.js';
+
+const resourceCatalog = createResourceCatalog(BUILT_IN_RESOURCES);
 
 function replaceWithLegacyTrace(snapshot: Record<string, unknown>): void {
   const currentTrace = snapshot.trace as {
@@ -77,14 +82,14 @@ describe('scenario validation', () => {
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
     assert.deepEqual(migrated.disclosureOpportunities, []);
     assert.deepEqual(migrated.dyads, []);
     assert.deepEqual(migrated.observationEvents, []);
-    assert.deepEqual(migrated.localNorms, []);
+    assert.deepEqual(migrated.legacyLocalNorms, []);
     assert.deepEqual(migrated.relationshipEvents, []);
     assert.deepEqual(migrated.relationshipRequests, []);
     assert.deepEqual(migrated.appraisalEvents, []);
@@ -150,7 +155,7 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 13);
+    assert.equal(migratedScenario.schemaVersion, 14);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
     assert.equal(migratedScenario.dyads[0]?.suspicion, 0);
@@ -164,7 +169,7 @@ describe('scenario validation', () => {
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 13);
+    assert.equal(migratedScenario.schemaVersion, 14);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -184,7 +189,7 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 10);
+    assert.equal(migratedSnapshot.schemaVersion, 11);
     assert.equal(migratedSnapshot.trace.schemaVersion, 1);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
@@ -209,7 +214,7 @@ describe('scenario validation', () => {
     replaceWithLegacyTrace(agendaSnapshot);
     downgradeSnapshotReferences(agendaSnapshot, 2);
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
-    assert.equal(migratedAgendaSnapshot.schemaVersion, 10);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 11);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
   });
 
@@ -222,7 +227,7 @@ describe('scenario validation', () => {
     }
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
 
@@ -247,7 +252,7 @@ describe('scenario validation', () => {
     assert.equal(schedule[0]?.recoveryMode, 'sleep');
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.deepEqual(migrated.environmentConditions, {
       season: 'spring',
@@ -262,7 +267,7 @@ describe('scenario validation', () => {
     for (const dyad of prior.dyads as Array<Record<string, unknown>>) delete dyad.suspicion;
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.deepEqual(migrated.observationEvents, []);
     assert.equal(migrated.dyads[0]?.suspicion, 0);
     assert.deepEqual(migrated.environmentConditions, mindModelScenario.environmentConditions);
@@ -272,8 +277,8 @@ describe('scenario validation', () => {
     const prior = downgradeScenarioReferences(mindModelScenario, 7);
     const migrated = parseScenario(prior);
 
-    assert.equal(migrated.schemaVersion, 13);
-    assert.deepEqual(migrated.localNorms, []);
+    assert.equal(migrated.schemaVersion, 14);
+    assert.deepEqual(migrated.legacyLocalNorms, []);
     assert.ok(migrated.characters.every(placement => placement.normPerspectives.length === 0));
     assert.ok(migrated.observationEvents.every(event => event.eventType === 'mind-model'));
 
@@ -288,12 +293,53 @@ describe('scenario validation', () => {
     const snapshot = serializeSnapshot(observed) as unknown as Record<string, unknown>;
     downgradeSnapshotReferences(snapshot, 4);
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 10);
+    assert.equal(migratedSnapshot.schemaVersion, 11);
     assert.ok(migratedSnapshot.observations.length > 0);
     assert.ok(migratedSnapshot.observations.every(event => event.eventType === 'mind-model'));
     assert.ok(
       migratedSnapshot.scenario.observationEvents.every(event => event.eventType === 'mind-model'),
     );
+  });
+
+  it('migrates the bounded scenario-local norm shape into stable norm addresses', () => {
+    const legacy = structuredClone(normScenario) as unknown as Record<string, unknown>;
+    legacy.schemaVersion = 13;
+    legacy.localNorms = [
+      {
+        id: 'harvest-observance',
+        label: 'The harvest observance preserves a fair communal order',
+        compatibilityTurns: { fairness: 0.8 },
+      },
+    ];
+    delete legacy.socialContractPlacements;
+    for (const placement of legacy.characters as Array<Record<string, unknown>>) {
+      for (const perspective of placement.normPerspectives as Array<Record<string, unknown>>) {
+        perspective.normId = 'harvest-observance';
+        delete perspective.norm;
+      }
+    }
+    const event = (legacy.observationEvents as Array<Record<string, unknown>>)[0];
+    assert.ok(event);
+    event.normId = 'harvest-observance';
+    delete event.norm;
+
+    const migrated = parseScenario(legacy);
+    assert.equal(migrated.schemaVersion, 14);
+    assert.equal(migrated.legacyLocalNorms[0]?.address.resourceId, 'harvest-observance');
+    assert.equal(
+      migrated.characters[0]?.normPerspectives[0]?.norm.resourceId,
+      'harvest-observance',
+    );
+    assert.ok(migrated.observationEvents[0]?.eventType === 'norm');
+    assert.equal(migrated.observationEvents[0].norm.resourceId, 'harvest-observance');
+    assert.deepEqual(migrated.socialContractPlacements, []);
+
+    const state = createSimulation({
+      characterLibrary: normCharacters,
+      environmentLibrary: environments,
+      scenario: migrated,
+    });
+    assert.equal(state.norms[0]?.address.resourceId, 'harvest-observance');
   });
 
   it('adds coping inputs without rewriting version 9 relationship state', () => {
@@ -306,7 +352,7 @@ describe('scenario validation', () => {
       }
     }
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.deepEqual(migrated.appraisalEvents, []);
     assert.ok(
       migrated.characters.every(placement =>
@@ -337,7 +383,7 @@ describe('scenario validation', () => {
       delete agent.outletHistory;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 10);
+    assert.equal(migratedSnapshot.schemaVersion, 11);
     assert.deepEqual(migratedSnapshot.appraisalRecords, []);
     assert.deepEqual(migratedSnapshot.resolvedAppraisalEventIds, []);
     assert.ok(migratedSnapshot.agents.every(agent => agent.currentOutlet === null));
@@ -356,7 +402,7 @@ describe('scenario validation', () => {
       delete dyad.validatorClaimIds;
     }
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 13);
+    assert.equal(migrated.schemaVersion, 14);
     assert.equal(migrated.appraisalEvents.length, cascadeScenario.appraisalEvents.length);
     assert.deepEqual(migrated.aspirationOpportunities, []);
     assert.deepEqual(migrated.narrativeEvents, []);
@@ -382,7 +428,7 @@ describe('scenario validation', () => {
       delete agent.narrative;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 10);
+    assert.equal(migratedSnapshot.schemaVersion, 11);
     assert.ok(migratedSnapshot.agents.every(agent => agent.narrative === null));
     assert.ok(migratedSnapshot.agents.some(agent => agent.cascade !== 'none'));
   });
@@ -444,27 +490,17 @@ describe('scenario validation', () => {
     const event = malformed.observationEvents[0];
     assert.ok(perspective);
     assert.ok(event);
-    perspective.normId = 'missing-norm';
+    perspective.norm.resourceId = 'missing-norm';
     assert.throws(
-      () =>
-        createSimulation({
-          characterLibrary: normCharacters,
-          environmentLibrary: environments,
-          scenario: malformed,
-        }),
-      /scenario\.characters\[1\]\.normPerspectives\[0\]\.normId: unknown local norm "missing-norm"/,
+      () => prepareScenario({ catalog: resourceCatalog, scenario: malformed }),
+      /scenario\.characters\[1\]\.normPerspectives\[0\]\.norm: unknown norm resource "verusim:norm:missing-norm"/,
     );
 
-    perspective.normId = 'harvest-observance';
-    event.normId = 'missing-norm';
+    perspective.norm.resourceId = 'pottsfield-harvest-observance';
+    event.norm.resourceId = 'missing-norm';
     assert.throws(
-      () =>
-        createSimulation({
-          characterLibrary: normCharacters,
-          environmentLibrary: environments,
-          scenario: malformed,
-        }),
-      /scenario\.observationEvents\[0\]\.normId: unknown local norm "missing-norm"/,
+      () => prepareScenario({ catalog: resourceCatalog, scenario: malformed }),
+      /scenario\.observationEvents\[0\]\.norm: unknown norm resource "verusim:norm:missing-norm"/,
     );
   });
 

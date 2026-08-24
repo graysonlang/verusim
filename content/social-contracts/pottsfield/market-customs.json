@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "address": {
+    "kind": "social-contract",
+    "packageId": "verusim",
+    "resourceId": "pottsfield-market-customs"
+  },
+  "contract": {
+    "label": "Pottsfield market customs",
+    "summary": "Conventions that keep trade possible through ordinary disagreement.",
+    "norms": [
+      {
+        "kind": "norm",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-market-courtesy"
+      }
+    ]
+  }
+}

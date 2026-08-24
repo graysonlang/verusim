@@ -1,5 +1,6 @@
 import type { ScenarioContent } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
+import { resourceAddressKey } from './parse.js';
 
 export function validateReferences(content: ScenarioContent): void {
   const characters = new Map(
@@ -25,7 +26,46 @@ export function validateReferences(content: ScenarioContent): void {
   );
   const claimIdsFor = (instanceId: string) =>
     new Set(profileByInstance.get(instanceId)?.narrativeClaims.map(claim => claim.id) ?? []);
-  const localNormIds = new Set(content.scenario.localNorms.map(norm => norm.id));
+  const normKeys = new Set(content.norms.map(resource => resourceAddressKey(resource.address)));
+  for (const norm of content.scenario.legacyLocalNorms) {
+    const key = resourceAddressKey(norm.address);
+    if (normKeys.has(key)) {
+      throw new ScenarioValidationError(
+        'scenario.legacyLocalNorms',
+        `legacy local norm duplicates resolved resource "${key}"`,
+      );
+    }
+    normKeys.add(key);
+  }
+  const socialContracts = new Map(
+    content.socialContracts.map(resource => [resourceAddressKey(resource.address), resource]),
+  );
+  content.socialContracts.forEach((resource, contractIndex) => {
+    resource.contract.norms.forEach((norm, normIndex) => {
+      const key = resourceAddressKey(norm);
+      if (!normKeys.has(key)) {
+        throw new ScenarioValidationError(
+          `socialContracts[${contractIndex}].contract.norms[${normIndex}]`,
+          `unknown norm resource "${key}"`,
+        );
+      }
+    });
+  });
+  content.scenario.socialContractPlacements.forEach((placement, index) => {
+    const key = resourceAddressKey(placement.contract);
+    if (!socialContracts.has(key)) {
+      throw new ScenarioValidationError(
+        `scenario.socialContractPlacements[${index}].contract`,
+        `unknown social contract resource "${key}"`,
+      );
+    }
+    if (placement.scope.kind === 'location' && !locationIds.has(placement.scope.locationId)) {
+      throw new ScenarioValidationError(
+        `scenario.socialContractPlacements[${index}].scope.locationId`,
+        `unknown location "${placement.scope.locationId}"`,
+      );
+    }
+  });
   content.scenario.characters.forEach((placement, index) => {
     if (!characters.has(placement.profile.resourceId)) {
       throw new ScenarioValidationError(
@@ -59,10 +99,11 @@ export function validateReferences(content: ScenarioContent): void {
       }
     });
     placement.normPerspectives.forEach((perspective, perspectiveIndex) => {
-      if (!localNormIds.has(perspective.normId)) {
+      const key = resourceAddressKey(perspective.norm);
+      if (!normKeys.has(key)) {
         throw new ScenarioValidationError(
-          `scenario.characters[${index}].normPerspectives[${perspectiveIndex}].normId`,
-          `unknown local norm "${perspective.normId}"`,
+          `scenario.characters[${index}].normPerspectives[${perspectiveIndex}].norm`,
+          `unknown norm resource "${key}"`,
         );
       }
     });
@@ -141,8 +182,11 @@ export function validateReferences(content: ScenarioContent): void {
     if (!instanceIds.has(event.subjectId)) {
       throw new ScenarioValidationError(`${path}.subjectId`, `unknown agent "${event.subjectId}"`);
     }
-    if (event.eventType === 'norm' && !localNormIds.has(event.normId)) {
-      throw new ScenarioValidationError(`${path}.normId`, `unknown local norm "${event.normId}"`);
+    if (event.eventType === 'norm' && !normKeys.has(resourceAddressKey(event.norm))) {
+      throw new ScenarioValidationError(
+        `${path}.norm`,
+        `unknown norm resource "${resourceAddressKey(event.norm)}"`,
+      );
     }
     event.observerIds.forEach((observerId, observerIndex) => {
       if (!instanceIds.has(observerId)) {
@@ -161,11 +205,13 @@ export function validateReferences(content: ScenarioContent): void {
         event.eventType === 'norm' &&
         !content.scenario.characters
           .find(placement => placement.instanceId === observerId)
-          ?.normPerspectives.some(perspective => perspective.normId === event.normId)
+          ?.normPerspectives.some(
+            perspective => resourceAddressKey(perspective.norm) === resourceAddressKey(event.norm),
+          )
       ) {
         throw new ScenarioValidationError(
           `${path}.observerIds[${observerIndex}]`,
-          `agent "${observerId}" lacks a perspective on local norm "${event.normId}"`,
+          `agent "${observerId}" lacks a perspective on norm "${resourceAddressKey(event.norm)}"`,
         );
       }
     });

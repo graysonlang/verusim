@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 14,
+  "id": "pottsfield-charter-day",
+  "title": "Pottsfield Charter Day",
+  "summary": "Harvest and market contracts coexist across institutional, group, and event scopes without changing the town layout.",
+  "startMinute": 600,
+  "tickMinutes": 1,
+  "environmentConditions": {
+    "season": "autumn",
+    "temperatureCelsius": 11,
+    "weather": "overcast"
+  },
+  "legacyLocalNorms": [],
+  "socialContractPlacements": [
+    {
+      "id": "charter-harvest-customs",
+      "contract": {
+        "kind": "social-contract",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-harvest-customs"
+      },
+      "scope": {
+        "kind": "institution",
+        "institutionId": "market-charter"
+      }
+    },
+    {
+      "id": "charter-market-customs",
+      "contract": {
+        "kind": "social-contract",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-market-customs"
+      },
+      "scope": {
+        "kind": "institution",
+        "institutionId": "market-charter"
+      }
+    },
+    {
+      "id": "trader-market-customs",
+      "contract": {
+        "kind": "social-contract",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-market-customs"
+      },
+      "scope": {
+        "kind": "group",
+        "groupId": "market-traders"
+      }
+    },
+    {
+      "id": "reading-harvest-customs",
+      "contract": {
+        "kind": "social-contract",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-harvest-customs"
+      },
+      "scope": {
+        "kind": "event",
+        "eventId": "charter-reading"
+      }
+    }
+  ],
+  "dyads": [],
+  "disclosureItems": [],
+  "disclosureOpportunities": [],
+  "observationEvents": [],
+  "worldFacts": [],
+  "agendaGoals": [],
+  "taskOperators": [],
+  "behaviorOpportunities": [],
+  "characters": [
+    {
+      "instanceId": "reeve",
+      "position": {
+        "x": 112,
+        "y": 72.5,
+        "layerId": "surface"
+      },
+      "normPerspectives": [
+        {
+          "norm": {
+            "kind": "norm",
+            "packageId": "verusim",
+            "resourceId": "pottsfield-harvest-observance"
+          },
+          "member": true,
+          "legibility": 1
+        },
+        {
+          "norm": {
+            "kind": "norm",
+            "packageId": "verusim",
+            "resourceId": "pottsfield-market-courtesy"
+          },
+          "member": true,
+          "legibility": 1
+        }
+      ],
+      "schedule": [
+        {
+          "startMinute": 0,
+          "locationId": "market-square",
+          "activity": "Reading the market charter",
+          "recoveryMode": "none",
+          "maskingDemand": null,
+          "resourceDrainsPerHour": {}
+        }
+      ],
+      "agency": "responder",
+      "narrativeOverrides": [],
+      "profile": {
+        "kind": "character-profile",
+        "packageId": "verusim",
+        "resourceId": "pottsfield-reeve"
+      }
+    }
+  ],
+  "relationshipEvents": [],
+  "relationshipRequests": [],
+  "appraisalEvents": [],
+  "aspirationOpportunities": [],
+  "narrativeEvents": [],
+  "reputationGroups": [],
+  "environment": {
+    "kind": "environment-layout",
+    "packageId": "verusim",
+    "resourceId": "alders-edge"
+  }
+}
