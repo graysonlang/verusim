@@ -36,6 +36,7 @@ Exit probes:
 - the handset level selector retains its regular grouped-control treatment within the same visual-size and hit-target split
 - dragging either handset sheet header previews a clamped height and snaps the roster or inspector to peek, half, or full on release without capturing interactive header controls
 - handset sheet corner controls show two opposing outward diagonal arrows and announce Expand from peek or half, then show the matching two inward diagonal arrows and announce Contract from full so the control describes its next action
+- multi-touch gestures outside the Canvas leave the document viewport at one-to-one scale, while the Canvas retains its custom two-pointer camera zoom
 - the signal verbosity and visibility selector occupies the character-roster title row rather than the application header
 - the character roster presents its current filtered count within the `Characters (n)` heading, while the Activity inspector uses the same compact uppercase `Activity (n)` hierarchy and reveals its filter field from a right-aligned header control
 - the layer selector occupies the Canvas lower-left in every mode, while compact and handset zoom occupies the Canvas upper-right and handset zoom presents right-aligned borderless value text without reducing its hit target
@@ -47,6 +48,8 @@ Responsive-layout regression coverage checks width classification, mutually excl
 Keyboard regression coverage checks physical punctuation codes, modifier exclusion, the Escape state machine, and clamped lowest-floor-to-Exterior traversal.
 World-view selection regression coverage distinguishes the nearest character hit from a Canvas background hit and covers visible and off-screen camera reveal decisions without coupling them to selection.
 Agent-marker regression coverage distinguishes ordinary, roster-hovered, dimmed-hovered, and selected appearances so transient emphasis cannot displace selection priority.
+Document-shell regression coverage checks the device-width baseline, one-to-one initial and maximum scale, disabled user scaling, and edge-to-edge viewport fitting while the existing world-view gesture regression retains custom two-pointer Canvas zoom.
+Live browser verification was unavailable because neither browser path had a reachable owner-run application and no isolated preview was authorized.
 Isolated browser verification confirmed a moving character's expanded badge, tooltip, and accessibility label use one consistent feet-per-second value while stationary characters omit a zero rate.
 Follow-up isolated browser verification confirmed a fresh profile reclaims the hidden footer row, the menu action shows and hides the bar, and a visible choice survives reload.
 Isolated Chromium verification confirmed both pointer resize directions, close and open detents, custom-width visibility restoration, reload persistence, the three-state double-click cycle, accessible separator state, and the requested header-control placement without console errors.
