@@ -61,7 +61,7 @@ The UI is constructed with standard DOM and Canvas APIs and does not use JSX.
 The dependency stack is intentionally small:
 
 - `solid-js` at runtime
-- esbuild, TypeScript, Biome, and `@graysonlang/esp` for development
+- esbuild, TypeScript, Biome, `@graysonlang/esp`, and `@playwright/mcp` for development
 - Node's built-in test runner for regression tests
 
 ## Repository map
@@ -88,3 +88,4 @@ npm run check
 
 `npm run check` chains the complete verification gate: typecheck, lint, tests, and build.
 The inherited esp scripts and VS Code tasks provide local development and editor integration.
+`.mcp.json` and `playwright-mcp.config.json` provision a headless, isolated Playwright browser for coding-agent validation; see [AGENTS.md](AGENTS.md) for how agents are expected to use it.
