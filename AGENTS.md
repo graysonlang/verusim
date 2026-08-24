@@ -129,6 +129,10 @@ Only report Playwright MCP as unavailable if an attempted Playwright MCP tool in
 
 The in-app browser and Playwright MCP are independent browser-control paths. Failure of the in-app browser does not imply failure of Playwright MCP.
 
+The repository's `.mcp.json` registers Playwright MCP through `playwright-mcp.config.json`, which runs the browser headless and isolated by default so automation never raises a window over the owner's work.
+To watch a run while debugging automation, temporarily set `browser.launchOptions.headless` to `false` in that file and restart the agent session.
+The server reads that file at startup, and changing it neither alters `.mcp.json` nor requires re-approving the server.
+
 ### Browser validation
 
 For browser-visible changes, try the `browser-use` skill against the owner's existing in-app browser session first. If that path is unavailable after completing the skill's required tool discovery, use the configured Playwright MCP server as the preferred fallback.
