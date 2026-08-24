@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "character-profile",
+    "packageId": "verusim",
     "resourceId": "jon-mere"
   },
   "profile": {
@@ -152,5 +151,6 @@
     ],
     "satisfierPreferences": [],
     "profileId": "jon-mere"
-  }
+  },
+  "schemaVersion": 1
 }

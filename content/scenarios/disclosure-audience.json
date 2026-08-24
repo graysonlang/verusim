@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "disclosure-audience",
   "title": "Disclosure Under Mixed Audiences",
   "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
@@ -95,7 +95,8 @@
       "instanceId": "owner",
       "position": {
         "x": 108,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -114,13 +115,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "friend",
       "position": {
         "x": 113,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -139,13 +142,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "sera-dane"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "hostile",
       "position": {
         "x": 118,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -164,10 +169,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "tomas-reed"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -178,5 +183,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

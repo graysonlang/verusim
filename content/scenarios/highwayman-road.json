@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "highwayman-road",
   "title": "The Highwayman: Empty Road",
   "summary": "A merchant and an opportunist meet on an unwatched stretch of road.",
@@ -77,7 +77,9 @@
               }
             }
           ],
-          "claimExpressions": []
+          "claimExpressions": [],
+          "selfDirected": false,
+          "somaticDemand": 0
         },
         {
           "id": "greet",
@@ -99,7 +101,9 @@
               }
             }
           ],
-          "claimExpressions": []
+          "claimExpressions": [],
+          "selfDirected": false,
+          "somaticDemand": 0
         }
       ]
     }
@@ -109,7 +113,8 @@
       "instanceId": "actor",
       "position": {
         "x": 45.8,
-        "y": 41.7
+        "y": 41.7,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -128,13 +133,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "corvin-rusk"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "merchant",
       "position": {
         "x": 54.2,
-        "y": 41.7
+        "y": 41.7,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -153,10 +160,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "jon-mere"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -167,5 +174,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "old-king-road"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

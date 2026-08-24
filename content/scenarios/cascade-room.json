@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "cascade-room",
   "title": "Two Audiences in One Room",
   "summary": "One threat drives target-specific fawning toward an abuser while a separate request from a therapist still receives superficial cooperation.",
@@ -10,7 +10,6 @@
     "temperatureCelsius": 18,
     "weather": "clear"
   },
-  "localNorms": [],
   "dyads": [
     {
       "observerId": "witness",
@@ -77,7 +76,8 @@
       "normPerspectives": [],
       "position": {
         "x": 108,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -95,14 +95,16 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "sera-dane"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "therapist",
       "normPerspectives": [],
       "position": {
         "x": 110,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -120,14 +122,16 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "abuser",
       "normPerspectives": [],
       "position": {
         "x": 112,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -145,7 +149,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "tomas-reed"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
   "aspirationOpportunities": [],
@@ -155,5 +160,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

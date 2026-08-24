@@ -628,6 +628,30 @@ Browser validation ran through Playwright MCP against an isolated preview: every
 The session recorded no console errors or warnings and no failed network requests.
 The full verification gate passes with 262 deterministic tests.
 
+## Phase 8P2 — current-schema content
+
+Status: complete.
+
+Rewrite every shipped scenario, character, environment, norm, and social-contract document to its current schema without changing semantic addresses or prepared behavior, and retain legacy migration coverage through a version matrix so migration is a compatibility path rather than the primary first-party read path.
+This closes the Phase 8P audit-repair preflight; Phases 8P1 and 8P3 are recorded above.
+
+Exit probes:
+
+- every shipped content file declares the current schema version and no built-in scenario depends on migration to prepare
+- the migration matrix retains explicit coverage for every supported legacy version and reports malformed legacy elements at indexed paths
+
+`npm run content:rewrite` runs every document through the ordinary parser and writes the migrated value back, refusing to write unless every built-in scenario prepares and steps sixty ticks byte-equivalently from the on-disk and rewritten content; `npm run content:check` verifies that parsing each shipped document is the identity.
+All 39 first-party documents now declare their current version - scenarios at 17, environment layouts at 3, norms and social contracts at 2, character profiles at 1 - and the resource catalog generator accepts each kind's supported versions explicitly.
+
+The migration functions now visit elements through one indexed traversal, so malformed legacy elements report paths such as `scenario.characters[1].schedule[0]` and `scenario.localNorms[0].id`; the audit had found these paths unindexed.
+`test/legacy.ts` is the explicit statement of migration-order assumptions: a version-aware downgrade that undoes each gate in reverse, shared by the matrix and the existing per-version migration probes.
+`test/migration-matrix.test.ts` migrates a minimal current scenario back from every version 1 through 16 to the identical parsed and prepared value, carries all thirteen built-in scenarios through every legacy version to a preparable revision with byte-equivalent first ticks from version 14 onward, migrates version 1 and 2 environment layouts and version 1 norms and social contracts to their current values, and pins the indexed error paths.
+`test/content-schema.test.ts` pins the current-version and parse-identity invariants for every shipped file.
+
+Scenario, snapshot, and resource schema versions are unchanged; only shipped documents moved to the versions the parser already defined.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 269 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

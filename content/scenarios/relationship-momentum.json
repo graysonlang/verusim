@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "relationship-momentum",
   "title": "The Requests at Bellweather",
   "summary": "Graduated requests move one dyad while a separate fall in estimated regard reprices an old disclosure before sleep consolidates the episodes.",
@@ -10,7 +10,6 @@
     "temperatureCelsius": 14,
     "weather": "cloudy"
   },
-  "localNorms": [],
   "dyads": [
     {
       "observerId": "responder",
@@ -159,7 +158,8 @@
       "normPerspectives": [],
       "position": {
         "x": 108,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -185,14 +185,16 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "sera-dane"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "responder",
       "normPerspectives": [],
       "position": {
         "x": 110,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -218,14 +220,16 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "abrasive",
       "normPerspectives": [],
       "position": {
         "x": 112,
-        "y": 76
+        "y": 76,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -243,7 +247,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "tomas-reed"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
   "appraisalEvents": [],
@@ -254,5 +259,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

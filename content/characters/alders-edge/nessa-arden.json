@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "character-profile",
+    "packageId": "verusim",
     "resourceId": "nessa-arden"
   },
   "profile": {
@@ -171,5 +170,6 @@
     ],
     "satisfierPreferences": [],
     "profileId": "nessa-arden"
-  }
+  },
+  "schemaVersion": 1
 }

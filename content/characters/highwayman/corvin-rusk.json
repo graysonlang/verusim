@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "character-profile",
+    "packageId": "verusim",
     "resourceId": "corvin-rusk"
   },
   "profile": {
@@ -152,5 +151,6 @@
     ],
     "satisfierPreferences": [],
     "profileId": "corvin-rusk"
-  }
+  },
+  "schemaVersion": 1
 }

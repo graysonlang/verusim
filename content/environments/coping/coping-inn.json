@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "environment-layout",
+    "packageId": "verusim",
     "resourceId": "coping-inn"
   },
   "layout": {
@@ -16,7 +15,14 @@
         "x": 0,
         "y": 0,
         "width": 100,
-        "height": 80
+        "height": 80,
+        "layerId": "surface",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0,
+          "overhead": 0,
+          "sightOcclusion": 0
+        }
       },
       {
         "id": "inn-building",
@@ -24,7 +30,14 @@
         "x": 20,
         "y": 15,
         "width": 60,
-        "height": 50
+        "height": 50,
+        "layerId": "surface",
+        "enclosure": "interior",
+        "cover": {
+          "hearingOcclusion": 0.7,
+          "overhead": 1,
+          "sightOcclusion": 1
+        }
       }
     ],
     "locations": [
@@ -35,7 +48,8 @@
         "x": 20,
         "y": 15,
         "width": 60,
-        "height": 50
+        "height": 50,
+        "layerId": "surface"
       }
     ],
     "outletAffordances": [
@@ -54,6 +68,15 @@
       }
     ],
     "environmentId": "coping-inn",
-    "layoutId": "coping-inn"
-  }
+    "layoutId": "coping-inn",
+    "layers": [
+      {
+        "elevationMeters": 0,
+        "id": "surface",
+        "name": "Surface"
+      }
+    ],
+    "connectors": []
+  },
+  "schemaVersion": 3
 }

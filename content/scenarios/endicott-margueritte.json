@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "endicott-margueritte",
   "title": "Endicott and Margueritte",
   "summary": "Two guarded neighbors sustain mistaken models of one another until a sufficiently revealing exchange supplies corrective evidence.",
@@ -153,7 +153,8 @@
       "instanceId": "endicott",
       "position": {
         "x": 112,
-        "y": 72.5
+        "y": 72.5,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -172,13 +173,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "endicott"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "margueritte",
       "position": {
         "x": 116,
-        "y": 72.5
+        "y": 72.5,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -197,10 +200,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "margueritte"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -211,5 +214,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

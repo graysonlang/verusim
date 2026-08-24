@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "market-morning",
   "title": "Market Morning",
   "summary": "A cold morning after rumors of a failed eastern crop have reached Alder's Edge.",
@@ -27,7 +27,8 @@
       "instanceId": "mara",
       "position": {
         "x": 65,
-        "y": 89
+        "y": 89,
+        "layerId": "surface"
       },
       "walkingMetersPerMinute": 82,
       "schedule": [
@@ -87,13 +88,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "mara-vale"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "tomas",
       "position": {
         "x": 164,
-        "y": 93
+        "y": 93,
+        "layerId": "surface"
       },
       "walkingMetersPerMinute": 83,
       "schedule": [
@@ -161,13 +164,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "tomas-reed"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "nessa",
       "position": {
         "x": 92.5,
-        "y": 25
+        "y": 25,
+        "layerId": "surface"
       },
       "walkingMetersPerMinute": 79,
       "schedule": [
@@ -227,13 +232,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "elian",
       "position": {
         "x": 139,
-        "y": 25.5
+        "y": 25.5,
+        "layerId": "surface"
       },
       "walkingMetersPerMinute": 80,
       "schedule": [
@@ -301,13 +308,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "elian-voss"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "sera",
       "position": {
         "x": 76.5,
-        "y": 108
+        "y": 108,
+        "layerId": "surface"
       },
       "walkingMetersPerMinute": 78,
       "schedule": [
@@ -367,10 +376,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "sera-dane"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -381,5 +390,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

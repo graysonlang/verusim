@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "character-profile",
+    "packageId": "verusim",
     "resourceId": "mara-under-load"
   },
   "profile": {
@@ -179,5 +178,6 @@
     ],
     "characterId": "mara-under-load",
     "profileId": "mara-under-load"
-  }
+  },
+  "schemaVersion": 1
 }

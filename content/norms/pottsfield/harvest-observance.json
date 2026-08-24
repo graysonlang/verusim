@@ -1,5 +1,4 @@
 {
-  "schemaVersion": 1,
   "address": {
     "kind": "norm",
     "packageId": "verusim",
@@ -9,6 +8,16 @@
     "label": "The harvest observance preserves a fair communal order",
     "compatibilityTurns": {
       "fairness": 0.8
-    }
-  }
+    },
+    "interpretations": [
+      {
+        "identityStake": 0.5,
+        "rootImpact": "norm-violation",
+        "turns": {
+          "fairness": 0.8
+        }
+      }
+    ]
+  },
+  "schemaVersion": 2
 }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "baker-deadline",
   "title": "Bread Before Market Close",
   "summary": "Mara must prepare market bread without flour while the common room also needs work.",
@@ -105,7 +105,8 @@
       "contractViolation": 0,
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
-      "claimExpressions": []
+      "claimExpressions": [],
+      "somaticDemand": 0
     },
     {
       "id": "bake-bread-standard",
@@ -142,7 +143,8 @@
       "contractViolation": 0,
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
-      "claimExpressions": []
+      "claimExpressions": [],
+      "somaticDemand": 0
     },
     {
       "id": "bake-bread-rush",
@@ -181,7 +183,8 @@
       "contractViolation": 0,
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
-      "claimExpressions": []
+      "claimExpressions": [],
+      "somaticDemand": 0
     },
     {
       "id": "sell-market-bread",
@@ -213,7 +216,8 @@
       "contractViolation": 0,
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
-      "claimExpressions": []
+      "claimExpressions": [],
+      "somaticDemand": 0
     },
     {
       "id": "prepare-common-room",
@@ -240,7 +244,8 @@
       "contractViolation": 0,
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
-      "claimExpressions": []
+      "claimExpressions": [],
+      "somaticDemand": 0
     }
   ],
   "behaviorOpportunities": [],
@@ -249,7 +254,8 @@
       "instanceId": "mara",
       "position": {
         "x": 77,
-        "y": 62
+        "y": 62,
+        "layerId": "surface"
       },
       "walkingMetersPerMinute": 82,
       "schedule": [
@@ -269,10 +275,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "mara-vale"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -283,5 +289,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

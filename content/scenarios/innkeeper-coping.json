@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "innkeeper-coping",
   "title": "The Innkeeper Under Load",
   "summary": "A directly seeded safety deficit drives Mara toward the highest-ranked control outlet the current environment actually supplies.",
@@ -10,7 +10,6 @@
     "temperatureCelsius": 5,
     "weather": "rain"
   },
-  "localNorms": [],
   "dyads": [],
   "disclosureItems": [],
   "disclosureOpportunities": [],
@@ -28,7 +27,8 @@
       "normPerspectives": [],
       "position": {
         "x": 50,
-        "y": 40
+        "y": 40,
+        "layerId": "surface"
       },
       "initialResources": {
         "executiveBudget": 0.62,
@@ -67,7 +67,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "mara-under-load"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
   "aspirationOpportunities": [],
@@ -77,5 +78,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "coping-inn"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

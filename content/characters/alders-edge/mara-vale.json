@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "character-profile",
+    "packageId": "verusim",
     "resourceId": "mara-vale"
   },
   "profile": {
@@ -171,5 +170,6 @@
     ],
     "satisfierPreferences": [],
     "profileId": "mara-vale"
-  }
+  },
+  "schemaVersion": 1
 }

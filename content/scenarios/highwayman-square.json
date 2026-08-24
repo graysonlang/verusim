@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "highwayman-square",
   "title": "The Highwayman: Town Square",
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
@@ -165,7 +165,9 @@
               }
             }
           ],
-          "claimExpressions": []
+          "claimExpressions": [],
+          "selfDirected": false,
+          "somaticDemand": 0
         },
         {
           "id": "greet",
@@ -187,7 +189,9 @@
               }
             }
           ],
-          "claimExpressions": []
+          "claimExpressions": [],
+          "selfDirected": false,
+          "somaticDemand": 0
         }
       ]
     }
@@ -197,7 +201,8 @@
       "instanceId": "actor",
       "position": {
         "x": 71.7,
-        "y": 40
+        "y": 40,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -216,13 +221,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "corvin-rusk"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "merchant",
       "position": {
         "x": 81.7,
-        "y": 43.3
+        "y": 43.3,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -241,13 +248,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "jon-mere"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "warden",
       "position": {
         "x": 88.3,
-        "y": 31.7
+        "y": 31.7,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -266,13 +275,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "elian-voss"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "actor-kin",
       "position": {
         "x": 65,
-        "y": 50
+        "y": 50,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -291,13 +302,15 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "lena-rusk"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "merchant-kin",
       "position": {
         "x": 86.7,
-        "y": 51.7
+        "y": 51.7,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -316,10 +329,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "petra-mere"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -330,5 +343,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "old-king-road"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

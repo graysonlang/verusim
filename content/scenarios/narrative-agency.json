@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 12,
+  "schemaVersion": 17,
   "id": "narrative-agency",
   "title": "Stories in the Square",
   "summary": "Agreement, contradiction, reputation, validators, and aspiration expose distinct consequences of the stories characters keep about themselves.",
@@ -11,7 +11,6 @@
     "weather": "clear"
   },
   "ambientTurnsPerHour": {},
-  "localNorms": [],
   "dyads": [
     {
       "observerId": "lowering",
@@ -256,7 +255,8 @@
           "valueId": "competence",
           "strength": 0.7
         }
-      ]
+      ],
+      "somaticDemand": 0
     }
   ],
   "behaviorOpportunities": [],
@@ -267,7 +267,8 @@
       "narrativeOverrides": [],
       "position": {
         "x": 100,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "initialValues": {
         "respect": {
@@ -291,7 +292,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "mara-vale"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "preemptive",
@@ -299,7 +301,8 @@
       "narrativeOverrides": [],
       "position": {
         "x": 102,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -316,7 +319,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "tomas-reed"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "genuine",
@@ -329,7 +333,8 @@
       ],
       "position": {
         "x": 104,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -346,7 +351,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "lowering",
@@ -354,7 +360,8 @@
       "narrativeOverrides": [],
       "position": {
         "x": 106,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -371,7 +378,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "elian-voss"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "dominant",
@@ -379,7 +387,8 @@
       "narrativeOverrides": [],
       "position": {
         "x": 108,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -396,7 +405,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "sera-dane"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "invoker",
@@ -404,7 +414,8 @@
       "narrativeOverrides": [],
       "position": {
         "x": 110,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -421,7 +432,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "responder",
@@ -429,7 +441,8 @@
       "narrativeOverrides": [],
       "position": {
         "x": 112,
-        "y": 70
+        "y": 70,
+        "layerId": "surface"
       },
       "schedule": [
         {
@@ -446,12 +459,19 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
   "environment": {
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

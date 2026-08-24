@@ -486,15 +486,25 @@ function legacyRecoveryMode(activity: unknown): RecoveryMode {
   return normalized === 'sleeping' || normalized === 'sleep' ? 'sleep' : 'none';
 }
 
+function eachObject(
+  value: unknown,
+  path: string,
+  visit: (item: Record<string, unknown>, itemPath: string) => void,
+): void {
+  for (const [index, item] of arrayValue(value, path).entries()) {
+    const itemPath = `${path}[${index}]`;
+    visit(objectValue(item, itemPath), itemPath);
+  }
+}
+
 function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'characterLibrary'));
   if (file.schemaVersion === 7) {
-    for (const value of arrayValue(file.characters, 'characterLibrary.characters')) {
-      const character = objectValue(value, 'characterLibrary.characters');
+    eachObject(file.characters, 'characterLibrary.characters', character => {
       character.profileId ??= character.id;
       character.characterId ??= character.profileId;
       delete character.id;
-    }
+    });
     return file;
   }
   if (
@@ -511,9 +521,7 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
     );
   }
   const sourceVersion = file.schemaVersion;
-  const characters = arrayValue(file.characters, 'characterLibrary.characters');
-  for (const value of characters) {
-    const character = objectValue(value, 'characterLibrary.characters');
+  eachObject(file.characters, 'characterLibrary.characters', (character, characterPath) => {
     character.profileId ??= character.id;
     character.characterId ??= character.profileId;
     delete character.id;
@@ -579,7 +587,7 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
     character.satisfierPreferences ??= [];
     character.narrativeClaims = arrayValue(
       character.narrativeClaims,
-      'characterLibrary.characters.narrativeClaims',
+      `${characterPath}.narrativeClaims`,
     ).map((claim, index) => {
       if (typeof claim !== 'string') return claim;
       const normalized = claim.toLowerCase();
@@ -595,43 +603,42 @@ function migrateCharacterLibrary(value: unknown): Record<string, unknown> {
         statement: claim,
       };
     });
-  }
+  });
   file.schemaVersion = 7;
   return file;
+}
+
+function legacyAreaDefaults(area: Record<string, unknown>): void {
+  area.enclosure ??= area.kind === 'building' ? 'interior' : 'exterior';
+  area.cover ??=
+    area.kind === 'building'
+      ? { hearingOcclusion: 0.7, overhead: 1, sightOcclusion: 1 }
+      : area.kind === 'forest'
+        ? { hearingOcclusion: 0.12, overhead: 0.65, sightOcclusion: 0.92 }
+        : { hearingOcclusion: 0, overhead: 0, sightOcclusion: 0 };
 }
 
 function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'environmentLibrary'));
   if (file.schemaVersion === 2 || file.schemaVersion === 3) {
-    for (const value of arrayValue(file.environments, 'environmentLibrary.environments')) {
-      const environment = objectValue(value, 'environmentLibrary.environments');
-      environment.layoutId ??= environment.id;
-      environment.environmentId ??= environment.layoutId;
-      delete environment.id;
-      environment.layers ??= [{ elevationMeters: 0, id: 'surface', name: 'Surface' }];
-      environment.connectors ??= [];
-      for (const areaValue of arrayValue(
-        environment.areas,
-        'environmentLibrary.environments.areas',
-      )) {
-        const area = objectValue(areaValue, 'environmentLibrary.environments.areas');
-        area.layerId ??= 'surface';
-        area.enclosure ??= area.kind === 'building' ? 'interior' : 'exterior';
-        area.cover ??=
-          area.kind === 'building'
-            ? { hearingOcclusion: 0.7, overhead: 1, sightOcclusion: 1 }
-            : area.kind === 'forest'
-              ? { hearingOcclusion: 0.12, overhead: 0.65, sightOcclusion: 0.92 }
-              : { hearingOcclusion: 0, overhead: 0, sightOcclusion: 0 };
-      }
-      for (const locationValue of arrayValue(
-        environment.locations,
-        'environmentLibrary.environments.locations',
-      )) {
-        objectValue(locationValue, 'environmentLibrary.environments.locations').layerId ??=
-          'surface';
-      }
-    }
+    eachObject(
+      file.environments,
+      'environmentLibrary.environments',
+      (environment, environmentPath) => {
+        environment.layoutId ??= environment.id;
+        environment.environmentId ??= environment.layoutId;
+        delete environment.id;
+        environment.layers ??= [{ elevationMeters: 0, id: 'surface', name: 'Surface' }];
+        environment.connectors ??= [];
+        eachObject(environment.areas, `${environmentPath}.areas`, area => {
+          area.layerId ??= 'surface';
+          legacyAreaDefaults(area);
+        });
+        eachObject(environment.locations, `${environmentPath}.locations`, location => {
+          location.layerId ??= 'surface';
+        });
+      },
+    );
     file.schemaVersion = 3;
     return file;
   }
@@ -641,79 +648,68 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
       'unsupported schema version',
     );
   }
-  for (const environmentValue of arrayValue(file.environments, 'environmentLibrary.environments')) {
-    const environment = objectValue(environmentValue, 'environmentLibrary.environments');
-    environment.layoutId ??= environment.id;
-    environment.environmentId ??= environment.layoutId;
-    delete environment.id;
-    environment.outletAffordances ??= [];
-    environment.layers = [{ elevationMeters: 0, id: 'surface', name: 'Surface' }];
-    environment.connectors = [];
-    for (const areaValue of arrayValue(
-      environment.areas,
-      'environmentLibrary.environments.areas',
-    )) {
-      const area = objectValue(areaValue, 'environmentLibrary.environments.areas');
-      area.layerId = 'surface';
-      area.enclosure = area.kind === 'building' ? 'interior' : 'exterior';
-      area.cover =
-        area.kind === 'building'
-          ? { hearingOcclusion: 0.7, overhead: 1, sightOcclusion: 1 }
-          : area.kind === 'forest'
-            ? { hearingOcclusion: 0.12, overhead: 0.65, sightOcclusion: 0.92 }
-            : { hearingOcclusion: 0, overhead: 0, sightOcclusion: 0 };
-    }
-    for (const locationValue of arrayValue(
-      environment.locations,
-      'environmentLibrary.environments.locations',
-    )) {
-      objectValue(locationValue, 'environmentLibrary.environments.locations').layerId = 'surface';
-    }
-  }
+  eachObject(
+    file.environments,
+    'environmentLibrary.environments',
+    (environment, environmentPath) => {
+      environment.layoutId ??= environment.id;
+      environment.environmentId ??= environment.layoutId;
+      delete environment.id;
+      environment.outletAffordances ??= [];
+      environment.layers = [{ elevationMeters: 0, id: 'surface', name: 'Surface' }];
+      environment.connectors = [];
+      eachObject(environment.areas, `${environmentPath}.areas`, area => {
+        area.layerId = 'surface';
+        delete area.enclosure;
+        delete area.cover;
+        legacyAreaDefaults(area);
+      });
+      eachObject(environment.locations, `${environmentPath}.locations`, location => {
+        location.layerId = 'surface';
+      });
+    },
+  );
   file.schemaVersion = 3;
   return file;
+}
+
+function normAddress(resourceId: string): Record<string, unknown> {
+  return { kind: 'norm', packageId: DEFAULT_RESOURCE_PACKAGE_ID, resourceId };
 }
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
   if (file.schemaVersion === 17) return file;
   if (
-    file.schemaVersion !== 1 &&
-    file.schemaVersion !== 2 &&
-    file.schemaVersion !== 3 &&
-    file.schemaVersion !== 4 &&
-    file.schemaVersion !== 5 &&
-    file.schemaVersion !== 6 &&
-    file.schemaVersion !== 7 &&
-    file.schemaVersion !== 8 &&
-    file.schemaVersion !== 9 &&
-    file.schemaVersion !== 10 &&
-    file.schemaVersion !== 11 &&
-    file.schemaVersion !== 12 &&
-    file.schemaVersion !== 13 &&
-    file.schemaVersion !== 14 &&
-    file.schemaVersion !== 15 &&
-    file.schemaVersion !== 16
+    typeof file.schemaVersion !== 'number' ||
+    !Number.isInteger(file.schemaVersion) ||
+    file.schemaVersion < 1 ||
+    file.schemaVersion > 16
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
-  const sourceVersion = file.schemaVersion as number;
+  const sourceVersion = file.schemaVersion;
+  const characters = 'scenario.characters';
   if (sourceVersion === 1 || sourceVersion === 2) {
     if (sourceVersion === 1) {
       file.behaviorOpportunities = [];
       file.socialRelations = [];
     }
-    file.dyads = arrayValue(file.socialRelations, 'scenario.socialRelations').map(value => ({
-      ...objectValue(value, 'scenario.socialRelations'),
-      behaviorVariance: 0,
-      estimateConfidence: 0.1,
-      estimatedDisclosure: 0.5,
-      estimatedEmpathy: 0.5,
-      integratedHistory: 0,
-      mode: 'courteous',
-      predictionError: 0,
-      stance: 0,
-    }));
+    const dyads: Record<string, unknown>[] = [];
+    eachObject(file.socialRelations, 'scenario.socialRelations', relation => {
+      dyads.push({
+        ...relation,
+        behaviorVariance: 0,
+        estimateConfidence: 0.1,
+        estimatedDisclosure: 0.5,
+        estimatedEmpathy: 0.5,
+        integratedHistory: 0,
+        mode: 'courteous',
+        predictionError: 0,
+        stance: 0,
+      });
+    });
+    file.dyads = dyads;
     delete file.socialRelations;
     file.disclosureItems = [];
     file.disclosureOpportunities = [];
@@ -724,17 +720,14 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     file.worldFacts = [];
   }
   if (sourceVersion < 5) {
-    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-      const task = objectValue(taskValue, 'scenario.taskOperators');
+    eachObject(file.taskOperators, 'scenario.taskOperators', task => {
       task.recoveryMode = 'none';
-    }
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
-      for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
-        const block = objectValue(blockValue, 'scenario.characters.schedule');
+    });
+    eachObject(file.characters, characters, (placement, placementPath) => {
+      eachObject(placement.schedule, `${placementPath}.schedule`, block => {
         block.recoveryMode = legacyRecoveryMode(block.activity);
-      }
-    }
+      });
+    });
   }
   if (sourceVersion < 6) {
     file.environmentConditions = {
@@ -744,80 +737,67 @@ function migrateScenario(value: unknown): Record<string, unknown> {
     };
   }
   if (sourceVersion < 7) {
-    for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
-      const dyad = objectValue(dyadValue, 'scenario.dyads');
+    eachObject(file.dyads, 'scenario.dyads', dyad => {
       dyad.suspicion = 0;
-    }
+    });
     file.observationEvents = [];
   }
   if (sourceVersion < 8) {
     file.localNorms = [];
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
+    eachObject(file.characters, characters, placement => {
       placement.normPerspectives = [];
-    }
-    for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
-      const event = objectValue(eventValue, 'scenario.observationEvents');
+    });
+    eachObject(file.observationEvents, 'scenario.observationEvents', event => {
       event.eventType = 'mind-model';
-    }
+    });
   }
   if (sourceVersion < 9) {
     file.relationshipEvents = [];
     file.relationshipRequests = [];
-    for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
-      const dyad = objectValue(dyadValue, 'scenario.dyads');
+    eachObject(file.dyads, 'scenario.dyads', dyad => {
       dyad.exposureDebt = 0;
-    }
+    });
   }
   if (sourceVersion < 10) {
     file.appraisalEvents = [];
-    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-      const task = objectValue(taskValue, 'scenario.taskOperators');
+    eachObject(file.taskOperators, 'scenario.taskOperators', task => {
       task.maskingDemand = null;
       task.resourceDrainsPerHour = {};
-    }
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
-      for (const blockValue of arrayValue(placement.schedule, 'scenario.characters.schedule')) {
-        const block = objectValue(blockValue, 'scenario.characters.schedule');
+    });
+    eachObject(file.characters, characters, (placement, placementPath) => {
+      eachObject(placement.schedule, `${placementPath}.schedule`, block => {
         block.maskingDemand = null;
         block.resourceDrainsPerHour = {};
-      }
-    }
+      });
+    });
   }
   if (sourceVersion < 11) {
     file.aspirationOpportunities = [];
     file.narrativeEvents = [];
     file.reputationGroups = [];
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
+    eachObject(file.characters, characters, placement => {
       placement.agency = 'responder';
       placement.narrativeOverrides = [];
-    }
-    for (const dyadValue of arrayValue(file.dyads, 'scenario.dyads')) {
-      const dyad = objectValue(dyadValue, 'scenario.dyads');
+    });
+    eachObject(file.dyads, 'scenario.dyads', dyad => {
       dyad.validatorClaimIds = [];
-    }
-    for (const goalValue of arrayValue(file.agendaGoals, 'scenario.agendaGoals')) {
-      objectValue(goalValue, 'scenario.agendaGoals').claimExpressions = [];
-    }
-    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-      objectValue(taskValue, 'scenario.taskOperators').claimExpressions = [];
-    }
-    for (const opportunityValue of arrayValue(
+    });
+    eachObject(file.agendaGoals, 'scenario.agendaGoals', goal => {
+      goal.claimExpressions = [];
+    });
+    eachObject(file.taskOperators, 'scenario.taskOperators', task => {
+      task.claimExpressions = [];
+    });
+    eachObject(
       file.behaviorOpportunities,
       'scenario.behaviorOpportunities',
-    )) {
-      const opportunity = objectValue(opportunityValue, 'scenario.behaviorOpportunities');
-      for (const candidateValue of arrayValue(
-        opportunity.candidates,
-        'scenario.behaviorOpportunities.candidates',
-      )) {
-        const candidate = objectValue(candidateValue, 'scenario.behaviorOpportunities.candidates');
-        candidate.claimExpressions = [];
-        delete candidate.narrativeExpression;
-      }
-    }
+      (opportunity, opportunityPath) => {
+        eachObject(opportunity.candidates, `${opportunityPath}.candidates`, candidate => {
+          candidate.claimExpressions = [];
+          delete candidate.narrativeExpression;
+        });
+      },
+    );
   }
   if (sourceVersion < 12) {
     file.environment = {
@@ -826,67 +806,48 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       resourceId: identifierValue(file.environmentId, 'scenario.environmentId'),
     };
     delete file.environmentId;
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
+    eachObject(file.characters, characters, (placement, placementPath) => {
       placement.profile = {
         kind: 'character-profile',
         packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-        resourceId: identifierValue(placement.characterId, 'scenario.characters.characterId'),
+        resourceId: identifierValue(placement.characterId, `${placementPath}.characterId`),
       };
       delete placement.characterId;
-    }
+    });
   }
   if (sourceVersion < 14) {
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
-      objectValue(placement.position, 'scenario.characters.position').layerId ??= 'surface';
-    }
+    eachObject(file.characters, characters, (placement, placementPath) => {
+      objectValue(placement.position, `${placementPath}.position`).layerId ??= 'surface';
+    });
     file.socialContractPlacements = [];
     file.legacyLocalNorms = arrayValue(file.localNorms, 'scenario.localNorms');
     delete file.localNorms;
-    for (const normValue of arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms')) {
-      const norm = objectValue(normValue, 'scenario.localNorms');
-      norm.address = {
-        kind: 'norm',
-        packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-        resourceId: identifierValue(norm.id, 'scenario.localNorms.id'),
-      };
+    eachObject(file.legacyLocalNorms, 'scenario.localNorms', (norm, normPath) => {
+      norm.address = normAddress(identifierValue(norm.id, `${normPath}.id`));
       delete norm.id;
-    }
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
-      for (const perspectiveValue of arrayValue(
+    });
+    eachObject(file.characters, characters, (placement, placementPath) => {
+      eachObject(
         placement.normPerspectives,
-        'scenario.characters.normPerspectives',
-      )) {
-        const perspective = objectValue(perspectiveValue, 'scenario.characters.normPerspectives');
-        perspective.norm = {
-          kind: 'norm',
-          packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-          resourceId: identifierValue(
-            perspective.normId,
-            'scenario.characters.normPerspectives.normId',
-          ),
-        };
-        delete perspective.normId;
-      }
-    }
-    for (const eventValue of arrayValue(file.observationEvents, 'scenario.observationEvents')) {
-      const event = objectValue(eventValue, 'scenario.observationEvents');
+        `${placementPath}.normPerspectives`,
+        (perspective, perspectivePath) => {
+          perspective.norm = normAddress(
+            identifierValue(perspective.normId, `${perspectivePath}.normId`),
+          );
+          delete perspective.normId;
+        },
+      );
+    });
+    eachObject(file.observationEvents, 'scenario.observationEvents', (event, eventPath) => {
       if (event.eventType === 'norm') {
-        event.norm = {
-          kind: 'norm',
-          packageId: DEFAULT_RESOURCE_PACKAGE_ID,
-          resourceId: identifierValue(event.normId, 'scenario.observationEvents.normId'),
-        };
+        event.norm = normAddress(identifierValue(event.normId, `${eventPath}.normId`));
         delete event.normId;
       }
-    }
+    });
   }
   if (sourceVersion < 15) {
     file.incidentEvents = [];
-    for (const normValue of arrayValue(file.legacyLocalNorms, 'scenario.legacyLocalNorms')) {
-      const norm = objectValue(normValue, 'scenario.legacyLocalNorms');
+    eachObject(file.legacyLocalNorms, 'scenario.legacyLocalNorms', norm => {
       norm.interpretations = [
         {
           identityStake: 0.5,
@@ -894,51 +855,39 @@ function migrateScenario(value: unknown): Record<string, unknown> {
           turns: clone(norm.compatibilityTurns),
         },
       ];
-    }
-    for (const placementValue of arrayValue(
-      file.socialContractPlacements,
-      'scenario.socialContractPlacements',
-    )) {
-      objectValue(placementValue, 'scenario.socialContractPlacements').enforcementPresence = 0;
-    }
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      const placement = objectValue(placementValue, 'scenario.characters');
-      for (const perspectiveValue of arrayValue(
-        placement.normPerspectives,
-        'scenario.characters.normPerspectives',
-      )) {
-        const perspective = objectValue(perspectiveValue, 'scenario.characters.normPerspectives');
+    });
+    eachObject(file.socialContractPlacements, 'scenario.socialContractPlacements', placement => {
+      placement.enforcementPresence = 0;
+    });
+    eachObject(file.characters, characters, (placement, placementPath) => {
+      eachObject(placement.normPerspectives, `${placementPath}.normPerspectives`, perspective => {
         const member = perspective.member === true;
         perspective.affiliated = member;
         perspective.internalization = member ? 1 : 0;
         delete perspective.member;
-      }
-    }
+      });
+    });
   }
   if (sourceVersion < 16) file.displayEvents = [];
   if (sourceVersion < 17) {
     file.ambientSomaticSources = [];
     file.somaticEvents = [];
-    for (const placementValue of arrayValue(file.characters, 'scenario.characters')) {
-      objectValue(placementValue, 'scenario.characters').initialSomaticSources = [];
-    }
-    for (const taskValue of arrayValue(file.taskOperators, 'scenario.taskOperators')) {
-      objectValue(taskValue, 'scenario.taskOperators').somaticDemand = 0;
-    }
-    for (const opportunityValue of arrayValue(
+    eachObject(file.characters, characters, placement => {
+      placement.initialSomaticSources = [];
+    });
+    eachObject(file.taskOperators, 'scenario.taskOperators', task => {
+      task.somaticDemand = 0;
+    });
+    eachObject(
       file.behaviorOpportunities,
       'scenario.behaviorOpportunities',
-    )) {
-      const opportunity = objectValue(opportunityValue, 'scenario.behaviorOpportunities');
-      for (const candidateValue of arrayValue(
-        opportunity.candidates,
-        'scenario.behaviorOpportunities.candidates',
-      )) {
-        const candidate = objectValue(candidateValue, 'scenario.behaviorOpportunities.candidates');
-        candidate.selfDirected = false;
-        candidate.somaticDemand = 0;
-      }
-    }
+      (opportunity, opportunityPath) => {
+        eachObject(opportunity.candidates, `${opportunityPath}.candidates`, candidate => {
+          candidate.selfDirected = false;
+          candidate.somaticDemand = 0;
+        });
+      },
+    );
   }
   file.schemaVersion = 17;
   return file;

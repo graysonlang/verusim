@@ -105,6 +105,8 @@ describe('resource preparation', () => {
     assert.ok(normInput);
     assert.ok(contractInput);
     const malformedNorm = structuredClone(normInput.value) as NormResourceFile;
+    (malformedNorm as unknown as Record<string, unknown>).schemaVersion = 1;
+    delete (malformedNorm.norm as unknown as Record<string, unknown>).interpretations;
     malformedNorm.norm.compatibilityTurns = {};
     assert.throws(
       () => createResourceCatalog([{ source: 'norms/empty.json', value: malformedNorm }]),

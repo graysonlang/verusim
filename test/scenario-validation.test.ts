@@ -10,6 +10,7 @@ import {
   normCharacters,
 } from './fixtures.js';
 import scenario from '../content/scenarios/market-morning.json';
+import { downgradeScenario } from './legacy.js';
 import mindModelScenario from '../content/scenarios/endicott-margueritte.json';
 import normScenario from '../content/scenarios/pottsfield.json';
 import relationshipScenario from '../content/scenarios/relationship-momentum.json';
@@ -47,17 +48,7 @@ function downgradeScenarioReferences(
   value: unknown,
   schemaVersion: number,
 ): Record<string, unknown> {
-  const legacy = structuredClone(value) as Record<string, unknown>;
-  const environment = legacy.environment as { resourceId: string };
-  legacy.environmentId = environment.resourceId;
-  delete legacy.environment;
-  for (const placement of legacy.characters as Array<Record<string, unknown>>) {
-    const profile = placement.profile as { resourceId: string };
-    placement.characterId = profile.resourceId;
-    delete placement.profile;
-  }
-  legacy.schemaVersion = schemaVersion;
-  return legacy;
+  return downgradeScenario(value, schemaVersion);
 }
 
 function downgradeSnapshotReferences(

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 14,
+  "schemaVersion": 17,
   "id": "pottsfield-charter-day",
   "title": "Pottsfield Charter Day",
   "summary": "Harvest and market contracts coexist across institutional, group, and event scopes without changing the town layout.",
@@ -22,7 +22,8 @@
       "scope": {
         "kind": "institution",
         "institutionId": "market-charter"
-      }
+      },
+      "enforcementPresence": 0
     },
     {
       "id": "charter-market-customs",
@@ -34,7 +35,8 @@
       "scope": {
         "kind": "institution",
         "institutionId": "market-charter"
-      }
+      },
+      "enforcementPresence": 0
     },
     {
       "id": "trader-market-customs",
@@ -46,7 +48,8 @@
       "scope": {
         "kind": "group",
         "groupId": "market-traders"
-      }
+      },
+      "enforcementPresence": 0
     },
     {
       "id": "reading-harvest-customs",
@@ -58,7 +61,8 @@
       "scope": {
         "kind": "event",
         "eventId": "charter-reading"
-      }
+      },
+      "enforcementPresence": 0
     }
   ],
   "dyads": [],
@@ -84,8 +88,9 @@
             "packageId": "verusim",
             "resourceId": "pottsfield-harvest-observance"
           },
-          "member": true,
-          "legibility": 1
+          "legibility": 1,
+          "affiliated": true,
+          "internalization": 1
         },
         {
           "norm": {
@@ -93,8 +98,9 @@
             "packageId": "verusim",
             "resourceId": "pottsfield-market-courtesy"
           },
-          "member": true,
-          "legibility": 1
+          "legibility": 1,
+          "affiliated": true,
+          "internalization": 1
         }
       ],
       "schedule": [
@@ -113,7 +119,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "pottsfield-reeve"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
   "relationshipEvents": [],
@@ -126,5 +133,9 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge"
-  }
+  },
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

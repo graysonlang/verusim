@@ -1,5 +1,4 @@
 {
-  "schemaVersion": 1,
   "address": {
     "kind": "norm",
     "packageId": "verusim",
@@ -10,6 +9,17 @@
     "compatibilityTurns": {
       "belonging": 0.25,
       "fairness": 0.35
-    }
-  }
+    },
+    "interpretations": [
+      {
+        "identityStake": 0.5,
+        "rootImpact": "norm-violation",
+        "turns": {
+          "belonging": 0.25,
+          "fairness": 0.35
+        }
+      }
+    ]
+  },
+  "schemaVersion": 2
 }

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 13,
+  "schemaVersion": 17,
   "id": "alders-edge-town",
   "title": "Alder's Edge Town",
   "summary": "A compact working town where homes sit above trades, stores and secrets sit below them, and civic, sacred, agricultural, and river life meet within one walkable layout.",
@@ -96,7 +96,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "mara-vale"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "tomas",
@@ -129,7 +130,9 @@
           "activity": "Working the forge",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": { "physicalStamina": 0.04 }
+          "resourceDrainsPerHour": {
+            "physicalStamina": 0.04
+          }
         },
         {
           "startMinute": 750,
@@ -145,7 +148,9 @@
           "activity": "Working the forge",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": { "physicalStamina": 0.04 }
+          "resourceDrainsPerHour": {
+            "physicalStamina": 0.04
+          }
         },
         {
           "startMinute": 1140,
@@ -171,7 +176,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "tomas-reed"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "nessa",
@@ -238,7 +244,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "nessa-arden"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "elian",
@@ -313,7 +320,8 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "elian-voss"
-      }
+      },
+      "initialSomaticSources": []
     },
     {
       "instanceId": "sera",
@@ -354,7 +362,9 @@
           "activity": "Milling grain",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": { "physicalStamina": 0.03 }
+          "resourceDrainsPerHour": {
+            "physicalStamina": 0.03
+          }
         },
         {
           "startMinute": 1080,
@@ -380,10 +390,10 @@
         "kind": "character-profile",
         "packageId": "verusim",
         "resourceId": "sera-dane"
-      }
+      },
+      "initialSomaticSources": []
     }
   ],
-  "localNorms": [],
   "relationshipEvents": [],
   "relationshipRequests": [],
   "appraisalEvents": [],
@@ -394,5 +404,11 @@
     "kind": "environment-layout",
     "packageId": "verusim",
     "resourceId": "alders-edge-town"
-  }
+  },
+  "socialContractPlacements": [],
+  "legacyLocalNorms": [],
+  "incidentEvents": [],
+  "displayEvents": [],
+  "ambientSomaticSources": [],
+  "somaticEvents": []
 }

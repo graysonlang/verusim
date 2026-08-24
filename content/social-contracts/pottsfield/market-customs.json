@@ -1,5 +1,4 @@
 {
-  "schemaVersion": 1,
   "address": {
     "kind": "social-contract",
     "packageId": "verusim",
@@ -14,6 +13,8 @@
         "packageId": "verusim",
         "resourceId": "pottsfield-market-courtesy"
       }
-    ]
-  }
+    ],
+    "enforcementSeverity": 0.5
+  },
+  "schemaVersion": 2
 }

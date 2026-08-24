@@ -18,52 +18,34 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8P2: current-schema content.
-Make current-schema first-party content the baseline consumed by the authoring document graph.
+The active slice is Phase 8A: authoring document graph and transactions.
+Establish the host-neutral in-memory document, identity, provenance, reference, dirty-state, and transactional edit boundary before adding Build workspace presentation.
 
 ### Current-focus non-goals
 
-- no deletion of legacy migration support before its compact version matrix is green
-- no change to prepared behavior, semantic addresses, or discriminating decisions during the content rewrite
+- no changes to completed Phase 5, Phase 6, or Phase 7 algorithms
 - no behavior-model or evaluator-fidelity expansion
-- no authoring graph, Build workspace shell, or workbench refactor in this slice
+- no draft mutation of a running simulation or its reset baseline
+- no package manager or remote dependency resolver
+- no filesystem, browser storage, database, or network dependency inside the engine
+- no Build workspace shell, specialized editor, store adapter, or pack writer until the document graph contract is green
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 8P2 — current-schema content
-2. Phase 8A — authoring document graph and transactions
-3. Phase 8B — authoritative preparation and revision isolation
-4. Phase 10A — ensemble runner and falsifier harness
-5. Phase 9A — authoritative seconds and schema migration
-6. Phases 8C through 8F — application shell, editors, store adapters, and packing
-7. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
-8. Phase 10B — remaining acceptance vignettes
+1. Phase 8A — authoring document graph and transactions
+2. Phase 8B — authoritative preparation and revision isolation
+3. Phase 10A — ensemble runner and falsifier harness
+4. Phase 9A — authoritative seconds and schema migration
+5. Phases 8C through 8F — application shell, editors, store adapters, and packing
+6. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+7. Phase 10B — remaining acceptance vignettes
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
 Phase 10A is headless, needs only the seeded generation and two vignette fixtures that already exist, and retires the project's highest-stakes risk: that the behavioral model needs revision.
 Learning that before the workbench and editor investment is worth more than learning it after, so the harness runs before Phase 8's presentation slices and the remaining vignettes wait for the subminute time domain they depend on.
-
-## Phase 8P — audit repair and authoring readiness
-
-Close the correctness and primary-path debt identified by the 2026-08-24 project audit before building authoring transactions over the existing formats.
-The event-boundary and trace-identity repair and the workbench modularization are recorded in COMPLETED.md; the remaining preflight establishes current-schema first-party content as the baseline consumed by Phase 8A.
-
-### Phase 8P implementation sequence
-
-#### Phase 8P2 — current-schema content
-
-Rewrite every shipped scenario, character, environment, norm, and social-contract document to its current schema without changing semantic addresses or prepared behavior.
-Retain legacy migration coverage through a compact version matrix so migration is a compatibility path rather than the primary first-party read path, and make migration-order assumptions explicit in regression coverage.
-
-Gate: every first-party document parses without migration, its prepared scenarios and discriminating decisions remain byte-equivalent to the pre-rewrite catalog, every supported legacy version reaches the current boundary in the migration matrix, and the full repository gate remains green.
-
-Exit probes:
-
-- every shipped content file declares the current schema version and no built-in scenario depends on migration to prepare
-- the migration matrix retains explicit coverage for every supported legacy version and reports malformed legacy elements at indexed paths
 
 ## Phase 8 — integrated content authoring workbench
 
@@ -89,7 +71,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A and 8B are host-neutral and follow Phase 8P2 directly; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
+Phases 8A and 8B are host-neutral and come first; Phases 8C through 8F begin only after Phase 10A and Phase 9A so the shell and editors are built once over the canonical time domain.
 
 #### Phase 8A — authoring document graph and transactions
 

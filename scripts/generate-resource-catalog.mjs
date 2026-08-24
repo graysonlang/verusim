@@ -48,7 +48,12 @@ function validateAddress(value, source) {
   if (!RESOURCE_KINDS.has(address.kind)) {
     throw new Error(`${source}.address.kind: expected a known resource kind`);
   }
-  const supportedVersions = address.kind === 'environment-layout' ? [1, 2, 3] : [1];
+  const supportedVersions =
+    address.kind === 'environment-layout'
+      ? [1, 2, 3]
+      : address.kind === 'character-profile'
+        ? [1]
+        : [1, 2];
   if (!supportedVersions.includes(value.schemaVersion)) {
     throw new Error(`${source}.schemaVersion: expected ${supportedVersions.join(' or ')}`);
   }

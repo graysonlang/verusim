@@ -1,8 +1,7 @@
 {
-  "schemaVersion": 1,
   "address": {
-    "packageId": "verusim",
     "kind": "environment-layout",
+    "packageId": "verusim",
     "resourceId": "old-king-road"
   },
   "layout": {
@@ -16,7 +15,14 @@
         "x": 0,
         "y": 0,
         "width": 150,
-        "height": 84
+        "height": 84,
+        "layerId": "surface",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0,
+          "overhead": 0,
+          "sightOcclusion": 0
+        }
       },
       {
         "id": "west-trees",
@@ -25,7 +31,14 @@
         "y": 0,
         "width": 37,
         "height": 84,
-        "label": "Old Wood"
+        "label": "Old Wood",
+        "layerId": "surface",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0.12,
+          "overhead": 0.65,
+          "sightOcclusion": 0.92
+        }
       },
       {
         "id": "east-trees",
@@ -33,7 +46,14 @@
         "x": 117,
         "y": 0,
         "width": 33,
-        "height": 84
+        "height": 84,
+        "layerId": "surface",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0.12,
+          "overhead": 0.65,
+          "sightOcclusion": 0.92
+        }
       },
       {
         "id": "king-road",
@@ -41,7 +61,14 @@
         "x": 30,
         "y": 37,
         "width": 94,
-        "height": 11
+        "height": 11,
+        "layerId": "surface",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0,
+          "overhead": 0,
+          "sightOcclusion": 0
+        }
       },
       {
         "id": "square-yard",
@@ -50,7 +77,14 @@
         "y": 22,
         "width": 44,
         "height": 40,
-        "label": "Town Square"
+        "label": "Town Square",
+        "layerId": "surface",
+        "enclosure": "exterior",
+        "cover": {
+          "hearingOcclusion": 0,
+          "overhead": 0,
+          "sightOcclusion": 0
+        }
       },
       {
         "id": "watch-house-building",
@@ -58,7 +92,14 @@
         "x": 98,
         "y": 24,
         "width": 18,
-        "height": 15
+        "height": 15,
+        "layerId": "surface",
+        "enclosure": "interior",
+        "cover": {
+          "hearingOcclusion": 0.7,
+          "overhead": 1,
+          "sightOcclusion": 1
+        }
       }
     ],
     "locations": [
@@ -69,7 +110,8 @@
         "x": 38,
         "y": 37,
         "width": 20,
-        "height": 11
+        "height": 11,
+        "layerId": "surface"
       },
       {
         "id": "town-square",
@@ -78,7 +120,8 @@
         "x": 58,
         "y": 25,
         "width": 37,
-        "height": 34
+        "height": 34,
+        "layerId": "surface"
       },
       {
         "id": "watch-house",
@@ -87,11 +130,21 @@
         "x": 98,
         "y": 24,
         "width": 18,
-        "height": 15
+        "height": 15,
+        "layerId": "surface"
       }
     ],
     "environmentId": "old-king-road",
     "outletAffordances": [],
-    "layoutId": "old-king-road"
-  }
+    "layoutId": "old-king-road",
+    "layers": [
+      {
+        "elevationMeters": 0,
+        "id": "surface",
+        "name": "Surface"
+      }
+    ],
+    "connectors": []
+  },
+  "schemaVersion": 3
 }
