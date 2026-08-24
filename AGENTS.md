@@ -63,7 +63,9 @@ When a phase is complete and the verification gate is green, move its complete s
 Do not leave the same phase active in both files.
 If completed scope is reopened, move that phase back to the plan before changing it, then return it to the completed record only after its new exit probes and the full gate pass.
 A bounded defect repair that leaves settled behavior unchanged may instead be recorded as a new repair slice with its own exit probes; changing a completed phase's contract still requires formally reopening that phase.
-When phase status or current capabilities change, update any README claims about the active phase and present capabilities in the same commit rather than leaving them stale.
+README.md is a repository overview for potential integrators and downstream users of the engine.
+It does not track roadmap, phase status, or plan details; those live in PLAN.md and COMPLETED.md, and capability descriptions in the README stay phase-agnostic.
+Keep build instructions in the README basic; if extensive build or setup instructions become necessary, put them in a dedicated document such as BUILDING.md.
 Keep retrospective additions concise and update both files whenever phase scope or status changes.
 For a newly completed or reopened phase, the completed record names the discriminating scenario or fixture, the regression coverage for its exit probes, snapshot replay evidence when persisted state changed, UI verification when presentation changed, and schema or migration boundaries when storage changed.
 Omit evidence categories that genuinely do not apply rather than adding placeholders.

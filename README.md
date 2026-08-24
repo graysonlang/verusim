@@ -8,37 +8,49 @@ The repository contains two connected surfaces:
 - a headless TypeScript simulation core whose serializable state and trace can be exercised by tests, interactive fiction, or embodied game worlds
 - a browser workbench for loading scenarios, navigating a top-down environment, advancing time, inspecting characters, and intervening in live state
 
-The full behavioral model is specified in [verusim-design-spec.md](verusim-design-spec.md), with [verusim-otgw-acceptance-suite.md](verusim-otgw-acceptance-suite.md) serving as a long-range stress-test target.
-[docs/architecture.md](docs/architecture.md) describes implementation boundaries, [PLAN.md](PLAN.md) organizes active and future work, and [COMPLETED.md](COMPLETED.md) records finished phases and their exit probes.
+This file is an overview for integrators and downstream users of the engine.
+Roadmap and phase status live in [PLAN.md](PLAN.md) and [COMPLETED.md](COMPLETED.md), the complete behavioral model lives in [verusim-design-spec.md](verusim-design-spec.md), and implementation boundaries live in [docs/architecture.md](docs/architecture.md).
 
-## Current slice
+## What the engine models
 
-The current implementation has completed Phase 0 through Phase 4 and Phase 5A through Phase 5D; seeded role-conditioned character and cohort generation are next in Phase 5E.
-It includes:
+Every simulated character shares one deterministic evaluator; authored content supplies facts, stakes, affordances, and consequences, never a selected behavior.
+The model currently covers:
 
-- independently versioned JSON character-profile, environment-layout, norm, and social-contract resources plus versioned scenarios
-- structured semantic resource addresses, a generated immutable repository catalog, transitive deterministic dependency closures, and an acquisition-neutral prepared-scenario boundary
-- scenario-owned social-contract placements over explicit location, institution, group, and event scopes, independent of physical layout
-- layered environment layouts with explicit stairs, ramps, and ladders; connector-aware schedule and agenda travel; floor-separated spatial perception; objective enclosure and overhead cover; and roof-on exterior plus contextual cutaway workbench views
-- Alder's Edge Town, a compact reference settlement with agricultural edges, civic and religious spaces, trades, commerce, river infrastructure, upper-floor homes, cellars, storage, a crypt, and a watch cell
-- deterministic simulation stepping, schedule-based movement, ambient value turns, and bounded trace history
-- sparse per-instance history-derived overrides, deterministic formative-event execution with linked provenance, and explicit age checkpoints over stable character identity
-- environment-authored behavioral opportunities with character-dependent action selection
-- nonlinear value salience, empathy distance and falloff, threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
-- highwayman road and town-square fixtures covering the first ordinal behavioral factorial
-- directed runtime dyads, a disclosure envelope independent from empathy, item-level exposure ledgers, and worst-observer disclosure composition
-- authored goals, numeric world facts, reusable task operators, deterministic prerequisite planning, deadline pressure, persistent intentions, and replanning after world changes
-- event-driven social observations, spatial perception gates, one-level directed mind models, accumulated prediction error and suspicion, evidence-gated correction, and the Endicott/Margueritte acceptance fixture
-- reusable observer-relative norms, coexisting social contracts, relationship momentum and consolidation, accumulation and coping, and narrative-driven agency
-- immutable authored scenarios separated from resource-locked versioned live snapshots with exact dyad, exposure, decision, and trace resume
-- a Solid-reactive, vanilla-DOM browser workbench with a bundled scenario catalog, scenario summaries, a pannable and zoomable atmospheric Canvas world, roster navigation, time-of-day and weather context, time controls, device-local clock and independent distance and temperature settings, live state editing, scenario and snapshot loading, snapshot export, agenda inspection, relational inspection, prediction inspection, and trace inspection
-- tests that use the same scenario loading and stepping path as the workbench
+- nonlinear value salience, empathy envelopes with threat coarsening, contract adherence, witness-based repercussions, derived remorse, and inspectable rejected alternatives
+- directed relationship dyads, disclosure envelopes with exposure ledgers and worst-observer composition, stance momentum, and memory consolidation
+- authored goals over numeric world facts, reusable task operators, bounded deterministic planning, deadline pressure, persistent intentions, and replanning after world changes
+- event-driven social observation, spatial sight and hearing over layered environments, one-level directed mind models, prediction error, suspicion, and evidence-gated correction
+- objective incidents interpreted through observer-relative norms and scoped social contracts, status displays with habituation, and positional respect
+- accumulation and coping: allostatic load, a defense cascade with dwell and hysteresis, outlet choice, masking drain, and somatic state with hard preemption gates
+- narrative claims, validators, external attribution, and aspiration-driven agency
+- seeded role-conditioned character and cohort generation, pre-contact relationship generation, and environment generation as authoring adapters with complete draw provenance
+- host-facing cadence sessions, text and embodied observation projections, and low-stakes exchange settlement over the same evaluator
 
-Schedules provide environmental obligations and visible activity, while behavioral opportunities advertise concrete acts that Verus may select.
-Schedules are not presented as emergent decisions, and opportunities specify consequences rather than character preferences.
-Disclosure opportunities similarly provide stakes and audiences while Verus derives disclosure safety, exposure cost, the worst observer, and the outcome.
-Agenda goals provide desired facts, stakes, commitment, and deadlines while task operators provide preconditions, effects, duration, location, and costs.
-The planner derives a route and commits only its first task, so completed tasks and external changes can alter what comes next without rewriting the authored goal.
+Every behavioral decision produces a causal trace of separated terms, and level of detail changes scheduling cadence, never evaluator fidelity.
+
+## Integrating the engine
+
+The simulation subsystem is host-agnostic: it performs no file, network, browser storage, or process access, and all content acquisition finishes before deterministic stepping begins.
+Authored resources carry structured semantic addresses independent of source paths, and preparation resolves a transitive dependency closure into a locked, immutable prepared scenario.
+
+A consumer with a content source supplies exact-address reads:
+
+```ts
+const prepared = await prepareScenarioFromSource({ scenario, source });
+const state = createSimulation(prepared);
+const next = advanceSimulation(state, ticks);
+```
+
+A consumer that already owns resource objects builds an immutable catalog instead:
+
+```ts
+const catalog = createResourceCatalog(resources);
+const prepared = prepareScenario({ scenario, catalog });
+const state = createSimulation(prepared);
+```
+
+Authored scenarios and live snapshots are distinct formats: a scenario is an immutable fixture, while a serialized snapshot resumes exact runtime state, including dyads, exposure, decisions, and trace, against the same prepared content.
+Cadence sessions batch host-driven advancement without changing results, and observation projections render the same state as prose or embodied tells.
 
 ## Technology
 
@@ -56,27 +68,23 @@ The dependency stack is intentionally small:
 
 - `verusim-design-spec.md` — complete behavioral model and scope
 - `verusim-otgw-acceptance-suite.md` — reference characters, falsifiers, and vignette sweeps
-- `PLAN.md` — active and future implementation phases, sequencing, decisions, and exit probes
-- `COMPLETED.md` — completed phases, achieved checkpoints, and settled phase decisions
+- `PLAN.md` / `COMPLETED.md` — active roadmap and the record of completed phases
+- `docs/` — architecture decisions and implementation boundaries
 - `src/model/` — shared serializable types and model constants
 - `src/scenario/` — resource and scenario parsing, preparation, reference validation, and serialization
 - `src/simulation/` — deterministic state transitions, derived observations, and appraisal
-- `content/` — the authored tree: reusable character profiles, environment layouts, norms, and social contracts plus scenario roots that reference them by semantic address
-- `content/catalog.generated.ts` — deterministic repository catalog generated from the authoring tree
+- `src/generation/` — seeded character, cohort, environment, and incident generation adapters
+- `src/integration/` — cadence sessions, observation projections, and exchange settlement
+- `content/` — authored character profiles, environment layouts, norms, social contracts, and scenarios addressed semantically, with a generated immutable catalog
 - `app/` — the browser workbench
 - `test/` — regression tests over the headless runtime
-- `docs/` — architecture decisions and implementation boundaries
 
-## Working on the model
-
-Add causes and event vocabulary before adding named behaviors.
-Keep behavioral state in the headless runtime, keep rendering concerns in `app/`, and make every behavioral decision produce a causal trace.
-Regression tests should assert ordinal relationships and aftermath differences rather than calibrated absolute probabilities.
-
-Run the complete repository gate with:
+## Building
 
 ```sh
+npm install
 npm run check
 ```
 
-For local development and editor integration, the inherited esp scripts and VS Code tasks remain available.
+`npm run check` chains the complete verification gate: typecheck, lint, tests, and build.
+The inherited esp scripts and VS Code tasks provide local development and editor integration.
