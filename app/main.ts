@@ -29,7 +29,7 @@ import {
   type ValueId,
 } from '../src/index.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
-import { activityFeed } from './activity.js';
+import { activityFeed, activityHeadingLabel } from './activity.js';
 import { bindHandsetSheetDrag } from './handset-sheet.js';
 import indexPath from './index.html';
 import './styles.css';
@@ -179,6 +179,7 @@ function controlIcon(
   kind:
     | 'chevron'
     | 'close'
+    | 'filter'
     | 'info'
     | 'pause'
     | 'play'
@@ -235,13 +236,15 @@ function controlIcon(
     const pathData =
       kind === 'reset'
         ? 'M13 5V2.5l-1.65 1.65A5.25 5.25 0 1 0 13.2 10'
-        : kind === 'close'
-          ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
-          : kind === 'sheet-expand'
-            ? 'M6.5 6.5 2.75 2.75m0 0h3m-3 0v3M9.5 6.5l3.75-3.75m0 0h-3m3 0v3M6.5 9.5l-3.75 3.75m0 0h3m-3 0v-3M9.5 9.5l3.75 3.75m0 0h-3m3 0v-3'
-            : kind === 'sheet-contract'
-              ? 'M2.75 2.75 6.5 6.5m0 0v-3m0 3h-3M13.25 2.75 9.5 6.5m0 0v-3m0 3h3M2.75 13.25 6.5 9.5m0 0v3m0-3h-3M13.25 13.25 9.5 9.5m0 0v3m0-3h3'
-              : 'm4.5 6 3.5 3.5L11.5 6';
+        : kind === 'filter'
+          ? 'M2.5 3.25h11L9.25 8.1v3.9l-2.5 1V8.1z'
+          : kind === 'close'
+            ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
+            : kind === 'sheet-expand'
+              ? 'M6.5 6.5 2.75 2.75m0 0h3m-3 0v3M9.5 6.5l3.75-3.75m0 0h-3m3 0v3M6.5 9.5l-3.75 3.75m0 0h3m-3 0v-3M9.5 9.5l3.75 3.75m0 0h-3m3 0v-3'
+              : kind === 'sheet-contract'
+                ? 'M2.75 2.75 6.5 6.5m0 0v-3m0 3h-3M13.25 2.75 9.5 6.5m0 0v-3m0 3h3M2.75 13.25 6.5 9.5m0 0v3m0-3h-3M13.25 13.25 9.5 9.5m0 0v3m0-3h3'
+                : 'm4.5 6 3.5 3.5L11.5 6';
     path.setAttribute('d', pathData);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', 'currentColor');
@@ -1106,16 +1109,20 @@ function createActivityInspector(): ActivityInspector {
   const header = element('header', 'activity-browser-header');
   const heading = element('div', 'activity-browser-heading');
   const title = element('h2');
-  const count = element('output', 'activity-count');
-  const filter = element('input');
+  const filterToggle = button('', 'activity-filter-toggle');
+  const filter = element('input', 'activity-filter');
   const list = element('ol', 'activity-list');
   let currentState: SimulationState | null = null;
   let currentClockFormat: ClockFormat = '12-hour';
 
-  title.textContent = 'Activity';
+  title.textContent = 'Activity (0)';
   title.dataset.testid = 'activity-title';
-  count.dataset.testid = 'activity-count';
-  count.setAttribute('aria-live', 'polite');
+  title.setAttribute('aria-live', 'polite');
+  filterToggle.dataset.testid = 'activity-filter-toggle';
+  filterToggle.setAttribute('aria-controls', 'activity-filter');
+  filterToggle.append(controlIcon('filter'));
+  filter.id = 'activity-filter';
+  filter.hidden = true;
   filter.type = 'search';
   filter.placeholder = 'Filter activity';
   filter.autocomplete = 'off';
@@ -1124,9 +1131,27 @@ function createActivityInspector(): ActivityInspector {
   filter.setAttribute('aria-label', 'Filter activity');
   list.dataset.testid = 'activity-list';
   list.setAttribute('aria-label', 'Activity trace');
-  heading.append(title, count);
+  heading.append(title, filterToggle);
   header.append(heading, filter);
   section.append(header, list);
+
+  function syncFilterDisclosure(): void {
+    const visible = !filter.hidden;
+    const active = filter.value.trim() !== '';
+    const action = visible ? 'Hide activity filter' : 'Show activity filter';
+    filterToggle.classList.toggle('is-active', active);
+    filterToggle.setAttribute('aria-expanded', String(visible));
+    filterToggle.setAttribute('aria-label', active ? `${action}, filter active` : action);
+    filterToggle.title = active ? `${action} (active)` : action;
+  }
+
+  function setFilterVisible(visible: boolean): void {
+    filter.hidden = !visible;
+    syncFilterDisclosure();
+    if (visible) filter.focus();
+  }
+
+  syncFilterDisclosure();
 
   function refresh(): void {
     if (currentState === null) return;
@@ -1134,11 +1159,11 @@ function createActivityInspector(): ActivityInspector {
       currentState.agents.map(agent => [agent.id, agent.profile.name] as const),
     );
     const feed = activityFeed(currentState.trace.entries, characterNames, filter.value);
-    count.textContent = `${feed.visibleEntries.length} visible / ${feed.totalCount} total`;
-    count.title =
+    title.textContent = activityHeadingLabel(feed);
+    title.title =
       feed.matchingCount === feed.totalCount
         ? `${feed.totalCount} trace entries`
-        : `${feed.matchingCount} trace entries match the current filter`;
+        : `${feed.matchingCount} of ${feed.totalCount} trace entries match the current filter`;
     if (feed.visibleEntries.length === 0) {
       const empty = element('li', 'activity-empty');
       empty.textContent =
@@ -1167,7 +1192,18 @@ function createActivityInspector(): ActivityInspector {
     list.replaceChildren(...rows);
   }
 
-  filter.addEventListener('input', refresh);
+  filterToggle.addEventListener('click', () => setFilterVisible(filter.hidden));
+  filter.addEventListener('input', () => {
+    syncFilterDisclosure();
+    refresh();
+  });
+  filter.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    event.stopPropagation();
+    setFilterVisible(false);
+    filterToggle.focus();
+  });
 
   return {
     render: (state, clockFormat) => {

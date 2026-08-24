@@ -37,7 +37,7 @@ Exit probes:
 - dragging either handset sheet header previews a clamped height and snaps the roster or inspector to peek, half, or full on release without capturing interactive header controls
 - handset sheet corner controls show outward diagonal arrows and announce Expand from peek or half, then show inward diagonal arrows and announce Contract from full so the control describes its next action
 - the signal verbosity and visibility selector occupies the character-roster title row rather than the application header
-- the character roster presents its current filtered count within the `Characters (n)` heading, while the Activity inspector heading uses the same compact uppercase typographic hierarchy
+- the character roster presents its current filtered count within the `Characters (n)` heading, while the Activity inspector uses the same compact uppercase `Activity (n)` hierarchy and reveals its filter field from a right-aligned header control
 - the layer selector occupies the Canvas lower-left in every mode, while compact and handset zoom occupies the Canvas upper-right and handset zoom presents right-aligned borderless value text without reducing its hit target
 
 Movement-format regression coverage checks both metric and US display units without changing the meter source value.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { activityFeed } from '../app/activity.js';
+import { activityFeed, activityHeadingLabel } from '../app/activity.js';
 import type { TraceEntry } from '../src/model/types.js';
 
 const entries: TraceEntry[] = [
@@ -64,6 +64,14 @@ describe('activity feed', () => {
     assert.deepEqual(
       feed.visibleEntries.map(entry => entry.id),
       ['2:tomas:decision', '1:mara:activity'],
+    );
+  });
+
+  it('formats the heading count from the currently matching entries', () => {
+    assert.equal(activityHeadingLabel(activityFeed(entries, characterNames, '')), 'Activity (3)');
+    assert.equal(
+      activityHeadingLabel(activityFeed(entries, characterNames, 'mara')),
+      'Activity (1)',
     );
   });
 });

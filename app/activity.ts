@@ -6,6 +6,10 @@ export interface ActivityFeed {
   visibleEntries: TraceEntry[];
 }
 
+export function activityHeadingLabel(feed: Pick<ActivityFeed, 'matchingCount'>): string {
+  return `Activity (${feed.matchingCount})`;
+}
+
 function searchText(entry: TraceEntry, characterNames: ReadonlyMap<string, string>): string {
   const character =
     entry.agentId === null ? 'system' : (characterNames.get(entry.agentId) ?? entry.agentId);
