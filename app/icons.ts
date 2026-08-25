@@ -48,6 +48,7 @@ export function controlIcon(
   kind:
     | 'chevron'
     | 'close'
+    | 'edit'
     | 'filter'
     | 'info'
     | 'pause'
@@ -104,15 +105,17 @@ export function controlIcon(
     const pathData =
       kind === 'reset'
         ? 'M13 5V2.5l-1.65 1.65A5.25 5.25 0 1 0 13.2 10'
-        : kind === 'filter'
-          ? 'M2.5 3.25h11L9.25 8.1v3.9l-2.5 1V8.1z'
-          : kind === 'close'
-            ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
-            : kind === 'sheet-expand'
-              ? handsetSheetIconPaths('expand').join('')
-              : kind === 'sheet-contract'
-                ? handsetSheetIconPaths('contract').join('')
-                : 'm4.5 6 3.5 3.5L11.5 6';
+        : kind === 'edit'
+          ? 'M3 13h3l7-7-3-3-7 7zM9.5 3.5l3 3'
+          : kind === 'filter'
+            ? 'M2.5 3.25h11L9.25 8.1v3.9l-2.5 1V8.1z'
+            : kind === 'close'
+              ? 'M3.5 3.5l9 9M12.5 3.5l-9 9'
+              : kind === 'sheet-expand'
+                ? handsetSheetIconPaths('expand').join('')
+                : kind === 'sheet-contract'
+                  ? handsetSheetIconPaths('contract').join('')
+                  : 'm4.5 6 3.5 3.5L11.5 6';
     path.setAttribute('d', pathData);
     path.setAttribute('fill', 'none');
     path.setAttribute('stroke', 'currentColor');

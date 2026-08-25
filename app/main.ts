@@ -279,9 +279,7 @@ function createWorkbench(): HTMLElement {
   const zoomFit = menuAction('Zoom to fit', 'fit-environment', 'Shift+1');
   const zoomSelection = menuAction('Zoom to selection', 'zoom-selection', 'Shift+2');
   const transport = element('div', 'transport');
-  const modeSwitch = element('div', 'mode-switch');
-  const modeBuildButton = button('Build', '');
-  const modeSimulateButton = button('Simulate', '');
+  const editModeButton = button('', 'sidebar-toggle-button edit-mode-button');
   const resetScenario = button('', 'button transport-button');
   const play = button('', 'button transport-button primary');
   const step = button('', 'button transport-button');
@@ -381,7 +379,7 @@ function createWorkbench(): HTMLElement {
   appMenu.append(
     menuAction('Open file...', 'open-file', 'Shift+O'),
     menuAction('Save snapshot', 'save-snapshot', 'Shift+S'),
-    menuAction('Switch Build / Simulate', 'toggle-mode', 'Shift+B'),
+    menuAction('Edit scenario', 'toggle-mode', 'Shift+B'),
     menuSeparatorOne,
     menuAction('Reset loaded scenario', 'reset-scenario', 'Shift+R'),
     menuAction('Step simulation', 'step', 'ArrowRight'),
@@ -447,17 +445,14 @@ function createWorkbench(): HTMLElement {
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
-  modeSwitch.setAttribute('role', 'radiogroup');
-  modeSwitch.setAttribute('aria-label', 'Workspace mode');
-  modeSwitch.dataset.testid = 'mode-switch';
-  modeBuildButton.setAttribute('role', 'radio');
-  modeBuildButton.dataset.testid = 'mode-build';
-  modeBuildButton.title = 'Build: edit authored drafts (Shift+B)';
-  modeSimulateButton.setAttribute('role', 'radio');
-  modeSimulateButton.dataset.testid = 'mode-simulate';
-  modeSimulateButton.title = 'Simulate: run the applied revision (Shift+B)';
-  modeSwitch.append(modeBuildButton, modeSimulateButton);
-  fileActions.append(menuButton, leftSidebarToggle, scenarioSelector, modeSwitch, fileInput);
+  // Editing is a toggle on the scenario: pressed means the authored drafts
+  // are open for editing (Build); released means the workbench is simulating.
+  editModeButton.dataset.testid = 'edit-mode-toggle';
+  editModeButton.append(controlIcon('edit'));
+  editModeButton.setAttribute('aria-pressed', 'false');
+  editModeButton.setAttribute('aria-label', 'Edit scenario');
+  editModeButton.title = 'Edit scenario (Shift+B)';
+  fileActions.append(menuButton, leftSidebarToggle, scenarioSelector, editModeButton, fileInput);
   resetScenario.dataset.testid = 'transport-reset';
   resetScenario.setAttribute('aria-label', 'Reset loaded scenario');
   resetScenario.append(controlIcon('reset'));
@@ -1108,7 +1103,7 @@ function createWorkbench(): HTMLElement {
       enabled: () => buildAvailable(),
       id: 'toggle-mode',
       keywords: ['build', 'simulate', 'workspace', 'edit', 'draft'],
-      label: 'Switch Build / Simulate',
+      label: 'Edit scenario (toggle)',
       run: () => setWorkbenchMode(toggleWorkbenchMode(mode())),
       shortcut: 'Shift+B',
     },
@@ -1905,17 +1900,17 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const available = buildAvailable();
-    modeSwitch.hidden = !available;
+    editModeButton.hidden = !available;
     if (!available && untrack(mode) === 'build') setWorkbenchMode('simulate');
   });
 
   createEffect(() => {
     const building = mode() === 'build';
     shell.dataset.mode = mode();
-    modeBuildButton.setAttribute('aria-checked', String(building));
-    modeSimulateButton.setAttribute('aria-checked', String(!building));
-    modeBuildButton.classList.toggle('selected', building);
-    modeSimulateButton.classList.toggle('selected', !building);
+    editModeButton.setAttribute('aria-pressed', String(building));
+    editModeButton.classList.toggle('active', building);
+    editModeButton.title = building ? 'Stop editing (Shift+B)' : 'Edit scenario (Shift+B)';
+    editModeButton.setAttribute('aria-label', building ? 'Stop editing' : 'Edit scenario');
     roster.inert = building;
     stage.inert = building;
     inspector.inert = building;
@@ -2177,8 +2172,7 @@ function createWorkbench(): HTMLElement {
     setHandsetLayerMenuOpen(false);
   });
   step.addEventListener('click', () => executeActionById('step'));
-  modeBuildButton.addEventListener('click', () => setWorkbenchMode('build'));
-  modeSimulateButton.addEventListener('click', () => setWorkbenchMode('simulate'));
+  editModeButton.addEventListener('click', () => setWorkbenchMode(toggleWorkbenchMode(mode())));
   play.addEventListener('click', () => executeActionById('play-pause'));
   timeRateButton.addEventListener('click', () => setTimeRateMenuOpen(timeRateMenu.hidden));
   timeRateButton.addEventListener('keydown', event => {
