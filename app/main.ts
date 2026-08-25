@@ -873,7 +873,6 @@ function createWorkbench(): HTMLElement {
     setState(loadedBaseline);
     setSelectedInstanceId(loadedBaseline.characters[0]?.id ?? null);
     setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
-    requestAnimationFrame(worldView.fit);
   }
 
   function activateLoadedSimulation(
