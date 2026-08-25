@@ -2934,3 +2934,21 @@ input[type="search"]::placeholder {
     width: 100%;
   }
 }
+
+.playback-diagnostics {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.redirect-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.redirect-field select {
+  flex: 1;
+  min-width: 0;
+}

@@ -1,6 +1,5 @@
 import type { SimulationState, TimeRateId } from '../src/model/types.js';
-import { advanceLayerPosition } from '../src/simulation/navigation.js';
-import { advanceSimulation } from '../src/simulation/runtime.js';
+import { routePositionAtSecond } from '../src/simulation/navigation.js';
 import type { ClockFormat } from './preferences.js';
 
 export interface PlaybackRate {
@@ -25,55 +24,109 @@ export const PLAYBACK_RATES = [
 
 export type PlaybackRateId = TimeRateId;
 
-export interface PlaybackAdvance {
+/** Real seconds of logical time a single frame may commit before the rest waits as backlog. */
+export const DEFAULT_FRAME_COMMIT_REAL_SECONDS = 0.5;
+
+/**
+ * Playback time the workbench has received from the wall clock but not committed.
+ * `carriedSeconds` is the fractional logical second below the integer domain and
+ * survives pause, resume, and rate changes; `backlogSeconds` is whole due work the
+ * solver has not yet caught up on, which is committed later rather than dropped.
+ */
+export interface PlaybackClock {
+  backlogSeconds: number;
   carriedSeconds: number;
-  ticks: number;
 }
 
-export function projectPlaybackMovement(
-  state: SimulationState,
-  nextState: SimulationState,
-  partialTickSeconds: number,
-): SimulationState {
-  if (!Number.isFinite(partialTickSeconds) || partialTickSeconds < 0) {
-    throw new RangeError('partialTickSeconds must be a non-negative finite number');
-  }
-  if (partialTickSeconds > state.scenario.tickSeconds) {
-    throw new RangeError('partialTickSeconds cannot exceed the scenario tick cadence');
-  }
-  if (partialTickSeconds === 0) return state;
-  const nextAgents = new Map(nextState.characters.map(agent => [agent.id, agent]));
-  let changed = false;
-  const agents = state.characters.map(agent => {
-    const nextAgent = nextAgents.get(agent.id);
-    if (nextAgent === undefined) {
-      throw new RangeError(`Missing next-tick agent "${agent.id}"`);
-    }
-    const position = advanceLayerPosition(
-      state.environment,
-      agent.position,
-      nextAgent.position,
-      (agent.walkingMetersPerMinute / 60) * partialTickSeconds,
-    );
-    if (position === agent.position) return agent;
-    changed = true;
-    return { ...agent, position };
-  });
-  return changed ? { ...state, characters: agents } : state;
+export const IDLE_PLAYBACK_CLOCK: PlaybackClock = Object.freeze({
+  backlogSeconds: 0,
+  carriedSeconds: 0,
+});
+
+export interface PlaybackFrame {
+  clock: PlaybackClock;
+  commitSeconds: number;
 }
 
+export interface PlaybackDiagnostics {
+  backlogSeconds: number;
+  committedSeconds: number;
+  frameMs: number;
+  solverMs: number;
+}
+
+function assertClock(clock: PlaybackClock): void {
+  if (
+    !Number.isFinite(clock.carriedSeconds) ||
+    clock.carriedSeconds < 0 ||
+    clock.carriedSeconds >= 1
+  ) {
+    throw new RangeError('carriedSeconds must be in [0, 1)');
+  }
+  if (!Number.isInteger(clock.backlogSeconds) || clock.backlogSeconds < 0) {
+    throw new RangeError('backlogSeconds must be a non-negative integer');
+  }
+}
+
+/**
+ * Turn elapsed wall time at a playback rate into whole logical seconds to commit now.
+ * Whole seconds beyond `maxCommitSeconds` stay in the backlog for later frames, so a
+ * slow solver or a stalled frame makes logical time lag rather than lose due work.
+ */
+export function planPlaybackFrame(
+  clock: PlaybackClock,
+  elapsedRealSeconds: number,
+  rate: PlaybackRate,
+  maxCommitSeconds: number = Math.max(1, Math.ceil(rate.rate * DEFAULT_FRAME_COMMIT_REAL_SECONDS)),
+): PlaybackFrame {
+  assertClock(clock);
+  if (!Number.isFinite(elapsedRealSeconds) || elapsedRealSeconds < 0) {
+    throw new RangeError('elapsedRealSeconds must be a non-negative finite number');
+  }
+  if (!Number.isInteger(maxCommitSeconds) || maxCommitSeconds < 1) {
+    throw new RangeError('maxCommitSeconds must be a positive integer');
+  }
+  const available = clock.carriedSeconds + elapsedRealSeconds * rate.rate;
+  const wholeSeconds = Math.floor(available + 1e-9);
+  const dueSeconds = clock.backlogSeconds + wholeSeconds;
+  const commitSeconds = Math.min(dueSeconds, maxCommitSeconds);
+  return {
+    clock: {
+      backlogSeconds: dueSeconds - commitSeconds,
+      carriedSeconds: Math.min(Math.max(0, available - wholeSeconds), 1 - Number.EPSILON),
+    },
+    commitSeconds,
+  };
+}
+
+/**
+ * Frame projection between committed movement samples.
+ * Each character with a committed route is placed along that route at the
+ * fractional logical second; nothing else changes, and no character is
+ * advanced by an evaluator or moved beyond its committed route.
+ */
 export function projectPlaybackState(
   state: SimulationState,
-  partialTickSeconds: number,
+  fractionalSeconds: number,
 ): SimulationState {
-  if (!Number.isFinite(partialTickSeconds) || partialTickSeconds < 0) {
-    throw new RangeError('partialTickSeconds must be a non-negative finite number');
+  if (!Number.isFinite(fractionalSeconds) || fractionalSeconds < 0 || fractionalSeconds >= 1) {
+    throw new RangeError('fractionalSeconds must be in [0, 1)');
   }
-  if (partialTickSeconds > state.scenario.tickSeconds) {
-    throw new RangeError('partialTickSeconds cannot exceed the scenario tick cadence');
-  }
-  if (partialTickSeconds === 0) return state;
-  return projectPlaybackMovement(state, advanceSimulation(state, 1), partialTickSeconds);
+  if (fractionalSeconds === 0) return state;
+  const at = state.second + fractionalSeconds;
+  let changed = false;
+  const characters = state.characters.map(character => {
+    if (character.route === null) return character;
+    const position = routePositionAtSecond(character.route, at);
+    if (position === character.position) return character;
+    changed = true;
+    return { ...character, position };
+  });
+  return changed ? { ...state, characters } : state;
+}
+
+export function formatPlaybackDiagnostics(diagnostics: PlaybackDiagnostics): string {
+  return `solver ${diagnostics.solverMs.toFixed(1)} ms / frame ${diagnostics.frameMs.toFixed(1)} ms / committed ${diagnostics.committedSeconds} s / backlog ${diagnostics.backlogSeconds} s`;
 }
 
 export function playbackRateShowsSeconds(rate: PlaybackRate): boolean {
@@ -105,27 +158,4 @@ export function playbackRateForId(id: PlaybackRateId): (typeof PLAYBACK_RATES)[n
   const rate = PLAYBACK_RATES.find(candidate => candidate.id === id);
   if (rate === undefined) throw new RangeError(`Unknown playback rate "${id}"`);
   return rate;
-}
-
-export function accumulatePlayback(
-  carriedSeconds: number,
-  elapsedSeconds: number,
-  rate: PlaybackRate,
-  tickSeconds: number,
-): PlaybackAdvance {
-  if (!Number.isFinite(carriedSeconds) || carriedSeconds < 0) {
-    throw new RangeError('carriedSeconds must be a non-negative finite number');
-  }
-  if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
-    throw new RangeError('elapsedSeconds must be a non-negative finite number');
-  }
-  if (!Number.isFinite(tickSeconds) || tickSeconds <= 0) {
-    throw new RangeError('tickSeconds must be a positive finite number');
-  }
-  const availableSeconds = carriedSeconds + elapsedSeconds * rate.rate;
-  const ticks = Math.floor((availableSeconds + tickSeconds * 1e-9) / tickSeconds);
-  return {
-    carriedSeconds: Math.max(0, availableSeconds - ticks * tickSeconds),
-    ticks,
-  };
 }

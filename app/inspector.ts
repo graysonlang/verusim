@@ -13,6 +13,7 @@ import {
   evaluateEavesdropping,
   evaluateProximity,
   evaluateSpatialPerception,
+  redirectCharacter,
   resourceAddressKey,
   setCharacterResource,
   setCharacterValueCharge,
@@ -157,6 +158,40 @@ export function renderInspector(
     physicalGrid.append(term, definition);
   }
   physical.body.append(physicalGrid);
+
+  const destination = makeSection('Destination', 'Live intervention');
+  const destinationSummary = element('p', 'agenda-summary');
+  const locationName = (locationId: string | null): string | null =>
+    state.environment.locations.find(location => location.id === locationId)?.name ?? null;
+  const currentLocationName = locationName(agent.currentLocationId);
+  const routeTargetName = locationName(agent.route?.destinationLocationId ?? null);
+  destinationSummary.textContent =
+    currentLocationName !== null
+      ? `At ${currentLocationName}`
+      : routeTargetName !== null
+        ? `Walking to ${routeTargetName}${agent.directedLocationId === null ? '' : ' (redirected)'}`
+        : 'In transit';
+  const redirectField = element('div', 'redirect-field');
+  const redirectSelect = element('select');
+  const redirectButton = button('Send', 'button');
+  const selectedDestination =
+    agent.directedLocationId ?? agent.route?.destinationLocationId ?? agent.currentLocationId;
+  redirectSelect.setAttribute('aria-label', 'Redirect destination');
+  redirectSelect.dataset.testid = 'redirect-select';
+  for (const location of state.environment.locations) {
+    const option = element('option');
+    option.value = location.id;
+    option.textContent = location.name;
+    option.selected = location.id === selectedDestination;
+    redirectSelect.append(option);
+  }
+  redirectButton.dataset.testid = 'redirect-button';
+  redirectButton.title = 'Send this character to the selected location from its current position';
+  redirectButton.addEventListener('click', () => {
+    setState(redirectCharacter(state, agent.id, redirectSelect.value));
+  });
+  redirectField.append(redirectSelect, redirectButton);
+  destination.body.append(destinationSummary, redirectField);
 
   const spatial = makeSection('Spatial context', 'Personal space / sight / hearing');
   const spatialList = element('ol', 'event-list spatial-list');
@@ -657,6 +692,7 @@ export function renderInspector(
   container.replaceChildren(
     hero,
     mind.section,
+    destination.section,
     spatial.section,
     values.section,
     resources.section,

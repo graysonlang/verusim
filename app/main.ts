@@ -1,7 +1,7 @@
 import { createEffect, createMemo, createRoot, createSignal, onCleanup, untrack } from 'solid-js';
 import {
   DAY_PERIOD_LABELS,
-  advanceSimulation,
+  advanceTo,
   createSimulation,
   createSimulationFromSnapshot,
   dayPeriodAtSecond,
@@ -41,11 +41,15 @@ import {
 } from './indicators.js';
 import {
   PLAYBACK_RATES,
-  accumulatePlayback,
+  IDLE_PLAYBACK_CLOCK,
+  formatPlaybackDiagnostics,
+  planPlaybackFrame,
   formatWorkbenchTime,
   playbackRateForId,
   playbackRateShowsSeconds,
   projectPlaybackState,
+  type PlaybackClock,
+  type PlaybackDiagnostics,
   type PlaybackRateId,
 } from './playback.js';
 import {
@@ -175,6 +179,10 @@ function createWorkbench(): HTMLElement {
   );
   const [showTickNumber, setShowTickNumber] = createSignal(false);
   const [playbackPreviewSeconds, setPlaybackPreviewSeconds] = createSignal(0);
+  const [playbackDiagnostics, setPlaybackDiagnostics] = createSignal<PlaybackDiagnostics | null>(
+    null,
+  );
+  let playbackBacklogSeconds = IDLE_PLAYBACK_CLOCK.backlogSeconds;
   const canvasState = createMemo(() => projectPlaybackState(state(), playbackPreviewSeconds()));
 
   const shell = element('section', 'app-shell');
@@ -266,6 +274,7 @@ function createWorkbench(): HTMLElement {
   const activityInspector = createActivityInspector();
   const footer = element('footer', 'status-bar');
   const statusText = element('span');
+  const playbackDiagnosticsText = element('span', 'playback-diagnostics');
   const quickActionsOverlay = element('div', 'quick-actions-overlay');
   const quickActionsPalette = element('section', 'quick-actions-palette');
   const quickActionsTitle = element('h2', 'visually-hidden');
@@ -572,7 +581,9 @@ function createWorkbench(): HTMLElement {
   footer.dataset.testid = 'status-bar';
   footer.hidden = !storedPreferences.showStatusBar;
   shell.classList.toggle('status-bar-visible', storedPreferences.showStatusBar);
-  footer.append(statusText);
+  playbackDiagnosticsText.dataset.testid = 'playback-diagnostics';
+  playbackDiagnosticsText.hidden = true;
+  footer.append(statusText, playbackDiagnosticsText);
   quickActionsTitle.id = 'quick-actions-title';
   quickActionsTitle.textContent = 'Quick actions';
   quickActionsInput.id = 'quick-actions-input';
@@ -845,8 +856,8 @@ function createWorkbench(): HTMLElement {
     }
   }
 
-  function advance(ticks: number): void {
-    setState(current => advanceSimulation(current, ticks));
+  function advanceSeconds(seconds: number): void {
+    setState(current => advanceTo(current, current.second + seconds));
   }
 
   function togglePlayback(): void {
@@ -856,6 +867,8 @@ function createWorkbench(): HTMLElement {
   function resetLoadedScenario(): void {
     setPlaying(false);
     setPlaybackPreviewSeconds(0);
+    playbackBacklogSeconds = 0;
+    setPlaybackDiagnostics(null);
     setRosterHoverInstanceId(null);
     setState(loadedBaseline);
     setSelectedInstanceId(loadedBaseline.characters[0]?.id ?? null);
@@ -871,6 +884,8 @@ function createWorkbench(): HTMLElement {
     loadedBaseline = loaded;
     setPlaying(false);
     setPlaybackPreviewSeconds(0);
+    playbackBacklogSeconds = 0;
+    setPlaybackDiagnostics(null);
     setRosterHoverInstanceId(null);
     setState(loaded);
     setPlaybackRateId(activeTimeRate => timeRateAfterScenarioLoad(loaded.scenario, activeTimeRate));
@@ -932,7 +947,7 @@ function createWorkbench(): HTMLElement {
       id: 'step',
       keywords: ['simulation', 'transport', 'time'],
       label: 'Step simulation',
-      run: () => advance(1),
+      run: () => advanceSeconds(state().scenario.tickSeconds),
       shortcut: 'ArrowRight',
     },
     {
@@ -1356,22 +1371,40 @@ function createWorkbench(): HTMLElement {
       control.classList.toggle('selected', selected);
       control.setAttribute('aria-checked', String(selected));
     }
-    if (!isPlaying) return;
-    let carriedSeconds = untrack(playbackPreviewSeconds);
+    if (!isPlaying) {
+      if (playbackBacklogSeconds > 0) {
+        // Pausing commits due work rather than dropping it.
+        const backlog = playbackBacklogSeconds;
+        playbackBacklogSeconds = 0;
+        advanceSeconds(backlog);
+      }
+      return;
+    }
+    // Authoritative advancement is driven by elapsed wall time at the selected
+    // rate through advanceTo; the fractional second and any backlog survive
+    // pause, resume, and rate changes.
+    let clock: PlaybackClock = {
+      backlogSeconds: playbackBacklogSeconds,
+      carriedSeconds: untrack(playbackPreviewSeconds),
+    };
     let previousTime = performance.now();
     let animationFrame = 0;
     const updatePlayback = (currentTime: number) => {
-      const elapsedSeconds = Math.max(0, (currentTime - previousTime) / 1000);
+      const frameMs = Math.max(0, currentTime - previousTime);
       previousTime = currentTime;
-      const result = accumulatePlayback(
-        carriedSeconds,
-        elapsedSeconds,
-        rate,
-        state().scenario.tickSeconds,
-      );
-      carriedSeconds = result.carriedSeconds;
-      if (result.ticks > 0) advance(result.ticks);
-      setPlaybackPreviewSeconds(carriedSeconds);
+      const frame = planPlaybackFrame(clock, frameMs / 1000, rate);
+      clock = frame.clock;
+      playbackBacklogSeconds = clock.backlogSeconds;
+      const solverStart = performance.now();
+      if (frame.commitSeconds > 0) advanceSeconds(frame.commitSeconds);
+      const solverMs = performance.now() - solverStart;
+      setPlaybackPreviewSeconds(clock.carriedSeconds);
+      setPlaybackDiagnostics({
+        backlogSeconds: clock.backlogSeconds,
+        committedSeconds: frame.commitSeconds,
+        frameMs,
+        solverMs,
+      });
       animationFrame = window.requestAnimationFrame(updatePlayback);
     };
     animationFrame = window.requestAnimationFrame(updatePlayback);
@@ -1636,6 +1669,13 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     statusText.textContent = status();
+  });
+
+  createEffect(() => {
+    const diagnostics = playbackDiagnostics();
+    playbackDiagnosticsText.hidden = diagnostics === null;
+    playbackDiagnosticsText.textContent =
+      diagnostics === null ? '' : formatPlaybackDiagnostics(diagnostics);
   });
 
   createEffect(() => {

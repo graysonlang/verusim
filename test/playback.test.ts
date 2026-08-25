@@ -1,16 +1,24 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  IDLE_PLAYBACK_CLOCK,
   PLAYBACK_RATES,
-  accumulatePlayback,
+  formatPlaybackDiagnostics,
   formatWorkbenchTime,
+  planPlaybackFrame,
   playbackRateForId,
   playbackRateShowsSeconds,
-  projectPlaybackMovement,
   projectPlaybackState,
 } from '../app/playback.js';
 import scenario from '../content/scenarios/market-morning.json';
-import { advanceSimulation, createSimulation, navigationDistance } from '../src/index.js';
+import {
+  advanceTo,
+  createSimulation,
+  locationCenter,
+  navigationDistance,
+  redirectCharacter,
+  routePositionAtSecond,
+} from '../src/index.js';
 import { characters, environments } from './fixtures.js';
 
 describe('workbench playback', () => {
@@ -56,103 +64,105 @@ describe('workbench playback', () => {
     assert.equal(playbackRateShowsSeconds(playbackRateForId('1-minute-per-second')), false);
   });
 
-  it('carries partial simulated seconds until a complete tick is available', () => {
+  it('carries fractional logical seconds until a whole second is available', () => {
     const rate = playbackRateForId('real-time');
-    const partial = accumulatePlayback(0, 30, rate, 60);
-    assert.equal(partial.ticks, 0);
-    assert.equal(partial.carriedSeconds, 30);
-    assert.deepEqual(accumulatePlayback(partial.carriedSeconds, 30, rate, 60), {
-      carriedSeconds: 0,
-      ticks: 1,
-    });
+    const partial = planPlaybackFrame(IDLE_PLAYBACK_CLOCK, 0.4, rate);
+    assert.equal(partial.commitSeconds, 0);
+    assert.ok(Math.abs(partial.clock.carriedSeconds - 0.4) < 1e-9);
+    const whole = planPlaybackFrame(partial.clock, 0.6, rate);
+    assert.equal(whole.commitSeconds, 1);
+    assert.ok(whole.clock.carriedSeconds < 1e-9);
+    assert.equal(whole.clock.backlogSeconds, 0);
   });
 
-  it('carries partial simulated time across playback rate changes', () => {
-    const realTime = accumulatePlayback(0, 30, playbackRateForId('real-time'), 60);
-    assert.deepEqual(realTime, {
-      carriedSeconds: 30,
-      ticks: 0,
-    });
-    assert.deepEqual(accumulatePlayback(realTime.carriedSeconds, 15, playbackRateForId('2x'), 60), {
-      carriedSeconds: 0,
-      ticks: 1,
-    });
+  it('carries fractional time across playback rate changes', () => {
+    const realTime = planPlaybackFrame(IDLE_PLAYBACK_CLOCK, 0.3, playbackRateForId('real-time'));
+    assert.equal(realTime.commitSeconds, 0);
+    const doubled = planPlaybackFrame(realTime.clock, 0.35, playbackRateForId('2x'));
+    assert.equal(doubled.commitSeconds, 1);
+    assert.ok(doubled.clock.carriedSeconds < 1e-9);
+    assert.throws(
+      () => planPlaybackFrame({ backlogSeconds: 0, carriedSeconds: 1 }, 0, playbackRateForId('2x')),
+      RangeError,
+    );
+    assert.throws(
+      () => planPlaybackFrame(IDLE_PLAYBACK_CLOCK, -1, playbackRateForId('2x')),
+      RangeError,
+    );
   });
 
-  it('projects each partial tick at the authoritative walking pace and endpoint', () => {
-    // Find the tick in which Mara departs: departure now begins exactly at the
-    // authored schedule start rather than during the tick that reaches it.
-    let beforeDeparture = createSimulation({
+  it('projects frames along committed routes without advancing anything else', () => {
+    const initial = createSimulation({
       characterLibrary: characters,
       environmentLibrary: environments,
       scenario,
     });
-    let next = advanceSimulation(beforeDeparture, 1);
-    for (let guard = 0; guard < 30; guard += 1) {
-      const from = beforeDeparture.characters.find(agent => agent.id === 'mara');
-      const to = next.characters.find(agent => agent.id === 'mara');
-      assert.ok(from);
-      assert.ok(to);
-      if (navigationDistance(beforeDeparture.environment, from.position, to.position) > 0) break;
-      beforeDeparture = next;
-      next = advanceSimulation(beforeDeparture, 1);
-    }
-    const currentMara = beforeDeparture.characters.find(agent => agent.id === 'mara');
-    const nextMara = next.characters.find(agent => agent.id === 'mara');
-    assert.ok(currentMara);
-    assert.ok(nextMara);
-    assert.ok(
-      navigationDistance(beforeDeparture.environment, currentMara.position, nextMara.position) > 0,
+    const mara = initial.characters.find(character => character.id === 'mara');
+    assert.ok(mara);
+    const farthest = initial.environment.locations
+      .map(location => ({
+        distance: navigationDistance(initial.environment, mara.position, locationCenter(location)),
+        location,
+      }))
+      .filter(entry => Number.isFinite(entry.distance))
+      .toSorted((left, right) => right.distance - left.distance)[0];
+    assert.ok(farthest);
+    const walking = advanceTo(
+      redirectCharacter(initial, 'mara', farthest.location.id),
+      initial.second + 1,
     );
+    const committed = walking.characters.find(character => character.id === 'mara');
+    assert.ok(committed?.route);
 
-    const tickDistance = navigationDistance(
-      beforeDeparture.environment,
-      currentMara.position,
-      nextMara.position,
-    );
-    const partialTickSeconds = ((tickDistance / currentMara.walkingMetersPerMinute) * 60) / 2;
-    const halfway = projectPlaybackMovement(beforeDeparture, next, partialTickSeconds);
-    const halfwayMara = halfway.characters.find(agent => agent.id === 'mara');
-    assert.ok(halfwayMara);
-    assert.ok(
-      Math.abs(
-        navigationDistance(
-          beforeDeparture.environment,
-          currentMara.position,
-          halfwayMara.position,
-        ) -
-          (currentMara.walkingMetersPerMinute / 60) * partialTickSeconds,
-      ) < 1e-9,
-    );
+    const halfway = projectPlaybackState(walking, 0.5);
+    const projected = halfway.characters.find(character => character.id === 'mara');
+    assert.ok(projected);
     assert.deepEqual(
-      projectPlaybackState(beforeDeparture, partialTickSeconds).characters.map(
-        agent => agent.position,
-      ),
-      halfway.characters.map(agent => agent.position),
+      projected.position,
+      routePositionAtSecond(committed.route, walking.second + 0.5),
     );
+    assert.notDeepEqual(projected.position, committed.position);
+    assert.equal(halfway.second, walking.second);
+    assert.equal(halfway.tick, walking.tick);
     assert.deepEqual(
-      beforeDeparture.characters.find(agent => agent.id === 'mara'),
-      currentMara,
+      halfway.characters.filter(character => character.route === null),
+      walking.characters.filter(character => character.route === null),
     );
-
-    const endpoint = projectPlaybackMovement(beforeDeparture, next, 60);
-    assert.deepEqual(
-      endpoint.characters.map(agent => agent.position),
-      next.characters.map(agent => agent.position),
-    );
-    assert.equal(endpoint.second, beforeDeparture.second);
-    assert.equal(endpoint.tick, beforeDeparture.tick);
+    assert.equal(projectPlaybackState(walking, 0), walking);
+    assert.throws(() => projectPlaybackState(walking, 1), RangeError);
+    assert.throws(() => projectPlaybackState(walking, -0.1), RangeError);
   });
 
-  it('batches accelerated time according to the loaded scenario cadence', () => {
+  it('commits at most a frame budget and keeps the remainder as backlog', () => {
     const rate = playbackRateForId('10-minutes-per-second');
-    assert.deepEqual(accumulatePlayback(0, 0.5, rate, 60), {
-      carriedSeconds: 0,
-      ticks: 5,
+    const steady = planPlaybackFrame(IDLE_PLAYBACK_CLOCK, 0.5, rate);
+    assert.deepEqual(steady, {
+      clock: { backlogSeconds: 0, carriedSeconds: 0 },
+      commitSeconds: 300,
     });
-    assert.deepEqual(accumulatePlayback(0, 0.5, rate, 300), {
-      carriedSeconds: 0,
-      ticks: 1,
+    const stalled = planPlaybackFrame(IDLE_PLAYBACK_CLOCK, 2, rate);
+    assert.deepEqual(stalled, {
+      clock: { backlogSeconds: 900, carriedSeconds: 0 },
+      commitSeconds: 300,
     });
+    const draining = planPlaybackFrame(stalled.clock, 0, rate);
+    assert.deepEqual(draining, {
+      clock: { backlogSeconds: 600, carriedSeconds: 0 },
+      commitSeconds: 300,
+    });
+    assert.deepEqual(planPlaybackFrame(stalled.clock, 0, rate, 900), {
+      clock: { backlogSeconds: 0, carriedSeconds: 0 },
+      commitSeconds: 900,
+    });
+    assert.throws(() => planPlaybackFrame(IDLE_PLAYBACK_CLOCK, 0, rate, 0), RangeError);
+    assert.equal(
+      formatPlaybackDiagnostics({
+        backlogSeconds: 600,
+        committedSeconds: 300,
+        frameMs: 16.66,
+        solverMs: 2.04,
+      }),
+      'solver 2.0 ms / frame 16.7 ms / committed 300 s / backlog 600 s',
+    );
   });
 });
