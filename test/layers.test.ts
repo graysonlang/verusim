@@ -4,10 +4,10 @@ import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { BUILT_IN_SCENARIOS } from '../app/scenarios.js';
 import {
   EXTERIOR_PROJECTION,
-  agentProjectionStyle,
-  projectionAfterSelectedAgentTransition,
+  characterProjectionStyle,
+  projectionAfterSelectedCharacterTransition,
   projectionAfterVerticalStep,
-  projectionForAgent,
+  projectionForCharacter,
 } from '../app/world-view.js';
 import {
   advanceSimulation,
@@ -82,14 +82,14 @@ describe('layered environments', () => {
 
   it('routes a resident from an upstairs home to the trade below through authored stairs', () => {
     const state = townState();
-    const mara = state.agents.find(agent => agent.id === 'mara');
+    const mara = state.characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
     const route = findNavigationRoute(state.environment, mara.position, mara.destination);
     assert.ok(route);
     assert.ok(route.steps.some(step => step.connectorId === 'wayfarer-stairs'));
 
     const arrived = advanceSimulation(state, 4);
-    const nextMara = arrived.agents.find(agent => agent.id === 'mara');
+    const nextMara = arrived.characters.find(agent => agent.id === 'mara');
     assert.ok(nextMara);
     assert.equal(nextMara.position.layerId, 'surface');
     assert.equal(nextMara.currentLocationId, 'wayfarer-common-room');
@@ -99,7 +99,7 @@ describe('layered environments', () => {
     const state = townState();
     const layered = {
       ...state,
-      agents: state.agents.map(agent =>
+      characters: state.characters.map(agent =>
         agent.id === 'mara'
           ? { ...agent, position: { layerId: 'upper', x: 100, y: 90 } }
           : agent.id === 'tomas'
@@ -125,7 +125,7 @@ describe('layered environments', () => {
     });
 
     assert.deepEqual(resumed, advanced);
-    assert.equal(serializeSnapshot(resumed).schemaVersion, 17);
+    assert.equal(serializeSnapshot(resumed).schemaVersion, 18);
   });
 
   it('rejects a floor that has no authored connection to the layout', () => {
@@ -189,51 +189,51 @@ describe('layered environments', () => {
 
   it('follows a selected character only when their visible projection changes', () => {
     const state = townState();
-    const mara = state.agents.find(agent => agent.id === 'mara');
+    const mara = state.characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
-    const upper = projectionForAgent(state.environment, mara);
+    const upper = projectionForCharacter(state.environment, mara);
     assert.deepEqual(upper, { kind: 'layer', layerId: 'upper' });
 
-    const manualExterior = projectionAfterSelectedAgentTransition(
+    const manualExterior = projectionAfterSelectedCharacterTransition(
       upper,
       upper,
       EXTERIOR_PROJECTION,
     );
     assert.equal(manualExterior, EXTERIOR_PROJECTION);
 
-    const arrived = advanceSimulation(state, 4).agents.find(agent => agent.id === 'mara');
+    const arrived = advanceSimulation(state, 4).characters.find(agent => agent.id === 'mara');
     assert.ok(arrived);
-    const surfaceInterior = projectionForAgent(state.environment, arrived);
+    const surfaceInterior = projectionForCharacter(state.environment, arrived);
     assert.deepEqual(surfaceInterior, { kind: 'layer', layerId: 'surface' });
     assert.deepEqual(
-      projectionAfterSelectedAgentTransition(upper, surfaceInterior, EXTERIOR_PROJECTION),
+      projectionAfterSelectedCharacterTransition(upper, surfaceInterior, EXTERIOR_PROJECTION),
       surfaceInterior,
     );
 
-    const exterior = projectionForAgent(state.environment, {
+    const exterior = projectionForCharacter(state.environment, {
       position: { layerId: 'surface', x: 150, y: 80 },
     });
     assert.equal(exterior, EXTERIOR_PROJECTION);
     assert.equal(
-      projectionAfterSelectedAgentTransition(surfaceInterior, exterior, surfaceInterior),
+      projectionAfterSelectedCharacterTransition(surfaceInterior, exterior, surfaceInterior),
       EXTERIOR_PROJECTION,
     );
   });
 
   it('keeps inactive interior characters visible but dimmed with their relative level', () => {
     const state = townState();
-    const mara = state.agents.find(agent => agent.id === 'mara');
+    const mara = state.characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
-    assert.deepEqual(agentProjectionStyle(state.environment, mara, EXTERIOR_PROJECTION), {
+    assert.deepEqual(characterProjectionStyle(state.environment, mara, EXTERIOR_PROJECTION), {
       dimmed: true,
       level: 1,
     });
     assert.deepEqual(
-      agentProjectionStyle(state.environment, mara, { kind: 'layer', layerId: 'upper' }),
+      characterProjectionStyle(state.environment, mara, { kind: 'layer', layerId: 'upper' }),
       { dimmed: false, level: null },
     );
     assert.deepEqual(
-      agentProjectionStyle(state.environment, mara, { kind: 'layer', layerId: 'cellars' }),
+      characterProjectionStyle(state.environment, mara, { kind: 'layer', layerId: 'cellars' }),
       { dimmed: true, level: 1 },
     );
   });
@@ -250,7 +250,7 @@ describe('layered environments', () => {
 
     const beneathAwning = {
       ...state,
-      agents: state.agents.map(agent =>
+      characters: state.characters.map(agent =>
         agent.id === 'mara'
           ? { ...agent, position: { layerId: 'surface', x: 148, y: 80 } }
           : agent.id === 'tomas'
@@ -260,7 +260,7 @@ describe('layered environments', () => {
     };
     const inOpenMarket = {
       ...state,
-      agents: state.agents.map(agent =>
+      characters: state.characters.map(agent =>
         agent.id === 'mara'
           ? { ...agent, position: { layerId: 'surface', x: 110, y: 80 } }
           : agent.id === 'tomas'

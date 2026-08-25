@@ -5,7 +5,7 @@ import {
   createSimulation,
   createSimulationFromSnapshot,
   dayPeriodAtMinute,
-  describeAgent,
+  describeCharacter,
   environmentLayersTopDown,
   parseSnapshot,
   prepareScenario,
@@ -142,8 +142,8 @@ function createWorkbench(): HTMLElement {
   const storedPreferences = loadPreferences(localStorage);
   let loadedBaseline = initial;
   const [state, setState] = createSignal(initial);
-  const [selectedAgentId, setSelectedAgentId] = createSignal<string | null>(
-    initial.agents[0]?.id ?? null,
+  const [selectedInstanceId, setSelectedInstanceId] = createSignal<string | null>(
+    initial.characters[0]?.id ?? null,
   );
   const [search, setSearch] = createSignal('');
   const [playing, setPlaying] = createSignal(false);
@@ -162,7 +162,7 @@ function createWorkbench(): HTMLElement {
   const [status, setStatus] = createSignal('Scenario ready');
   const [indicatorSettings, setIndicatorSettings] = createSignal(defaultIndicatorSettings());
   const [worldHover, setWorldHover] = createSignal<WorldHover | null>(null);
-  const [rosterHoverAgentId, setRosterHoverAgentId] = createSignal<string | null>(null);
+  const [rosterHoverInstanceId, setRosterHoverInstanceId] = createSignal<string | null>(null);
   const [layoutMode, setLayoutMode] = createSignal<WorkbenchLayoutMode>(
     workbenchLayoutMode(window.innerWidth),
   );
@@ -722,26 +722,26 @@ function createWorkbench(): HTMLElement {
     canvas,
     indicatorSettings,
     onHover: setWorldHover,
-    onSelect: agentId => {
-      if (agentId !== null) {
-        selectAgent(agentId, 'preserve');
+    onSelect: instanceId => {
+      if (instanceId !== null) {
+        selectAgent(instanceId, 'preserve');
         return;
       }
       const backgroundAction = canvasBackgroundAction({
-        hasSelection: selectedAgentId() !== null,
+        hasSelection: selectedInstanceId() !== null,
         isExterior: worldView.activeProjection().kind === 'exterior',
       });
-      if (backgroundAction === 'clear-selection') setSelectedAgentId(null);
+      if (backgroundAction === 'clear-selection') setSelectedInstanceId(null);
       else if (backgroundAction === 'projection-exterior') {
         worldView.setProjection(EXTERIOR_PROJECTION);
       }
     },
-    rosterHoverAgentId,
-    selectedAgentId,
+    rosterHoverInstanceId,
+    selectedInstanceId,
     state: canvasState,
   });
   const commitLeftSidebarLayout = (layout: SidebarLayout): void => {
-    if (!layout.visible) setRosterHoverAgentId(null);
+    if (!layout.visible) setRosterHoverInstanceId(null);
     setLeftSidebarLayout(layout);
     setPreferences(current => ({
       ...current,
@@ -776,7 +776,7 @@ function createWorkbench(): HTMLElement {
     viewportWidth: () => window.innerWidth,
   });
   const toggleResponsivePanel = (panel: NarrowPanelId): void => {
-    setRosterHoverAgentId(null);
+    setRosterHoverInstanceId(null);
     setNarrowPanelState(current => toggleNarrowPanel(current, panel));
   };
   const onLeftSidebarToggle = (): void => {
@@ -789,7 +789,7 @@ function createWorkbench(): HTMLElement {
   };
   const toggleBothSidebarVisibility = (): void => {
     if (layoutMode() !== 'wide') {
-      setRosterHoverAgentId(null);
+      setRosterHoverInstanceId(null);
       setNarrowPanelState(toggleNarrowPanelPair);
       return;
     }
@@ -833,13 +833,13 @@ function createWorkbench(): HTMLElement {
   let renderedLayerSignature = '';
 
   function selectAgent(
-    agentId: string,
+    instanceId: string,
     framing: 'preserve' | 'reveal',
     source: 'canvas' | 'roster' = 'canvas',
   ): void {
-    setSelectedAgentId(agentId);
-    if (framing === 'reveal') worldView.revealAgent(agentId);
-    else worldView.followAgent(agentId);
+    setSelectedInstanceId(instanceId);
+    if (framing === 'reveal') worldView.revealCharacter(instanceId);
+    else worldView.followCharacter(instanceId);
     if (source === 'roster') {
       setNarrowPanelState(current => narrowPanelAfterRosterSelection(layoutMode(), current));
     }
@@ -856,9 +856,9 @@ function createWorkbench(): HTMLElement {
   function resetLoadedScenario(): void {
     setPlaying(false);
     setPlaybackPreviewMinutes(0);
-    setRosterHoverAgentId(null);
+    setRosterHoverInstanceId(null);
     setState(loadedBaseline);
-    setSelectedAgentId(loadedBaseline.agents[0]?.id ?? null);
+    setSelectedInstanceId(loadedBaseline.characters[0]?.id ?? null);
     setStatus(`Restored ${loadedBaseline.scenario.title} to its loaded state`);
     requestAnimationFrame(worldView.fit);
   }
@@ -871,10 +871,10 @@ function createWorkbench(): HTMLElement {
     loadedBaseline = loaded;
     setPlaying(false);
     setPlaybackPreviewMinutes(0);
-    setRosterHoverAgentId(null);
+    setRosterHoverInstanceId(null);
     setState(loaded);
     setPlaybackRateId(activeTimeRate => timeRateAfterScenarioLoad(loaded.scenario, activeTimeRate));
-    setSelectedAgentId(loaded.agents[0]?.id ?? null);
+    setSelectedInstanceId(loaded.characters[0]?.id ?? null);
     setLoadedBuiltInScenarioId(builtInScenarioId);
     resetScenario.title = `Reset ${loaded.scenario.title} to its loaded state`;
     setStatus(statusMessage);
@@ -997,13 +997,13 @@ function createWorkbench(): HTMLElement {
       shortcut: '\\',
     },
     {
-      enabled: () => selectedAgentId() !== null,
+      enabled: () => selectedInstanceId() !== null,
       id: 'zoom-selection',
       keywords: ['character', 'center', 'selection', 'view', 'zoom'],
       label: 'Zoom to selected character',
       run: () => {
-        const selected = selectedAgentId();
-        if (selected !== null) worldView.focusAgent(selected);
+        const selected = selectedInstanceId();
+        if (selected !== null) worldView.focusCharacter(selected);
       },
       shortcut: 'Shift+2',
     },
@@ -1457,7 +1457,7 @@ function createWorkbench(): HTMLElement {
     );
     const builtInId = loadedBuiltInScenarioId();
     const origin = builtInId === null ? 'Loaded file or snapshot' : 'Included with workbench';
-    const characterCount = current.agents.length;
+    const characterCount = current.characters.length;
     const characterCountLabel = `${characterCount} character${characterCount === 1 ? '' : 's'}`;
     const conditionSummary = `${seasonName}, ${temperature}, ${weatherName}`;
     scenarioName.textContent = current.scenario.title;
@@ -1630,7 +1630,7 @@ function createWorkbench(): HTMLElement {
         ? 'Drag to resize or double-click to close the character inspector'
         : 'Drag to resize or double-click to reset the character inspector';
 
-    if (!visibility.roster) setRosterHoverAgentId(null);
+    if (!visibility.roster) setRosterHoverInstanceId(null);
     if (mode !== 'handset' && handsetLayerMenuOpen()) setHandsetLayerMenuOpen(false);
   });
 
@@ -1660,7 +1660,7 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     const percent = Math.round(worldView.camera().zoom * 100);
-    const hasSelection = selectedAgentId() !== null;
+    const hasSelection = selectedInstanceId() !== null;
     zoomLevelValue.textContent = `${percent}%`;
     zoomLevelButton.title = `Canvas zoom: ${percent}%`;
     zoomLevelButton.setAttribute('aria-label', `Canvas zoom: ${percent}%`);
@@ -1679,8 +1679,8 @@ function createWorkbench(): HTMLElement {
     const current = state();
     const currentPreferences = preferences();
     const query = search().trim().toLowerCase();
-    const selected = selectedAgentId();
-    const filtered = current.agents.filter(agent =>
+    const selected = selectedInstanceId();
+    const filtered = current.characters.filter(agent =>
       `${agent.profile.name} ${agent.profile.role} ${physicalProfileSummary(agent)}`
         .toLowerCase()
         .includes(query),
@@ -1711,18 +1711,18 @@ function createWorkbench(): HTMLElement {
       copy.append(heading, activity, physical);
       context.append(location, movementBadge(agent, currentPreferences.distanceUnit, true));
       item.append(copy, context, signals);
-      item.dataset.agentId = agent.id;
+      item.dataset.instanceId = agent.id;
       item.dataset.testid = `roster-agent-${agent.id}`;
       item.classList.toggle('selected', agent.id === selected);
       item.setAttribute('aria-pressed', String(agent.id === selected));
       item.addEventListener('click', () => selectAgent(agent.id, 'reveal', 'roster'));
-      item.addEventListener('pointerenter', () => setRosterHoverAgentId(agent.id));
+      item.addEventListener('pointerenter', () => setRosterHoverInstanceId(agent.id));
       item.addEventListener('pointerleave', () =>
-        setRosterHoverAgentId(current => (current === agent.id ? null : current)),
+        setRosterHoverInstanceId(current => (current === agent.id ? null : current)),
       );
-      item.addEventListener('focus', () => setRosterHoverAgentId(agent.id));
+      item.addEventListener('focus', () => setRosterHoverInstanceId(agent.id));
       item.addEventListener('blur', () =>
-        setRosterHoverAgentId(current => (current === agent.id ? null : current)),
+        setRosterHoverInstanceId(current => (current === agent.id ? null : current)),
       );
       return item;
     });
@@ -1732,9 +1732,11 @@ function createWorkbench(): HTMLElement {
   createEffect(() => {
     const current = state();
     const currentPreferences = preferences();
-    const selected = selectedAgentId();
+    const selected = selectedInstanceId();
     const agent =
-      selected === null ? undefined : current.agents.find(candidate => candidate.id === selected);
+      selected === null
+        ? undefined
+        : current.characters.find(candidate => candidate.id === selected);
     if (agent === undefined) {
       activityInspector.render(current, currentPreferences.clockFormat);
       if (inspectorContent.firstElementChild !== activityInspector.section) {
@@ -1750,14 +1752,16 @@ function createWorkbench(): HTMLElement {
     const current = state();
     const currentPreferences = preferences();
     const agent =
-      hover === null ? undefined : current.agents.find(candidate => candidate.id === hover.agentId);
+      hover === null
+        ? undefined
+        : current.characters.find(candidate => candidate.id === hover.instanceId);
     if (hover === null || agent === undefined) {
       characterHoverCard.hidden = true;
       characterHoverCard.setAttribute('aria-hidden', 'true');
       return;
     }
 
-    const observation = describeAgent(agent);
+    const observation = describeCharacter(agent);
     const name = element('h3');
     const meta = element('div', 'hover-card-meta');
     const activity = element('p', 'hover-card-activity');
@@ -1842,7 +1846,7 @@ function createWorkbench(): HTMLElement {
   });
   time.addEventListener('click', () => setShowTickNumber(current => !current));
   searchInput.addEventListener('input', () => {
-    setRosterHoverAgentId(null);
+    setRosterHoverInstanceId(null);
     setSearch(searchInput.value);
   });
   layerSwitcher.addEventListener('click', event => {
@@ -2184,14 +2188,14 @@ function createWorkbench(): HTMLElement {
       event.preventDefault();
       const escapeAction = workbenchEscapeAction({
         hasOpenNarrowPanel: layoutMode() !== 'wide' && narrowPanelState().activePanel !== null,
-        hasSelection: selectedAgentId() !== null,
+        hasSelection: selectedInstanceId() !== null,
         isExterior: worldView.activeProjection().kind === 'exterior',
       });
       if (escapeAction === 'close-narrow-panel') {
-        setRosterHoverAgentId(null);
+        setRosterHoverInstanceId(null);
         setNarrowPanelState(closeNarrowPanel);
       } else if (escapeAction === 'clear-selection') {
-        setSelectedAgentId(null);
+        setSelectedInstanceId(null);
       } else if (escapeAction === 'projection-exterior') {
         worldView.setProjection(EXTERIOR_PROJECTION);
       } else {

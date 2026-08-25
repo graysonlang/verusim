@@ -37,8 +37,8 @@ describe('local norm appraisal', () => {
     const next = advanceSimulation(createPottsfieldSimulation(), 1);
     const resident = normRecord(next.observations, 'resident');
     const visitor = normRecord(next.observations, 'visitor');
-    const residentAgent = next.agents.find(agent => agent.id === 'resident');
-    const visitorAgent = next.agents.find(agent => agent.id === 'visitor');
+    const residentAgent = next.characters.find(agent => agent.id === 'resident');
+    const visitorAgent = next.characters.find(agent => agent.id === 'visitor');
     assert.ok(residentAgent);
     assert.ok(visitorAgent);
 
@@ -116,7 +116,7 @@ describe('local norm appraisal', () => {
 
     for (const observerId of ['resident', 'visitor']) {
       const record = normRecord(next.observations, observerId);
-      const agent = next.agents.find(candidate => candidate.id === observerId);
+      const agent = next.characters.find(candidate => candidate.id === observerId);
       assert.ok(agent);
       assert.equal(record.outcome, 'missed');
       assert.equal(record.subjectiveTurn, null);

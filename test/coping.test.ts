@@ -71,30 +71,30 @@ describe('accumulation and coping', () => {
       1,
     );
 
-    assert.equal(mobilized.agents.find(agent => agent.id === 'witness')?.cascade, 'fight');
-    assert.equal(fawning.agents.find(agent => agent.id === 'witness')?.cascade, 'fawn');
-    assert.equal(flopped.agents.find(agent => agent.id === 'witness')?.cascade, 'flop');
+    assert.equal(mobilized.characters.find(agent => agent.id === 'witness')?.cascade, 'fight');
+    assert.equal(fawning.characters.find(agent => agent.id === 'witness')?.cascade, 'fawn');
+    assert.equal(flopped.characters.find(agent => agent.id === 'witness')?.cascade, 'flop');
   });
 
   it('descends immediately, recovers slowly, and holds a borderline state through dwell', () => {
     const descended = advanceSimulation(createCascadeSimulation(), 1);
-    const witness = descended.agents.find(agent => agent.id === 'witness');
+    const witness = descended.characters.find(agent => agent.id === 'witness');
     assert.ok(witness);
     assert.equal(witness.cascade, 'fawn');
 
     const held = advanceSimulation(descended, 5);
-    assert.equal(held.agents.find(agent => agent.id === 'witness')?.cascade, 'fawn');
-    assert.ok((held.agents.find(agent => agent.id === 'witness')?.cascadeLoad ?? 0) > 0);
+    assert.equal(held.characters.find(agent => agent.id === 'witness')?.cascade, 'fawn');
+    assert.ok((held.characters.find(agent => agent.id === 'witness')?.cascadeLoad ?? 0) > 0);
 
     const recovered = advanceSimulation(held, 300);
-    const recoveredWitness = recovered.agents.find(agent => agent.id === 'witness');
+    const recoveredWitness = recovered.characters.find(agent => agent.id === 'witness');
     assert.ok(recoveredWitness);
     assert.notEqual(recoveredWitness.cascade, 'flop');
     assert.ok(recoveredWitness.cascadeLoad < witness.cascadeLoad);
   });
 
   it('scales positive and negative turns through the same reactivity coefficient', () => {
-    const witness = createCascadeSimulation().agents.find(agent => agent.id === 'witness');
+    const witness = createCascadeSimulation().characters.find(agent => agent.id === 'witness');
     assert.ok(witness);
     const turns = reactiveValueTurns(witness, { belonging: 0.4, safety: -0.4 });
 
@@ -105,7 +105,7 @@ describe('accumulation and coping', () => {
 
   it('keeps therapist cooperation and abuser-targeted fawning simultaneous', () => {
     const resolved = advanceSimulation(createCascadeSimulation(), 1);
-    const witness = resolved.agents.find(agent => agent.id === 'witness');
+    const witness = resolved.characters.find(agent => agent.id === 'witness');
     assert.ok(witness);
 
     assert.equal(resolved.relationshipDecisions[0]?.outcome, 'accepted');
@@ -118,7 +118,7 @@ describe('accumulation and coping', () => {
     const states = ['coping-inn', 'coping-yard', 'coping-storehouse'].map(environmentId =>
       advanceSimulation(createInnkeeperSimulation(environmentId), 1),
     );
-    const outlets = states.map(state => state.agents[0]?.currentOutlet);
+    const outlets = states.map(state => state.characters[0]?.currentOutlet);
 
     assert.ok(outlets.every(outlet => outlet?.operation === 'control'));
     assert.deepEqual(
@@ -129,7 +129,7 @@ describe('accumulation and coping', () => {
 
   it('fires the innkeeper outlet from seeded deficit rather than a one-event threshold', () => {
     const resolved = advanceSimulation(createInnkeeperSimulation(), 1);
-    const mara = resolved.agents[0];
+    const mara = resolved.characters[0];
     assert.ok(mara);
 
     assert.equal(resolved.appraisalRecords.length, 0);
@@ -139,9 +139,9 @@ describe('accumulation and coping', () => {
   });
 
   it('makes variable-ratio outlets resist habituation at the same use count', () => {
-    const fixed = advanceSimulation(createInnkeeperSimulation('coping-inn'), 40).agents[0];
+    const fixed = advanceSimulation(createInnkeeperSimulation('coping-inn'), 40).characters[0];
     const variable = advanceSimulation(createInnkeeperSimulation('coping-storehouse'), 40)
-      .agents[0];
+      .characters[0];
     assert.ok(fixed && variable);
     const fixedUse = fixed.outletHistory[0];
     const variableUse = variable.outletHistory[0];
@@ -152,15 +152,15 @@ describe('accumulation and coping', () => {
   });
 
   it('keeps masking outlets from silently repairing their accumulated deficit', () => {
-    const displaced = advanceSimulation(createInnkeeperSimulation('coping-inn'), 1).agents[0];
-    const repairing = advanceSimulation(createInnkeeperSimulation('coping-yard'), 1).agents[0];
+    const displaced = advanceSimulation(createInnkeeperSimulation('coping-inn'), 1).characters[0];
+    const repairing = advanceSimulation(createInnkeeperSimulation('coping-yard'), 1).characters[0];
     assert.ok(displaced && repairing);
 
     assert.ok(repairing.values.safety.deficitIntegral < displaced.values.safety.deficitIntegral);
   });
 
   it('drains activity and masking resources without relabeling them as value turns', () => {
-    const drained = advanceSimulation(createInnkeeperSimulation(), 60).agents[0];
+    const drained = advanceSimulation(createInnkeeperSimulation(), 60).characters[0];
     const neutralScenario = parseScenario(innkeeperScenario);
     const placement = neutralScenario.characters[0];
     const block = placement?.schedule[0];
@@ -168,7 +168,7 @@ describe('accumulation and coping', () => {
     block.resourceDrainsPerHour = {};
     block.maskingDemand = null;
     const neutral = advanceSimulation(createInnkeeperSimulation('coping-inn', neutralScenario), 60)
-      .agents[0];
+      .characters[0];
     assert.ok(drained && neutral);
 
     assert.ok(drained.resources.executiveBudget < neutral.resources.executiveBudget);

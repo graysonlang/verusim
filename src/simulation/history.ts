@@ -11,7 +11,7 @@ import {
   type OutletPreference,
   type RuntimeMemory,
   type SatisfierPreference,
-  type SimulationAgent,
+  type CharacterInstance,
   type ValueId,
   type ValueMap,
   type ValueState,
@@ -110,26 +110,26 @@ function effectiveProfileValueWeight(
   return overrides?.[valueId] ?? profile.values[valueId].weight;
 }
 
-export function effectiveValueWeight(agent: SimulationAgent, valueId: ValueId): number {
+export function effectiveValueWeight(agent: CharacterInstance, valueId: ValueId): number {
   return effectiveProfileValueWeight(agent.profile, agent.history.overrides.valueWeights, valueId);
 }
 
 export function effectiveCascadePrior(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   position: Exclude<CascadePosition, 'none'>,
 ): number {
   return agent.history.overrides.cascadePriors?.[position] ?? agent.profile.cascadePriors[position];
 }
 
-export function effectiveContractAdherence(agent: SimulationAgent): number {
+export function effectiveContractAdherence(agent: CharacterInstance): number {
   return agent.history.overrides.contractAdherence ?? agent.profile.contractAdherence;
 }
 
-export function effectiveDisclosure(agent: SimulationAgent): DisclosureEnvelope {
+export function effectiveDisclosure(agent: CharacterInstance): DisclosureEnvelope {
   return { ...agent.profile.disclosure, ...agent.history.overrides.disclosure };
 }
 
-export function effectiveEmpathy(agent: SimulationAgent): EmpathyEnvelope {
+export function effectiveEmpathy(agent: CharacterInstance): EmpathyEnvelope {
   const override = agent.history.overrides.empathy;
   return {
     ...agent.profile.empathy,
@@ -141,19 +141,19 @@ export function effectiveEmpathy(agent: SimulationAgent): EmpathyEnvelope {
   };
 }
 
-export function effectiveIdentity(agent: SimulationAgent): IdentityMarker[] {
+export function effectiveIdentity(agent: CharacterInstance): IdentityMarker[] {
   return agent.history.overrides.identity ?? agent.profile.identity;
 }
 
-export function effectiveNormInternalization(agent: SimulationAgent, norm: NormAddress): number {
+export function effectiveNormInternalization(agent: CharacterInstance, norm: NormAddress): number {
   const key = `${norm.packageId}:${norm.kind}:${norm.resourceId}`;
   return agent.history.overrides.normInternalizations?.[key] ?? 0;
 }
 
-export function effectiveOutletPreferences(agent: SimulationAgent): OutletPreference[] {
+export function effectiveOutletPreferences(agent: CharacterInstance): OutletPreference[] {
   return agent.history.overrides.outletPreferences ?? agent.profile.outletPreferences;
 }
 
-export function effectiveSatisfierPreferences(agent: SimulationAgent): SatisfierPreference[] {
+export function effectiveSatisfierPreferences(agent: CharacterInstance): SatisfierPreference[] {
   return agent.history.overrides.satisfierPreferences ?? agent.profile.satisfierPreferences;
 }

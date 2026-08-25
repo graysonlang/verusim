@@ -1,25 +1,29 @@
 import {
   MOVEMENT_SPEED_LABELS,
-  describeAgent,
+  describeCharacter,
   type CapabilityId,
   type ResourceState,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type ValueId,
 } from '../src/index.js';
 import { element } from './dom.js';
-import { indicatorsForAgent, type IndicatorSettings, type AgentIndicator } from './indicators.js';
+import {
+  indicatorsForCharacter,
+  type IndicatorSettings,
+  type CharacterIndicator,
+} from './indicators.js';
 import type { DistanceUnit } from './preferences.js';
 import { formatMovementSpeed } from './units.js';
 
-export const SEX_LABELS: Record<SimulationAgent['profile']['physical']['sex'], string> = {
+export const SEX_LABELS: Record<CharacterInstance['profile']['physical']['sex'], string> = {
   female: 'Female',
   intersex: 'Intersex',
   male: 'Male',
   unspecified: 'Unspecified',
 };
 
-const SEX_ABBREVIATIONS: Record<SimulationAgent['profile']['physical']['sex'], string> = {
+const SEX_ABBREVIATIONS: Record<CharacterInstance['profile']['physical']['sex'], string> = {
   female: 'F',
   intersex: 'I',
   male: 'M',
@@ -42,15 +46,17 @@ export const RESOURCE_LABELS: Record<keyof ResourceState, string> = {
   socialBattery: 'Social battery',
 };
 
-export const CONSTITUTION_LABELS: Record<keyof SimulationAgent['profile']['constitution'], string> =
-  {
-    baselineArousal: 'Baseline arousal',
-    habituationRate: 'Habituation',
-    reactivity: 'Reactivity',
-    recoveryRate: 'Recovery',
-    socialValence: 'Social valence',
-    threshold: 'Threshold',
-  };
+export const CONSTITUTION_LABELS: Record<
+  keyof CharacterInstance['profile']['constitution'],
+  string
+> = {
+  baselineArousal: 'Baseline arousal',
+  habituationRate: 'Habituation',
+  reactivity: 'Reactivity',
+  recoveryRate: 'Recovery',
+  socialValence: 'Social valence',
+  threshold: 'Threshold',
+};
 
 export const CAPABILITY_LABELS: Record<CapabilityId, string> = {
   acuity: 'Acuity',
@@ -62,7 +68,7 @@ export function classLabel(value: string): string {
   return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 
-export function physicalProfileSummary(agent: SimulationAgent, compact = false): string {
+export function physicalProfileSummary(agent: CharacterInstance, compact = false): string {
   const physical = agent.profile.physical;
   if (compact) {
     const height =
@@ -84,7 +90,7 @@ export function signedPercent(value: number): string {
   return `${percent > 0 ? '+' : ''}${percent}%`;
 }
 
-export function locationName(state: SimulationState, agent: SimulationAgent): string {
+export function locationName(state: SimulationState, agent: CharacterInstance): string {
   if (agent.currentLocationId === null) return 'In transit';
   return (
     state.environment.locations.find(location => location.id === agent.currentLocationId)?.name ??
@@ -92,7 +98,7 @@ export function locationName(state: SimulationState, agent: SimulationAgent): st
   );
 }
 
-function indicatorBadge(indicator: AgentIndicator, showLabel: boolean): HTMLElement {
+function indicatorBadge(indicator: CharacterIndicator, showLabel: boolean): HTMLElement {
   const badge = element(
     'span',
     `signal-badge signal-${indicator.kind} signal-tone-${indicator.tone}`,
@@ -114,19 +120,19 @@ function indicatorBadge(indicator: AgentIndicator, showLabel: boolean): HTMLElem
 
 export function indicatorStrip(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   settings: IndicatorSettings,
   className: string,
   showLabels: boolean,
 ): HTMLElement {
   const strip = element('span', `signal-strip ${className}`);
-  for (const indicator of indicatorsForAgent(state, agent, settings)) {
+  for (const indicator of indicatorsForCharacter(state, agent, settings)) {
     strip.append(indicatorBadge(indicator, showLabels));
   }
   return strip;
 }
 
-export function roleBadge(agent: SimulationAgent): HTMLElement {
+export function roleBadge(agent: CharacterInstance): HTMLElement {
   const badge = element('span', 'role-badge');
   const label = element('span', 'role-label');
   const role = element('strong');
@@ -138,7 +144,7 @@ export function roleBadge(agent: SimulationAgent): HTMLElement {
   return badge;
 }
 
-export function physicalProfileBadge(agent: SimulationAgent): HTMLElement {
+export function physicalProfileBadge(agent: CharacterInstance): HTMLElement {
   const badge = element('span', 'profile-badge');
   const label = element('span', 'profile-label');
   const profile = element('strong');
@@ -151,7 +157,7 @@ export function physicalProfileBadge(agent: SimulationAgent): HTMLElement {
   return badge;
 }
 
-export function locationBadge(state: SimulationState, agent: SimulationAgent): HTMLElement {
+export function locationBadge(state: SimulationState, agent: CharacterInstance): HTMLElement {
   const badge = element('span', 'location-badge');
   const label = element('span', 'location-label');
   const location = element('strong');
@@ -165,11 +171,11 @@ export function locationBadge(state: SimulationState, agent: SimulationAgent): H
 }
 
 export function movementBadge(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   distanceUnit: DistanceUnit,
   compact = false,
 ): HTMLElement {
-  const observation = describeAgent(agent);
+  const observation = describeCharacter(agent);
   const badge = element(
     'span',
     `movement-badge movement-${observation.movementSpeedClass}${compact ? ' compact' : ''}`,

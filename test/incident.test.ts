@@ -99,7 +99,7 @@ const socialResources: AuthoredResource[] = [
 function incidentEvent(): IncidentEvent {
   return {
     actorId: 'reeve',
-    affectedAgentId: 'resident',
+    affectedInstanceId: 'resident',
     atMinute: 601,
     attribution: 'ambiguous',
     audibleRadiusMeters: 20,
@@ -345,7 +345,7 @@ describe('seeded incident sampling', () => {
     const state = incidentState();
     const depleted = {
       ...state,
-      agents: state.agents.map(agent =>
+      characters: state.characters.map(agent =>
         agent.id === 'resident'
           ? {
               ...agent,
@@ -371,7 +371,7 @@ describe('seeded incident sampling', () => {
       state: depleted,
       templates: [
         {
-          affectedAgentId: null,
+          affectedInstanceId: null,
           attribution: 'ambiguous' as const,
           contradictedClaimId: null,
           id: 'spill',
@@ -392,7 +392,7 @@ describe('seeded incident sampling', () => {
     assert.ok(Object.isFrozen(first));
     assert.ok(Object.isFrozen(first.event));
     const weights = new Map(
-      first.generation.eligibleWeights.map(item => [item.agentId, item.weight]),
+      first.generation.eligibleWeights.map(item => [item.instanceId, item.weight]),
     );
     assert.ok((weights.get('resident') ?? 0) > (weights.get('visitor') ?? 0));
     assert.equal(first.event.generation?.samplerEnd, first.generation.samplerEnd);

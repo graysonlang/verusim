@@ -96,3 +96,20 @@ export function knownKeys(
     }
   }
 }
+
+/** Rename object keys everywhere below a value; used by migrations that retire a vocabulary. */
+export function renameKeysDeep(value: unknown, renames: Readonly<Record<string, string>>): void {
+  if (Array.isArray(value)) {
+    for (const item of value) renameKeysDeep(item, renames);
+    return;
+  }
+  if (typeof value !== 'object' || value === null) return;
+  const record = value as Record<string, unknown>;
+  for (const [key, replacement] of Object.entries(renames)) {
+    if (key in record) {
+      record[replacement] = record[key];
+      delete record[key];
+    }
+  }
+  for (const child of Object.values(record)) renameKeysDeep(child, renames);
+}

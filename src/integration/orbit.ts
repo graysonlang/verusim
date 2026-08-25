@@ -1,5 +1,5 @@
 import { MAX_TRACE_ENTRIES, clamp } from '../model/retention.js';
-import type { DyadState, SimulationAgent, SimulationState, TraceEntry } from '../model/types.js';
+import type { DyadState, CharacterInstance, SimulationState, TraceEntry } from '../model/types.js';
 import { dyadFor, projectedDyad, turnDyad } from '../simulation/relationship.js';
 import { appendTrace, traceTerm } from '../simulation/trace.js';
 
@@ -29,9 +29,9 @@ export interface OrbitSettlement {
   stanceTurn: number;
 }
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown exchange agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown exchange agent "${instanceId}"`);
   return agent;
 }
 
@@ -62,7 +62,7 @@ function validateExchange(exchange: LowStakesExchange): void {
 
 function dyadOrProjection(
   state: SimulationState,
-  observer: SimulationAgent,
+  observer: CharacterInstance,
   subjectId: string,
 ): DyadState {
   return dyadFor(state, observer.id, subjectId) ?? projectedDyad(observer, subjectId);
@@ -142,11 +142,11 @@ function replaceDyad(state: SimulationState, dyad: DyadState): DyadState[] {
 function gateTrace(
   state: SimulationState,
   exchange: LowStakesExchange,
-  initiator: SimulationAgent,
-  responder: SimulationAgent,
+  initiator: CharacterInstance,
+  responder: CharacterInstance,
 ): TraceEntry {
   return {
-    agentId: initiator.id,
+    instanceId: initiator.id,
     id: `${state.tick}:${exchange.id}:somatic-gate`,
     kind: 'gate',
     minute: state.minute,
@@ -156,12 +156,12 @@ function gateTrace(
       traceTerm(
         'initiator-somatic-level',
         initiator.somatic.level,
-        `agents.${initiator.id}.somatic.level`,
+        `characters.${initiator.id}.somatic.level`,
       ),
       traceTerm(
         'responder-somatic-level',
         responder.somatic.level,
-        `agents.${responder.id}.somatic.level`,
+        `characters.${responder.id}.somatic.level`,
       ),
     ],
     tick: state.tick,
@@ -197,7 +197,7 @@ export function resolveOrbitExchange(
   let dyads = replaceDyad(state, initiatorDyad);
   dyads = replaceDyad({ ...state, dyads }, responderDyad);
   const trace: TraceEntry = {
-    agentId: initiator.id,
+    instanceId: initiator.id,
     id: `${settlement.id}:orbit`,
     kind: 'relationship',
     minute: state.minute,
@@ -211,7 +211,11 @@ export function resolveOrbitExchange(
         `integration.exchanges.${exchange.id}.intimacyBid`,
       ),
       traceTerm('stakes', exchange.stakes, `integration.exchanges.${exchange.id}.stakes`),
-      traceTerm('habit-power', settlement.habitualPower, `agents.${responder.id}.values.respect`),
+      traceTerm(
+        'habit-power',
+        settlement.habitualPower,
+        `characters.${responder.id}.values.respect`,
+      ),
       traceTerm(
         'habit-intimacy',
         settlement.habitualIntimacy,

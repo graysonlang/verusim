@@ -6,7 +6,7 @@ import type {
   RelationshipEvent,
   RelationshipRequestOpportunity,
   RuntimeMemory,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
   SocialFeatureMap,
   TraceEntry,
@@ -25,13 +25,13 @@ const DISTANT_FEATURES: SocialFeatureMap = {
   similarity: 0,
 };
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown relationship agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown relationship agent "${instanceId}"`);
   return agent;
 }
 
-export function projectedDyad(observer: SimulationAgent, subjectId: string): DyadState {
+export function projectedDyad(observer: CharacterInstance, subjectId: string): DyadState {
   const empathy = effectiveEmpathy(observer);
   const disclosure = effectiveDisclosure(observer);
   return {
@@ -143,7 +143,7 @@ export function repriceExposureFor(
   const observer = agentFor(state, observerId);
   const subject = agentFor(state, subjectId);
   const entry: TraceEntry = {
-    agentId: observerId,
+    instanceId: observerId,
     id: `${state.tick}:${observerId}:${subjectId}:exposure-debt:${state.trace.entries.length}`,
     kind: 'relationship',
     minute: state.minute,
@@ -195,7 +195,7 @@ function addRelationshipMemory(
 ): SimulationState {
   return {
     ...state,
-    agents: state.agents.map(agent =>
+    characters: state.characters.map(agent =>
       agent.id === observerId
         ? { ...agent, memories: appendBounded(agent.memories, memory, MAX_MEMORIES) }
         : agent,
@@ -226,7 +226,7 @@ export function resolveRelationshipEvent(
     ),
   );
   const entry: TraceEntry = {
-    agentId: event.observerId,
+    instanceId: event.observerId,
     id: `${state.tick}:${event.id}:relationship`,
     kind: 'relationship',
     minute: state.minute,
@@ -326,7 +326,7 @@ export function resolveRelationshipRequest(
     ),
   );
   const entry: TraceEntry = {
-    agentId: opportunity.responderId,
+    instanceId: opportunity.responderId,
     id: `${state.tick}:${opportunity.id}:relationship-request`,
     kind: 'relationship',
     minute: state.minute,
@@ -399,7 +399,7 @@ export function consolidateRelationshipMemories(
 ): SimulationState {
   let trace = state.trace;
   const sleeping = new Set(sleepingAgentIds);
-  const agents = state.agents.map(agent => {
+  const agents = state.characters.map(agent => {
     if (!sleeping.has(agent.id)) return agent;
     const relationshipMemories = agent.memories.filter(memory => memory.type === 'relationship');
     if (relationshipMemories.length === 0) return agent;
@@ -425,14 +425,14 @@ export function consolidateRelationshipMemories(
     trace = appendTrace(
       trace,
       {
-        agentId: agent.id,
+        instanceId: agent.id,
         id: `${state.tick}:${agent.id}:memory-consolidation`,
         kind: 'relationship',
         minute: state.minute,
         selection: null,
         summary: `${agent.profile.name} consolidated relationship memories during sleep`,
         terms: [
-          traceTerm('removed-episodes', removed, `agents.${agent.id}.memories`),
+          traceTerm('removed-episodes', removed, `characters.${agent.id}.memories`),
           traceTerm('retained-episodes', retained.size, 'simulation.relationship.peakEndRetention'),
           traceTerm('semantic-dyads', subjectIds.size, `dyads.${agent.id}`),
         ],
@@ -442,5 +442,5 @@ export function consolidateRelationshipMemories(
     );
     return { ...agent, memories };
   });
-  return { ...state, agents, trace };
+  return { ...state, characters: agents, trace };
 }

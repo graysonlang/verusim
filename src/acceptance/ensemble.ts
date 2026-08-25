@@ -214,7 +214,7 @@ function unavailableAgents(
   state: SimulationState,
   homeLocations: ReadonlyMap<string, string | null>,
 ): number {
-  return state.agents.filter(
+  return state.characters.filter(
     agent =>
       agent.currentLocationId === null ||
       agent.currentOutlet !== null ||
@@ -227,7 +227,7 @@ export function runVariant(vignette: VignetteDefinition, variant: EnsembleVarian
   const prepared = prepareScenario({ catalog: vignette.catalog, scenario: variant.scenario });
   const initial = createSimulationFromPrepared(prepared);
   const homeLocations = new Map(
-    initial.agents.map(agent => [
+    initial.characters.map(agent => [
       agent.id,
       agent.schedule[0]?.locationId ?? agent.currentLocationId,
     ]),
@@ -238,7 +238,7 @@ export function runVariant(vignette: VignetteDefinition, variant: EnsembleVarian
     state = advanceSimulation(state, 1);
     unavailable += unavailableAgents(state, homeLocations);
   }
-  const agentTicks = Math.max(1, initial.agents.length * vignette.ticks);
+  const agentTicks = Math.max(1, initial.characters.length * vignette.ticks);
   return { final: state, initial, prepared, unavailabilityRate: unavailable / agentTicks, variant };
 }
 

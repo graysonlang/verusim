@@ -17,6 +17,7 @@ import {
   objectValue,
   stringValue,
   validateLayerPosition,
+  renameKeysDeep,
 } from './primitives.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
@@ -667,7 +668,7 @@ function validateAppraisalHistory(value: unknown, path: string): void {
     const entry = objectValue(entryValue, entryPath);
     stringValue(entry.id, `${entryPath}.id`);
     stringValue(entry.eventId, `${entryPath}.eventId`);
-    stringValue(entry.agentId, `${entryPath}.agentId`);
+    stringValue(entry.instanceId, `${entryPath}.instanceId`);
     integerValue(entry.minute, `${entryPath}.minute`);
     integerValue(entry.tick, `${entryPath}.tick`);
     numberValue(entry.copingPotential, `${entryPath}.copingPotential`, 0, 1);
@@ -715,7 +716,7 @@ function validateTrace(value: unknown, path: string): void {
     const entryPath = `${path}.entries[${index}]`;
     const entry = objectValue(entryValue, entryPath);
     stringValue(entry.id, `${entryPath}.id`);
-    if (entry.agentId !== null) stringValue(entry.agentId, `${entryPath}.agentId`);
+    if (entry.instanceId !== null) stringValue(entry.instanceId, `${entryPath}.instanceId`);
     integerValue(entry.minute, `${entryPath}.minute`);
     integerValue(entry.tick, `${entryPath}.tick`);
     stringValue(entry.summary, `${entryPath}.summary`);
@@ -1399,11 +1400,18 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 14 &&
     file.schemaVersion !== 15 &&
     file.schemaVersion !== 16 &&
-    file.schemaVersion !== 17
+    file.schemaVersion !== 17 &&
+    file.schemaVersion !== 18
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const sourceVersion = file.schemaVersion as number;
+  // Vocabulary first, so every later gate reads the current key names.
+  if (sourceVersion < 18) {
+    file.characters = file.agents;
+    delete file.agents;
+    renameKeysDeep(file, { affectedAgentId: 'affectedInstanceId', agentId: 'instanceId' });
+  }
   if (sourceVersion === 1) {
     const scenario = parseScenario(file.scenario);
     file.scenario = scenario;
@@ -1431,10 +1439,10 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       schemaVersion: 1,
     };
   }
-  for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-    const agent = objectValue(agentValue, 'snapshot.agents');
-    for (const blockValue of arrayValue(agent.schedule, 'snapshot.agents.schedule')) {
-      const block = objectValue(blockValue, 'snapshot.agents.schedule');
+  for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+    const agent = objectValue(agentValue, 'snapshot.characters');
+    for (const blockValue of arrayValue(agent.schedule, 'snapshot.characters.schedule')) {
+      const block = objectValue(blockValue, 'snapshot.characters.schedule');
       if (block.recoveryMode === undefined) {
         block.recoveryMode = legacyRecoveryMode(block.activity);
       }
@@ -1466,8 +1474,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.resolvedRelationshipRequestIds = [];
   }
   if (sourceVersion < 7) {
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      const agent = objectValue(agentValue, 'snapshot.agents');
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      const agent = objectValue(agentValue, 'snapshot.characters');
       agent.cascadeDwellUntilMinute = file.minute;
       agent.cascadeLoad = 0;
       agent.cascadeTargetId = null;
@@ -1478,8 +1486,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.resolvedAppraisalEventIds = [];
   }
   if (sourceVersion < 8) {
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      objectValue(agentValue, 'snapshot.agents').narrative = null;
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      objectValue(agentValue, 'snapshot.characters').narrative = null;
     }
     for (const dyadValue of arrayValue(file.dyads, 'snapshot.dyads')) {
       objectValue(dyadValue, 'snapshot.dyads').validatorClaimIds = [];
@@ -1504,19 +1512,19 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.scenario = scenario;
     file.environment = scenario.environment;
     delete file.environmentId;
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      const agent = objectValue(agentValue, 'snapshot.agents');
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      const agent = objectValue(agentValue, 'snapshot.characters');
       const placement = scenario.characters.find(candidate => candidate.instanceId === agent.id);
       if (placement === undefined) {
         throw new ScenarioValidationError(
-          'snapshot.agents.id',
+          'snapshot.characters.id',
           `unknown scenario agent "${String(agent.id)}"`,
         );
       }
-      const legacyProfileId = stringValue(agent.profileId, 'snapshot.agents.profileId');
+      const legacyProfileId = stringValue(agent.profileId, 'snapshot.characters.profileId');
       if (legacyProfileId !== placement.profile.resourceId) {
         throw new ScenarioValidationError(
-          'snapshot.agents.profileId',
+          'snapshot.characters.profileId',
           'must match the snapshot scenario character profile',
         );
       }
@@ -1539,10 +1547,10 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     };
   }
   if (sourceVersion < 10) {
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      const agent = objectValue(agentValue, 'snapshot.agents');
-      objectValue(agent.position, 'snapshot.agents.position').layerId = 'surface';
-      objectValue(agent.destination, 'snapshot.agents.destination').layerId = 'surface';
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      const agent = objectValue(agentValue, 'snapshot.characters');
+      objectValue(agent.position, 'snapshot.characters.position').layerId = 'surface';
+      objectValue(agent.destination, 'snapshot.characters.destination').layerId = 'surface';
     }
   }
   if (sourceVersion < 11) {
@@ -1557,22 +1565,22 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     }
   }
   if (sourceVersion < 12) {
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      const agent = objectValue(agentValue, 'snapshot.agents');
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      const agent = objectValue(agentValue, 'snapshot.characters');
       agent.history = {
         formativeRecords: [],
         overrides: {},
         plasticity: { accumulators: [], records: [] },
       };
-      for (const memoryValue of arrayValue(agent.memories, 'snapshot.agents.memories')) {
-        delete objectValue(memoryValue, 'snapshot.agents.memories').provenance;
+      for (const memoryValue of arrayValue(agent.memories, 'snapshot.characters.memories')) {
+        delete objectValue(memoryValue, 'snapshot.characters.memories').provenance;
       }
     }
   }
   if (sourceVersion < 13) {
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      const agent = objectValue(agentValue, 'snapshot.agents');
-      const history = objectValue(agent.history, 'snapshot.agents.history');
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      const agent = objectValue(agentValue, 'snapshot.characters');
+      const history = objectValue(agent.history, 'snapshot.characters.history');
       history.plasticity = { accumulators: [], records: [] };
     }
   }
@@ -1589,10 +1597,10 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       observation.internalization = member ? 1 : 0;
       delete observation.member;
     }
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      const agent = objectValue(agentValue, 'snapshot.agents');
-      const history = objectValue(agent.history, 'snapshot.agents.history');
-      const overrides = objectValue(history.overrides, 'snapshot.agents.history.overrides');
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      const agent = objectValue(agentValue, 'snapshot.characters');
+      const history = objectValue(agent.history, 'snapshot.characters.history');
+      const overrides = objectValue(history.overrides, 'snapshot.characters.history.overrides');
       const placement = scenario.characters.find(candidate => candidate.instanceId === agent.id);
       if (placement !== undefined && placement.normPerspectives.length > 0) {
         overrides.normInternalizations = Object.fromEntries(
@@ -1609,8 +1617,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.displayExposures = [];
     file.displayRecords = [];
     file.resolvedDisplayEventIds = [];
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      objectValue(agentValue, 'snapshot.agents').positionalRespect = {
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      objectValue(agentValue, 'snapshot.characters').positionalRespect = {
         ambientCount: 0,
         ambientStanding: 0,
         references: [],
@@ -1621,8 +1629,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.scenario = parseScenario(file.scenario);
     file.resolvedSomaticEventIds = [];
     file.somaticRecords = [];
-    for (const agentValue of arrayValue(file.agents, 'snapshot.agents')) {
-      objectValue(agentValue, 'snapshot.agents').somatic = {
+    for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
+      objectValue(agentValue, 'snapshot.characters').somatic = {
         attentionTax: 0,
         impairment: 0,
         level: 0,
@@ -1642,7 +1650,7 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     const lock = objectValue(file.resourceLock, 'snapshot.resourceLock');
     lock.digest = null;
   }
-  file.schemaVersion = 17;
+  file.schemaVersion = 18;
   return file;
 }
 
@@ -1651,7 +1659,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 17) {
+  if (file.schemaVersion !== 18) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1706,15 +1714,18 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   integerValue(file.minute, 'snapshot.minute');
   integerValue(file.tick, 'snapshot.tick');
 
-  const agents = arrayValue(file.agents, 'snapshot.agents');
+  const agents = arrayValue(file.characters, 'snapshot.characters');
   agents.forEach((agent, index) => {
-    validateAgent(agent, `snapshot.agents[${index}]`);
+    validateAgent(agent, `snapshot.characters[${index}]`);
   });
-  const agentIds = agents.map((agent, index) =>
-    stringValue(objectValue(agent, `snapshot.agents[${index}]`).id, `snapshot.agents[${index}].id`),
+  const instanceIds = agents.map((agent, index) =>
+    stringValue(
+      objectValue(agent, `snapshot.characters[${index}]`).id,
+      `snapshot.characters[${index}].id`,
+    ),
   );
-  if (new Set(agentIds).size !== agentIds.length) {
-    throw new ScenarioValidationError('snapshot.agents', 'duplicate agent identifier');
+  if (new Set(instanceIds).size !== instanceIds.length) {
+    throw new ScenarioValidationError('snapshot.characters', 'duplicate agent identifier');
   }
 
   const runtimeScenario = parseScenario({

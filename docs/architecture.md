@@ -463,7 +463,7 @@ Nominal ranges are therefore claims about the model's envelope, and the ensemble
 Player-facing integrations should show behavior and tells rather than raw meters.
 The browser application is a developer workbench, so it deliberately exposes numeric state and permits direct intervention.
 That exception is useful for factorial sweeps and does not define a game UI contract.
-Workbench and player-facing copy calls simulated people **characters**; `agent` remains an internal model, API, and storage term only.
+Simulated people are **characters** at every surface, including the model, API, and storage vocabulary: the runtime holds `CharacterInstance` records under `state.characters`, and every record or trace entry addresses a character by its placement `instanceId`, the same identifier the scenario placement declares.
 Signal display settings are field-projection controls: they govern Canvas glyphs and compact roster summaries only.
 Selected-character properties and hover inspection always show the complete available mood, thought, action, speech, and recent-event projection so reducing field clutter cannot hide diagnostic state.
 

@@ -9,7 +9,7 @@ import {
   type PlanCandidateEvaluation,
   type ResourceState,
   type RuntimeMemory,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type TaskIntention,
   type TaskOperator,
@@ -25,7 +25,7 @@ import { locationCenter, navigationDistance, sameLayerPosition } from './navigat
 import { effectiveValueWeights } from './salience.js';
 import { somaticActionAvailable } from './somatic.js';
 import { appendTrace, traceTerm } from './trace.js';
-import { applyAgentValueTurns } from './value-turn.js';
+import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_AGENDA_DECISIONS = 80;
 const MAX_PLAN_CANDIDATES = 24;
@@ -47,9 +47,9 @@ const EMPTY_RESOURCE_COSTS: ResourceState = {
   socialBattery: 0,
 };
 
-function findAgent(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown agenda agent "${agentId}"`);
+function findAgent(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown agenda agent "${instanceId}"`);
   return agent;
 }
 
@@ -112,7 +112,7 @@ function addResourceCosts(left: ResourceState, right: Partial<ResourceState>): R
   };
 }
 
-function resourcesAvailable(agent: SimulationAgent, costs: ResourceState): boolean {
+function resourcesAvailable(agent: CharacterInstance, costs: ResourceState): boolean {
   return (Object.keys(EMPTY_RESOURCE_COSTS) as (keyof ResourceState)[]).every(
     resourceId => costs[resourceId] <= agent.resources[resourceId],
   );
@@ -159,7 +159,7 @@ function relevantTasks(
 
 function completionForTask(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   node: SearchNode,
   task: TaskOperator,
 ): { minute: number; position: LayerPosition } | null {
@@ -177,7 +177,7 @@ function completionForTask(
 
 function searchPlans(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   goal: AgendaGoalState,
 ): SearchNode[] {
   const tasks = relevantTasks(state, agent.id, goal);
@@ -224,7 +224,7 @@ function searchPlans(
   return completed;
 }
 
-function resourceCost(agent: SimulationAgent, costs: ResourceState): number {
+function resourceCost(agent: CharacterInstance, costs: ResourceState): number {
   return (Object.keys(EMPTY_RESOURCE_COSTS) as (keyof ResourceState)[]).reduce(
     (total, resourceId) => total + costs[resourceId] * (2 - agent.resources[resourceId]),
     0,
@@ -233,7 +233,7 @@ function resourceCost(agent: SimulationAgent, costs: ResourceState): number {
 
 function planCandidates(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   goal: AgendaGoalState,
 ): PlanCandidateEvaluation[] {
   const nodes = searchPlans(state, agent, goal);
@@ -310,13 +310,13 @@ function addTrace(state: SimulationState, entry: TraceEntry): SimulationState {
 
 function addMemory(
   state: SimulationState,
-  agentId: string,
+  instanceId: string,
   memory: RuntimeMemory,
 ): SimulationState {
   return {
     ...state,
-    agents: state.agents.map(agent =>
-      agent.id === agentId
+    characters: state.characters.map(agent =>
+      agent.id === instanceId
         ? { ...agent, memories: appendBounded(agent.memories, memory, MAX_MEMORIES) }
         : agent,
     ),
@@ -336,8 +336,8 @@ function resolveGoal(
     agendaGoals: state.agendaGoals.map(candidate =>
       candidate.id === goal.id ? { ...candidate, resolvedMinute: state.minute, status } : candidate,
     ),
-    agents: state.agents.map(candidate =>
-      candidate.id === agent.id ? applyAgentValueTurns(candidate, turns) : candidate,
+    characters: state.characters.map(candidate =>
+      candidate.id === agent.id ? applyCharacterValueTurns(candidate, turns) : candidate,
     ),
     intentions: state.intentions.filter(intention => intention.goalId !== goal.id),
     plans: state.plans.filter(plan => plan.goalId !== goal.id),
@@ -349,7 +349,7 @@ function resolveGoal(
     type: 'goal',
   });
   return addTrace(next, {
-    agentId: agent.id,
+    instanceId: agent.id,
     id: `${state.tick}:${goal.id}:goal:${status}`,
     kind: 'goal',
     minute: state.minute,
@@ -386,7 +386,7 @@ function settleGoals(state: SimulationState): SimulationState {
       goal = next.agendaGoals.find(candidate => candidate.id === initialGoal.id);
       if (goal === undefined) continue;
       next = addTrace(next, {
-        agentId: goal.actorId,
+        instanceId: goal.actorId,
         id: `${next.tick}:${goal.id}:goal:active`,
         kind: 'goal',
         minute: next.minute,
@@ -483,7 +483,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
   };
   for (const candidate of candidates) {
     next = addTrace(next, {
-      agentId: actorId,
+      instanceId: actorId,
       id: `${state.tick}:${actorId}:agenda:${candidate.id}`,
       kind: 'agenda',
       minute: state.minute,
@@ -501,7 +501,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
           candidate.goalUtility,
           `agendaGoals.${candidate.goalId}.successTurns`,
           `agendaGoals.${candidate.goalId}.failureTurns`,
-          `agents.${actorId}.values`,
+          `characters.${actorId}.values`,
         ),
         traceTerm(
           'task-utility',
@@ -513,13 +513,13 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
           candidate.appraisal.narrativeExpression,
           `agendaGoals.${candidate.goalId}.claimExpressions`,
           ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.claimExpressions`),
-          `agents.${actorId}.narrative`,
+          `characters.${actorId}.narrative`,
         ),
         traceTerm(
           'resource-cost',
           candidate.resourceCost,
           ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.resourceCosts`),
-          `agents.${actorId}.resources`,
+          `characters.${actorId}.resources`,
         ),
         ...(Object.keys(EMPTY_RESOURCE_COSTS) as (keyof ResourceState)[])
           .filter(resourceId => (candidate.resourceCosts[resourceId] ?? 0) > 0)
@@ -552,7 +552,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
   }
   if (selected === null) {
     return addTrace(next, {
-      agentId: actorId,
+      instanceId: actorId,
       id: `${state.tick}:${actorId}:agenda:blocked`,
       kind: 'agenda',
       minute: state.minute,
@@ -582,7 +582,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
     plans: [...next.plans, plan],
   };
   return addTrace(next, {
-    agentId: actorId,
+    instanceId: actorId,
     id: `${state.tick}:${actorId}:intention:${task.id}`,
     kind: 'intention',
     minute: state.minute,
@@ -623,7 +623,7 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
       plans: next.plans.filter(plan => plan.id !== intention.planId),
     };
     next = addTrace(next, {
-      agentId: intention.actorId,
+      instanceId: intention.actorId,
       id: `${state.tick}:${intention.actorId}:intention:canceled:${task.id}`,
       kind: 'intention',
       minute: state.minute,
@@ -636,7 +636,7 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
           'availability-changed',
           `scenario.taskOperators.${task.id}.preconditions`,
           `scenario.taskOperators.${task.id}.availableUntilMinute`,
-          `agents.${actor.id}.somatic`,
+          `characters.${actor.id}.somatic`,
           'worldFacts',
         ),
       ],
@@ -663,8 +663,8 @@ export function prepareAgenda(state: SimulationState): SimulationState {
   return next;
 }
 
-export function intendedTask(state: SimulationState, agentId: string): TaskOperator | null {
-  const intention = state.intentions.find(candidate => candidate.actorId === agentId);
+export function intendedTask(state: SimulationState, instanceId: string): TaskOperator | null {
+  const intention = state.intentions.find(candidate => candidate.actorId === instanceId);
   return intention === undefined ? null : findTask(state, intention.taskId);
 }
 
@@ -688,7 +688,7 @@ export function setWorldFactAmount(
       worldRevision,
     },
     {
-      agentId: null,
+      instanceId: null,
       id: `${state.tick}:world-fact:${factId}:${worldRevision}`,
       kind: 'intervention',
       minute: state.minute,
@@ -734,7 +734,7 @@ function completeTask(
       plans: state.plans.filter(plan => plan.id !== intention.planId),
     };
     canceled = addTrace(canceled, {
-      agentId: intention.actorId,
+      instanceId: intention.actorId,
       id: `${state.tick}:${intention.actorId}:task:failed:${task.id}`,
       kind: 'task',
       minute: state.minute,
@@ -747,7 +747,7 @@ function completeTask(
           'completion-precondition-failed',
           `scenario.taskOperators.${task.id}.preconditions`,
           `scenario.taskOperators.${task.id}.resourceCosts`,
-          `agents.${agent.id}.resources`,
+          `characters.${agent.id}.resources`,
           'worldFacts',
         ),
       ],
@@ -765,10 +765,10 @@ function completeTask(
   const summary = `${agent.profile.name} completed ${task.label.toLowerCase()}`;
   let next: SimulationState = {
     ...state,
-    agents: state.agents.map(candidate =>
+    characters: state.characters.map(candidate =>
       candidate.id === agent.id
         ? {
-            ...applyAgentValueTurns(candidate, task.valueTurns),
+            ...applyCharacterValueTurns(candidate, task.valueTurns),
             currentActivity: task.label,
             resources,
           }
@@ -792,7 +792,7 @@ function completeTask(
     type: 'task',
   });
   next = addTrace(next, {
-    agentId: agent.id,
+    instanceId: agent.id,
     id: `${state.tick}:${agent.id}:task:${task.id}`,
     kind: 'task',
     minute: state.minute,

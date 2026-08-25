@@ -1,12 +1,17 @@
 import { clamp } from '../model/retention.js';
-import { VALUE_IDS, type SimulationAgent, type ValueMap, type ValueState } from '../model/types.js';
+import {
+  VALUE_IDS,
+  type CharacterInstance,
+  type ValueMap,
+  type ValueState,
+} from '../model/types.js';
 
 export function reactiveValueTurn(reactivity: number, turn: number): number {
   return turn * reactivity;
 }
 
 export function reactiveValueTurns(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   turns: Partial<ValueMap<number>>,
 ): Partial<ValueMap<number>> {
   const result: Partial<ValueMap<number>> = {};
@@ -33,9 +38,9 @@ export function applyValueTurns(
   return next;
 }
 
-export function applyAgentValueTurns(
-  agent: SimulationAgent,
+export function applyCharacterValueTurns(
+  agent: CharacterInstance,
   turns: Partial<ValueMap<number>>,
-): SimulationAgent {
+): CharacterInstance {
   return { ...agent, values: applyValueTurns(agent.values, turns) };
 }

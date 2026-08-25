@@ -6,7 +6,7 @@ import type {
   LocationDefinition,
   Point,
   Season,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
   WeatherCondition,
 } from '../src/model/types.js';
@@ -18,8 +18,8 @@ import {
 } from '../src/simulation/environment.js';
 import {
   areaIndicatorsForState,
-  indicatorsForAgent,
-  type AgentIndicator,
+  indicatorsForCharacter,
+  type CharacterIndicator,
   type IndicatorKind,
   type IndicatorSettings,
 } from './indicators.js';
@@ -42,14 +42,14 @@ interface WorldViewOptions {
   canvas: HTMLCanvasElement;
   indicatorSettings: Accessor<IndicatorSettings>;
   onHover: (hover: WorldHover | null) => void;
-  onSelect: (agentId: string | null) => void;
-  rosterHoverAgentId: Accessor<string | null>;
-  selectedAgentId: Accessor<string | null>;
+  onSelect: (instanceId: string | null) => void;
+  rosterHoverInstanceId: Accessor<string | null>;
+  selectedInstanceId: Accessor<string | null>;
   state: Accessor<SimulationState>;
 }
 
 export interface WorldHover {
-  agentId: string;
+  instanceId: string;
   x: number;
   y: number;
 }
@@ -59,9 +59,9 @@ export interface WorldView {
   actualSize: () => void;
   camera: Accessor<Camera>;
   fit: () => void;
-  followAgent: (agentId: string) => void;
-  focusAgent: (agentId: string) => void;
-  revealAgent: (agentId: string) => void;
+  followCharacter: (instanceId: string) => void;
+  focusCharacter: (instanceId: string) => void;
+  revealCharacter: (instanceId: string) => void;
   setProjection: (projection: WorldProjection) => void;
   setZoom: (zoom: number) => void;
   zoomBy: (factor: number) => void;
@@ -96,9 +96,9 @@ function projectionsEqual(left: WorldProjection, right: WorldProjection): boolea
   );
 }
 
-export function projectionForAgent(
+export function projectionForCharacter(
   environment: EnvironmentDefinition,
-  agent: Pick<SimulationAgent, 'position'>,
+  agent: Pick<CharacterInstance, 'position'>,
 ): WorldProjection {
   const context = environmentSpatialContextAt(environment, agent.position);
   return context.enclosure === 'interior'
@@ -106,7 +106,7 @@ export function projectionForAgent(
     : EXTERIOR_PROJECTION;
 }
 
-export function projectionAfterSelectedAgentTransition(
+export function projectionAfterSelectedCharacterTransition(
   previousAgentProjection: WorldProjection,
   currentAgentProjection: WorldProjection,
   activeProjection: WorldProjection,
@@ -116,16 +116,16 @@ export function projectionAfterSelectedAgentTransition(
     : currentAgentProjection;
 }
 
-export interface AgentProjectionStyle {
+export interface CharacterProjectionStyle {
   dimmed: boolean;
   level: number | null;
 }
 
-export function agentProjectionStyle(
+export function characterProjectionStyle(
   environment: EnvironmentDefinition,
-  agent: Pick<SimulationAgent, 'position'>,
+  agent: Pick<CharacterInstance, 'position'>,
   projection: WorldProjection,
-): AgentProjectionStyle {
+): CharacterProjectionStyle {
   const context = environmentSpatialContextAt(environment, agent.position);
   const inactiveInterior =
     context.enclosure === 'interior' &&
@@ -136,11 +136,11 @@ export function agentProjectionStyle(
   };
 }
 
-export function agentsOnLayer(
-  agents: readonly SimulationAgent[],
+export function charactersOnLayer(
+  characters: readonly CharacterInstance[],
   layerId: string,
-): readonly SimulationAgent[] {
-  return agents.filter(agent => agent.position.layerId === layerId);
+): readonly CharacterInstance[] {
+  return characters.filter(agent => agent.position.layerId === layerId);
 }
 
 export function locationLabelVisibleInProjection(
@@ -240,7 +240,7 @@ function pixelsPerMeter(zoom: number): number {
   return zoom * CSS_PIXELS_PER_METER_AT_100_PERCENT;
 }
 
-export interface AgentMarkerAppearance {
+export interface CharacterMarkerAppearance {
   alpha: number;
   fill: string;
   labelFill: string;
@@ -251,11 +251,11 @@ export interface AgentMarkerAppearance {
   ringWidthPixels: number;
 }
 
-export function agentMarkerAppearance(
+export function characterMarkerAppearance(
   selected: boolean,
   rosterHovered: boolean,
   dimmed: boolean,
-): AgentMarkerAppearance {
+): CharacterMarkerAppearance {
   if (selected) {
     return {
       alpha: dimmed ? 0.38 : 1,
@@ -358,16 +358,16 @@ function worldPoint(canvas: HTMLCanvasElement, camera: Camera, screen: Point): P
   };
 }
 
-export function agentIdAtScreenPoint(
-  agents: readonly Pick<SimulationAgent, 'id' | 'position'>[],
+export function instanceIdAtScreenPoint(
+  characters: readonly Pick<CharacterInstance, 'id' | 'position'>[],
   camera: Camera,
   viewport: { height: number; width: number },
   screen: Point,
   hitRadius = 18,
 ): string | null {
   const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
-  let nearest: { agentId: string; distance: number } | null = null;
-  for (const agent of agents) {
+  let nearest: { instanceId: string; distance: number } | null = null;
+  for (const agent of characters) {
     const point = {
       x: viewport.width / 2 + (agent.position.x - camera.x) * screenPixelsPerMeter,
       y: viewport.height / 2 + (agent.position.y - camera.y) * screenPixelsPerMeter,
@@ -377,10 +377,10 @@ export function agentIdAtScreenPoint(
       candidateDistance <= hitRadius &&
       (nearest === null || candidateDistance < nearest.distance)
     ) {
-      nearest = { agentId: agent.id, distance: candidateDistance };
+      nearest = { instanceId: agent.id, distance: candidateDistance };
     }
   }
-  return nearest?.agentId ?? null;
+  return nearest?.instanceId ?? null;
 }
 
 export function cameraRevealingPoint(
@@ -548,7 +548,7 @@ function roundedShape(
 
 function indicatorShape(
   context: CanvasRenderingContext2D,
-  indicator: AgentIndicator,
+  indicator: CharacterIndicator,
   x: number,
   y: number,
   width: number,
@@ -584,7 +584,7 @@ function indicatorShape(
 
 function drawIndicator(
   context: CanvasRenderingContext2D,
-  indicator: AgentIndicator,
+  indicator: CharacterIndicator,
   x: number,
   y: number,
   showLabel: boolean,
@@ -637,11 +637,11 @@ function drawIndicator(
   return width;
 }
 
-function drawAgentIndicators(
+function drawCharacterIndicators(
   context: CanvasRenderingContext2D,
   state: SimulationState,
   camera: Camera,
-  selectedAgentId: string | null,
+  selectedInstanceId: string | null,
   settings: IndicatorSettings,
   projection: WorldProjection,
   width: number,
@@ -649,10 +649,10 @@ function drawAgentIndicators(
 ): void {
   if (settings.verbosity === 'off') return;
   const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
-  for (const agent of state.agents) {
-    const selected = agent.id === selectedAgentId;
+  for (const agent of state.characters) {
+    const selected = agent.id === selectedInstanceId;
     if (screenPixelsPerMeter < 0.3 && !selected) continue;
-    const projected = indicatorsForAgent(state, agent, settings);
+    const projected = indicatorsForCharacter(state, agent, settings);
     const indicators = selected
       ? projected
       : projected
@@ -664,7 +664,7 @@ function drawAgentIndicators(
       y: height / 2 + (agent.position.y - camera.y) * screenPixelsPerMeter,
     };
     const showLabels = selected && settings.verbosity !== 'minimal';
-    const style = agentProjectionStyle(state.environment, agent, projection);
+    const style = characterProjectionStyle(state.environment, agent, projection);
     context.save();
     if (style.dimmed) context.globalAlpha = 0.34;
     if (showLabels) {
@@ -798,8 +798,8 @@ function drawWorld(
   context: CanvasRenderingContext2D,
   state: SimulationState,
   camera: Camera,
-  selectedAgentId: string | null,
-  rosterHoverAgentId: string | null,
+  selectedInstanceId: string | null,
+  rosterHoverInstanceId: string | null,
   indicatorSettings: IndicatorSettings,
   projection: WorldProjection,
   width: number,
@@ -941,8 +941,8 @@ function drawWorld(
     }
   }
 
-  for (const agent of state.agents) {
-    if (agentProjectionStyle(state.environment, agent, projection).dimmed) continue;
+  for (const agent of state.characters) {
+    if (characterProjectionStyle(state.environment, agent, projection).dimmed) continue;
     if (agent.currentLocationId === null) {
       if (
         projection.kind === 'layer' &&
@@ -961,12 +961,12 @@ function drawWorld(
     }
   }
 
-  for (const agent of state.agents) {
-    const style = agentProjectionStyle(state.environment, agent, projection);
-    const selected = agent.id === selectedAgentId;
-    const appearance = agentMarkerAppearance(
+  for (const agent of state.characters) {
+    const style = characterProjectionStyle(state.environment, agent, projection);
+    const selected = agent.id === selectedInstanceId;
+    const appearance = characterMarkerAppearance(
       selected,
-      agent.id === rosterHoverAgentId,
+      agent.id === rosterHoverInstanceId,
       style.dimmed,
     );
     const radius = appearance.radiusPixels / screenPixelsPerMeter;
@@ -1007,11 +1007,11 @@ function drawWorld(
     context.restore();
   }
   context.restore();
-  drawAgentIndicators(
+  drawCharacterIndicators(
     context,
     state,
     camera,
-    selectedAgentId,
+    selectedInstanceId,
     indicatorSettings,
     projection,
     width,
@@ -1038,7 +1038,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   let gestureCentroidStart = { x: 0, y: 0 };
   let gestureDistanceStart = 1;
   let projectedLayoutId = initialState.environment.layoutId;
-  let observedSelectedAgentId: string | null = null;
+  let observedSelectedInstanceId: string | null = null;
   let observedSelectedAgentProjection: WorldProjection | null = null;
 
   function fit(): void {
@@ -1062,19 +1062,19 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     setCamera(current => ({ ...current, zoom: 1 }));
   }
 
-  function followAgent(agentId: string): SimulationAgent | undefined {
-    const agent = options.state().agents.find(candidate => candidate.id === agentId);
+  function followCharacter(instanceId: string): CharacterInstance | undefined {
+    const agent = options.state().characters.find(candidate => candidate.id === instanceId);
     if (agent === undefined) return undefined;
-    const projection = projectionForAgent(options.state().environment, agent);
-    observedSelectedAgentId = agentId;
+    const projection = projectionForCharacter(options.state().environment, agent);
+    observedSelectedInstanceId = instanceId;
     observedSelectedAgentProjection = projection;
     setActiveProjection(projection);
     options.onHover(null);
     return agent;
   }
 
-  function revealAgent(agentId: string): void {
-    const agent = followAgent(agentId);
+  function revealCharacter(instanceId: string): void {
+    const agent = followCharacter(instanceId);
     if (agent === undefined) return;
     setCamera(current =>
       cameraRevealingPoint(
@@ -1085,8 +1085,8 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     );
   }
 
-  function focusAgent(agentId: string): void {
-    const agent = followAgent(agentId);
+  function focusCharacter(instanceId: string): void {
+    const agent = followCharacter(instanceId);
     if (agent === undefined) return;
     setCamera(current => ({
       ...current,
@@ -1115,15 +1115,15 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     zoomAt(clamp(zoom, MIN_ZOOM, MAX_ZOOM) / current.zoom);
   }
 
-  function nearestAgentId(screen: Point): string | null {
+  function nearestInstanceId(screen: Point): string | null {
     const state = options.state();
     const projection = activeProjection();
-    const agents = state.agents.toSorted(
+    const agents = state.characters.toSorted(
       (left, right) =>
-        Number(agentProjectionStyle(state.environment, left, projection).dimmed) -
-        Number(agentProjectionStyle(state.environment, right, projection).dimmed),
+        Number(characterProjectionStyle(state.environment, left, projection).dimmed) -
+        Number(characterProjectionStyle(state.environment, right, projection).dimmed),
     );
-    return agentIdAtScreenPoint(
+    return instanceIdAtScreenPoint(
       agents,
       camera(),
       { height: canvas.clientHeight, width: canvas.clientWidth },
@@ -1132,12 +1132,12 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   }
 
   function showHover(screen: Point): void {
-    const agentId = nearestAgentId(screen);
-    options.onHover(agentId === null ? null : { agentId, x: screen.x, y: screen.y });
+    const instanceId = nearestInstanceId(screen);
+    options.onHover(instanceId === null ? null : { instanceId, x: screen.x, y: screen.y });
   }
 
   function selectNearest(screen: Point): void {
-    options.onSelect(nearestAgentId(screen));
+    options.onSelect(nearestInstanceId(screen));
   }
 
   function firstTwoPointers(): readonly [Point, Point] | null {
@@ -1261,14 +1261,14 @@ export function createWorldView(options: WorldViewOptions): WorldView {
 
   createEffect(() => {
     const state = options.state();
-    const selectedAgentId = options.selectedAgentId();
-    const rosterHoverAgentId = options.rosterHoverAgentId();
+    const selectedInstanceId = options.selectedInstanceId();
+    const rosterHoverInstanceId = options.rosterHoverInstanceId();
     const indicatorSettings = options.indicatorSettings();
     const currentCamera = camera();
     const projection = activeProjection();
     if (state.environment.layoutId !== projectedLayoutId) {
       projectedLayoutId = state.environment.layoutId;
-      observedSelectedAgentId = null;
+      observedSelectedInstanceId = null;
       observedSelectedAgentProjection = null;
       setActiveProjection(EXTERIOR_PROJECTION);
       return;
@@ -1281,19 +1281,19 @@ export function createWorldView(options: WorldViewOptions): WorldView {
       return;
     }
     const selectedAgent =
-      selectedAgentId === null
+      selectedInstanceId === null
         ? undefined
-        : state.agents.find(agent => agent.id === selectedAgentId);
+        : state.characters.find(agent => agent.id === selectedInstanceId);
     const currentSelectedAgentProjection =
-      selectedAgent === undefined ? null : projectionForAgent(state.environment, selectedAgent);
-    if (selectedAgentId !== observedSelectedAgentId) {
-      observedSelectedAgentId = selectedAgentId;
+      selectedAgent === undefined ? null : projectionForCharacter(state.environment, selectedAgent);
+    if (selectedInstanceId !== observedSelectedInstanceId) {
+      observedSelectedInstanceId = selectedInstanceId;
       observedSelectedAgentProjection = currentSelectedAgentProjection;
     } else if (
       observedSelectedAgentProjection !== null &&
       currentSelectedAgentProjection !== null
     ) {
-      const followedProjection = projectionAfterSelectedAgentTransition(
+      const followedProjection = projectionAfterSelectedCharacterTransition(
         observedSelectedAgentProjection,
         currentSelectedAgentProjection,
         projection,
@@ -1322,8 +1322,8 @@ export function createWorldView(options: WorldViewOptions): WorldView {
       context,
       state,
       currentCamera,
-      selectedAgentId,
-      rosterHoverAgentId,
+      selectedInstanceId,
+      rosterHoverInstanceId,
       indicatorSettings,
       projection,
       width,
@@ -1346,9 +1346,9 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     actualSize,
     camera,
     fit,
-    followAgent,
-    focusAgent,
-    revealAgent,
+    followCharacter,
+    focusCharacter,
+    revealCharacter,
     setProjection: setActiveProjection,
     setZoom: setZoomLevel,
     zoomBy: zoomAt,

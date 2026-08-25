@@ -2,7 +2,7 @@ import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import type {
   CapabilityResolution,
   ResourceState,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
   SomaticCrowdResponse,
   SomaticEvent,
@@ -14,7 +14,7 @@ import type {
   SomaticState,
   TraceEntry,
 } from '../model/types.js';
-import { resolveAgentCapabilityCheck } from './capability.js';
+import { resolveCharacterCapabilityCheck } from './capability.js';
 import { evaluateEmpathy } from './empathy.js';
 import {
   effectiveCascadePrior,
@@ -134,15 +134,15 @@ export function applySomaticResourceTax(
   };
 }
 
-export function somaticActionAvailable(agent: SimulationAgent, demand: number): boolean {
+export function somaticActionAvailable(agent: CharacterInstance, demand: number): boolean {
   if (agent.somatic.level >= 3) return false;
   if (agent.somatic.level < 2) return true;
   return demand <= 1 - agent.somatic.impairment;
 }
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown somatic agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown somatic agent "${instanceId}"`);
   return agent;
 }
 
@@ -177,11 +177,11 @@ function visibleEvidence(state: SomaticState): number {
 }
 
 function calibrationFor(
-  observer: SimulationAgent,
+  observer: CharacterInstance,
   event: SomaticEvent,
   evidence: number,
 ): CapabilityResolution {
-  return resolveAgentCapabilityCheck(observer, {
+  return resolveCharacterCapabilityCheck(observer, {
     applicable: true,
     capabilityId: 'evidenceCalibration',
     difficulty: 1 - evidence,
@@ -191,7 +191,7 @@ function calibrationFor(
   });
 }
 
-function competenceDrive(observer: SimulationAgent): number {
+function competenceDrive(observer: CharacterInstance): number {
   const preference = effectiveSatisfierPreferences(observer).some(
     item => item.valueId === 'competence',
   );
@@ -199,7 +199,7 @@ function competenceDrive(observer: SimulationAgent): number {
 }
 
 function crowdResponse(
-  observer: SimulationAgent,
+  observer: CharacterInstance,
   empathy: number,
   witnessCount: number,
 ): { helpProbability: number; response: SomaticCrowdResponse } {
@@ -220,7 +220,7 @@ function crowdResponse(
 function observationFor(
   state: SimulationState,
   event: SomaticEvent,
-  subject: SimulationAgent,
+  subject: CharacterInstance,
   somatic: SomaticState,
   observerId: string,
   witnessCount: number,
@@ -280,7 +280,7 @@ function somaticTrace(
   record: SomaticResolutionRecord,
 ): TraceEntry {
   return {
-    agentId: event.agentId,
+    instanceId: event.instanceId,
     id: `${record.id}:trace`,
     kind: 'somatic',
     minute: state.minute,
@@ -314,7 +314,7 @@ function somaticTrace(
 }
 
 export function resolveSomaticEvent(state: SimulationState, event: SomaticEvent): SimulationState {
-  const subject = agentFor(state, event.agentId);
+  const subject = agentFor(state, event.instanceId);
   const somatic = applySourceEvent(subject.somatic, event);
   const witnessCount = event.observerIds.length;
   const observations = event.observerIds.map(observerId =>
@@ -332,7 +332,7 @@ export function resolveSomaticEvent(state: SimulationState, event: SomaticEvent)
   };
   return {
     ...state,
-    agents: state.agents.map(agent =>
+    characters: state.characters.map(agent =>
       agent.id === subject.id
         ? {
             ...agent,

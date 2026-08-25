@@ -1,10 +1,10 @@
-import type { SimulationAgent, SimulationState } from '../model/types.js';
-import { describeAgent, type MovementSpeedClass } from '../simulation/observe.js';
+import type { CharacterInstance, SimulationState } from '../model/types.js';
+import { describeCharacter, type MovementSpeedClass } from '../simulation/observe.js';
 
 const MAX_TRACE_REFERENCES = 8;
 
 export interface TextObservationProjection {
-  agentId: string;
+  instanceId: string;
   medium: 'text';
   minute: number;
   sourceTraceIds: string[];
@@ -14,7 +14,7 @@ export interface TextObservationProjection {
 
 export interface EmbodiedObservationProjection {
   action: string;
-  agentId: string;
+  instanceId: string;
   attention: 'available' | 'elsewhere' | 'fixed' | 'survival';
   expression: string;
   medium: 'embodied';
@@ -24,20 +24,20 @@ export interface EmbodiedObservationProjection {
   sourceTraceIds: string[];
 }
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown observation agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown observation agent "${instanceId}"`);
   return agent;
 }
 
-function sourceTraceIds(state: SimulationState, agentId: string): string[] {
+function sourceTraceIds(state: SimulationState, instanceId: string): string[] {
   return state.trace.entries
-    .filter(entry => entry.agentId === agentId)
+    .filter(entry => entry.instanceId === instanceId)
     .slice(-MAX_TRACE_REFERENCES)
     .map(entry => entry.id);
 }
 
-function somaticText(agent: SimulationAgent): string | null {
+function somaticText(agent: CharacterInstance): string | null {
   if (agent.somatic.level >= 4) return 'Cannot act without help';
   if (agent.somatic.level === 3) return 'Focused entirely on immediate survival';
   if (agent.somatic.level === 2) return 'Moves with visible difficulty';
@@ -47,10 +47,10 @@ function somaticText(agent: SimulationAgent): string | null {
 
 export function projectTextObservation(
   state: SimulationState,
-  agentId: string,
+  instanceId: string,
 ): TextObservationProjection {
-  const agent = agentFor(state, agentId);
-  const observed = describeAgent(agent);
+  const agent = agentFor(state, instanceId);
+  const observed = describeCharacter(agent);
   const tells = [
     somaticText(agent),
     observed.cascadeTell,
@@ -59,16 +59,16 @@ export function projectTextObservation(
     observed.stateOfMind,
   ].filter((tell): tell is string => tell !== null);
   return {
-    agentId,
+    instanceId,
     medium: 'text',
     minute: state.minute,
-    sourceTraceIds: sourceTraceIds(state, agentId),
+    sourceTraceIds: sourceTraceIds(state, instanceId),
     summary: `${agent.profile.name} is ${observed.mood} while ${agent.currentActivity.toLowerCase()}.`,
     tells: [...new Set(tells)],
   };
 }
 
-function embodiedPosture(agent: SimulationAgent): EmbodiedObservationProjection['posture'] {
+function embodiedPosture(agent: CharacterInstance): EmbodiedObservationProjection['posture'] {
   if (agent.somatic.level >= 4 || agent.cascade === 'flop') return 'collapsed';
   if (agent.cascade === 'fight') return 'braced';
   if (agent.cascade === 'freeze') return 'rigid';
@@ -77,7 +77,7 @@ function embodiedPosture(agent: SimulationAgent): EmbodiedObservationProjection[
   return 'neutral';
 }
 
-function embodiedAttention(agent: SimulationAgent): EmbodiedObservationProjection['attention'] {
+function embodiedAttention(agent: CharacterInstance): EmbodiedObservationProjection['attention'] {
   if (agent.somatic.level >= 3) return 'survival';
   if (agent.cascade === 'freeze' || agent.cascade === 'fight') return 'fixed';
   if (agent.currentOutlet !== null || agent.cascade !== 'none') return 'elsewhere';
@@ -86,19 +86,19 @@ function embodiedAttention(agent: SimulationAgent): EmbodiedObservationProjectio
 
 export function projectEmbodiedObservation(
   state: SimulationState,
-  agentId: string,
+  instanceId: string,
 ): EmbodiedObservationProjection {
-  const agent = agentFor(state, agentId);
-  const observed = describeAgent(agent);
+  const agent = agentFor(state, instanceId);
+  const observed = describeCharacter(agent);
   return {
     action: agent.currentActivity,
-    agentId,
+    instanceId,
     attention: embodiedAttention(agent),
     expression: observed.mood,
     medium: 'embodied',
     minute: state.minute,
     motion: observed.movementSpeedClass,
     posture: embodiedPosture(agent),
-    sourceTraceIds: sourceTraceIds(state, agentId),
+    sourceTraceIds: sourceTraceIds(state, instanceId),
   };
 }

@@ -42,9 +42,9 @@ export function projectPlaybackMovement(
     throw new RangeError('partialTickMinutes cannot exceed the scenario tick cadence');
   }
   if (partialTickMinutes === 0) return state;
-  const nextAgents = new Map(nextState.agents.map(agent => [agent.id, agent]));
+  const nextAgents = new Map(nextState.characters.map(agent => [agent.id, agent]));
   let changed = false;
-  const agents = state.agents.map(agent => {
+  const agents = state.characters.map(agent => {
     const nextAgent = nextAgents.get(agent.id);
     if (nextAgent === undefined) {
       throw new RangeError(`Missing next-tick agent "${agent.id}"`);
@@ -59,7 +59,7 @@ export function projectPlaybackMovement(
     changed = true;
     return { ...agent, position };
   });
-  return changed ? { ...state, agents } : state;
+  return changed ? { ...state, characters: agents } : state;
 }
 
 export function projectPlaybackState(

@@ -64,7 +64,7 @@ export interface SnapshotReferenceContext {
 type SnapshotReferenceValidator = (context: SnapshotReferenceContext) => void;
 
 function validateLockAndAgents({ base, snapshot }: SnapshotReferenceContext): void {
-  const baseAgents = new Map(base.agents.map(agent => [agent.id, agent]));
+  const baseAgents = new Map(base.characters.map(agent => [agent.id, agent]));
   if (!sameAddress(snapshot.environment, base.scenario.environment)) {
     throw new ScenarioValidationError(
       'snapshot.environment',
@@ -86,51 +86,51 @@ function validateLockAndAgents({ base, snapshot }: SnapshotReferenceContext): vo
       'locked content changed at the same semantic addresses; prepare a new revision instead of resuming',
     );
   }
-  if (snapshot.agents.length !== base.agents.length) {
+  if (snapshot.characters.length !== base.characters.length) {
     throw new ScenarioValidationError(
-      'snapshot.agents',
+      'snapshot.characters',
       'must contain exactly the scenario agent instances',
     );
   }
   const locationIds = new Set(base.environment.locations.map(location => location.id));
   const layerIds = new Set(base.environment.layers.map(layer => layer.id));
-  snapshot.agents.forEach((saved, index) => {
+  snapshot.characters.forEach((saved, index) => {
     const agent = baseAgents.get(saved.id);
     if (agent === undefined) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].id`,
+        `snapshot.characters[${index}].id`,
         `unknown agent "${saved.id}"`,
       );
     }
     const placement = base.scenario.characters.find(item => item.instanceId === saved.id);
     if (placement === undefined || !sameAddress(saved.profile, placement.profile)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].profile`,
+        `snapshot.characters[${index}].profile`,
         `expected character profile "${agent.profile.profileId}"`,
       );
     }
     if (saved.currentLocationId !== null && !locationIds.has(saved.currentLocationId)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].currentLocationId`,
+        `snapshot.characters[${index}].currentLocationId`,
         `unknown location "${saved.currentLocationId}"`,
       );
     }
     if (!layerIds.has(saved.position.layerId)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].position.layerId`,
+        `snapshot.characters[${index}].position.layerId`,
         `unknown layer "${saved.position.layerId}"`,
       );
     }
     if (!layerIds.has(saved.destination.layerId)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].destination.layerId`,
+        `snapshot.characters[${index}].destination.layerId`,
         `unknown layer "${saved.destination.layerId}"`,
       );
     }
     saved.schedule.forEach((block, blockIndex) => {
       if (!locationIds.has(block.locationId)) {
         throw new ScenarioValidationError(
-          `snapshot.agents[${index}].schedule[${blockIndex}].locationId`,
+          `snapshot.characters[${index}].schedule[${blockIndex}].locationId`,
           `unknown location "${block.locationId}"`,
         );
       }
@@ -141,7 +141,7 @@ function validateLockAndAgents({ base, snapshot }: SnapshotReferenceContext): vo
         JSON.stringify(agent.history.formativeRecords)
     ) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].history.formativeRecords`,
+        `snapshot.characters[${index}].history.formativeRecords`,
         'must match formative execution for the prepared character profile',
       );
     }
@@ -150,13 +150,13 @@ function validateLockAndAgents({ base, snapshot }: SnapshotReferenceContext): vo
     const effectiveCeiling = empathyOverride?.ceiling ?? agent.profile.empathy.ceiling;
     if (effectiveCeiling < effectiveFloor) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].history.overrides.empathy.ceiling`,
+        `snapshot.characters[${index}].history.overrides.empathy.ceiling`,
         'expected effective ceiling at or above effective floor',
       );
     }
     if (!isDerivedSomaticState(saved.somatic)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].somatic`,
+        `snapshot.characters[${index}].somatic`,
         'must match its exact sorted somatic source ledger',
       );
     }
@@ -164,13 +164,13 @@ function validateLockAndAgents({ base, snapshot }: SnapshotReferenceContext): vo
 }
 
 function validateCollections({ base, snapshot }: SnapshotReferenceContext): void {
-  const baseAgents = new Map(base.agents.map(agent => [agent.id, agent]));
-  const agentIds = new Set(snapshot.agents.map(agent => agent.id));
+  const baseAgents = new Map(base.characters.map(agent => [agent.id, agent]));
+  const instanceIds = new Set(snapshot.characters.map(agent => agent.id));
   const outletAffordanceIds = new Set(base.environment.outletAffordances.map(item => item.id));
-  snapshot.agents.forEach((saved, index) => {
-    if (saved.cascadeTargetId !== null && !agentIds.has(saved.cascadeTargetId)) {
+  snapshot.characters.forEach((saved, index) => {
+    if (saved.cascadeTargetId !== null && !instanceIds.has(saved.cascadeTargetId)) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].cascadeTargetId`,
+        `snapshot.characters[${index}].cascadeTargetId`,
         `unknown agent "${saved.cascadeTargetId}"`,
       );
     }
@@ -179,7 +179,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
       !outletAffordanceIds.has(saved.currentOutlet.affordanceId)
     ) {
       throw new ScenarioValidationError(
-        `snapshot.agents[${index}].currentOutlet.affordanceId`,
+        `snapshot.characters[${index}].currentOutlet.affordanceId`,
         `unknown outlet affordance "${saved.currentOutlet.affordanceId}"`,
       );
     }
@@ -192,22 +192,22 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
         saved.narrative.claims.some(claim => !profileClaimIds.has(claim.id))
       ) {
         throw new ScenarioValidationError(
-          `snapshot.agents[${index}].narrative.claims`,
+          `snapshot.characters[${index}].narrative.claims`,
           'must contain exactly the character narrative claims',
         );
       }
     }
     saved.positionalRespect.references.forEach((reference, referenceIndex) => {
-      if (!agentIds.has(reference.subjectId) || reference.subjectId === saved.id) {
+      if (!instanceIds.has(reference.subjectId) || reference.subjectId === saved.id) {
         throw new ScenarioValidationError(
-          `snapshot.agents[${index}].positionalRespect.references[${referenceIndex}].subjectId`,
+          `snapshot.characters[${index}].positionalRespect.references[${referenceIndex}].subjectId`,
           'positional reference must name another snapshot agent',
         );
       }
     });
   });
   snapshot.dyads.forEach((dyad, index) => {
-    if (!agentIds.has(dyad.observerId) || !agentIds.has(dyad.subjectId)) {
+    if (!instanceIds.has(dyad.observerId) || !instanceIds.has(dyad.subjectId)) {
       throw new ScenarioValidationError(
         `snapshot.dyads[${index}]`,
         'dyad must reference snapshot agents',
@@ -221,8 +221,8 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
   snapshot.observations.forEach((observation, index) => {
     const event = observationEvents.get(observation.eventId);
     if (
-      !agentIds.has(observation.observerId) ||
-      !agentIds.has(observation.subjectId) ||
+      !instanceIds.has(observation.observerId) ||
+      !instanceIds.has(observation.subjectId) ||
       event === undefined
     ) {
       throw new ScenarioValidationError(
@@ -247,7 +247,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
   });
   const incidentEventIds = new Set(snapshot.scenario.incidentEvents.map(event => event.id));
   snapshot.incidentRecords.forEach((record, index) => {
-    if (!incidentEventIds.has(record.eventId) || !agentIds.has(record.observerId)) {
+    if (!incidentEventIds.has(record.eventId) || !instanceIds.has(record.observerId)) {
       throw new ScenarioValidationError(
         `snapshot.incidentRecords[${index}]`,
         'incident record must reference a snapshot agent and authored event',
@@ -267,9 +267,9 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
   snapshot.displayRecords.forEach((record, index) => {
     if (
       !displayEventIds.has(record.eventId) ||
-      !agentIds.has(record.wearerId) ||
+      !instanceIds.has(record.wearerId) ||
       record.appraisals.some(
-        appraisal => appraisal.eventId !== record.eventId || !agentIds.has(appraisal.observerId),
+        appraisal => appraisal.eventId !== record.eventId || !instanceIds.has(appraisal.observerId),
       )
     ) {
       throw new ScenarioValidationError(
@@ -279,7 +279,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
     }
   });
   snapshot.displayExposures.forEach((exposure, index) => {
-    if (!agentIds.has(exposure.observerId) || !displayIds.has(exposure.displayId)) {
+    if (!instanceIds.has(exposure.observerId) || !displayIds.has(exposure.displayId)) {
       throw new ScenarioValidationError(
         `snapshot.displayExposures[${index}]`,
         'display exposure must reference a snapshot agent and authored display',
@@ -298,12 +298,12 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
   snapshot.somaticRecords.forEach((record, index) => {
     if (
       !somaticEventIds.has(record.eventId) ||
-      !agentIds.has(record.subjectId) ||
+      !instanceIds.has(record.subjectId) ||
       record.observations.some(
         observation =>
           observation.eventId !== record.eventId ||
           observation.subjectId !== record.subjectId ||
-          !agentIds.has(observation.observerId),
+          !instanceIds.has(observation.observerId),
       )
     ) {
       throw new ScenarioValidationError(
@@ -341,7 +341,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
     }
   });
   snapshot.relationshipDecisions.forEach((decision, index) => {
-    if (!agentIds.has(decision.requesterId) || !agentIds.has(decision.responderId)) {
+    if (!instanceIds.has(decision.requesterId) || !instanceIds.has(decision.responderId)) {
       throw new ScenarioValidationError(
         `snapshot.relationshipDecisions[${index}]`,
         'relationship decision must reference snapshot agents',
@@ -358,7 +358,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
     }
   });
   snapshot.appraisalRecords.forEach((record, index) => {
-    if (!agentIds.has(record.agentId) || !appraisalEventIds.has(record.eventId)) {
+    if (!instanceIds.has(record.instanceId) || !appraisalEventIds.has(record.eventId)) {
       throw new ScenarioValidationError(
         `snapshot.appraisalRecords[${index}]`,
         'appraisal record must reference a snapshot agent and authored event',
@@ -375,7 +375,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
     }
   });
   snapshot.narrativeRecords.forEach((record, index) => {
-    if (!agentIds.has(record.actorId) || !narrativeEventIds.has(record.eventId)) {
+    if (!instanceIds.has(record.actorId) || !narrativeEventIds.has(record.eventId)) {
       throw new ScenarioValidationError(
         `snapshot.narrativeRecords[${index}]`,
         'narrative record must reference a snapshot agent and authored event',
@@ -385,9 +385,9 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
   const reputationGroupIds = new Set(snapshot.scenario.reputationGroups.map(group => group.id));
   snapshot.reputations.forEach((reputation, index) => {
     if (
-      !agentIds.has(reputation.subjectId) ||
-      reputation.sourceIds.some(sourceId => !agentIds.has(sourceId)) ||
-      (reputation.audienceType === 'agent' && !agentIds.has(reputation.audienceId)) ||
+      !instanceIds.has(reputation.subjectId) ||
+      reputation.sourceIds.some(sourceId => !instanceIds.has(sourceId)) ||
+      (reputation.audienceType === 'agent' && !instanceIds.has(reputation.audienceId)) ||
       (reputation.audienceType === 'group' && !reputationGroupIds.has(reputation.audienceId))
     ) {
       throw new ScenarioValidationError(
@@ -408,7 +408,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
     }
   });
   snapshot.disclosureItems.forEach((item, index) => {
-    if (!agentIds.has(item.ownerId) || item.knownByIds.some(id => !agentIds.has(id))) {
+    if (!instanceIds.has(item.ownerId) || item.knownByIds.some(id => !instanceIds.has(id))) {
       throw new ScenarioValidationError(
         `snapshot.disclosureItems[${index}]`,
         'disclosure item must reference snapshot agents',
@@ -478,7 +478,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
   const planActors = new Set<string>();
   snapshot.plans.forEach((plan, index) => {
     const goal = snapshot.agendaGoals.find(candidate => candidate.id === plan.goalId);
-    if (goal === undefined || goal.actorId !== plan.actorId || !agentIds.has(plan.actorId)) {
+    if (goal === undefined || goal.actorId !== plan.actorId || !instanceIds.has(plan.actorId)) {
       throw new ScenarioValidationError(
         `snapshot.plans[${index}]`,
         'plan must belong to a snapshot agent and goal',
@@ -530,7 +530,7 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
     );
   }
   snapshot.agendaDecisions.forEach((decision, index) => {
-    if (!agentIds.has(decision.actorId)) {
+    if (!instanceIds.has(decision.actorId)) {
       throw new ScenarioValidationError(
         `snapshot.agendaDecisions[${index}].actorId`,
         `unknown agent "${decision.actorId}"`,

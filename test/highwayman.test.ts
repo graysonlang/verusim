@@ -64,8 +64,8 @@ describe('highwayman factorial', () => {
     assert.equal(roadEmpathy, squareEmpathy);
     assert.equal(selectedCandidate(roadResult), 'rob');
     assert.equal(selectedCandidate(squareResult), 'greet');
-    assert.equal(roadResult.agents.find(agent => agent.id === 'actor')?.cascade, 'none');
-    assert.equal(squareResult.agents.find(agent => agent.id === 'actor')?.cascade, 'none');
+    assert.equal(roadResult.characters.find(agent => agent.id === 'actor')?.cascade, 'none');
+    assert.equal(squareResult.characters.find(agent => agent.id === 'actor')?.cascade, 'none');
     assert.equal(
       squareResult.trace.entries.some(entry => entry.kind === 'aftermath'),
       false,
@@ -105,8 +105,8 @@ describe('highwayman factorial', () => {
     );
 
     const initialStarving = createHighwaymanSimulation(starving);
-    const starvingActor = initialStarving.agents.find(agent => agent.id === 'actor');
-    const fedActor = createHighwaymanSimulation(roadScenario).agents.find(
+    const starvingActor = initialStarving.characters.find(agent => agent.id === 'actor');
+    const fedActor = createHighwaymanSimulation(roadScenario).characters.find(
       agent => agent.id === 'actor',
     );
     assert.ok(starvingActor);

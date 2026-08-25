@@ -12,7 +12,9 @@ export function activityHeadingLabel(feed: Pick<ActivityFeed, 'matchingCount'>):
 
 function searchText(entry: TraceEntry, characterNames: ReadonlyMap<string, string>): string {
   const character =
-    entry.agentId === null ? 'system' : (characterNames.get(entry.agentId) ?? entry.agentId);
+    entry.instanceId === null
+      ? 'system'
+      : (characterNames.get(entry.instanceId) ?? entry.instanceId);
   const terms = entry.terms
     .map(term => `${term.id} ${String(term.value)} ${term.sources.join(' ')}`)
     .join(' ');

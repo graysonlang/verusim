@@ -6,7 +6,7 @@ import type {
   DecisionRecord,
   RepercussionEvaluation,
   RuntimeMemory,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
   TraceEntry,
 } from '../model/types.js';
@@ -17,13 +17,13 @@ import { claimExpressionPayoff } from './narrative.js';
 import { effectiveValueWeights } from './salience.js';
 import { somaticActionAvailable } from './somatic.js';
 import { appendTrace, traceTerm } from './trace.js';
-import { applyAgentValueTurns } from './value-turn.js';
+import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_DECISIONS = 80;
 
-function findAgent(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown decision agent "${agentId}"`);
+function findAgent(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown decision agent "${instanceId}"`);
   return agent;
 }
 
@@ -142,18 +142,18 @@ function somaticGateTrace(
 ): TraceEntry {
   const actor = findAgent(state, opportunity.actorId);
   return {
-    agentId: actor.id,
+    instanceId: actor.id,
     id: `${state.tick}:${opportunity.id}:somatic-gate`,
     kind: 'gate',
     minute: state.minute,
     selection: { rule: 'preempt-gate', selectedId },
     summary: `${actor.profile.name}'s somatic state restricted ${opportunity.id}`,
     terms: [
-      traceTerm('somatic-level', actor.somatic.level, `agents.${actor.id}.somatic.level`),
+      traceTerm('somatic-level', actor.somatic.level, `characters.${actor.id}.somatic.level`),
       traceTerm(
         'somatic-impairment',
         actor.somatic.impairment,
-        `agents.${actor.id}.somatic.impairment`,
+        `characters.${actor.id}.somatic.impairment`,
       ),
       ...removedIds.map((candidateId, index) =>
         traceTerm(
@@ -176,11 +176,11 @@ function resolvePreemptedOpportunity(
     actor.somatic.level === 3
       ? (opportunity.candidates.find(candidate => candidate.selfDirected) ?? null)
       : null;
-  let agents = state.agents;
+  let agents = state.characters;
   if (selected !== null) {
     for (const impact of selected.impacts) {
       agents = agents.map(agent =>
-        agent.id === impact.subjectId ? applyAgentValueTurns(agent, impact.turns) : agent,
+        agent.id === impact.subjectId ? applyCharacterValueTurns(agent, impact.turns) : agent,
       );
     }
     agents = agents.map(agent =>
@@ -189,7 +189,7 @@ function resolvePreemptedOpportunity(
   }
   return {
     ...state,
-    agents,
+    characters: agents,
     resolvedOpportunityIds: [...state.resolvedOpportunityIds, opportunity.id],
     trace: appendTrace(
       state.trace,
@@ -213,9 +213,9 @@ function appraisalTrace(
 ): TraceEntry {
   const appraisal = candidate.appraisal;
   const candidateSource = `scenario.behaviorOpportunities.${opportunity.id}.candidates.${candidate.candidateId}`;
-  const actorSource = `agents.${opportunity.actorId}`;
+  const actorSource = `characters.${opportunity.actorId}`;
   return {
-    agentId: opportunity.actorId,
+    instanceId: opportunity.actorId,
     id: `${state.tick}:${opportunity.id}:appraisal:${candidate.candidateId}`,
     kind: 'appraisal',
     minute: state.minute,
@@ -259,8 +259,8 @@ function appraisalTrace(
           `${actorSource}.profile.empathy`,
           `${actorSource}.history.overrides.empathy`,
           `${candidateSource}.impacts.${evaluation.subjectId}`,
-          `agents.${evaluation.subjectId}.profile.identity`,
-          `agents.${evaluation.subjectId}.history.overrides.identity`,
+          `characters.${evaluation.subjectId}.profile.identity`,
+          `characters.${evaluation.subjectId}.history.overrides.identity`,
         ),
       ),
     ],
@@ -290,10 +290,10 @@ export function resolveOpportunity(
     throw new Error('Selected candidate must belong to the evaluated opportunity');
   }
 
-  let agents = state.agents;
+  let agents = state.characters;
   for (const impact of selectedCandidate.impacts) {
     agents = agents.map(agent =>
-      agent.id === impact.subjectId ? applyAgentValueTurns(agent, impact.turns) : agent,
+      agent.id === impact.subjectId ? applyCharacterValueTurns(agent, impact.turns) : agent,
     );
   }
 
@@ -321,7 +321,7 @@ export function resolveOpportunity(
     const withRemorse =
       remorse === 0
         ? agent
-        : applyAgentValueTurns(agent, { fairness: -remorse, respect: -remorse * 0.35 });
+        : applyCharacterValueTurns(agent, { fairness: -remorse, respect: -remorse * 0.35 });
     return {
       ...withRemorse,
       currentActivity: selectedCandidate.label,
@@ -349,7 +349,7 @@ export function resolveOpportunity(
   trace = appendTrace(
     trace,
     {
-      agentId: opportunity.actorId,
+      instanceId: opportunity.actorId,
       id: `${state.tick}:${opportunity.id}:decision`,
       kind: 'decision',
       minute: state.minute,
@@ -378,7 +378,7 @@ export function resolveOpportunity(
     trace = appendTrace(
       trace,
       {
-        agentId: opportunity.actorId,
+        instanceId: opportunity.actorId,
         id: `${state.tick}:${opportunity.id}:aftermath`,
         kind: 'aftermath',
         minute: state.minute,
@@ -404,7 +404,7 @@ export function resolveOpportunity(
 
   return {
     ...state,
-    agents,
+    characters: agents,
     decisions: appendBounded(state.decisions, decision, MAX_DECISIONS),
     resolvedOpportunityIds: [...state.resolvedOpportunityIds, opportunity.id],
     trace,

@@ -1,5 +1,5 @@
 import { clamp } from '../model/retention.js';
-import { VALUE_IDS, type SimulationAgent, type ValueId } from '../model/types.js';
+import { VALUE_IDS, type CharacterInstance, type ValueId } from '../model/types.js';
 import { allostaticLoadFor } from './coping.js';
 import { effectiveValueWeight } from './history.js';
 
@@ -44,7 +44,7 @@ export function classifyMovementSpeed(metersPerMinute: number): MovementSpeedCla
   return 'sprinting';
 }
 
-export interface AgentObservation {
+export interface CharacterObservation {
   allostaticLoad: number;
   arousal: number;
   cascadeTell: string | null;
@@ -60,7 +60,7 @@ export interface AgentObservation {
   valueValence: number;
 }
 
-export function describeAgent(agent: SimulationAgent): AgentObservation {
+export function describeCharacter(agent: CharacterInstance): CharacterObservation {
   let dominantValue: ValueId = VALUE_IDS[0];
   let dominantPressure = Number.NEGATIVE_INFINITY;
   let weightedCharge = 0;

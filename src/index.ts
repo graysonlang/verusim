@@ -212,7 +212,7 @@ export { appraiseAction } from './simulation/appraisal.js';
 export {
   capabilityAvailability,
   capabilityBand,
-  resolveAgentCapabilityCheck,
+  resolveCharacterCapabilityCheck,
   resolveCapabilityCheck,
 } from './simulation/capability.js';
 export { evaluateOpportunity, resolveOpportunity } from './simulation/decision.js';
@@ -250,7 +250,7 @@ export {
   initializeHistoryDerivedState,
 } from './simulation/history.js';
 export {
-  applyAgentValueTurns,
+  applyCharacterValueTurns,
   applyValueTurns,
   reactiveValueTurn,
   reactiveValueTurns,
@@ -259,13 +259,13 @@ export {
   advanceSimulation,
   createSimulationFromPrepared,
   createSimulationFromPreparedSnapshot,
-  setAgentResource,
-  setAgentValueCharge,
+  setCharacterResource,
+  setCharacterValueCharge,
 } from './simulation/runtime.js';
 export {
   MOVEMENT_SPEED_LABELS,
   classifyMovementSpeed,
-  describeAgent,
+  describeCharacter,
   formatSimulationTime,
 } from './simulation/observe.js';
 export type { MovementSpeedClass } from './simulation/observe.js';

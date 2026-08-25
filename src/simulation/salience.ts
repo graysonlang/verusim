@@ -1,8 +1,8 @@
 import { clamp } from '../model/retention.js';
-import { VALUE_IDS, type SimulationAgent, type ValueMap } from '../model/types.js';
+import { VALUE_IDS, type CharacterInstance, type ValueMap } from '../model/types.js';
 import { effectiveValueWeight } from './history.js';
 
-export function effectiveValueWeights(agent: SimulationAgent): ValueMap<number> {
+export function effectiveValueWeights(agent: CharacterInstance): ValueMap<number> {
   const weights = {} as ValueMap<number>;
   for (const valueId of VALUE_IDS) {
     const state = agent.values[valueId];

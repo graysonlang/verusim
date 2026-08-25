@@ -8,26 +8,26 @@ import type {
   NarrativeEvent,
   NarrativeRecord,
   NarrativeState,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
 } from '../model/types.js';
 import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
-import { applyAgentValueTurns } from './value-turn.js';
+import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_NARRATIVE_RECORDS = 120;
 const MAX_REPUTATIONS = 160;
 const YEAR_MINUTES = 365 * 24 * 60;
 const ADULT_WEAR_IN_RATE_PER_YEAR = 0.02;
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown narrative agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown narrative agent "${instanceId}"`);
   return agent;
 }
 
 export function createNarrativeState(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   promotedMinute: number,
 ): NarrativeState {
   return {
@@ -43,7 +43,7 @@ export function createNarrativeState(
 }
 
 export function claimExpressionPayoff(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   expressions: ClaimExpression[],
 ): number {
   if (agent.narrative === null) return 0;
@@ -66,14 +66,14 @@ export function claimExpressionPayoff(
   );
 }
 
-function replaceAgent(state: SimulationState, agent: SimulationAgent): SimulationState {
+function replaceAgent(state: SimulationState, agent: CharacterInstance): SimulationState {
   return {
     ...state,
-    agents: state.agents.map(candidate => (candidate.id === agent.id ? agent : candidate)),
+    characters: state.characters.map(candidate => (candidate.id === agent.id ? agent : candidate)),
   };
 }
 
-function replaceClaim(agent: SimulationAgent, claim: NarrativeClaimState): SimulationAgent {
+function replaceClaim(agent: CharacterInstance, claim: NarrativeClaimState): CharacterInstance {
   if (agent.narrative === null) return agent;
   return {
     ...agent,
@@ -108,7 +108,7 @@ function addRecord(
   };
   return {
     ...state,
-    agents: state.agents.map(agent =>
+    characters: state.characters.map(agent =>
       agent.id === actorId
         ? {
             ...agent,
@@ -130,7 +130,7 @@ function addRecord(
     trace: appendTrace(
       state.trace,
       {
-        agentId: actorId,
+        instanceId: actorId,
         id: record.id,
         kind: event.eventType === 'attribution' ? 'reputation' : 'narrative',
         minute: state.minute,
@@ -138,9 +138,9 @@ function addRecord(
         summary: `${actor.profile.name}: ${disposition}`,
         terms: [
           traceTerm('event', event.id, `scenario.narrativeEvents.${event.id}`),
-          traceTerm('claim', claimId, `agents.${actorId}.narrative.claims.${claimId}`),
+          traceTerm('claim', claimId, `characters.${actorId}.narrative.claims.${claimId}`),
           traceTerm('disposition', disposition, `narrativeRecords.${record.id}.disposition`),
-          traceTerm('regulation-cost', regulationCost, `agents.${actorId}.resources`),
+          traceTerm('regulation-cost', regulationCost, `characters.${actorId}.resources`),
         ],
         tick: state.tick,
       },
@@ -149,13 +149,13 @@ function addRecord(
   };
 }
 
-function claimFor(agent: SimulationAgent, claimId: string): NarrativeClaimState {
+function claimFor(agent: CharacterInstance, claimId: string): NarrativeClaimState {
   const claim = agent.narrative?.claims.find(candidate => candidate.id === claimId);
   if (claim === undefined) throw new RangeError(`Unknown narrative claim "${claimId}"`);
   return claim;
 }
 
-function plasticityFor(agent: SimulationAgent): number {
+function plasticityFor(agent: CharacterInstance): number {
   if (agent.profile.physical.ageYears < 18) return 0.8;
   return clamp(0.08 - (agent.profile.physical.ageYears - 18) * 0.0015, 0.015, 0.08);
 }
@@ -236,7 +236,7 @@ function resolveSelfDeprecation(state: SimulationState, event: NarrativeEvent): 
     };
   } else if (agent.values.respect.deficitIntegral >= 0.45 || claim.confidence > 0.5) {
     disposition = 'fishing';
-    agent = applyAgentValueTurns(agent, {
+    agent = applyCharacterValueTurns(agent, {
       respect: -0.25 * agent.profile.constitution.reactivity,
     });
   } else {
@@ -395,23 +395,23 @@ export function prepareNarrativeAgency(state: SimulationState): SimulationState 
       trace: appendTrace(
         next.trace,
         {
-          agentId: agent.id,
+          instanceId: agent.id,
           id: `${next.tick}:${opportunity.id}:aspiration`,
           kind: 'narrative',
           minute: next.minute,
           selection: { rule: 'positive-utility', selectedId: goal.id },
           summary: `${agent.profile.name} formed an aspiration goal: ${goal.label}`,
           terms: [
-            traceTerm('claim', claim.id, `agents.${agent.id}.narrative.claims.${claim.id}`),
+            traceTerm('claim', claim.id, `characters.${agent.id}.narrative.claims.${claim.id}`),
             traceTerm(
               'commitment',
               claim.commitment,
-              `agents.${agent.id}.narrative.claims.${claim.id}`,
+              `characters.${agent.id}.narrative.claims.${claim.id}`,
             ),
             traceTerm(
               'confidence',
               claim.confidence,
-              `agents.${agent.id}.narrative.claims.${claim.id}`,
+              `characters.${agent.id}.narrative.claims.${claim.id}`,
             ),
             traceTerm('goal', goal.id, `agendaGoals.${goal.id}`),
           ],
@@ -424,8 +424,8 @@ export function prepareNarrativeAgency(state: SimulationState): SimulationState 
   return next;
 }
 
-export function promoteToInvoker(state: SimulationState, agentId: string): SimulationState {
-  const agent = agentFor(state, agentId);
+export function promoteToInvoker(state: SimulationState, instanceId: string): SimulationState {
+  const agent = agentFor(state, instanceId);
   if (agent.narrative !== null) return state;
   return replaceAgent(state, { ...agent, narrative: createNarrativeState(agent, state.minute) });
 }

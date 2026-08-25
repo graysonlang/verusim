@@ -180,7 +180,7 @@ describe('integration adapters', () => {
     const state = createRelationshipSimulation();
     const preempted: SimulationState = {
       ...state,
-      agents: state.agents.map(agent =>
+      characters: state.characters.map(agent =>
         agent.id === lowStakesExchange.initiatorId
           ? {
               ...agent,

@@ -17,13 +17,43 @@ function resourceId(address: unknown): string {
 }
 
 export const LEGACY_SCENARIO_VERSIONS: readonly number[] = Array.from(
-  { length: 16 },
+  { length: 17 },
   (_, index) => index + 1,
 );
+
+function renameKeysDeepForLegacy(
+  value: unknown,
+  renames: Readonly<Record<string, string>>,
+  placements: readonly Doc[],
+): void {
+  // Placements legitimately carry `instanceId`; only event and metadata records renamed it.
+  if (Array.isArray(value)) {
+    for (const item of value) renameKeysDeepForLegacy(item, renames, placements);
+    return;
+  }
+  if (typeof value !== 'object' || value === null) return;
+  const record = value as Doc;
+  if (!placements.includes(record)) {
+    for (const [key, replacement] of Object.entries(renames)) {
+      if (key in record) {
+        record[replacement] = record[key];
+        delete record[key];
+      }
+    }
+  }
+  for (const child of Object.values(record)) renameKeysDeepForLegacy(child, renames, placements);
+}
 
 export function downgradeScenario(value: unknown, schemaVersion: number): Doc {
   const file = structuredClone(value) as Doc;
   const placements = objects(file.characters);
+  if (schemaVersion < 18) {
+    renameKeysDeepForLegacy(
+      file,
+      { affectedInstanceId: 'affectedAgentId', instanceId: 'agentId' },
+      placements,
+    );
+  }
   if (schemaVersion < 17) {
     delete file.ambientSomaticSources;
     delete file.somaticEvents;
@@ -176,4 +206,19 @@ export function downgradeScenario(value: unknown, schemaVersion: number): Doc {
   }
   file.schemaVersion = schemaVersion;
   return file;
+}
+
+/** Return a snapshot to the pre-18 vocabulary: `agents`, `agentId`, and `affectedAgentId`. */
+export function downgradeSnapshotVocabulary(snapshot: Doc): void {
+  // Legacy files carried `agents`; the current alias stays on the fixture so a
+  // test can keep mutating the same instance array after downgrading, and the
+  // migration's `characters = agents` assignment overwrites it identically.
+  if ('characters' in snapshot) snapshot.agents = snapshot.characters;
+  const scenario = snapshot.scenario as Doc | undefined;
+  const placements = objects(scenario?.characters);
+  renameKeysDeepForLegacy(
+    snapshot,
+    { affectedInstanceId: 'affectedAgentId', instanceId: 'agentId' },
+    placements,
+  );
 }

@@ -45,6 +45,7 @@ import {
   objectValue,
   stringValue,
   validateLayerPosition,
+  renameKeysDeep,
 } from './primitives.js';
 
 export { ScenarioValidationError } from '../model/validation.js';
@@ -619,12 +620,12 @@ function normAddress(resourceId: string): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 17) return file;
+  if (file.schemaVersion === 18) return file;
   if (
     typeof file.schemaVersion !== 'number' ||
     !Number.isInteger(file.schemaVersion) ||
     file.schemaVersion < 1 ||
-    file.schemaVersion > 16
+    file.schemaVersion > 17
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -829,7 +830,9 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       },
     );
   }
-  file.schemaVersion = 17;
+  if (sourceVersion < 18)
+    renameKeysDeep(file, { affectedAgentId: 'affectedInstanceId', agentId: 'instanceId' });
+  file.schemaVersion = 18;
   return file;
 }
 
@@ -1343,7 +1346,7 @@ const SCHEDULE_BLOCK_KEYS: readonly string[] = [
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 17);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 18);
   knownKeys(file, 'scenario', SCENARIO_FILE_KEYS);
   eachObject(file.characters, 'scenario.characters', (placement, placementPath) => {
     knownKeys(placement, placementPath, CHARACTER_PLACEMENT_KEYS);
@@ -1753,8 +1756,8 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(item.ownerId, `${path}.ownerId`);
       stringValue(item.summary, `${path}.summary`);
       numberValue(item.shameCharge, `${path}.shameCharge`, 0, 1);
-      arrayValue(item.knownByIds, `${path}.knownByIds`).forEach((agentId, agentIndex) => {
-        identifierValue(agentId, `${path}.knownByIds[${agentIndex}]`);
+      arrayValue(item.knownByIds, `${path}.knownByIds`).forEach((instanceId, agentIndex) => {
+        identifierValue(instanceId, `${path}.knownByIds[${agentIndex}]`);
       });
       return item;
     },
@@ -1777,8 +1780,8 @@ export function parseScenario(value: unknown): ScenarioFile {
     if (audiences.length === 0) {
       throw new ScenarioValidationError(`${path}.audienceIds`, 'expected at least one audience');
     }
-    audiences.forEach((agentId, agentIndex) => {
-      identifierValue(agentId, `${path}.audienceIds[${agentIndex}]`);
+    audiences.forEach((instanceId, agentIndex) => {
+      identifierValue(instanceId, `${path}.audienceIds[${agentIndex}]`);
     });
     if (new Set(audiences).size !== audiences.length) {
       throw new ScenarioValidationError(`${path}.audienceIds`, 'duplicate agent identifier');
@@ -1826,7 +1829,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const path = `scenario.appraisalEvents[${index}]`;
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
-      identifierValue(event.agentId, `${path}.agentId`);
+      identifierValue(event.instanceId, `${path}.instanceId`);
       integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       numberValue(event.threat, `${path}.threat`, 0, 1);
@@ -1992,7 +1995,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const path = `scenario.incidentEvents[${index}]`;
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
-      identifierValue(event.affectedAgentId, `${path}.affectedAgentId`);
+      identifierValue(event.affectedInstanceId, `${path}.affectedInstanceId`);
       if (event.actorId !== null) identifierValue(event.actorId, `${path}.actorId`);
       integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
@@ -2067,7 +2070,7 @@ export function parseScenario(value: unknown): ScenarioFile {
         weights.forEach((weightValue, weightIndex) => {
           const weightPath = `${path}.generation.eligibleWeights[${weightIndex}]`;
           const weight = objectValue(weightValue, weightPath);
-          identifierValue(weight.agentId, `${weightPath}.agentId`);
+          identifierValue(weight.instanceId, `${weightPath}.instanceId`);
           numberValue(weight.weight, `${weightPath}.weight`, Number.EPSILON);
         });
         const draws = arrayValue(generation.draws, `${path}.generation.draws`);
@@ -2150,7 +2153,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const path = `scenario.somaticEvents[${index}]`;
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
-      identifierValue(event.agentId, `${path}.agentId`);
+      identifierValue(event.instanceId, `${path}.instanceId`);
       integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
       identifierValue(event.sourceId, `${path}.sourceId`);
       stringValue(event.summary, `${path}.summary`);

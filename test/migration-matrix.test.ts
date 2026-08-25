@@ -98,7 +98,7 @@ describe('migration matrix', () => {
       for (const version of LEGACY_SCENARIO_VERSIONS) {
         const legacy = downgradeScenario(entry.scenario, version);
         const migrated = parseScenario(legacy);
-        assert.equal(migrated.schemaVersion, 17, `${entry.id} from version ${version}`);
+        assert.equal(migrated.schemaVersion, 18, `${entry.id} from version ${version}`);
         const prepared = prepareScenario({ catalog, scenario: legacy });
         const tick = serializeSnapshot(advanceSimulation(createSimulation(prepared), 1));
         // Versions before 8 cannot represent norm-typed observation events,

@@ -7,23 +7,23 @@ import {
   type NormObservationRecord,
   type NormPerspective,
   type SensoryAssessment,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type TraceEntry,
   type ValueMap,
 } from '../model/types.js';
-import { resolveAgentCapabilityCheck } from './capability.js';
+import { resolveCharacterCapabilityCheck } from './capability.js';
 import { effectiveValueWeights } from './salience.js';
 import { effectiveNormInternalization } from './history.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
-import { applyAgentValueTurns } from './value-turn.js';
+import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_OBSERVATIONS = 120;
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown norm observer "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown norm observer "${instanceId}"`);
   return agent;
 }
 
@@ -87,7 +87,7 @@ function subjectiveTurns(
   return { compatibilityTurns, subjectiveTurns: resolvedTurns };
 }
 
-function weightedTurn(agent: SimulationAgent, turns: Partial<ValueMap<number>>): number {
+function weightedTurn(agent: CharacterInstance, turns: Partial<ValueMap<number>>): number {
   const weights = effectiveValueWeights(agent);
   return VALUE_IDS.reduce((total, valueId) => total + weights[valueId] * (turns[valueId] ?? 0), 0);
 }
@@ -95,14 +95,14 @@ function weightedTurn(agent: SimulationAgent, turns: Partial<ValueMap<number>>):
 function observationTrace(
   state: SimulationState,
   event: NormObservationEvent,
-  observer: SimulationAgent,
+  observer: CharacterInstance,
   sensory: SensoryAssessment,
   perceptionTerms: TraceEntry['terms'],
 ): TraceEntry {
   const perceived = sensory.available;
   const key = normKey(event.norm);
   return {
-    agentId: observer.id,
+    instanceId: observer.id,
     id: `${state.tick}:${event.id}:${observer.id}:observation`,
     kind: 'observation',
     minute: state.minute,
@@ -171,7 +171,7 @@ function appraisalTrace(
   const key = normKey(event.norm);
   const perspectiveSource = `scenario.characters.${record.observerId}.normPerspectives.${key}`;
   return {
-    agentId: record.observerId,
+    instanceId: record.observerId,
     id: `${state.tick}:${event.id}:${record.observerId}:norm-appraisal`,
     kind: 'norm-appraisal',
     minute: state.minute,
@@ -183,7 +183,7 @@ function appraisalTrace(
       traceTerm(
         'internalization',
         record.internalization,
-        `agents.${record.observerId}.history.overrides.normInternalizations.${key}`,
+        `characters.${record.observerId}.history.overrides.normInternalizations.${key}`,
       ),
       traceTerm('legibility', record.legibility, `${perspectiveSource}.legibility`),
       ...capabilityTerms,
@@ -213,7 +213,7 @@ function appraisalTrace(
               `compatibility:${valueId}`,
               compatibility,
               `resources.${key}.norm.compatibilityTurns.${valueId}`,
-              `agents.${record.observerId}.history.overrides.normInternalizations.${key}`,
+              `characters.${record.observerId}.history.overrides.normInternalizations.${key}`,
             ),
           );
         }
@@ -255,7 +255,7 @@ function resolveForObserver(
 
   const norm = normFor(state, event.norm);
   const key = normKey(event.norm);
-  const legibility = resolveAgentCapabilityCheck(observer, {
+  const legibility = resolveCharacterCapabilityCheck(observer, {
     applicable: true,
     capabilityId: 'evidenceCalibration',
     difficulty: event.interpretationDifficulty,
@@ -301,9 +301,9 @@ function resolveForObserver(
   );
   return {
     ...state,
-    agents: state.agents.map(candidate =>
+    characters: state.characters.map(candidate =>
       candidate.id === observerId
-        ? applyAgentValueTurns(candidate, turns.subjectiveTurns)
+        ? applyCharacterValueTurns(candidate, turns.subjectiveTurns)
         : candidate,
     ),
     observations: appendBounded(state.observations, record, MAX_OBSERVATIONS),

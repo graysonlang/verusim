@@ -4,7 +4,7 @@ import { characters, environments } from './fixtures.js';
 import scenario from '../content/scenarios/market-morning.json';
 import {
   createSimulation,
-  resolveAgentCapabilityCheck,
+  resolveCharacterCapabilityCheck,
   resolveCapabilityCheck,
   type CapabilityCheck,
 } from '../src/index.js';
@@ -59,14 +59,14 @@ describe('capability resolution', () => {
       environmentLibrary: environments,
       scenario,
     });
-    const mara = state.agents.find(agent => agent.id === 'mara');
-    const nessa = state.agents.find(agent => agent.id === 'nessa');
+    const mara = state.characters.find(agent => agent.id === 'mara');
+    const nessa = state.characters.find(agent => agent.id === 'nessa');
     assert.ok(mara);
     assert.ok(nessa);
 
-    const maraResult = resolveAgentCapabilityCheck(mara, agentCheck());
-    const nessaResult = resolveAgentCapabilityCheck(nessa, agentCheck());
-    const fatiguedResult = resolveAgentCapabilityCheck(
+    const maraResult = resolveCharacterCapabilityCheck(mara, agentCheck());
+    const nessaResult = resolveCharacterCapabilityCheck(nessa, agentCheck());
+    const fatiguedResult = resolveCharacterCapabilityCheck(
       {
         ...nessa,
         resources: { ...nessa.resources, executiveBudget: 0.16, physicalStamina: 0.25 },

@@ -1,3 +1,4 @@
+import { downgradeSnapshotVocabulary } from './legacy.js';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
@@ -155,7 +156,7 @@ describe('authoring revisions', () => {
     const { graph } = project();
     const revision = prepareRevision(graph, SCENARIO_ID);
     const snapshot = serializeSnapshot(advanceSimulation(createSimulation(revision.prepared), 3));
-    assert.equal(snapshot.schemaVersion, 17);
+    assert.equal(snapshot.schemaVersion, 18);
     assert.equal(snapshot.resourceLock.digest, revision.prepared.resourceLock.digest);
     const resumed = createSimulationFromSnapshot({ prepared: revision.prepared, snapshot });
     assert.deepEqual(serializeSnapshot(resumed), snapshot);
@@ -175,6 +176,7 @@ describe('authoring revisions', () => {
 
     const legacy = structuredClone(snapshot) as unknown as Record<string, unknown>;
     legacy.schemaVersion = 16;
+    downgradeSnapshotVocabulary(legacy);
     delete (legacy.resourceLock as Record<string, unknown>).digest;
     const migrated = parseSnapshot(legacy);
     assert.equal(migrated.resourceLock.digest, null);

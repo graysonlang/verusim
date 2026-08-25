@@ -111,7 +111,7 @@ describe('agenda planning', () => {
     };
 
     const completed = advanceSimulation(createBakerSimulation(recovering), 25);
-    const completedMara = completed.agents.find(agent => agent.id === 'mara');
+    const completedMara = completed.characters.find(agent => agent.id === 'mara');
     assert.ok(completedMara);
     assert.equal(completed.agendaGoals[0]?.status, 'completed');
     for (const amount of Object.values(completedMara.resources)) assert.ok(amount > 0.1);

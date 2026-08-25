@@ -31,7 +31,7 @@ function dyadFor(state: SimulationState, observerId: string, subjectId: string):
 }
 
 function disclosureSafety(state: SimulationState, ownerId: string, audienceId: string): number {
-  const owner = state.agents.find(agent => agent.id === ownerId);
+  const owner = state.characters.find(agent => agent.id === ownerId);
   if (owner === undefined) throw new RangeError(`Unknown disclosure owner "${ownerId}"`);
   const features = dyadFor(state, ownerId, audienceId)?.features ?? DISTANT_FEATURES;
   const meanAffinity =
@@ -110,7 +110,7 @@ function appraisalTrace(
   decision: DisclosureDecisionRecord,
 ): TraceEntry {
   return {
-    agentId: opportunity.ownerId,
+    instanceId: opportunity.ownerId,
     id: `${state.tick}:${opportunity.id}:disclosure-appraisal`,
     kind: 'disclosure-appraisal',
     minute: state.minute,
@@ -136,8 +136,8 @@ function appraisalTrace(
         traceTerm(
           `disclosure-safety:${audience.audienceId}`,
           audience.disclosureSafety,
-          `agents.${opportunity.ownerId}.profile.disclosure`,
-          `agents.${opportunity.ownerId}.history.overrides.disclosure`,
+          `characters.${opportunity.ownerId}.profile.disclosure`,
+          `characters.${opportunity.ownerId}.history.overrides.disclosure`,
           `dyads.${opportunity.ownerId}:${audience.audienceId}.features`,
         ),
         traceTerm(
@@ -161,7 +161,7 @@ export function resolveDisclosureOpportunity(
   state: SimulationState,
   opportunity: DisclosureOpportunity,
 ): SimulationState {
-  const owner = state.agents.find(agent => agent.id === opportunity.ownerId);
+  const owner = state.characters.find(agent => agent.id === opportunity.ownerId);
   if (owner === undefined)
     throw new RangeError(`Unknown disclosure owner "${opportunity.ownerId}"`);
   const decision = evaluateDisclosureOpportunity(state, opportunity);
@@ -190,7 +190,7 @@ export function resolveDisclosureOpportunity(
   trace = appendTrace(
     trace,
     {
-      agentId: opportunity.ownerId,
+      instanceId: opportunity.ownerId,
       id: `${state.tick}:${opportunity.id}:disclosure-decision`,
       kind: 'disclosure-decision',
       minute: state.minute,
@@ -216,7 +216,7 @@ export function resolveDisclosureOpportunity(
 
   let next: SimulationState = {
     ...state,
-    agents: state.agents.map(agent =>
+    characters: state.characters.map(agent =>
       agent.id === owner.id
         ? { ...agent, memories: appendBounded(agent.memories, memory, MAX_MEMORIES) }
         : agent,

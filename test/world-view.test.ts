@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-  agentIdAtScreenPoint,
-  agentMarkerAppearance,
+  instanceIdAtScreenPoint,
+  characterMarkerAppearance,
   cameraRevealingPoint,
   cameraForGesture,
   CSS_PIXELS_PER_METER_AT_100_PERCENT,
@@ -22,11 +22,11 @@ describe('world view selection', () => {
   const viewport = { height: 200, width: 200 };
 
   it('hits the nearest character inside the selection radius', () => {
-    assert.equal(agentIdAtScreenPoint(agents, camera, viewport, { x: 101, y: 100 }), 'mara');
+    assert.equal(instanceIdAtScreenPoint(agents, camera, viewport, { x: 101, y: 100 }), 'mara');
   });
 
   it('returns no selection for a click on the canvas background', () => {
-    assert.equal(agentIdAtScreenPoint(agents, camera, viewport, { x: 50, y: 50 }), null);
+    assert.equal(instanceIdAtScreenPoint(agents, camera, viewport, { x: 50, y: 50 }), null);
   });
 
   it('preserves camera framing when the selected character is visible', () => {
@@ -44,8 +44,8 @@ describe('world view selection', () => {
 
 describe('agent marker appearance', () => {
   it('adds a distinct transient ring and stronger marker for roster hover', () => {
-    const ordinary = agentMarkerAppearance(false, false, false);
-    const hovered = agentMarkerAppearance(false, true, false);
+    const ordinary = characterMarkerAppearance(false, false, false);
+    const hovered = characterMarkerAppearance(false, true, false);
     assert.equal(ordinary.ringColor, null);
     assert.notEqual(hovered.ringColor, null);
     assert.ok(hovered.radiusPixels > ordinary.radiusPixels);
@@ -53,15 +53,15 @@ describe('agent marker appearance', () => {
   });
 
   it('lifts a hovered cross-layer marker above its ordinary dimmed presentation', () => {
-    const dimmed = agentMarkerAppearance(false, false, true);
-    const hovered = agentMarkerAppearance(false, true, true);
+    const dimmed = characterMarkerAppearance(false, false, true);
+    const hovered = characterMarkerAppearance(false, true, true);
     assert.ok(hovered.alpha > dimmed.alpha);
   });
 
   it('keeps selected appearance authoritative while its roster card is hovered', () => {
     assert.deepEqual(
-      agentMarkerAppearance(true, true, false),
-      agentMarkerAppearance(true, false, false),
+      characterMarkerAppearance(true, true, false),
+      characterMarkerAppearance(true, false, false),
     );
   });
 });

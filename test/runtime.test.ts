@@ -8,16 +8,16 @@ import {
   classifyMovementSpeed,
   createSimulation,
   createSimulationFromSnapshot,
-  describeAgent,
+  describeCharacter,
   parseScenario,
   parseSnapshot,
   serializeScenario,
   serializeSnapshot,
-  setAgentResource,
-  setAgentValueCharge,
+  setCharacterResource,
+  setCharacterValueCharge,
   type RecoveryMode,
   type ScenarioFile,
-  type SimulationAgent,
+  type CharacterInstance,
 } from '../src/index.js';
 
 function starterSimulation() {
@@ -51,13 +51,13 @@ function recoverySimulation(mode: RecoveryMode) {
   });
 }
 
-function neutralAgent(agent: SimulationAgent): SimulationAgent {
+function neutralAgent(agent: CharacterInstance): CharacterInstance {
   const values = Object.fromEntries(
     VALUE_IDS.map(valueId => [
       valueId,
       { ...agent.values[valueId], charge: 0, deficitIntegral: 0 },
     ]),
-  ) as SimulationAgent['values'];
+  ) as CharacterInstance['values'];
   return { ...agent, values };
 }
 
@@ -67,7 +67,7 @@ describe('simulation runtime', () => {
     assert.equal(state.scenario.id, 'market-morning');
     assert.equal(state.environment.layoutId, 'alders-edge');
     assert.deepEqual(
-      state.agents.map(agent => agent.profile.name),
+      state.characters.map(agent => agent.profile.name),
       ['Mara Vale', 'Tomas Reed', 'Nessa Arden', 'Elian Voss', 'Sera Dane'],
     );
   });
@@ -78,21 +78,21 @@ describe('simulation runtime', () => {
     assert.deepEqual(first, second);
     assert.equal(first.minute, 530);
 
-    const mara = first.agents.find(agent => agent.id === 'mara');
+    const mara = first.characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
     assert.equal(mara.currentLocationId, 'wayfarer-inn');
     assert.equal(mara.currentActivity, 'Opening the common room');
     assert.ok(Math.abs(mara.values.safety.charge - 0.108) < 1e-12);
     assert.ok(
-      first.trace.entries.some(entry => entry.agentId === 'mara' && entry.kind === 'activity'),
+      first.trace.entries.some(entry => entry.instanceId === 'mara' && entry.kind === 'activity'),
     );
   });
 
   it('derives one legible concern from the full value state', () => {
     const state = starterSimulation();
-    const tomas = state.agents.find(agent => agent.id === 'tomas');
+    const tomas = state.characters.find(agent => agent.id === 'tomas');
     assert.ok(tomas);
-    const observation = describeAgent(tomas);
+    const observation = describeCharacter(tomas);
     assert.equal(observation.dominantValue, 'respect');
     assert.equal(observation.stateOfMind, 'Protecting respect');
   });
@@ -109,32 +109,32 @@ describe('simulation runtime', () => {
       'sprinting',
     ]);
 
-    const mara = starterSimulation().agents.find(agent => agent.id === 'mara');
+    const mara = starterSimulation().characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
-    const moving = describeAgent({
+    const moving = describeCharacter({
       ...mara,
       destination: { ...mara.position, x: mara.position.x + 100 },
     });
-    const arrived = describeAgent({ ...mara, destination: { ...mara.position } });
+    const arrived = describeCharacter({ ...mara, destination: { ...mara.position } });
     assert.equal(moving.movementMetersPerMinute, mara.walkingMetersPerMinute);
     assert.equal(moving.movementSpeedClass, 'walking');
     assert.equal(arrived.movementMetersPerMinute, 0);
     assert.equal(arrived.movementSpeedClass, 'still');
 
-    const tomas = starterSimulation().agents.find(agent => agent.id === 'tomas');
+    const tomas = starterSimulation().characters.find(agent => agent.id === 'tomas');
     assert.ok(tomas);
     assert.ok(Math.abs(tomas.walkingMetersPerMinute - 83 * 1.04 * 0.94) < 1e-12);
   });
 
   it('lets depleted social battery impair otherwise neutral mood', () => {
-    const mara = starterSimulation().agents.find(agent => agent.id === 'mara');
+    const mara = starterSimulation().characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
     const neutral = neutralAgent(mara);
-    const rested = describeAgent({
+    const rested = describeCharacter({
       ...neutral,
       resources: { ...neutral.resources, physicalStamina: 1, socialBattery: 1 },
     });
-    const depleted = describeAgent({
+    const depleted = describeCharacter({
       ...neutral,
       resources: { ...neutral.resources, physicalStamina: 1, socialBattery: 0 },
     });
@@ -147,22 +147,22 @@ describe('simulation runtime', () => {
   });
 
   it('recharges resources from explicit sleep, rest, and break schedules', () => {
-    const recovered = new Map<RecoveryMode, SimulationAgent>();
+    const recovered = new Map<RecoveryMode, CharacterInstance>();
     for (const mode of ['break', 'rest', 'sleep'] as const) {
       const advanced = advanceSimulation(recoverySimulation(mode), 60);
-      const mara = advanced.agents.find(agent => agent.id === 'mara');
+      const mara = advanced.characters.find(agent => agent.id === 'mara');
       assert.ok(mara);
       recovered.set(mode, mara);
       for (const amount of Object.values(mara.resources)) assert.ok(amount > 0.1);
       const resourceTrace = advanced.trace.entries.find(
-        entry => entry.agentId === 'mara' && entry.kind === 'resource',
+        entry => entry.instanceId === 'mara' && entry.kind === 'resource',
       );
       assert.ok(resourceTrace);
       assert.equal(resourceTrace.terms.find(term => term.id === 'recovery-mode')?.value, mode);
     }
 
     const idle = advanceSimulation(recoverySimulation('none'), 60);
-    const idleMara = idle.agents.find(agent => agent.id === 'mara');
+    const idleMara = idle.characters.find(agent => agent.id === 'mara');
     assert.ok(idleMara);
     assert.deepEqual(idleMara.resources, {
       executiveBudget: 0.1,
@@ -182,15 +182,18 @@ describe('simulation runtime', () => {
 
   it('records workbench interventions without mutating prior state', () => {
     const initial = starterSimulation();
-    const changedValue = setAgentValueCharge(initial, 'sera', 'autonomy', 0.75);
-    const changedResource = setAgentResource(changedValue, 'sera', 'regulationReserve', 0.1);
-    assert.equal(initial.agents.find(agent => agent.id === 'sera')?.values.autonomy.charge, -0.24);
+    const changedValue = setCharacterValueCharge(initial, 'sera', 'autonomy', 0.75);
+    const changedResource = setCharacterResource(changedValue, 'sera', 'regulationReserve', 0.1);
     assert.equal(
-      changedResource.agents.find(agent => agent.id === 'sera')?.values.autonomy.charge,
+      initial.characters.find(agent => agent.id === 'sera')?.values.autonomy.charge,
+      -0.24,
+    );
+    assert.equal(
+      changedResource.characters.find(agent => agent.id === 'sera')?.values.autonomy.charge,
       0.75,
     );
     assert.equal(
-      changedResource.agents.find(agent => agent.id === 'sera')?.resources.regulationReserve,
+      changedResource.characters.find(agent => agent.id === 'sera')?.resources.regulationReserve,
       0.1,
     );
     assert.equal(changedResource.trace.entries.at(-1)?.kind, 'intervention');
@@ -257,12 +260,12 @@ describe('simulation runtime', () => {
       },
     };
     assert.equal(saturated.trace.entries.length, 240);
-    const first = setAgentValueCharge(saturated, 'sera', 'autonomy', 0.6);
-    const second = setAgentValueCharge(first, 'sera', 'autonomy', 0.7);
+    const first = setCharacterValueCharge(saturated, 'sera', 'autonomy', 0.6);
+    const second = setCharacterValueCharge(first, 'sera', 'autonomy', 0.7);
     const interventionIds = second.trace.entries
       .filter(entry => entry.kind === 'intervention' && entry.tick === second.tick)
       .map(entry => entry.id);
-    const sera = second.agents.find(agent => agent.id === 'sera');
+    const sera = second.characters.find(agent => agent.id === 'sera');
     assert.ok(sera);
     const memoryIds = sera.memories
       .filter(memory => memory.type === 'intervention')
@@ -278,8 +281,8 @@ describe('simulation runtime', () => {
       environmentLibrary: environments,
       snapshot,
     });
-    const continued = setAgentValueCharge(resumed, 'sera', 'autonomy', 0.8);
-    const replayed = setAgentValueCharge(
+    const continued = setCharacterValueCharge(resumed, 'sera', 'autonomy', 0.8);
+    const replayed = setCharacterValueCharge(
       createSimulationFromSnapshot({
         characterLibrary: characters,
         environmentLibrary: environments,
@@ -316,7 +319,7 @@ describe('simulation runtime', () => {
 
   it('validates live snapshot references before restoring state', () => {
     const snapshot = serializeSnapshot(starterSimulation());
-    const firstAgent = snapshot.agents[0];
+    const firstAgent = snapshot.characters[0];
     const firstBlock = firstAgent?.schedule[0];
     assert.ok(firstBlock);
     firstBlock.locationId = 'missing-location';
@@ -327,7 +330,7 @@ describe('simulation runtime', () => {
           environmentLibrary: environments,
           snapshot,
         }),
-      /snapshot\.agents\[0\]\.schedule\[0\]\.locationId/,
+      /snapshot\.characters\[0\]\.schedule\[0\]\.locationId/,
     );
   });
 });

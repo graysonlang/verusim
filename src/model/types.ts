@@ -112,7 +112,7 @@ export interface CapabilityCheck {
   modifiers: CapabilityModifier[];
 }
 
-export type AgentCapabilityCheck = Omit<
+export type CharacterCapabilityCheck = Omit<
   CapabilityCheck,
   'availableCapacity' | 'availableCapacitySources' | 'baseCapability' | 'capabilitySource'
 >;
@@ -724,7 +724,7 @@ export interface IncidentGenerationDraw {
 export interface IncidentGenerationMetadata {
   algorithm: 'verusim-incident-v1';
   draws: IncidentGenerationDraw[];
-  eligibleWeights: Array<{ agentId: string; weight: number }>;
+  eligibleWeights: Array<{ instanceId: string; weight: number }>;
   samplerEnd: number;
   samplerStart: number;
   seed: number;
@@ -739,7 +739,7 @@ export interface IncidentContext {
 
 export interface IncidentEvent {
   actorId: string | null;
-  affectedAgentId: string;
+  affectedInstanceId: string;
   atMinute: number;
   attribution: IncidentAttribution;
   audibleRadiusMeters: number;
@@ -804,7 +804,7 @@ export interface SomaticState {
 }
 
 export interface SomaticEvent {
-  agentId: string;
+  instanceId: string;
   atMinute: number;
   id: string;
   observerIds: string[];
@@ -1039,7 +1039,7 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 17;
+  schemaVersion: 18;
   socialContractPlacements: SocialContractPlacement[];
   somaticEvents: SomaticEvent[];
   startMinute: number;
@@ -1070,7 +1070,7 @@ export interface RuntimeMemory {
 }
 
 export interface AppraisalEvent {
-  agentId: string;
+  instanceId: string;
   atMinute: number;
   believedLeverage: boolean;
   copingPotential: number;
@@ -1085,7 +1085,7 @@ export interface AppraisalEvent {
 
 export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 'flop';
 
-export interface SimulationAgent {
+export interface CharacterInstance {
   cascade: CascadePosition;
   cascadeDwellUntilMinute: number;
   cascadeLoad: number;
@@ -1157,7 +1157,7 @@ export interface TraceSelection {
 }
 
 export interface TraceEntry {
-  agentId: string | null;
+  instanceId: string | null;
   id: string;
   kind: TraceKind;
   minute: number;
@@ -1176,7 +1176,7 @@ export interface SimulationState {
   appraisalRecords: AppraisalRecord[];
   agendaDecisions: AgendaDecisionRecord[];
   agendaGoals: AgendaGoalState[];
-  agents: SimulationAgent[];
+  characters: CharacterInstance[];
   decisions: DecisionRecord[];
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
@@ -1231,7 +1231,7 @@ export interface OutletUseState {
 }
 
 export interface AppraisalRecord {
-  agentId: string;
+  instanceId: string;
   appliedTurns: Partial<ValueMap<number>>;
   cascadeLoad: number;
   copingPotential: number;
@@ -1607,7 +1607,7 @@ export interface TaskIntention {
   taskId: string;
 }
 
-export interface SimulationAgentSnapshot {
+export interface CharacterInstanceSnapshot {
   cascade: CascadePosition;
   cascadeDwellUntilMinute: number;
   cascadeLoad: number;
@@ -1635,7 +1635,7 @@ export interface SimulationSnapshotFile {
   appraisalRecords: AppraisalRecord[];
   agendaDecisions: AgendaDecisionRecord[];
   agendaGoals: AgendaGoalState[];
-  agents: SimulationAgentSnapshot[];
+  characters: CharacterInstanceSnapshot[];
   decisions: DecisionRecord[];
   disclosureDecisions: DisclosureDecisionRecord[];
   disclosureItems: DisclosureItemSeed[];
@@ -1664,7 +1664,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipRequestIds: string[];
   resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 17;
+  schemaVersion: 18;
   somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;

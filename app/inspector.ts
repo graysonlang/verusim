@@ -2,7 +2,7 @@ import {
   CAPABILITY_IDS,
   VALUE_IDS,
   capabilityAvailability,
-  describeAgent,
+  describeCharacter,
   deriveBuildEffects,
   effectiveContractAdherence,
   effectiveDisclosure,
@@ -14,11 +14,11 @@ import {
   evaluateProximity,
   evaluateSpatialPerception,
   resourceAddressKey,
-  setAgentResource,
-  setAgentValueCharge,
+  setCharacterResource,
+  setCharacterValueCharge,
   setWorldFactAmount,
   type ResourceState,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
 } from '../src/index.js';
 import { activityFeed, activityHeadingLabel } from './activity.js';
@@ -81,10 +81,10 @@ function metricRow(label: string, value: string, width: number): HTMLElement {
 
 function latestEntries(
   state: SimulationState,
-  agentId: string,
+  instanceId: string,
 ): SimulationState['trace']['entries'] {
   return state.trace.entries
-    .filter(entry => entry.agentId === null || entry.agentId === agentId)
+    .filter(entry => entry.instanceId === null || entry.instanceId === instanceId)
     .slice(-7)
     .reverse();
 }
@@ -97,11 +97,11 @@ function traceValue(value: boolean | number | string | null): string {
 export function renderInspector(
   container: HTMLElement,
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   preferences: ApplicationPreferences,
   setState: (next: SimulationState) => void,
 ): void {
-  const observation = describeAgent(agent);
+  const observation = describeCharacter(agent);
   const hero = element('section', 'character-hero');
   const name = element('h2');
   const summary = element('p', 'character-summary');
@@ -133,7 +133,7 @@ export function renderInspector(
     metricRow('Resource strain', observation.resourceStrain.toFixed(2), observation.resourceStrain),
   );
   const copingTell = element('p', 'agenda-summary');
-  copingTell.textContent = `${observation.cascadeTell ?? 'No active defense tell'} / ${observation.outletTell ?? 'no active outlet'}${agent.cascadeTargetId === null ? '' : ` / target ${state.agents.find(candidate => candidate.id === agent.cascadeTargetId)?.profile.name ?? agent.cascadeTargetId}`}`;
+  copingTell.textContent = `${observation.cascadeTell ?? 'No active defense tell'} / ${observation.outletTell ?? 'no active outlet'}${agent.cascadeTargetId === null ? '' : ` / target ${state.characters.find(candidate => candidate.id === agent.cascadeTargetId)?.profile.name ?? agent.cascadeTargetId}`}`;
   mind.body.append(copingTell);
 
   const physical = makeSection('Physical profile', 'Stable traits / derived build contributions');
@@ -160,7 +160,7 @@ export function renderInspector(
 
   const spatial = makeSection('Spatial context', 'Personal space / sight / hearing');
   const spatialList = element('ol', 'event-list spatial-list');
-  const nearby = state.agents
+  const nearby = state.characters
     .filter(candidate => candidate.id !== agent.id)
     .map(candidate => ({
       agent: candidate,
@@ -219,7 +219,7 @@ export function renderInspector(
     heading.append(label, output);
     field.append(heading, input, detail);
     input.addEventListener('change', () => {
-      setState(setAgentValueCharge(state, agent.id, valueId, input.valueAsNumber));
+      setState(setCharacterValueCharge(state, agent.id, valueId, input.valueAsNumber));
     });
     values.body.append(field);
   }
@@ -241,7 +241,7 @@ export function renderInspector(
     heading.append(label, output);
     field.append(heading, input);
     input.addEventListener('change', () => {
-      setState(setAgentResource(state, agent.id, resourceId, input.valueAsNumber));
+      setState(setCharacterResource(state, agent.id, resourceId, input.valueAsNumber));
     });
     resources.body.append(field);
   }
@@ -498,7 +498,7 @@ export function renderInspector(
   const relationshipList = element('ol', 'event-list trace-list');
   for (const dyad of state.dyads.filter(item => item.observerId === agent.id)) {
     const item = element('li');
-    const subject = state.agents.find(candidate => candidate.id === dyad.subjectId);
+    const subject = state.characters.find(candidate => candidate.id === dyad.subjectId);
     const mode = element('span', 'event-time');
     const copy = element('span');
     const estimates = element('small');
@@ -529,7 +529,7 @@ export function renderInspector(
     empty.textContent = 'No relationship request has resolved for this character.';
     relationshipDecisionSection.body.append(empty);
   } else {
-    const requester = state.agents.find(
+    const requester = state.characters.find(
       candidate => candidate.id === relationshipDecision.requesterId,
     );
     const summary = element('p', 'disclosure-summary');
@@ -555,7 +555,7 @@ export function renderInspector(
       const outcome = element('span', 'event-time');
       const copy = element('span');
       const terms = element('small');
-      const subject = state.agents.find(candidate => candidate.id === observation.subjectId);
+      const subject = state.characters.find(candidate => candidate.id === observation.subjectId);
       outcome.textContent = observation.outcome;
       if (observation.eventType === 'norm') {
         const norm = state.norms.find(
@@ -604,7 +604,9 @@ export function renderInspector(
     summary.textContent = `${disclosure.outcome} / utility ${disclosure.utility.toFixed(3)} / worst audience ${disclosure.worstAudienceId ?? 'none'}`;
     for (const audience of disclosure.audiences) {
       const item = element('li');
-      const audienceAgent = state.agents.find(candidate => candidate.id === audience.audienceId);
+      const audienceAgent = state.characters.find(
+        candidate => candidate.id === audience.audienceId,
+      );
       const cost = element('span', 'event-time');
       const copy = element('span');
       const terms = element('small');
@@ -734,7 +736,7 @@ export function createActivityInspector(): ActivityInspector {
   function refresh(): void {
     if (currentState === null) return;
     const characterNames = new Map(
-      currentState.agents.map(agent => [agent.id, agent.profile.name] as const),
+      currentState.characters.map(agent => [agent.id, agent.profile.name] as const),
     );
     const feed = activityFeed(currentState.trace.entries, characterNames, filter.value);
     title.textContent = activityHeadingLabel(feed);
@@ -761,7 +763,9 @@ export function createActivityInspector(): ActivityInspector {
       time.textContent = formatWorkbenchTime(entry.minute, currentClockFormat);
       kind.textContent = entry.kind.replaceAll('-', ' ');
       character.textContent =
-        entry.agentId === null ? 'System' : (characterNames.get(entry.agentId) ?? entry.agentId);
+        entry.instanceId === null
+          ? 'System'
+          : (characterNames.get(entry.instanceId) ?? entry.instanceId);
       summary.textContent = entry.summary;
       meta.append(time, kind, character);
       item.append(meta, summary);

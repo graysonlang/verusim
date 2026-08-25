@@ -12,7 +12,7 @@ const CURRENT_RESOURCE_VERSIONS: Record<string, number> = {
   norm: 2,
   'social-contract': 2,
 };
-const CURRENT_SCENARIO_VERSION = 17;
+const CURRENT_SCENARIO_VERSION = 18;
 
 function jsonFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true })

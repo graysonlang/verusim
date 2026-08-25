@@ -5,7 +5,7 @@ import {
   type IncidentRootImpact,
   type NormAddress,
   type NormPerspective,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type SocialContractPlacement,
   type ValueMap,
@@ -48,7 +48,7 @@ export function activeSocialInterpretationTerms(
     context: IncidentContext;
     eventId: string;
     magnitude: number;
-    observer: SimulationAgent;
+    observer: CharacterInstance;
     rootImpact: IncidentRootImpact;
   },
 ): IncidentContractTerm[] {

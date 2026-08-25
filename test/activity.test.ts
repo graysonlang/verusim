@@ -5,7 +5,7 @@ import type { TraceEntry } from '../src/model/types.js';
 
 const entries: TraceEntry[] = [
   {
-    agentId: null,
+    instanceId: null,
     id: '0:scenario',
     kind: 'scenario',
     minute: 480,
@@ -15,17 +15,17 @@ const entries: TraceEntry[] = [
     tick: 0,
   },
   {
-    agentId: 'mara',
+    instanceId: 'mara',
     id: '1:mara:activity',
     kind: 'activity',
     minute: 481,
     selection: null,
     summary: 'Walked toward the bakery',
-    terms: [{ id: 'destination', sources: ['agents.mara.destination'], value: 'bakery' }],
+    terms: [{ id: 'destination', sources: ['characters.mara.destination'], value: 'bakery' }],
     tick: 1,
   },
   {
-    agentId: 'tomas',
+    instanceId: 'tomas',
     id: '2:tomas:decision',
     kind: 'decision',
     minute: 482,

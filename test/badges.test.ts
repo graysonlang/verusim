@@ -30,7 +30,7 @@ describe('badge formatters', () => {
 
   it('summarizes a physical profile in full and compact forms', () => {
     const state = createSimulation(DEFAULT_BUILT_IN_SCENARIO.prepared);
-    const agent = state.agents[0];
+    const agent = state.characters[0];
     assert.notEqual(agent, undefined);
     if (agent === undefined) return;
     const full = physicalProfileSummary(agent);
@@ -43,7 +43,7 @@ describe('badge formatters', () => {
 
   it('resolves location names from the environment and marks transit', () => {
     const state = createSimulation(DEFAULT_BUILT_IN_SCENARIO.prepared);
-    const agent = state.agents[0];
+    const agent = state.characters[0];
     assert.notEqual(agent, undefined);
     if (agent === undefined) return;
     const placed = { ...agent, currentLocationId: state.environment.locations[0]?.id ?? null };

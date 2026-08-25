@@ -10,7 +10,7 @@ import {
   type RecoveryMode,
   type ResourceState,
   type ScheduleBlock,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationSnapshotFile,
   type SimulationState,
   type TraceEntry,
@@ -143,7 +143,7 @@ function initializeAgent(
   environment: EnvironmentDefinition,
   minute: number,
   ambientSomaticSources: readonly SomaticSourceSeed[],
-): SimulationAgent {
+): CharacterInstance {
   const block = activeScheduleBlock(placement.schedule, minute);
   const destination = locationCenter(findLocation(environment, block.locationId));
   const arrived = sameLayerPosition(placement.position, destination);
@@ -154,7 +154,7 @@ function initializeAgent(
       perspective.internalization,
     ]),
   );
-  const agent: SimulationAgent = {
+  const agent: CharacterInstance = {
     cascade: 'none',
     cascadeDwellUntilMinute: minute,
     cascadeLoad: 0,
@@ -230,7 +230,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
       status: 'pending',
       successTurns: { ...goal.successTurns },
     })),
-    agents,
+    characters: agents,
     decisions: [],
     disclosureDecisions: [],
     disclosureItems: prepared.scenario.disclosureItems.map(item => ({
@@ -272,7 +272,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     tick: 0,
     trace: createTrace([
       {
-        agentId: null,
+        instanceId: null,
         id: '0:scenario',
         kind: 'scenario',
         minute: prepared.scenario.startMinute,
@@ -308,8 +308,8 @@ export function createSimulationFromPreparedSnapshot(input: {
   const snapshot = input.snapshot;
   const base = createSimulationFromPrepared(input.prepared);
   validateSnapshotReferences({ base, snapshot });
-  const baseAgents = new Map(base.agents.map(agent => [agent.id, agent]));
-  const agents = snapshot.agents.map(saved => {
+  const baseAgents = new Map(base.characters.map(agent => [agent.id, agent]));
+  const agents = snapshot.characters.map(saved => {
     const agent = baseAgents.get(saved.id);
     if (agent === undefined) throw new Error('Validated snapshot agents exist in the base state');
     return {
@@ -356,7 +356,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     appraisalRecords: structuredClone(snapshot.appraisalRecords),
     agendaDecisions: structuredClone(snapshot.agendaDecisions),
     agendaGoals: structuredClone(snapshot.agendaGoals),
-    agents,
+    characters: agents,
     decisions: structuredClone(snapshot.decisions),
     disclosureDecisions: structuredClone(snapshot.disclosureDecisions),
     disclosureItems: structuredClone(snapshot.disclosureItems),
@@ -457,8 +457,8 @@ function combinedResourceDrains(
   ) as Partial<ResourceState>;
 }
 
-interface AgentAdvanceResult {
-  agent: SimulationAgent;
+interface CharacterAdvanceResult {
+  agent: CharacterInstance;
   plasticitySignals: BaselinePlasticitySignal[];
   sleeping: boolean;
   trace: TraceEntry[];
@@ -466,10 +466,10 @@ interface AgentAdvanceResult {
 
 function advanceAgent(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   nextMinute: number,
   nextTick: number,
-): AgentAdvanceResult {
+): CharacterAdvanceResult {
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
   const task = intendedTask(state, agent.id);
   const block = task === null ? activeScheduleBlock(agent.schedule, nextMinute) : null;
@@ -537,14 +537,14 @@ function advanceAgent(
   );
   const recoverySource =
     task === null
-      ? `agents.${agent.id}.schedule.recoveryMode`
+      ? `characters.${agent.id}.schedule.recoveryMode`
       : `scenario.taskOperators.${task.id}.recoveryMode`;
   const plasticitySignals: BaselinePlasticitySignal[] = [];
   if (agent.currentOutlet !== null) {
     plasticitySignals.push({
       gap: agent.currentOutlet.yield,
       mechanism: 'outlet-promotion',
-      source: `agents.${agent.id}.currentOutlet`,
+      source: `characters.${agent.id}.currentOutlet`,
       strength: 1,
       target: { id: agent.currentOutlet.label, kind: 'identity-marker' },
     });
@@ -565,20 +565,20 @@ function advanceAgent(
   const trace: TraceEntry[] = [];
   if (somatic.attentionTax > 0) {
     trace.push({
-      agentId: agent.id,
+      instanceId: agent.id,
       id: `${nextTick}:${agent.id}:somatic`,
       kind: 'somatic',
       minute: nextMinute,
       selection: null,
       summary: `${agent.profile.name} carries a somatic attention tax`,
       terms: [
-        traceTerm('attention-tax', somatic.attentionTax, `agents.${agent.id}.somatic.sources`),
+        traceTerm('attention-tax', somatic.attentionTax, `characters.${agent.id}.somatic.sources`),
         traceTerm(
           'executive-budget',
           resources.executiveBudget,
-          `agents.${agent.id}.resources.executiveBudget`,
+          `characters.${agent.id}.resources.executiveBudget`,
         ),
-        traceTerm('level', somatic.level, `agents.${agent.id}.somatic.level`),
+        traceTerm('level', somatic.level, `characters.${agent.id}.somatic.level`),
       ],
       tick: nextTick,
     });
@@ -591,7 +591,7 @@ function advanceAgent(
       MAX_MEMORIES,
     );
     trace.push({
-      agentId: agent.id,
+      instanceId: agent.id,
       id: `${nextTick}:${agent.id}:activity`,
       kind: 'activity',
       minute: nextMinute,
@@ -600,9 +600,13 @@ function advanceAgent(
       terms:
         task === null
           ? [
-              traceTerm('schedule', block?.startMinute ?? 0, `agents.${agent.id}.schedule`),
+              traceTerm('schedule', block?.startMinute ?? 0, `characters.${agent.id}.schedule`),
               traceTerm('location', locationId, `environment.locations.${locationId}`),
-              traceTerm('recovery-mode', recoveryMode, `agents.${agent.id}.schedule.recoveryMode`),
+              traceTerm(
+                'recovery-mode',
+                recoveryMode,
+                `characters.${agent.id}.schedule.recoveryMode`,
+              ),
             ]
           : [
               traceTerm('intention', task.id, `intentions.${agent.id}`),
@@ -621,7 +625,7 @@ function advanceAgent(
     );
     if (activeTurns.length > 0) {
       trace.push({
-        agentId: agent.id,
+        instanceId: agent.id,
         id: `${nextTick}:${agent.id}:ambient`,
         kind: 'value-turn',
         minute: nextMinute,
@@ -641,7 +645,7 @@ function advanceAgent(
       RESOURCE_IDS.some(resourceId => resources[resourceId] - agent.resources[resourceId] !== 0)
     ) {
       trace.push({
-        agentId: agent.id,
+        instanceId: agent.id,
         id: `${nextTick}:${agent.id}:resource`,
         kind: 'resource',
         minute: nextMinute,
@@ -661,7 +665,7 @@ function advanceAgent(
               `drain-rate:${resourceId}`,
               drains[resourceId] ?? 0,
               task === null
-                ? `agents.${agent.id}.schedule.resourceDrainsPerHour`
+                ? `characters.${agent.id}.schedule.resourceDrainsPerHour`
                 : `scenario.taskOperators.${task.id}.resourceDrainsPerHour`,
             ),
           ),
@@ -669,7 +673,7 @@ function advanceAgent(
             traceTerm(
               `resource:${resourceId}`,
               resources[resourceId],
-              `agents.${agent.id}.resources.${resourceId}`,
+              `characters.${agent.id}.resources.${resourceId}`,
             ),
           ),
         ],
@@ -698,7 +702,7 @@ function advanceAgent(
 
 function rupturePlasticitySignals(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
 ): BaselinePlasticitySignal[] {
   return state.dyads
     .filter(dyad => dyad.observerId === agent.id && dyad.mode === 'ruptured')
@@ -736,14 +740,16 @@ function advanceOneTick(state: SimulationState): SimulationState {
   const prepared = prepareAgenda(prepareNarrativeAgency(state));
   const nextTick = prepared.tick + 1;
   const nextMinute = prepared.minute + prepared.scenario.tickMinutes;
-  const results = prepared.agents.map(agent => advanceAgent(prepared, agent, nextMinute, nextTick));
+  const results = prepared.characters.map(agent =>
+    advanceAgent(prepared, agent, nextMinute, nextTick),
+  );
   let trace = prepared.trace;
   for (const result of results) {
     for (const entry of result.trace) trace = appendTrace(trace, entry, MAX_TRACE_ENTRIES);
   }
   let next: SimulationState = {
     ...prepared,
-    agents: results.map(result => result.agent),
+    characters: results.map(result => result.agent),
     minute: nextMinute,
     tick: nextTick,
     trace,
@@ -832,7 +838,7 @@ function advanceOneTick(state: SimulationState): SimulationState {
   );
   return {
     ...next,
-    agents: next.agents.map(agent =>
+    characters: next.characters.map(agent =>
       advanceBaselinePlasticity(agent, {
         elapsedMinutes: next.scenario.tickMinutes,
         minute: next.minute,
@@ -856,7 +862,7 @@ export function advanceSimulation(state: SimulationState, ticks = 1): Simulation
 
 function interventionEntry(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   summary: string,
   termId: string,
   value: number,
@@ -870,7 +876,7 @@ function interventionEntry(
     if (Number.isInteger(candidate) && candidate >= ordinal) ordinal = candidate + 1;
   }
   return {
-    agentId: agent.id,
+    instanceId: agent.id,
     id: `${idPrefix}${ordinal}`,
     kind: 'intervention',
     minute: state.minute,
@@ -881,14 +887,14 @@ function interventionEntry(
   };
 }
 
-export function setAgentValueCharge(
+export function setCharacterValueCharge(
   state: SimulationState,
-  agentId: string,
+  instanceId: string,
   valueId: ValueId,
   charge: number,
 ): SimulationState {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown agent "${agentId}"`);
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown agent "${instanceId}"`);
   const nextCharge = clamp(charge, -1, 1);
   const summary = `Set ${agent.profile.name}'s ${valueId} charge to ${nextCharge.toFixed(2)}`;
   const entry = interventionEntry(
@@ -897,12 +903,12 @@ export function setAgentValueCharge(
     summary,
     `value:${valueId}`,
     nextCharge,
-    `intervention.agents.${agentId}.values.${valueId}.charge`,
+    `intervention.characters.${instanceId}.values.${valueId}.charge`,
   );
   return {
     ...state,
-    agents: state.agents.map(candidate =>
-      candidate.id === agentId
+    characters: state.characters.map(candidate =>
+      candidate.id === instanceId
         ? {
             ...candidate,
             memories: appendBounded(
@@ -921,14 +927,14 @@ export function setAgentValueCharge(
   };
 }
 
-export function setAgentResource(
+export function setCharacterResource(
   state: SimulationState,
-  agentId: string,
+  instanceId: string,
   resourceId: keyof ResourceState,
   amount: number,
 ): SimulationState {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown agent "${agentId}"`);
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown agent "${instanceId}"`);
   const nextAmount = clamp(amount, 0, 1);
   const summary = `Set ${agent.profile.name}'s ${resourceId} to ${nextAmount.toFixed(2)}`;
   const entry = interventionEntry(
@@ -937,12 +943,12 @@ export function setAgentResource(
     summary,
     `resource:${resourceId}`,
     nextAmount,
-    `intervention.agents.${agentId}.resources.${resourceId}`,
+    `intervention.characters.${instanceId}.resources.${resourceId}`,
   );
   return {
     ...state,
-    agents: state.agents.map(candidate =>
-      candidate.id === agentId
+    characters: state.characters.map(candidate =>
+      candidate.id === instanceId
         ? { ...candidate, resources: { ...candidate.resources, [resourceId]: nextAmount } }
         : candidate,
     ),

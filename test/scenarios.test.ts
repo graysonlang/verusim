@@ -33,7 +33,7 @@ describe('built-in scenario catalog', () => {
       assert.equal(state.scenario.id, entry.id);
       assert.equal(state.scenario.title, entry.title);
       assert.equal(state.scenario.summary, entry.summary);
-      assert.ok(state.agents.length > 0);
+      assert.ok(state.characters.length > 0);
     }
   });
 
@@ -42,7 +42,7 @@ describe('built-in scenario catalog', () => {
       const entry = BUILT_IN_SCENARIOS.find(candidate => candidate.id === scenarioId);
       assert.ok(entry);
       const state = createSimulation(entry.prepared);
-      for (const agent of state.agents) {
+      for (const agent of state.characters) {
         const metersPerSecond = agent.walkingMetersPerMinute / 60;
         assert.ok(metersPerSecond >= 1.3, `${scenarioId}:${agent.id} is too slow`);
         assert.ok(metersPerSecond <= 1.4, `${scenarioId}:${agent.id} is too fast`);

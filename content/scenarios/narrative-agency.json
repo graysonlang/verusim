@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 17,
+  "schemaVersion": 18,
   "id": "narrative-agency",
   "title": "Stories in the Square",
   "summary": "Agreement, contradiction, reputation, validators, and aspiration expose distinct consequences of the stories characters keep about themselves.",
@@ -51,7 +51,6 @@
   "appraisalEvents": [
     {
       "id": "dominance-threat",
-      "agentId": "lowering",
       "atMinute": 1,
       "summary": "The dominant listener made disagreement feel unsafe.",
       "threat": 1,
@@ -62,7 +61,8 @@
       "socialTargetId": "dominant",
       "turns": {
         "safety": -0.3
-      }
+      },
+      "instanceId": "lowering"
     }
   ],
   "reputationGroups": [

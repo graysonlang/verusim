@@ -4,9 +4,12 @@ function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
 }
 
-function profileAddress(state: SimulationState, agentId: string) {
-  const placement = state.scenario.characters.find(candidate => candidate.instanceId === agentId);
-  if (placement === undefined) throw new Error(`Missing scenario placement for agent "${agentId}"`);
+function profileAddress(state: SimulationState, instanceId: string) {
+  const placement = state.scenario.characters.find(
+    candidate => candidate.instanceId === instanceId,
+  );
+  if (placement === undefined)
+    throw new Error(`Missing scenario placement for agent "${instanceId}"`);
   return placement.profile;
 }
 
@@ -19,7 +22,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     appraisalRecords: state.appraisalRecords,
     agendaDecisions: state.agendaDecisions,
     agendaGoals: state.agendaGoals,
-    agents: state.agents.map(agent => ({
+    characters: state.characters.map(agent => ({
       cascade: agent.cascade,
       cascadeDwellUntilMinute: agent.cascadeDwellUntilMinute,
       cascadeLoad: agent.cascadeLoad,
@@ -70,7 +73,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     resolvedRelationshipRequestIds: state.resolvedRelationshipRequestIds,
     resolvedSomaticEventIds: state.resolvedSomaticEventIds,
     scenario: state.scenario,
-    schemaVersion: 17,
+    schemaVersion: 18,
     somaticRecords: state.somaticRecords,
     tick: state.tick,
     trace: state.trace,

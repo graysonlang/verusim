@@ -9,7 +9,7 @@ import {
   type OutletSelection,
   type OutletUseState,
   type RuntimeMemory,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type TraceEntry,
   type ValueId,
@@ -35,13 +35,13 @@ const CASCADE_DEPTH: Record<CascadePosition, number> = {
   none: 0,
 };
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown appraisal agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown appraisal agent "${instanceId}"`);
   return agent;
 }
 
-export function allostaticLoadFor(agent: SimulationAgent): number {
+export function allostaticLoadFor(agent: CharacterInstance): number {
   const pressure = VALUE_IDS.reduce(
     (total, valueId) =>
       total + Math.max(0, -agent.values[valueId].charge) + agent.values[valueId].deficitIntegral,
@@ -50,7 +50,7 @@ export function allostaticLoadFor(agent: SimulationAgent): number {
   return clamp(pressure / VALUE_IDS.length, 0, 1);
 }
 
-function mobilizedPosition(agent: SimulationAgent, event: AppraisalEvent): CascadePosition {
+function mobilizedPosition(agent: CharacterInstance, event: AppraisalEvent): CascadePosition {
   if (event.believedLeverage && event.exitAvailable) {
     return effectiveCascadePrior(agent, 'fight') >= effectiveCascadePrior(agent, 'flight')
       ? 'fight'
@@ -62,7 +62,7 @@ function mobilizedPosition(agent: SimulationAgent, event: AppraisalEvent): Casca
 }
 
 function targetCascade(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   event: AppraisalEvent,
   cascadeLoad: number,
   effectiveCoping: number,
@@ -75,17 +75,17 @@ function targetCascade(
   return 'flop';
 }
 
-function dwellMinutes(agent: SimulationAgent): number {
+function dwellMinutes(agent: CharacterInstance): number {
   return Math.max(5, Math.ceil(12 * (1 - agent.profile.constitution.recoveryRate)));
 }
 
 function applyCascadeTarget(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   target: CascadePosition,
   load: number,
   targetId: string | null,
-): SimulationAgent {
+): CharacterInstance {
   const descending = CASCADE_DEPTH[target] > CASCADE_DEPTH[agent.cascade];
   const mayRecover =
     state.minute >= agent.cascadeDwellUntilMinute &&
@@ -116,7 +116,7 @@ export function resolveAppraisalEvent(
   state: SimulationState,
   event: AppraisalEvent,
 ): SimulationState {
-  const agent = agentFor(state, event.agentId);
+  const agent = agentFor(state, event.instanceId);
   const appliedTurns = reactiveValueTurns(agent, event.turns);
   const values = applyValueTurns(agent.values, appliedTurns);
   const turned = { ...agent, values };
@@ -140,7 +140,7 @@ export function resolveAppraisalEvent(
   const target = targetCascade(turned, event, cascadeLoad, effectiveCoping);
   const updated = applyCascadeTarget(state, turned, target, cascadeLoad, event.socialTargetId);
   const record: AppraisalRecord = {
-    agentId: event.agentId,
+    instanceId: event.instanceId,
     appliedTurns,
     cascadeLoad,
     copingPotential: event.copingPotential,
@@ -166,7 +166,7 @@ export function resolveAppraisalEvent(
   let trace = appendTrace(
     state.trace,
     {
-      agentId: agent.id,
+      instanceId: agent.id,
       id: `${state.tick}:${event.id}:appraisal`,
       kind: 'appraisal',
       minute: state.minute,
@@ -180,16 +180,16 @@ export function resolveAppraisalEvent(
           event.copingPotential,
           `scenario.appraisalEvents.${event.id}.copingPotential`,
         ),
-        traceTerm('allostatic-load', allostaticLoad, `agents.${agent.id}.values`),
+        traceTerm('allostatic-load', allostaticLoad, `characters.${agent.id}.values`),
         traceTerm(
           'somatic-impairment',
           turned.somatic.impairment,
-          `agents.${agent.id}.somatic.impairment`,
+          `characters.${agent.id}.somatic.impairment`,
         ),
         traceTerm(
           'somatic-threat',
           turned.somatic.threatContribution,
-          `agents.${agent.id}.somatic.threatContribution`,
+          `characters.${agent.id}.somatic.threatContribution`,
         ),
         traceTerm('effective-coping', effectiveCoping, `appraisalRecords.${record.id}`),
         ...VALUE_IDS.flatMap(valueId =>
@@ -212,21 +212,21 @@ export function resolveAppraisalEvent(
   trace = appendTrace(
     trace,
     {
-      agentId: agent.id,
+      instanceId: agent.id,
       id: `${state.tick}:${event.id}:cascade`,
       kind: 'cascade',
       minute: state.minute,
       selection: null,
       summary: `${agent.profile.name} entered ${updated.cascade}`,
       terms: [
-        traceTerm('previous-cascade', agent.cascade, `agents.${agent.id}.cascade`),
+        traceTerm('previous-cascade', agent.cascade, `characters.${agent.id}.cascade`),
         traceTerm('cascade-load', cascadeLoad, `appraisalRecords.${record.id}.cascadeLoad`),
         traceTerm(
           'threshold',
           agent.profile.constitution.threshold,
           `characters.${agent.profile.profileId}.constitution.threshold`,
         ),
-        traceTerm('next-cascade', updated.cascade, `agents.${agent.id}.cascade`),
+        traceTerm('next-cascade', updated.cascade, `characters.${agent.id}.cascade`),
         traceTerm(
           'target',
           updated.cascadeTargetId,
@@ -235,7 +235,7 @@ export function resolveAppraisalEvent(
         traceTerm(
           'dwell-until',
           updated.cascadeDwellUntilMinute,
-          `agents.${agent.id}.cascadeDwellUntilMinute`,
+          `characters.${agent.id}.cascadeDwellUntilMinute`,
         ),
       ],
       tick: state.tick,
@@ -244,7 +244,7 @@ export function resolveAppraisalEvent(
   );
   return {
     ...state,
-    agents: state.agents.map(candidate =>
+    characters: state.characters.map(candidate =>
       candidate.id === agent.id
         ? { ...updated, memories: appendBounded(updated.memories, memory, MAX_MEMORIES) }
         : candidate,
@@ -255,7 +255,7 @@ export function resolveAppraisalEvent(
   };
 }
 
-function shallowerCascade(agent: SimulationAgent): CascadePosition {
+function shallowerCascade(agent: CharacterInstance): CascadePosition {
   if (agent.cascade === 'flop') return 'fawn';
   if (agent.cascade === 'fawn') return 'freeze';
   if (agent.cascade === 'fight' || agent.cascade === 'flight') return 'freeze';
@@ -263,7 +263,7 @@ function shallowerCascade(agent: SimulationAgent): CascadePosition {
   return 'none';
 }
 
-function dominantDeficit(agent: SimulationAgent): { pressure: number; valueId: ValueId } {
+function dominantDeficit(agent: CharacterInstance): { pressure: number; valueId: ValueId } {
   let valueId: ValueId = VALUE_IDS[0];
   let pressure = Number.NEGATIVE_INFINITY;
   for (const candidate of VALUE_IDS) {
@@ -277,7 +277,7 @@ function dominantDeficit(agent: SimulationAgent): { pressure: number; valueId: V
   return { pressure, valueId };
 }
 
-function outletUseFor(agent: SimulationAgent, affordanceId: string): OutletUseState {
+function outletUseFor(agent: CharacterInstance, affordanceId: string): OutletUseState {
   return (
     agent.outletHistory.find(candidate => candidate.affordanceId === affordanceId) ?? {
       affordanceId,
@@ -287,7 +287,7 @@ function outletUseFor(agent: SimulationAgent, affordanceId: string): OutletUseSt
   );
 }
 
-function matchingSatisfier(agent: SimulationAgent, affordance: OutletAffordance) {
+function matchingSatisfier(agent: CharacterInstance, affordance: OutletAffordance) {
   return effectiveSatisfierPreferences(agent).find(
     preference =>
       preference.valueId === affordance.targetValueId &&
@@ -295,7 +295,7 @@ function matchingSatisfier(agent: SimulationAgent, affordance: OutletAffordance)
   );
 }
 
-function outletScore(agent: SimulationAgent, affordance: OutletAffordance): number {
+function outletScore(agent: CharacterInstance, affordance: OutletAffordance): number {
   const preference = effectiveOutletPreferences(agent).find(
     candidate => candidate.operation === affordance.operation,
   );
@@ -306,7 +306,7 @@ function outletScore(agent: SimulationAgent, affordance: OutletAffordance): numb
 }
 
 function selectOutlet(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   environment: EnvironmentDefinition,
 ): OutletAffordance | null {
   let selected: OutletAffordance | null = null;
@@ -323,9 +323,9 @@ function selectOutlet(
 
 function fireOutlet(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   affordance: OutletAffordance,
-): { agent: SimulationAgent; trace: TraceEntry } {
+): { agent: CharacterInstance; trace: TraceEntry } {
   const previousUse = outletUseFor(agent, affordance.id);
   const scheduleResistance = affordance.reinforcementSchedule === 'variable-ratio' ? 0.35 : 1;
   const habituation = clamp(
@@ -379,7 +379,7 @@ function fireOutlet(
   return {
     agent: { ...agent, currentOutlet: selection, outletHistory, values },
     trace: {
-      agentId: agent.id,
+      instanceId: agent.id,
       id: `${state.tick}:${agent.id}:${affordance.id}:outlet`,
       kind: 'outlet',
       minute: state.minute,
@@ -401,13 +401,17 @@ function fireOutlet(
           affordance.targetValueId,
           `environments.${state.environment.layoutId}.outletAffordances.${affordance.id}`,
         ),
-        traceTerm('yield', outletYield, `agents.${agent.id}.outletHistory.${affordance.id}`),
+        traceTerm('yield', outletYield, `characters.${agent.id}.outletHistory.${affordance.id}`),
         traceTerm(
           'deficit-repair',
           repairedDeficit,
           `environments.${state.environment.layoutId}.outletAffordances.${affordance.id}.displacesRepair`,
         ),
-        traceTerm('habituation', habituation, `agents.${agent.id}.outletHistory.${affordance.id}`),
+        traceTerm(
+          'habituation',
+          habituation,
+          `characters.${agent.id}.outletHistory.${affordance.id}`,
+        ),
         traceTerm(
           'reinforcement',
           affordance.reinforcementSchedule,
@@ -426,14 +430,14 @@ function fireOutlet(
 
 export function advanceCoping(state: SimulationState): SimulationState {
   let trace = state.trace;
-  const agents = state.agents.map(agent => {
+  const agents = state.characters.map(agent => {
     const cascadeLoad = clamp(
       agent.cascadeLoad -
         (agent.profile.constitution.recoveryRate * state.scenario.tickMinutes) / 60,
       0,
       1.5,
     );
-    let next: SimulationAgent = {
+    let next: CharacterInstance = {
       ...agent,
       cascadeLoad,
       currentOutlet:
@@ -462,16 +466,16 @@ export function advanceCoping(state: SimulationState): SimulationState {
       trace = appendTrace(
         trace,
         {
-          agentId: next.id,
+          instanceId: next.id,
           id: `${state.tick}:${next.id}:cascade-recovery`,
           kind: 'cascade',
           minute: state.minute,
           selection: null,
           summary: `${next.profile.name} recovered from ${previous} toward ${cascade}`,
           terms: [
-            traceTerm('previous-cascade', previous, `agents.${next.id}.cascade`),
-            traceTerm('cascade-load', cascadeLoad, `agents.${next.id}.cascadeLoad`),
-            traceTerm('next-cascade', cascade, `agents.${next.id}.cascade`),
+            traceTerm('previous-cascade', previous, `characters.${next.id}.cascade`),
+            traceTerm('cascade-load', cascadeLoad, `characters.${next.id}.cascadeLoad`),
+            traceTerm('next-cascade', cascade, `characters.${next.id}.cascade`),
           ],
           tick: state.tick,
         },
@@ -492,5 +496,5 @@ export function advanceCoping(state: SimulationState): SimulationState {
     }
     return next;
   });
-  return { ...state, agents, trace };
+  return { ...state, characters: agents, trace };
 }

@@ -5,7 +5,7 @@ import {
   type IncidentContractTerm,
   type IncidentEvent,
   type IncidentPerceivedAttribution,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type TraceEntry,
   type ValueMap,
@@ -16,13 +16,13 @@ import { effectiveValueWeights } from './salience.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { activeSocialInterpretationTerms } from './social-context.js';
 import { appendTrace, traceTerm } from './trace.js';
-import { applyAgentValueTurns } from './value-turn.js';
+import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_INCIDENT_RECORDS = 160;
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown incident agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown incident agent "${instanceId}"`);
   return agent;
 }
 
@@ -31,7 +31,7 @@ function baselineTurns(
   event: IncidentEvent,
   observerId: string,
 ): Partial<ValueMap<number>> {
-  const empathy = evaluateEmpathy(state, observerId, event.affectedAgentId).empathy;
+  const empathy = evaluateEmpathy(state, observerId, event.affectedInstanceId).empathy;
   const magnitude = event.magnitude * empathy;
   switch (event.rootImpact) {
     case 'accidental-disclosure':
@@ -87,7 +87,7 @@ function estimatedAudienceAppraisal(state: SimulationState, event: IncidentEvent
 function shameTurn(
   state: SimulationState,
   event: IncidentEvent,
-  observer: SimulationAgent,
+  observer: CharacterInstance,
   terms: readonly IncidentContractTerm[],
 ): number {
   if (
@@ -143,7 +143,7 @@ function appraisalTrace(
     0,
   );
   return {
-    agentId: observer.id,
+    instanceId: observer.id,
     id: `${record.id}:trace`,
     kind: 'incident-appraisal',
     minute: state.minute,
@@ -172,7 +172,7 @@ function appraisalTrace(
         traceTerm(
           `internalization:${index}`,
           term.internalization,
-          `agents.${observer.id}.history.overrides.normInternalizations.${term.normId}`,
+          `characters.${observer.id}.history.overrides.normInternalizations.${term.normId}`,
         ),
         traceTerm(
           `legibility:${index}`,
@@ -219,9 +219,9 @@ function resolveForObserver(
   observerId: string,
 ): SimulationState {
   const perception =
-    observerId === event.affectedAgentId
+    observerId === event.affectedInstanceId
       ? null
-      : evaluateSpatialPerception(state, observerId, event.affectedAgentId, {
+      : evaluateSpatialPerception(state, observerId, event.affectedInstanceId, {
           audibleRadiusMeters: event.audibleRadiusMeters,
           visualProminence: event.visualProminence,
         });
@@ -280,8 +280,8 @@ function resolveForObserver(
   const next = applyAttributionInference(
     {
       ...state,
-      agents: state.agents.map(agent =>
-        agent.id === observerId ? applyAgentValueTurns(agent, turns) : agent,
+      characters: state.characters.map(agent =>
+        agent.id === observerId ? applyCharacterValueTurns(agent, turns) : agent,
       ),
       incidentRecords: appendBounded(state.incidentRecords, record, MAX_INCIDENT_RECORDS),
     },

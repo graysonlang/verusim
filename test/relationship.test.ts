@@ -115,11 +115,11 @@ describe('relationship momentum and consolidation', () => {
   it('collapses relationship episodes during sleep while semantic stance persists', () => {
     const afterRequests = advanceSimulation(createRelationshipSimulation(), 6);
     const stance = dyadFor(afterRequests, 'responder', 'requester').stance;
-    const responderBefore = afterRequests.agents.find(agent => agent.id === 'responder');
+    const responderBefore = afterRequests.characters.find(agent => agent.id === 'responder');
     assert.ok(responderBefore?.memories.some(memory => memory.type === 'relationship'));
 
     const consolidated = advanceSimulation(afterRequests, 720);
-    const responderAfter = consolidated.agents.find(agent => agent.id === 'responder');
+    const responderAfter = consolidated.characters.find(agent => agent.id === 'responder');
     assert.ok(responderAfter);
     assert.equal(
       responderAfter.memories.filter(memory => memory.type === 'relationship').length,

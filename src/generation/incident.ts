@@ -7,7 +7,7 @@ import type {
   IncidentPublicity,
   IncidentRootImpact,
   IncidentVolition,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
 } from '../model/types.js';
 import { allostaticLoadFor } from '../simulation/coping.js';
@@ -25,7 +25,7 @@ import {
 const INCIDENT_GENERATOR_ALGORITHM = 'verusim-incident-v1' as const;
 
 export interface IncidentTemplate {
-  affectedAgentId: string | null;
+  affectedInstanceId: string | null;
   attribution: IncidentAttribution;
   contradictedClaimId: string | null;
   id: string;
@@ -55,7 +55,7 @@ export interface IncidentGenerationRequest {
 export interface IncidentSamplingProvenance {
   algorithm: typeof INCIDENT_GENERATOR_ALGORITHM;
   draws: IncidentGenerationDraw[];
-  eligibleWeights: Array<{ agentId: string; weight: number }>;
+  eligibleWeights: Array<{ instanceId: string; weight: number }>;
   occurred: boolean;
   samplerEnd: number;
   samplerStart: number;
@@ -93,7 +93,7 @@ function validateRequest(request: IncidentGenerationRequest): void {
   if (!Number.isFinite(request.audibleRadiusMeters) || request.audibleRadiusMeters < 0) {
     throw new RangeError('audibleRadiusMeters must be a non-negative finite number');
   }
-  if (!request.state.agents.some(agent => agent.id === request.referenceObserverId)) {
+  if (!request.state.characters.some(agent => agent.id === request.referenceObserverId)) {
     throw new RangeError(`Unknown reference observer "${request.referenceObserverId}"`);
   }
   if (request.templates.length === 0) throw new TypeError('templates must not be empty');
@@ -108,11 +108,11 @@ function validateRequest(request: IncidentGenerationRequest): void {
       throw new RangeError(`templates[${index}].weight must be positive`);
     }
     if (
-      template.affectedAgentId !== null &&
-      !request.state.agents.some(agent => agent.id === template.affectedAgentId)
+      template.affectedInstanceId !== null &&
+      !request.state.characters.some(agent => agent.id === template.affectedInstanceId)
     ) {
       throw new RangeError(
-        `templates[${index}].affectedAgentId names unknown agent "${template.affectedAgentId}"`,
+        `templates[${index}].affectedInstanceId names unknown agent "${template.affectedInstanceId}"`,
       );
     }
     totalWeight += template.weight;
@@ -121,8 +121,8 @@ function validateRequest(request: IncidentGenerationRequest): void {
     throw new RangeError('template weights must have a finite sum');
 }
 
-function visibleAgents(request: IncidentGenerationRequest): SimulationAgent[] {
-  return request.state.agents.filter(agent => {
+function visibleAgents(request: IncidentGenerationRequest): CharacterInstance[] {
+  return request.state.characters.filter(agent => {
     if (agent.id === request.referenceObserverId) return true;
     const perception = evaluateSpatialPerception(
       request.state,
@@ -137,7 +137,7 @@ function visibleAgents(request: IncidentGenerationRequest): SimulationAgent[] {
   });
 }
 
-function depletionWeight(agent: SimulationAgent): number {
+function depletionWeight(agent: CharacterInstance): number {
   const resourceDepletion =
     (1 -
       agent.resources.executiveBudget +
@@ -148,7 +148,7 @@ function depletionWeight(agent: SimulationAgent): number {
   return 0.25 + resourceDepletion + allostaticLoadFor(agent);
 }
 
-function narrativeWeight(agent: SimulationAgent, template: IncidentTemplate): number {
+function narrativeWeight(agent: CharacterInstance, template: IncidentTemplate): number {
   if (template.contradictedClaimId === null) return 1;
   const claim = agent.narrative?.claims.find(
     candidate => candidate.id === template.contradictedClaimId,
@@ -194,7 +194,7 @@ export function generateIncident(request: IncidentGenerationRequest): GeneratedI
         algorithm: INCIDENT_GENERATOR_ALGORITHM,
         draws: generationDraws(sampler),
         eligibleWeights: eligible.map((agent, index) => ({
-          agentId: agent.id,
+          instanceId: agent.id,
           weight: baseWeights[index] ?? 0,
         })),
         occurred: false,
@@ -224,7 +224,7 @@ export function generateIncident(request: IncidentGenerationRequest): GeneratedI
     (template.magnitude.maximum - template.magnitude.minimum) * magnitudeUnit.unit ** 3;
   const draws = generationDraws(sampler);
   const eligibleWeights = eligible.map((agent, index) => ({
-    agentId: agent.id,
+    instanceId: agent.id,
     weight: subjectWeights[index] ?? 0,
   }));
   const metadata = {
@@ -238,7 +238,7 @@ export function generateIncident(request: IncidentGenerationRequest): GeneratedI
   } as const;
   const event: IncidentEvent = {
     actorId: actor.id,
-    affectedAgentId: template.affectedAgentId ?? actor.id,
+    affectedInstanceId: template.affectedInstanceId ?? actor.id,
     atMinute: request.atMinute,
     attribution: template.attribution,
     audibleRadiusMeters: request.audibleRadiusMeters,

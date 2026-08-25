@@ -89,8 +89,8 @@ describe('workbench playback', () => {
       9,
     );
     const next = advanceSimulation(beforeDeparture, 1);
-    const currentMara = beforeDeparture.agents.find(agent => agent.id === 'mara');
-    const nextMara = next.agents.find(agent => agent.id === 'mara');
+    const currentMara = beforeDeparture.characters.find(agent => agent.id === 'mara');
+    const nextMara = next.characters.find(agent => agent.id === 'mara');
     assert.ok(currentMara);
     assert.ok(nextMara);
     assert.ok(
@@ -104,7 +104,7 @@ describe('workbench playback', () => {
     );
     const partialTickMinutes = tickDistance / currentMara.walkingMetersPerMinute / 2;
     const halfway = projectPlaybackMovement(beforeDeparture, next, partialTickMinutes);
-    const halfwayMara = halfway.agents.find(agent => agent.id === 'mara');
+    const halfwayMara = halfway.characters.find(agent => agent.id === 'mara');
     assert.ok(halfwayMara);
     assert.ok(
       Math.abs(
@@ -117,18 +117,20 @@ describe('workbench playback', () => {
       ) < 1e-9,
     );
     assert.deepEqual(
-      projectPlaybackState(beforeDeparture, partialTickMinutes).agents.map(agent => agent.position),
-      halfway.agents.map(agent => agent.position),
+      projectPlaybackState(beforeDeparture, partialTickMinutes).characters.map(
+        agent => agent.position,
+      ),
+      halfway.characters.map(agent => agent.position),
     );
     assert.deepEqual(
-      beforeDeparture.agents.find(agent => agent.id === 'mara'),
+      beforeDeparture.characters.find(agent => agent.id === 'mara'),
       currentMara,
     );
 
     const endpoint = projectPlaybackMovement(beforeDeparture, next, 1);
     assert.deepEqual(
-      endpoint.agents.map(agent => agent.position),
-      next.agents.map(agent => agent.position),
+      endpoint.characters.map(agent => agent.position),
+      next.characters.map(agent => agent.position),
     );
     assert.equal(endpoint.minute, beforeDeparture.minute);
     assert.equal(endpoint.tick, beforeDeparture.tick);

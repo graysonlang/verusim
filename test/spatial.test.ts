@@ -22,7 +22,7 @@ function createState(): SimulationState {
 function withPositions(state: SimulationState, positions: Record<string, Point>): SimulationState {
   return {
     ...state,
-    agents: state.agents.map(agent => ({
+    characters: state.characters.map(agent => ({
       ...agent,
       position:
         positions[agent.id] === undefined
@@ -57,7 +57,7 @@ describe('spatial appraisal', () => {
     });
     const rested = {
       ...positioned,
-      agents: positioned.agents.map(agent =>
+      characters: positioned.characters.map(agent =>
         agent.id === 'owner'
           ? { ...agent, resources: { ...agent.resources, socialBattery: 1 } }
           : agent,
@@ -65,7 +65,7 @@ describe('spatial appraisal', () => {
     };
     const depleted = {
       ...positioned,
-      agents: positioned.agents.map(agent =>
+      characters: positioned.characters.map(agent =>
         agent.id === 'owner'
           ? { ...agent, resources: { ...agent.resources, socialBattery: 0.05 } }
           : agent,

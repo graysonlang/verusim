@@ -1,11 +1,11 @@
 import {
   VALUE_IDS,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type TraceKind,
   type ValueId,
 } from '../src/model/types.js';
-import { describeAgent } from '../src/simulation/observe.js';
+import { describeCharacter } from '../src/simulation/observe.js';
 
 export const INDICATOR_KINDS = ['mood', 'thought', 'speech', 'action', 'event', 'area'] as const;
 
@@ -18,8 +18,8 @@ export interface IndicatorSettings {
   visible: Record<IndicatorKind, boolean>;
 }
 
-export interface AgentIndicator {
-  agentId: string;
+export interface CharacterIndicator {
+  instanceId: string;
   detail: string;
   glyph: string;
   kind: Exclude<IndicatorKind, 'area'>;
@@ -112,7 +112,7 @@ function isRecent(state: SimulationState, minute: number, settings: IndicatorSet
   return state.minute - minute <= recencyWindow(settings);
 }
 
-function currentAction(state: SimulationState, agent: SimulationAgent): string {
+function currentAction(state: SimulationState, agent: CharacterInstance): string {
   if (agent.currentOutlet !== null) return agent.currentOutlet.label;
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
   if (intention === undefined) return agent.currentActivity;
@@ -122,9 +122,9 @@ function currentAction(state: SimulationState, agent: SimulationAgent): string {
 
 function speechIndicator(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   settings: IndicatorSettings,
-): AgentIndicator | null {
+): CharacterIndicator | null {
   const decision = state.disclosureDecisions
     .filter(candidate => candidate.ownerId === agent.id && candidate.outcome === 'disclose')
     .at(-1);
@@ -132,7 +132,7 @@ function speechIndicator(
   const item = state.disclosureItems.find(candidate => candidate.id === decision.itemId);
   const subject = item?.summary ?? decision.itemId;
   return {
-    agentId: agent.id,
+    instanceId: agent.id,
     detail: `${agent.profile.name} disclosed ${subject}`,
     glyph: '"',
     kind: 'speech',
@@ -144,18 +144,18 @@ function speechIndicator(
 
 function eventIndicator(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   settings: IndicatorSettings,
-): AgentIndicator | null {
+): CharacterIndicator | null {
   const entry = state.trace.entries.findLast(
     candidate =>
-      candidate.agentId === agent.id &&
+      candidate.instanceId === agent.id &&
       EVENT_KINDS.has(candidate.kind) &&
       isRecent(state, candidate.minute, settings),
   );
   if (entry === undefined) return null;
   return {
-    agentId: agent.id,
+    instanceId: agent.id,
     detail: `${entry.kind}: ${entry.summary}`,
     glyph: '*',
     kind: 'event',
@@ -165,16 +165,16 @@ function eventIndicator(
   };
 }
 
-export function indicatorsForAgent(
+export function indicatorsForCharacter(
   state: SimulationState,
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   settings: IndicatorSettings,
-): AgentIndicator[] {
+): CharacterIndicator[] {
   if (settings.verbosity === 'off') return [];
-  const observation = describeAgent(agent);
-  const indicators: AgentIndicator[] = [
+  const observation = describeCharacter(agent);
+  const indicators: CharacterIndicator[] = [
     {
-      agentId: agent.id,
+      instanceId: agent.id,
       detail: `Mood: ${observation.mood}; valence ${observation.valence.toFixed(2)}; arousal ${observation.arousal.toFixed(2)}; resource strain ${observation.resourceStrain.toFixed(2)}`,
       glyph: moodGlyph(observation.mood),
       kind: 'mood',
@@ -183,7 +183,7 @@ export function indicatorsForAgent(
       tone: moodTone(observation.mood),
     },
     {
-      agentId: agent.id,
+      instanceId: agent.id,
       detail: `State of mind: ${observation.stateOfMind}`,
       glyph: '...',
       kind: 'thought',
@@ -192,7 +192,7 @@ export function indicatorsForAgent(
       tone: 'cool',
     },
     {
-      agentId: agent.id,
+      instanceId: agent.id,
       detail: `Current action: ${currentAction(state, agent)}`,
       glyph: '>>',
       kind: 'action',

@@ -1,3 +1,4 @@
+import { downgradeSnapshotVocabulary } from './legacy.js';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import cascadeScenario from '../content/scenarios/cascade-room.json';
@@ -54,10 +55,10 @@ function createSomaticSimulation(scenario: ScenarioFile): SimulationState {
 
 function setInitialSource(
   scenario: ScenarioFile,
-  agentId: string,
+  instanceId: string,
   source: SomaticSourceSeed,
 ): void {
-  const placement = scenario.characters.find(character => character.instanceId === agentId);
+  const placement = scenario.characters.find(character => character.instanceId === instanceId);
   assert.ok(placement);
   placement.initialSomaticSources = [{ ...source, origin: 'activity' }];
 }
@@ -66,7 +67,7 @@ function crowdScenario(observerIds: string[]): ScenarioFile {
   const scenario = strippedScenario();
   scenario.somaticEvents = [
     {
-      agentId: 'witness',
+      instanceId: 'witness',
       atMinute: 601,
       id: 'witness-incapacitated',
       observerIds,
@@ -88,7 +89,7 @@ function crowdScenario(observerIds: string[]): ScenarioFile {
 function conditionCrowdObservers(state: SimulationState): SimulationState {
   return {
     ...state,
-    agents: state.agents.map(agent => {
+    characters: state.characters.map(agent => {
       if (agent.id === 'therapist') {
         return {
           ...agent,
@@ -189,8 +190,8 @@ describe('somatic state and preemption', () => {
     ];
     const baseline = createSomaticSimulation(baselineScenario);
     const discomfort = createSomaticSimulation(discomfortScenario);
-    const baselineWitness = baseline.agents.find(agent => agent.id === 'witness');
-    const discomfortWitness = discomfort.agents.find(agent => agent.id === 'witness');
+    const baselineWitness = baseline.characters.find(agent => agent.id === 'witness');
+    const discomfortWitness = discomfort.characters.find(agent => agent.id === 'witness');
     assert.ok(baselineWitness);
     assert.ok(discomfortWitness);
 
@@ -273,7 +274,7 @@ describe('somatic state and preemption', () => {
     const scenario = strippedScenario();
     scenario.somaticEvents = [
       {
-        agentId: 'witness',
+        instanceId: 'witness',
         atMinute: 601,
         id: 'subtle-impairment',
         observerIds: ['therapist'],
@@ -284,7 +285,7 @@ describe('somatic state and preemption', () => {
         visualProminence: 1,
       },
       {
-        agentId: 'witness',
+        instanceId: 'witness',
         atMinute: 602,
         id: 'marked-impairment',
         observerIds: ['therapist'],
@@ -304,7 +305,7 @@ describe('somatic state and preemption', () => {
     assert.ok(marked.inferredSeverity > subtle.inferredSeverity);
     assert.equal('level' in marked, false);
     assert.equal(
-      result.agents.find(agent => agent.id === 'witness')?.somatic.sources[0]?.impairment,
+      result.characters.find(agent => agent.id === 'witness')?.somatic.sources[0]?.impairment,
       0.8,
     );
   });
@@ -313,7 +314,7 @@ describe('somatic state and preemption', () => {
     const scenario = strippedScenario();
     scenario.somaticEvents = [
       {
-        agentId: 'witness',
+        instanceId: 'witness',
         atMinute: 601,
         id: 'acute-emergency',
         observerIds: [],
@@ -403,9 +404,9 @@ describe('somatic state and preemption', () => {
     assert.ok(crowdedTherapist);
     assert.ok(singleTherapist.helpProbability > crowdedTherapist.helpProbability);
     assert.equal(new Set(crowdedObservations.map(observation => observation.response)).size, 2);
-    const incapacitated = crowded.agents.find(agent => agent.id === 'witness');
+    const incapacitated = crowded.characters.find(agent => agent.id === 'witness');
     assert.ok(incapacitated);
-    const withoutAgency = advanceSimulation(crowded, 1).agents.find(
+    const withoutAgency = advanceSimulation(crowded, 1).characters.find(
       agent => agent.id === 'witness',
     );
     assert.equal(withoutAgency?.currentActivity, 'Incapacitated');
@@ -430,7 +431,7 @@ describe('somatic state and preemption', () => {
       delete characterValue.initialSomaticSources;
     }
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 17);
+    assert.equal(migratedScenario.schemaVersion, 18);
     assert.deepEqual(migratedScenario.ambientSomaticSources, []);
     assert.ok(
       migratedScenario.characters.every(character => character.initialSomaticSources.length === 0),
@@ -439,18 +440,19 @@ describe('somatic state and preemption', () => {
     const currentSnapshot = serializeSnapshot(createSomaticSimulation(scenario));
     const legacySnapshot = structuredClone(currentSnapshot) as unknown as Record<string, unknown>;
     legacySnapshot.schemaVersion = 15;
+    downgradeSnapshotVocabulary(legacySnapshot);
     delete legacySnapshot.resolvedSomaticEventIds;
     delete legacySnapshot.somaticRecords;
-    for (const agentValue of legacySnapshot.agents as Array<Record<string, unknown>>) {
+    for (const agentValue of legacySnapshot.characters as Array<Record<string, unknown>>) {
       delete agentValue.somatic;
     }
     const migratedSnapshot = parseSnapshot(legacySnapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 17);
+    assert.equal(migratedSnapshot.schemaVersion, 18);
     assert.deepEqual(migratedSnapshot.somaticRecords, []);
-    assert.ok(migratedSnapshot.agents.every(agent => agent.somatic.level === 0));
+    assert.ok(migratedSnapshot.characters.every(agent => agent.somatic.level === 0));
 
     const inconsistent = structuredClone(currentSnapshot);
-    const witness = inconsistent.agents.find(agent => agent.id === 'witness');
+    const witness = inconsistent.characters.find(agent => agent.id === 'witness');
     assert.ok(witness);
     witness.somatic.attentionTax = 0.5;
     assert.throws(
@@ -460,7 +462,7 @@ describe('somatic state and preemption', () => {
           environmentLibrary: environments,
           snapshot: inconsistent,
         }),
-      /snapshot\.agents\[0\]\.somatic.*exact sorted somatic source ledger/,
+      /snapshot\.characters\[0\]\.somatic.*exact sorted somatic source ledger/,
     );
   });
 });

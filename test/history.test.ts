@@ -1,3 +1,4 @@
+import { downgradeSnapshotVocabulary } from './legacy.js';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
@@ -23,7 +24,7 @@ import {
   serializeSnapshot,
   type CharacterDefinition,
   type CharacterProfileResourceFile,
-  type SimulationAgent,
+  type CharacterInstance,
 } from '../src/index.js';
 import { characters, environments } from './fixtures.js';
 
@@ -34,13 +35,13 @@ function maraProfile(): CharacterDefinition {
   return structuredClone(resource.profile);
 }
 
-function maraAgent(): SimulationAgent {
+function maraAgent(): CharacterInstance {
   const state = createSimulation({
     characterLibrary: characters,
     environmentLibrary: environments,
     scenario,
   });
-  const mara = state.agents.find(agent => agent.id === 'mara');
+  const mara = state.characters.find(agent => agent.id === 'mara');
   assert.ok(mara);
   return mara;
 }
@@ -116,7 +117,7 @@ describe('history-derived instance state', () => {
 
   it('resolves every mutable history-derived field through sparse instance overrides', () => {
     const original = maraAgent();
-    const changed: SimulationAgent = {
+    const changed: CharacterInstance = {
       ...original,
       history: {
         ...original.history,
@@ -165,7 +166,7 @@ describe('history-derived instance state', () => {
     });
     assert.deepEqual(ordinary.history, adult.history);
 
-    const child: SimulationAgent = {
+    const child: CharacterInstance = {
       ...adult,
       profile: {
         ...adult.profile,
@@ -243,7 +244,7 @@ describe('history-derived instance state', () => {
     });
     const stateWithPlasticity = {
       ...persistedState,
-      agents: persistedState.agents.map(agent =>
+      characters: persistedState.characters.map(agent =>
         agent.id === adultUnderPressure.id ? adultUnderPressure : agent,
       ),
       minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
@@ -256,7 +257,7 @@ describe('history-derived instance state', () => {
       snapshot: plasticitySnapshot,
     });
     assert.deepEqual(
-      resumed.agents.find(agent => agent.id === adultUnderPressure.id)?.history.plasticity,
+      resumed.characters.find(agent => agent.id === adultUnderPressure.id)?.history.plasticity,
       adultUnderPressure.history.plasticity,
     );
   });
@@ -268,7 +269,7 @@ describe('history-derived instance state', () => {
       scenario,
     });
     const snapshot = serializeSnapshot(initial);
-    assert.equal(snapshot.schemaVersion, 17);
+    assert.equal(snapshot.schemaVersion, 18);
     assert.deepEqual(parseSnapshot(snapshot), snapshot);
     assert.deepEqual(
       createSimulationFromSnapshot({
@@ -281,15 +282,16 @@ describe('history-derived instance state', () => {
 
     const legacy = structuredClone(snapshot) as unknown as Record<string, unknown>;
     legacy.schemaVersion = 11;
-    for (const agentValue of legacy.agents as Array<Record<string, unknown>>) {
+    downgradeSnapshotVocabulary(legacy);
+    for (const agentValue of legacy.characters as Array<Record<string, unknown>>) {
       delete agentValue.history;
       for (const memory of agentValue.memories as Array<Record<string, unknown>>) {
         delete memory.provenance;
       }
     }
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 17);
-    assert.deepEqual(migrated.agents[0]?.history, {
+    assert.equal(migrated.schemaVersion, 18);
+    assert.deepEqual(migrated.characters[0]?.history, {
       formativeRecords: [],
       overrides: {},
       plasticity: { accumulators: [], records: [] },
@@ -299,16 +301,17 @@ describe('history-derived instance state', () => {
       environmentLibrary: environments,
       snapshot: legacy,
     });
-    const mara = resumed.agents.find(agent => agent.id === 'mara');
+    const mara = resumed.characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
     assert.equal(effectiveValueWeight(mara, 'safety'), mara.profile.values.safety.weight);
 
     const schema12 = structuredClone(snapshot) as unknown as Record<string, unknown>;
     schema12.schemaVersion = 12;
-    for (const agentValue of schema12.agents as Array<Record<string, unknown>>) {
+    downgradeSnapshotVocabulary(schema12);
+    for (const agentValue of schema12.characters as Array<Record<string, unknown>>) {
       delete (agentValue.history as Record<string, unknown>).plasticity;
     }
-    assert.deepEqual(parseSnapshot(schema12).agents[0]?.history.plasticity, {
+    assert.deepEqual(parseSnapshot(schema12).characters[0]?.history.plasticity, {
       accumulators: [],
       records: [],
     });
@@ -330,16 +333,16 @@ describe('history-derived instance state', () => {
       }),
     );
     const malformed = structuredClone(snapshot);
-    const first = malformed.agents[0];
+    const first = malformed.characters[0];
     assert.ok(first);
     first.history.overrides.valueWeights = { safety: 3 };
     assert.throws(
       () => parseSnapshot(malformed),
-      /snapshot\.agents\[0\]\.history\.overrides\.valueWeights\.safety/,
+      /snapshot\.characters\[0\]\.history\.overrides\.valueWeights\.safety/,
     );
 
     const malformedPlasticity = structuredClone(snapshot);
-    const plasticityAgent = malformedPlasticity.agents[0];
+    const plasticityAgent = malformedPlasticity.characters[0];
     assert.ok(plasticityAgent);
     plasticityAgent.history.plasticity.accumulators = [
       {
@@ -353,7 +356,7 @@ describe('history-derived instance state', () => {
     ];
     assert.throws(
       () => parseSnapshot(malformedPlasticity),
-      /snapshot\.agents\[0\]\.history\.plasticity\.accumulators\[0\]\.target\.kind/,
+      /snapshot\.characters\[0\]\.history\.plasticity\.accumulators\[0\]\.target\.kind/,
     );
   });
 });

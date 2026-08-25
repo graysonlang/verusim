@@ -21,9 +21,9 @@ export function evaluateEmpathy(
   subjectId: string,
   perceivedThreat = 0,
 ): EmpathyEvaluation {
-  const observer = state.agents.find(agent => agent.id === observerId);
+  const observer = state.characters.find(agent => agent.id === observerId);
   if (observer === undefined) throw new RangeError(`Unknown empathy observer "${observerId}"`);
-  const subject = state.agents.find(agent => agent.id === subjectId);
+  const subject = state.characters.find(agent => agent.id === subjectId);
   if (subject === undefined) throw new RangeError(`Unknown empathy subject "${subjectId}"`);
 
   const envelope = effectiveEmpathy(observer);

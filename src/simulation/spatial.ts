@@ -9,7 +9,7 @@ import type {
   ProximityAssessment,
   ProximityBand,
   SensoryAssessment,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
   SpatialPerceptionAssessment,
 } from '../model/types.js';
@@ -29,9 +29,9 @@ const MODE_DISTANCE_METERS: Record<DyadMode, number> = {
   warm: -0.12,
 };
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown spatial agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown spatial agent "${instanceId}"`);
   return agent;
 }
 
@@ -158,14 +158,14 @@ export function evaluateProximity(
     traceTerm(
       'distance-meters',
       distanceMeters,
-      `agents.${observerId}.position`,
-      `agents.${subjectId}.position`,
+      `characters.${observerId}.position`,
+      `characters.${subjectId}.position`,
     ),
     traceTerm(
       'layer-separated',
       layerSeparated,
-      `agents.${observerId}.position.layerId`,
-      `agents.${subjectId}.position.layerId`,
+      `characters.${observerId}.position.layerId`,
+      `characters.${subjectId}.position.layerId`,
     ),
     traceTerm(
       'relationship-closeness',
@@ -175,21 +175,21 @@ export function evaluateProximity(
     traceTerm(
       'comfortable-distance-meters',
       comfortableDistanceMeters,
-      `agents.${observerId}.profile.constitution.socialValence`,
-      `agents.${observerId}.resources.socialBattery`,
+      `characters.${observerId}.profile.constitution.socialValence`,
+      `characters.${observerId}.resources.socialBattery`,
       `dyads.${observerId}:${subjectId}.mode`,
       'simulation.spatial.proximityConvention',
     ),
     traceTerm(
       'social-battery',
       observer.resources.socialBattery,
-      `agents.${observerId}.resources.socialBattery`,
+      `characters.${observerId}.resources.socialBattery`,
     ),
     traceTerm(
       'proximity-discomfort',
       discomfort,
-      `agents.${observerId}.position`,
-      `agents.${subjectId}.position`,
+      `characters.${observerId}.position`,
+      `characters.${subjectId}.position`,
       `dyads.${observerId}:${subjectId}.features`,
     ),
   ];
@@ -271,22 +271,22 @@ export function evaluateSpatialPerception(
     traceTerm(
       'distance-meters',
       distanceMeters,
-      `agents.${observerId}.position`,
-      `agents.${subjectId}.position`,
+      `characters.${observerId}.position`,
+      `characters.${subjectId}.position`,
     ),
     traceTerm(
       'layer-separated',
       layerSeparated,
-      `agents.${observerId}.position.layerId`,
-      `agents.${subjectId}.position.layerId`,
+      `characters.${observerId}.position.layerId`,
+      `characters.${subjectId}.position.layerId`,
       'environment.layers',
     ),
     traceTerm(
       'effective-acuity',
       acuity,
-      `agents.${observerId}.profile.capabilities.acuity`,
-      `agents.${observerId}.resources.executiveBudget`,
-      `agents.${observerId}.resources.physicalStamina`,
+      `characters.${observerId}.profile.capabilities.acuity`,
+      `characters.${observerId}.resources.executiveBudget`,
+      `characters.${observerId}.resources.physicalStamina`,
     ),
     traceTerm(
       'hearing-occlusion',
@@ -337,7 +337,7 @@ export function evaluateEavesdropping(
       traceTerm(
         'detected-by-speaker',
         detectedBySpeaker,
-        `agents.${speakerId}.profile.capabilities.acuity`,
+        `characters.${speakerId}.profile.capabilities.acuity`,
         'environment.areas',
       ),
       traceTerm(

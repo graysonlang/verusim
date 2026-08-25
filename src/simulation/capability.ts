@@ -1,12 +1,12 @@
 import { clamp } from '../model/retention.js';
 import {
   CAPABILITY_IDS,
-  type AgentCapabilityCheck,
+  type CharacterCapabilityCheck,
   type CapabilityCheck,
   type CapabilityId,
   type CapabilityResolution,
   type CapabilityResolutionBand,
-  type SimulationAgent,
+  type CharacterInstance,
 } from '../model/types.js';
 import { traceTerm } from './trace.js';
 
@@ -35,7 +35,10 @@ function geometricMean(values: number[]): number {
   return values.reduce((product, value) => product * value, 1) ** (1 / values.length);
 }
 
-export function capabilityAvailability(agent: SimulationAgent, capabilityId: CapabilityId): number {
+export function capabilityAvailability(
+  agent: CharacterInstance,
+  capabilityId: CapabilityId,
+): number {
   switch (capabilityId) {
     case 'acuity':
       return geometricMean([agent.resources.executiveBudget, agent.resources.physicalStamina]);
@@ -50,23 +53,23 @@ export function capabilityAvailability(agent: SimulationAgent, capabilityId: Cap
   }
 }
 
-function availabilitySources(agentId: string, capabilityId: CapabilityId): string[] {
+function availabilitySources(instanceId: string, capabilityId: CapabilityId): string[] {
   switch (capabilityId) {
     case 'acuity':
       return [
-        `agents.${agentId}.resources.executiveBudget`,
-        `agents.${agentId}.resources.physicalStamina`,
+        `characters.${instanceId}.resources.executiveBudget`,
+        `characters.${instanceId}.resources.physicalStamina`,
       ];
     case 'evidenceCalibration':
       return [
-        `agents.${agentId}.resources.executiveBudget`,
-        `agents.${agentId}.resources.regulationReserve`,
+        `characters.${instanceId}.resources.executiveBudget`,
+        `characters.${instanceId}.resources.regulationReserve`,
       ];
     case 'expressiveControl':
       return [
-        `agents.${agentId}.resources.executiveBudget`,
-        `agents.${agentId}.resources.regulationReserve`,
-        `agents.${agentId}.resources.socialBattery`,
+        `characters.${instanceId}.resources.executiveBudget`,
+        `characters.${instanceId}.resources.regulationReserve`,
+        `characters.${instanceId}.resources.socialBattery`,
       ];
   }
 }
@@ -158,15 +161,15 @@ export function resolveCapabilityCheck(input: CapabilityCheck): CapabilityResolu
   };
 }
 
-export function resolveAgentCapabilityCheck(
-  agent: SimulationAgent,
-  input: AgentCapabilityCheck,
+export function resolveCharacterCapabilityCheck(
+  agent: CharacterInstance,
+  input: CharacterCapabilityCheck,
 ): CapabilityResolution {
   return resolveCapabilityCheck({
     ...input,
     availableCapacity: capabilityAvailability(agent, input.capabilityId),
     availableCapacitySources: availabilitySources(agent.id, input.capabilityId),
     baseCapability: agent.profile.capabilities[input.capabilityId],
-    capabilitySource: `agents.${agent.id}.profile.capabilities.${input.capabilityId}`,
+    capabilitySource: `characters.${agent.id}.profile.capabilities.${input.capabilityId}`,
   });
 }

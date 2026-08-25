@@ -6,7 +6,7 @@ import type {
   BaselinePlasticityTarget,
   CascadePosition,
   IdentityMarker,
-  SimulationAgent,
+  CharacterInstance,
 } from '../model/types.js';
 import { effectiveCascadePrior, effectiveIdentity } from './history.js';
 
@@ -85,7 +85,7 @@ function validateSignal(signal: BaselinePlasticitySignal, path: string): void {
   }
 }
 
-function previousTargetValue(agent: SimulationAgent, target: BaselinePlasticityTarget): number {
+function previousTargetValue(agent: CharacterInstance, target: BaselinePlasticityTarget): number {
   if (target.kind === 'cascade-prior') {
     return effectiveCascadePrior(agent, target.id as Exclude<CascadePosition, 'none'>);
   }
@@ -105,10 +105,10 @@ function updateIdentity(
 }
 
 function applyTargetChange(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   target: BaselinePlasticityTarget,
   change: number,
-): { agent: SimulationAgent; previous: number; resulting: number } {
+): { agent: CharacterInstance; previous: number; resulting: number } {
   const previous = previousTargetValue(agent, target);
   const resulting = round(clamp(previous + change, 0, 1));
   if (target.kind === 'cascade-prior') {
@@ -157,10 +157,10 @@ function replaceAccumulator(
 }
 
 function advanceSignal(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   input: BaselinePlasticityAdvance,
   signal: BaselinePlasticitySignal,
-): SimulationAgent {
+): CharacterInstance {
   if (signal.gap < LARGE_GAP_THRESHOLD || signal.strength === 0 || input.elapsedMinutes === 0) {
     return agent;
   }
@@ -239,9 +239,9 @@ function advanceSignal(
 }
 
 export function advanceBaselinePlasticity(
-  agent: SimulationAgent,
+  agent: CharacterInstance,
   input: BaselinePlasticityAdvance,
-): SimulationAgent {
+): CharacterInstance {
   if (!Number.isFinite(input.elapsedMinutes) || input.elapsedMinutes < 0) {
     throw new RangeError('elapsedMinutes must be a non-negative finite number');
   }

@@ -331,7 +331,7 @@ export function validatePreparedScenario(value: unknown): PreparedScenario {
     throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
   }
   const scenario = objectValue(file.scenario, `${path}.scenario`);
-  if (scenario.schemaVersion !== 17) {
+  if (scenario.schemaVersion !== 18) {
     throw new ScenarioValidationError(
       `${path}.scenario.schemaVersion`,
       'unsupported schema version',

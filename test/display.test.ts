@@ -1,3 +1,4 @@
+import { downgradeSnapshotVocabulary } from './legacy.js';
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
@@ -162,7 +163,7 @@ function initialDisplayState(scenario: ScenarioFile = displayScenario()): Simula
   const state = createSimulation(preparedDisplay(scenario));
   return {
     ...state,
-    agents: state.agents.map(agent => {
+    characters: state.characters.map(agent => {
       const identity =
         agent.id === 'sera'
           ? [{ centrality: 1, marker: 'unrelated-status' }]
@@ -253,7 +254,7 @@ describe('status displays and positional respect', () => {
       });
     }
     const result = advanceSimulation(initialDisplayState(scenario), 6);
-    const positional = result.agents.find(agent => agent.id === 'nessa')?.positionalRespect;
+    const positional = result.characters.find(agent => agent.id === 'nessa')?.positionalRespect;
     assert.equal(result.displayRecords[0]?.appraisals[0]?.positionalTurn, 0);
     assert.equal(positional?.references.length, 5);
     assert.equal(positional?.ambientCount, 1);
@@ -263,23 +264,24 @@ describe('status displays and positional respect', () => {
     const snapshot = serializeSnapshot(initialDisplayState());
     const legacy = structuredClone(snapshot) as unknown as Record<string, unknown>;
     legacy.schemaVersion = 14;
+    downgradeSnapshotVocabulary(legacy);
     delete legacy.displayExposures;
     delete legacy.displayRecords;
     delete legacy.resolvedDisplayEventIds;
     const scenario = legacy.scenario as Record<string, unknown>;
     scenario.schemaVersion = 15;
     delete scenario.displayEvents;
-    for (const agent of legacy.agents as Array<Record<string, unknown>>) {
+    for (const agent of legacy.characters as Array<Record<string, unknown>>) {
       delete agent.positionalRespect;
     }
 
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 17);
+    assert.equal(migrated.schemaVersion, 18);
     assert.deepEqual(migrated.scenario.displayEvents, []);
     assert.deepEqual(migrated.displayExposures, []);
     assert.deepEqual(migrated.displayRecords, []);
     assert.ok(
-      migrated.agents.every(
+      migrated.characters.every(
         agent =>
           agent.positionalRespect.ambientCount === 0 &&
           agent.positionalRespect.references.length === 0,

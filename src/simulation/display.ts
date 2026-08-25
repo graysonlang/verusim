@@ -9,7 +9,7 @@ import {
   type IncidentContractTerm,
   type PositionalRespectReference,
   type PositionalRespectState,
-  type SimulationAgent,
+  type CharacterInstance,
   type SimulationState,
   type TraceEntry,
   type ValueMap,
@@ -19,7 +19,7 @@ import { effectiveIdentity } from './history.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { activeSocialInterpretationTerms } from './social-context.js';
 import { appendTrace, traceTerm } from './trace.js';
-import { applyAgentValueTurns } from './value-turn.js';
+import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_DISPLAY_RECORDS = 160;
 const MAX_POSITIONAL_REFERENCES = 5;
@@ -30,7 +30,7 @@ const ADMIRATION_EMPATHY_FLOOR = 0.55;
 interface PerceptionResult {
   exposureAfter: number;
   exposureBefore: number;
-  observer: SimulationAgent;
+  observer: CharacterInstance;
   perceived: boolean;
   perceptionStrength: number;
 }
@@ -40,9 +40,9 @@ interface PositionalUpdate {
   state: PositionalRespectState;
 }
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown display agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown display agent "${instanceId}"`);
   return agent;
 }
 
@@ -81,7 +81,7 @@ function perceptionFor(
   };
 }
 
-function markerCentrality(observer: SimulationAgent, marker: string): number {
+function markerCentrality(observer: CharacterInstance, marker: string): number {
   return effectiveIdentity(observer).reduce(
     (maximum, identity) =>
       identity.marker === marker ? Math.max(maximum, identity.centrality) : maximum,
@@ -96,7 +96,7 @@ function comparability(state: SimulationState, observerId: string, wearerId: str
   return dyad === undefined ? 0 : Math.max(dyad.features.kinship, dyad.features.similarity);
 }
 
-function rankSimilarity(observer: SimulationAgent, wearer: SimulationAgent): number {
+function rankSimilarity(observer: CharacterInstance, wearer: CharacterInstance): number {
   return clamp(
     1 - Math.abs(observer.values.respect.charge - wearer.values.respect.charge) / 2,
     0,
@@ -218,7 +218,7 @@ function appraisalTrace(
   appraisal: DisplayObserverAppraisal,
 ): TraceEntry {
   return {
-    agentId: appraisal.observerId,
+    instanceId: appraisal.observerId,
     id: `${appraisal.id}:trace`,
     kind: 'display-appraisal',
     minute: state.minute,
@@ -230,14 +230,14 @@ function appraisalTrace(
       traceTerm(
         'marker-centrality',
         appraisal.markerCentrality,
-        `agents.${appraisal.observerId}.history.overrides.identity`,
-        `agents.${appraisal.observerId}.profile.identity`,
+        `characters.${appraisal.observerId}.history.overrides.identity`,
+        `characters.${appraisal.observerId}.profile.identity`,
       ),
       traceTerm('comparability', appraisal.comparability, `dyads.${appraisal.observerId}`),
       traceTerm(
         'rank-similarity',
         appraisal.rankSimilarity,
-        `agents.${appraisal.observerId}.values`,
+        `characters.${appraisal.observerId}.values`,
       ),
       traceTerm('exposure-before', appraisal.exposureBefore, `displayExposures.${event.displayId}`),
       traceTerm('admiration-turn', appraisal.admirationTurn, `displayRecords.${appraisal.id}`),
@@ -260,7 +260,7 @@ function wearerTrace(
   record: DisplayResolutionRecord,
 ): TraceEntry {
   return {
-    agentId: event.wearerId,
+    instanceId: event.wearerId,
     id: `${record.id}:wearer`,
     kind: 'display-appraisal',
     minute: state.minute,
@@ -290,7 +290,7 @@ export function resolveDisplayEvent(state: SimulationState, event: DisplayEvent)
         (perceived.reduce((total, result) => total + (1 - result.exposureBefore), 0) /
           perceived.length);
   const wearerWithYield =
-    wearerYield === 0 ? wearer : applyAgentValueTurns(wearer, { respect: wearerYield });
+    wearerYield === 0 ? wearer : applyCharacterValueTurns(wearer, { respect: wearerYield });
   const standingBefore = wearer.values.respect.charge;
   const standingAfter = wearerWithYield.values.respect.charge;
 
@@ -373,12 +373,12 @@ export function resolveDisplayEvent(state: SimulationState, event: DisplayEvent)
     } satisfies DisplayObserverAppraisal;
   });
 
-  const agents = state.agents.map(agent => {
+  const agents = state.characters.map(agent => {
     if (agent.id === event.wearerId) return wearerWithYield;
     const appraisal = appraisals.find(candidate => candidate.observerId === agent.id);
     if (appraisal === undefined || appraisal.outcome === 'missed') return agent;
     return {
-      ...applyAgentValueTurns(agent, appraisal.subjectiveTurns),
+      ...applyCharacterValueTurns(agent, appraisal.subjectiveTurns),
       positionalRespect: positionalByObserver.get(agent.id) ?? agent.positionalRespect,
     };
   });
@@ -416,7 +416,7 @@ export function resolveDisplayEvent(state: SimulationState, event: DisplayEvent)
   trace = appendTrace(trace, wearerTrace(state, event, record), MAX_TRACE_ENTRIES);
   return {
     ...state,
-    agents,
+    characters: agents,
     displayExposures,
     displayRecords: appendBounded(state.displayRecords, record, MAX_DISPLAY_RECORDS),
     resolvedDisplayEventIds: [...state.resolvedDisplayEventIds, event.id],

@@ -147,11 +147,11 @@ export function validateReferences(content: ScenarioContent): void {
     if (!instanceIds.has(item.ownerId)) {
       throw new ScenarioValidationError(`${path}.ownerId`, `unknown agent "${item.ownerId}"`);
     }
-    item.knownByIds.forEach((agentId, agentIndex) => {
-      if (!instanceIds.has(agentId)) {
+    item.knownByIds.forEach((instanceId, agentIndex) => {
+      if (!instanceIds.has(instanceId)) {
         throw new ScenarioValidationError(
           `${path}.knownByIds[${agentIndex}]`,
-          `unknown agent "${agentId}"`,
+          `unknown agent "${instanceId}"`,
         );
       }
     });
@@ -179,11 +179,11 @@ export function validateReferences(content: ScenarioContent): void {
         'disclosure item must belong to the opportunity owner',
       );
     }
-    opportunity.audienceIds.forEach((agentId, agentIndex) => {
-      if (!instanceIds.has(agentId)) {
+    opportunity.audienceIds.forEach((instanceId, agentIndex) => {
+      if (!instanceIds.has(instanceId)) {
         throw new ScenarioValidationError(
           `${path}.audienceIds[${agentIndex}]`,
-          `unknown agent "${agentId}"`,
+          `unknown agent "${instanceId}"`,
         );
       }
     });
@@ -230,10 +230,10 @@ export function validateReferences(content: ScenarioContent): void {
   const reputationGroupIds = new Set(content.scenario.reputationGroups.map(group => group.id));
   content.scenario.incidentEvents.forEach((event, index) => {
     const path = `scenario.incidentEvents[${index}]`;
-    if (!instanceIds.has(event.affectedAgentId)) {
+    if (!instanceIds.has(event.affectedInstanceId)) {
       throw new ScenarioValidationError(
-        `${path}.affectedAgentId`,
-        `unknown agent "${event.affectedAgentId}"`,
+        `${path}.affectedInstanceId`,
+        `unknown agent "${event.affectedInstanceId}"`,
       );
     }
     if (event.actorId !== null && !instanceIds.has(event.actorId)) {
@@ -262,10 +262,10 @@ export function validateReferences(content: ScenarioContent): void {
       }
     });
     event.generation?.eligibleWeights.forEach((weight, weightIndex) => {
-      if (!instanceIds.has(weight.agentId)) {
+      if (!instanceIds.has(weight.instanceId)) {
         throw new ScenarioValidationError(
-          `${path}.generation.eligibleWeights[${weightIndex}].agentId`,
-          `unknown agent "${weight.agentId}"`,
+          `${path}.generation.eligibleWeights[${weightIndex}].instanceId`,
+          `unknown agent "${weight.instanceId}"`,
         );
       }
     });
@@ -306,8 +306,11 @@ export function validateReferences(content: ScenarioContent): void {
   });
   content.scenario.somaticEvents.forEach((event, index) => {
     const path = `scenario.somaticEvents[${index}]`;
-    if (!instanceIds.has(event.agentId)) {
-      throw new ScenarioValidationError(`${path}.agentId`, `unknown agent "${event.agentId}"`);
+    if (!instanceIds.has(event.instanceId)) {
+      throw new ScenarioValidationError(
+        `${path}.instanceId`,
+        `unknown agent "${event.instanceId}"`,
+      );
     }
     event.observerIds.forEach((observerId, observerIndex) => {
       if (!instanceIds.has(observerId)) {
@@ -316,7 +319,7 @@ export function validateReferences(content: ScenarioContent): void {
           `unknown agent "${observerId}"`,
         );
       }
-      if (observerId === event.agentId) {
+      if (observerId === event.instanceId) {
         throw new ScenarioValidationError(
           `${path}.observerIds[${observerIndex}]`,
           'an agent cannot observe its own somatic state',
@@ -359,8 +362,11 @@ export function validateReferences(content: ScenarioContent): void {
   });
   content.scenario.appraisalEvents.forEach((event, index) => {
     const path = `scenario.appraisalEvents[${index}]`;
-    if (!instanceIds.has(event.agentId)) {
-      throw new ScenarioValidationError(`${path}.agentId`, `unknown agent "${event.agentId}"`);
+    if (!instanceIds.has(event.instanceId)) {
+      throw new ScenarioValidationError(
+        `${path}.instanceId`,
+        `unknown agent "${event.instanceId}"`,
+      );
     }
     if (event.socialTargetId !== null && !instanceIds.has(event.socialTargetId)) {
       throw new ScenarioValidationError(
@@ -368,7 +374,7 @@ export function validateReferences(content: ScenarioContent): void {
         `unknown agent "${event.socialTargetId}"`,
       );
     }
-    if (event.socialTargetId === event.agentId) {
+    if (event.socialTargetId === event.instanceId) {
       throw new ScenarioValidationError(
         `${path}.socialTargetId`,
         'an agent cannot be its own social threat target',
@@ -526,12 +532,12 @@ export function validateReferences(content: ScenarioContent): void {
   content.scenario.narrativeEvents.forEach((event, index) => {
     const path = `scenario.narrativeEvents[${index}]`;
     if (event.eventType === 'attribution') {
-      for (const [field, agentId] of [
+      for (const [field, instanceId] of [
         ['sourceId', event.sourceId],
         ['subjectId', event.subjectId],
       ] as const) {
-        if (!instanceIds.has(agentId)) {
-          throw new ScenarioValidationError(`${path}.${field}`, `unknown agent "${agentId}"`);
+        if (!instanceIds.has(instanceId)) {
+          throw new ScenarioValidationError(`${path}.${field}`, `unknown agent "${instanceId}"`);
         }
       }
       if (

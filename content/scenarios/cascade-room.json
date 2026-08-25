@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 17,
+  "schemaVersion": 18,
   "id": "cascade-room",
   "title": "Two Audiences in One Room",
   "summary": "One threat drives target-specific fawning toward an abuser while a separate request from a therapist still receives superficial cooperation.",
@@ -51,7 +51,6 @@
   "appraisalEvents": [
     {
       "id": "abuser-enters",
-      "agentId": "witness",
       "atMinute": 601,
       "summary": "the abuser entering the room",
       "turns": {
@@ -63,7 +62,8 @@
       "localized": true,
       "believedLeverage": false,
       "exitAvailable": false,
-      "socialTargetId": "abuser"
+      "socialTargetId": "abuser",
+      "instanceId": "witness"
     }
   ],
   "worldFacts": [],

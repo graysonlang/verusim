@@ -6,11 +6,11 @@ import type {
   MindModelObservationRecord,
   ObservationEvent,
   SensoryAssessment,
-  SimulationAgent,
+  CharacterInstance,
   SimulationState,
   TraceEntry,
 } from '../model/types.js';
-import { resolveAgentCapabilityCheck } from './capability.js';
+import { resolveCharacterCapabilityCheck } from './capability.js';
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { resolveNormObservationEvent } from './norms.js';
@@ -19,9 +19,9 @@ import { projectedDyad, repriceExposureFor } from './relationship.js';
 const CONFIRMATION_ERROR = 0.08;
 const MAX_OBSERVATIONS = 120;
 
-function agentFor(state: SimulationState, agentId: string): SimulationAgent {
-  const agent = state.agents.find(candidate => candidate.id === agentId);
-  if (agent === undefined) throw new RangeError(`Unknown observation agent "${agentId}"`);
+function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown observation agent "${instanceId}"`);
   return agent;
 }
 
@@ -48,14 +48,14 @@ function sensoryFor(event: MindModelObservationEvent, state: SimulationState, ob
 function observationTrace(
   state: SimulationState,
   event: MindModelObservationEvent,
-  observer: SimulationAgent,
+  observer: CharacterInstance,
   sensory: SensoryAssessment,
   perceptionTerms: TraceEntry['terms'],
 ): TraceEntry {
   const subject = agentFor(state, event.subjectId);
   const perceived = sensory.available;
   return {
-    agentId: observer.id,
+    instanceId: observer.id,
     id: `${state.tick}:${event.id}:${observer.id}:observation`,
     kind: 'observation',
     minute: state.minute,
@@ -131,7 +131,7 @@ function predictionTrace(
   const observer = agentFor(state, record.observerId);
   const subject = agentFor(state, record.subjectId);
   return {
-    agentId: record.observerId,
+    instanceId: record.observerId,
     id: `${state.tick}:${event.id}:${record.observerId}:prediction`,
     kind: 'prediction',
     minute: state.minute,
@@ -235,7 +235,7 @@ function resolveForObserver(
   const dyad = existingDyad ?? projectedDyad(observer, event.subjectId);
   const prediction = predictedValue(dyad, event.dimension);
   const rawError = Math.abs(event.observedValue - prediction);
-  const calibration = resolveAgentCapabilityCheck(observer, {
+  const calibration = resolveCharacterCapabilityCheck(observer, {
     applicable: true,
     capabilityId: 'evidenceCalibration',
     difficulty: event.interpretationDifficulty,

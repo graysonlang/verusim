@@ -6,14 +6,14 @@ import {
   advanceSimulation,
   createSimulation,
   createSimulationFromSnapshot,
-  describeAgent,
+  describeCharacter,
   evaluateRelationshipRequest,
   parseCharacterLibrary,
   parseScenario,
   promoteToInvoker,
   resolveNarrativeEvent,
   serializeSnapshot,
-  setAgentResource,
+  setCharacterResource,
   type AttributionEvent,
   type ScenarioFile,
 } from '../src/index.js';
@@ -150,7 +150,7 @@ describe('narrative-driven agency', () => {
 
   it('keeps a load-bearing validator non-substitutable despite negative history', () => {
     const state = createNarrativeSimulation();
-    const responder = state.agents.find(agent => agent.id === 'responder');
+    const responder = state.characters.find(agent => agent.id === 'responder');
     assert.ok(responder);
     const common = {
       behaviorVariance: 0,
@@ -206,11 +206,16 @@ describe('narrative-driven agency', () => {
         ?.disposition,
       'resisted',
     );
-    const attributed = resolved.agents.find(agent => agent.id === 'invoker');
+    const attributed = resolved.characters.find(agent => agent.id === 'invoker');
     assert.ok(attributed);
-    assert.match(describeAgent(attributed).narrativeTell ?? '', /^resisted:/);
+    assert.match(describeCharacter(attributed).narrativeTell ?? '', /^resisted:/);
 
-    let worn = setAgentResource(createNarrativeSimulation(), 'invoker', 'regulationReserve', 0.05);
+    let worn = setCharacterResource(
+      createNarrativeSimulation(),
+      'invoker',
+      'regulationReserve',
+      0.05,
+    );
     const event = (id: string, atMinute: number): AttributionEvent => ({
       atMinute,
       audienceId: 'neighbors',
@@ -227,11 +232,14 @@ describe('narrative-driven agency', () => {
     });
     worn = resolveNarrativeEvent(worn, event('wear-one', 1));
     worn = resolveNarrativeEvent(worn, event('wear-two', 2));
-    const before = worn.agents.find(agent => agent.id === 'invoker')?.narrative?.claims[0]?.wearIn;
+    const before = worn.characters.find(agent => agent.id === 'invoker')?.narrative?.claims[0]
+      ?.wearIn;
     worn = resolveNarrativeEvent(worn, event('wear-three', YEAR_MINUTES + 2));
-    const after = worn.agents.find(agent => agent.id === 'invoker')?.narrative?.claims[0]?.wearIn;
+    const after = worn.characters.find(agent => agent.id === 'invoker')?.narrative?.claims[0]
+      ?.wearIn;
     worn = resolveNarrativeEvent(worn, event('wear-four', YEAR_MINUTES + 2));
-    const capped = worn.agents.find(agent => agent.id === 'invoker')?.narrative?.claims[0]?.wearIn;
+    const capped = worn.characters.find(agent => agent.id === 'invoker')?.narrative?.claims[0]
+      ?.wearIn;
 
     assert.equal(before, 0);
     assert.equal(
@@ -256,13 +264,13 @@ describe('narrative-driven agency', () => {
 
   it('promotes a responder without rewriting accumulated state and enables proactive goals', () => {
     const state = createNarrativeSimulation();
-    const before = state.agents.find(agent => agent.id === 'responder');
+    const before = state.characters.find(agent => agent.id === 'responder');
     assert.ok(before);
     assert.equal(before.narrative, null);
     assert.ok(!state.agendaGoals.some(goal => goal.id === 'responder-help-square'));
 
     const promoted = promoteToInvoker(state, 'responder');
-    const afterPromotion = promoted.agents.find(agent => agent.id === 'responder');
+    const afterPromotion = promoted.characters.find(agent => agent.id === 'responder');
     assert.ok(afterPromotion?.narrative);
     assert.deepEqual({ ...afterPromotion, narrative: null }, before);
     const active = advanceSimulation(promoted, 1);
