@@ -722,6 +722,28 @@ Earlier in the slice, the inspector was verified across 27 seconds of real-time 
 The console recorded no errors or warnings; screenshots are under `.playwright-mcp/`.
 The full verification gate passes with 318 deterministic tests.
 
+## Phase 8D — specialized editors and shared problems surface
+
+Status: complete.
+
+Add the content explorer, central form or spatial canvas, property and reference inspector, and shared problems panel.
+Provide specialized editing for character identities and age or continuity profiles, layered environment layouts, atomic norms, social-contract composition, and scenario placement and initial conditions.
+Keep raw JSON as an advanced view over the same transaction and draft rather than a second document model.
+
+Gate: keyboard and pointer workflows author representative fields in every document kind, navigate semantic references and diagnostics without trapping focus, and apply the valid revision to run the fixture without copied dependencies.
+
+Editing is a pure layer under a declarative one.
+`app/editing/paths.ts` addresses any value in a draft with dot and index paths and maps authored diagnostic paths (`scenario.` and `resource.` rooted) onto them; `app/editing/edits.ts` turns a path set, clear, insert, remove, or move into one undoable transaction over the workspace; `app/editing/forms.ts` declares a form specification per document kind - groups of typed fields and lists with nested lists, item labels, and templates - with options derived from the graph (environment layers and locations for placements and schedules, documents of a kind for references).
+The specifications cover character identities, physical and age profiles, constitution, capabilities, disclosure and empathy envelopes, cascade priors, value dispositions, identity markers, formative events, narrative claims, outlet and satisfier preferences; environment layouts with layers, locations, areas, and connectors; norm labels, compatibility turns, and interpretations; social-contract composition; and scenario identity, conditions, ambient turns, placements with initial resources, value charges, and schedules, and world facts.
+`app/editing/form-view.ts` renders a specification as native controls with delegated change, click, focus, and toggle handling, reconciled in place; a problem lands on the field that owns its path or on the enclosing item, reference fields carry an Open control, and property selection follows focus.
+`app/editing/layout-canvas.ts` is the spatial editor: it draws one layer's areas, locations, and connector endpoints, selects and drags locations, nudges the selection with arrow keys, pans and zooms, and reports a camera per document that the workspace keeps across selection and mode changes.
+The Build editor offers Form, Canvas (environment layouts only), and JSON views over the same draft and transactions, the problems panel navigates to the owning document and field, the inspector shows the current selection with its value and reference, and problems are de-duplicated and carry their path separately from the message.
+
+`test/editing.test.ts` proves path parsing, immutable set, remove, and insert, diagnostic-path mapping, address round-trips, that every required field in every kind's specification exists in the Pottsfield project, that placements are offered the referenced environment's layers and locations, and that authoring one representative field in every kind - a character's age and name, a location's position, an interpretation's identity stake, a placement's activity, the scenario's weather, and a norm composed into a contract - prepares and runs with the edits visible in the started simulation, undoes byte-for-byte across all seven transactions, and reports a broken field at the path the form owns.
+Browser verification against the isolated preview with the headless Playwright MCP server, on the Pottsfield project: typed a scenario title and committed it with Tab (focus and selection moved to the next field), changed the weather by pointer, added a world fact, opened the environment through the placement's reference control, switched to the canvas, clicked a location to select it, nudged it with an arrow key, dragged it, zoomed with the wheel and panned, returned to the scenario and set an invalid tick length - the field showed the problem, the problems panel listed it, running the revision was blocked at `scenario.tickSeconds`, and clicking the problem focused the owning field - undid it, ran the revision into Simulate with the edited title, rain, and the moved location, and returned to Build to find the canvas camera and history intact; a second pass authored a character name by keyboard, a norm label, and a contract composition whose new item auto-expanded and resolved a second norm, ran that revision, and returned to a four-entry history.
+The console recorded no errors or warnings; screenshots are under `.playwright-mcp/`.
+The full verification gate passes with 324 deterministic tests.
+
 ## Phase 10A — ensemble runner and falsifier harness
 
 Status: complete.

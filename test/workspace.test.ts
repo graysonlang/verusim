@@ -138,7 +138,15 @@ describe('build and simulate workspaces', () => {
       selectionStart: 12,
     });
     assert.equal(result.workspace.graph.undoStack.length, 1);
-    assert.equal(buildProblems(result.workspace).at(-1)?.message, result.problem.message);
+    const listed = buildProblems(result.workspace).filter(
+      problem => problem.path === result.problem.path,
+    );
+    assert.equal(
+      listed.length,
+      1,
+      'the document diagnostic and preparation failure are one problem',
+    );
+    assert.equal(listed[0]?.message, 'expected a number from 1 through 86400');
 
     const repaired = prepareBuildRevision(undoBuildEdit(result.workspace));
     assert.ok('revision' in repaired);

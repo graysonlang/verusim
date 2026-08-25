@@ -18,12 +18,13 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8D: specialized editors and the shared problems surface.
-Replace the raw JSON draft view with editors for character identities and continuity profiles, layered environment layouts, atomic norms, social-contract composition, and scenario placement and initial conditions, backed by a content explorer, property and reference inspector, and one problems panel over the same document graph.
+The active slice is Phase 8E: authoring-store ports and adapters.
+Define the host-facing authoring-store port for deterministic document discovery, reads, and atomic change-set commits outside the engine.
+Implement a direct in-memory adapter for embedded consumers and an IndexedDB-backed browser adapter, with import and export remaining application concerns over the same graph.
 
 ### Current-focus non-goals
 
-- no authoring-store adapters or packing; those are Phases 8E and 8F
+- no dependency-aware packing or export; that is Phase 8F
 - no simulation-model or time-domain changes; Phase 9 is complete
 - no behavior-model or evaluator-fidelity expansion
 
@@ -31,10 +32,10 @@ Replace the raw JSON draft view with editors for character identities and contin
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phases 8D through 8F — editors, store adapters, and packing
+1. Phases 8E and 8F — store adapters and packing
 2. Phase 10B — remaining acceptance vignettes
 
-Phase 9 ran to completion ahead of the presentation slices, and the Phase 8C shell now integrates the finished advancement model; the editors in Phase 8D build over that shell.
+Phase 9 ran to completion ahead of the presentation slices; the Phase 8C shell and the Phase 8D editors are built over the finished advancement model, and the store adapters in Phase 8E feed the same document graph.
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -65,15 +66,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A through 8C are recorded in COMPLETED.md, as are Phases 9 and 10A, so the editors are built once over the canonical time domain and the finished shell.
-
-#### Phase 8D — specialized editors and shared problems surface
-
-Add the content explorer, central form or spatial canvas, property and reference inspector, and shared problems panel.
-Provide specialized editing for character identities and age or continuity profiles, layered environment layouts, atomic norms, social-contract composition, and scenario placement and initial conditions.
-Keep raw JSON as an advanced view over the same transaction and draft rather than a second document model.
-
-Gate: keyboard and pointer workflows author representative fields in every document kind, navigate semantic references and diagnostics without trapping focus, and apply the valid revision to run the fixture without copied dependencies.
+Phases 8A through 8D are recorded in COMPLETED.md, as are Phases 9 and 10A; the store adapters and packing build over the finished shell, editors, and time domain.
 
 #### Phase 8E — authoring-store ports and adapters
 

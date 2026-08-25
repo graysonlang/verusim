@@ -29,12 +29,22 @@ export type WorkbenchMode = 'build' | 'simulate';
 
 export const WORKBENCH_MODES: readonly WorkbenchMode[] = ['build', 'simulate'];
 
-/** Where the Build editor is looking; the spatial camera arrives with the layout editor in Phase 8D. */
+/** Where the Build draft editor is looking: the JSON view's scroll and caret. */
 export interface EditorViewport {
   scrollTop: number;
   selectionEnd: number;
   selectionStart: number;
 }
+
+/** The layout editor's spatial camera: the active layer, world-space center in meters, and zoom. */
+export interface EditorCamera {
+  layerId: string | null;
+  x: number;
+  y: number;
+  zoom: number;
+}
+
+export type BuildEditorView = 'canvas' | 'form' | 'json';
 
 export interface BuildProblem {
   documentId: string | null;
@@ -47,12 +57,16 @@ export interface BuildWorkspace {
   appliedDraftDigest: string | null;
   /** Revision digest Simulate is running, or null before any preparation. */
   appliedDigest: string | null;
+  /** Per-document spatial cameras, keyed by document id, kept across selection changes. */
+  cameras: Readonly<Record<string, EditorCamera>>;
   graph: AuthoringGraph;
   /** The last preparation failure, cleared by the next successful preparation. */
   preparationProblem: BuildProblem | null;
   scenarioDocumentId: string;
   selectedDocumentId: string;
   selectedPath: string | null;
+  /** Which editor presents the selected document: form, spatial canvas, or the raw JSON advanced view. */
+  view: BuildEditorView;
   viewport: EditorViewport;
 }
 
@@ -86,11 +100,13 @@ export function createBuildWorkspace(input: {
   return {
     appliedDigest: null,
     appliedDraftDigest: null,
+    cameras: {},
     graph,
     preparationProblem: null,
     scenarioDocumentId: documentId,
     selectedDocumentId: documentId,
     selectedPath: null,
+    view: 'form',
     viewport: IDLE_EDITOR_VIEWPORT,
   };
 }
@@ -98,12 +114,27 @@ export function createBuildWorkspace(input: {
 export function selectBuildDocument(workspace: BuildWorkspace, documentId: string): BuildWorkspace {
   documentById(workspace.graph, documentId);
   if (documentId === workspace.selectedDocumentId) return workspace;
+  const kind = documentById(workspace.graph, documentId).kind;
   return {
     ...workspace,
     selectedDocumentId: documentId,
     selectedPath: null,
+    view: workspace.view === 'canvas' && kind !== 'environment-layout' ? 'form' : workspace.view,
     viewport: IDLE_EDITOR_VIEWPORT,
   };
+}
+
+export function setBuildView(workspace: BuildWorkspace, view: BuildEditorView): BuildWorkspace {
+  return view === workspace.view ? workspace : { ...workspace, view };
+}
+
+/** Remember the spatial camera for one document; it survives selection and mode changes. */
+export function setBuildCamera(
+  workspace: BuildWorkspace,
+  documentId: string,
+  camera: EditorCamera,
+): BuildWorkspace {
+  return { ...workspace, cameras: { ...workspace.cameras, [documentId]: { ...camera } } };
 }
 
 export function selectBuildPath(workspace: BuildWorkspace, path: string | null): BuildWorkspace {
@@ -153,17 +184,37 @@ export function buildRevisionPending(workspace: BuildWorkspace): boolean {
   );
 }
 
-/** Document validation diagnostics plus the last preparation failure, in explorer order. */
+/** Parser messages repeat their authored path; problems carry the path separately. */
+function problemMessage(path: string, message: string): string {
+  const prefix = `${path}: `;
+  return message.startsWith(prefix) ? message.slice(prefix.length) : message;
+}
+
+/** Document validation diagnostics plus the last preparation failure, in explorer order, without duplicates. */
 export function buildProblems(workspace: BuildWorkspace): readonly BuildProblem[] {
   const problems: BuildProblem[] = workspace.graph.documents.flatMap(document =>
     document.diagnostics.map((diagnostic: AuthoringDiagnostic) => ({
       documentId: diagnostic.documentId,
-      message: diagnostic.message,
+      message: problemMessage(diagnostic.path, diagnostic.message),
       path: diagnostic.path,
     })),
   );
-  if (workspace.preparationProblem !== null) problems.push(workspace.preparationProblem);
-  return problems;
+  if (workspace.preparationProblem !== null) {
+    problems.push({
+      ...workspace.preparationProblem,
+      message: problemMessage(
+        workspace.preparationProblem.path,
+        workspace.preparationProblem.message,
+      ),
+    });
+  }
+  const seen = new Set<string>();
+  return problems.filter(problem => {
+    const key = `${problem.documentId ?? ''}\u0000${problem.path}\u0000${problem.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**

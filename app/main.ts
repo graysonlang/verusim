@@ -20,6 +20,12 @@ import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
 import { createBuildPanels } from './build-workspace.js';
 import {
+  insertDraftEntry,
+  moveDraftEntry,
+  removeDraftEntry,
+  setDraftValue,
+} from './editing/edits.js';
+import {
   classLabel,
   indicatorStrip,
   locationBadge,
@@ -42,6 +48,8 @@ import {
   redoBuildEdit,
   selectBuildDocument,
   selectBuildPath,
+  setBuildCamera,
+  setBuildView,
   setBuildViewport,
   toggleWorkbenchMode,
   undoBuildEdit,
@@ -758,12 +766,32 @@ function createWorkbench(): HTMLElement {
   scenarioInfoOverlay.setAttribute('aria-hidden', 'true');
   scenarioInfoOverlay.inert = true;
   scenarioInfoOverlay.append(scenarioInfoPanel);
+  const recordEdit = (label: string, apply: (current: BuildWorkspace) => BuildWorkspace): void => {
+    let changed = false;
+    setBuildWorkspace(current => {
+      const next = apply(current);
+      changed = next !== current;
+      return next;
+    });
+    if (changed) setStatus(`Recorded ${label}`);
+  };
   const buildPanels = createBuildPanels({
-    onEdit: (documentId, draft, label) => {
-      setBuildWorkspace(current => editBuildDocument(current, documentId, draft, label));
-      setStatus(`Recorded ${label}`);
-    },
+    onCamera: (documentId, camera) =>
+      setBuildWorkspace(current => setBuildCamera(current, documentId, camera)),
+    onEdit: (documentId, draft, label) =>
+      recordEdit(label, current => editBuildDocument(current, documentId, draft, label)),
+    onInsertEntry: (documentId, listPath, item, label) =>
+      recordEdit(label, current => insertDraftEntry(current, documentId, listPath, item, label)),
+    onMoveEntry: (documentId, listPath, from, to, label) =>
+      recordEdit(label, current => moveDraftEntry(current, documentId, listPath, from, to, label)),
     onRedo: () => setBuildWorkspace(current => redoBuildEdit(current)),
+    onRemoveEntry: (documentId, path, label) =>
+      recordEdit(label, current => removeDraftEntry(current, documentId, path, label)),
+    onRemoveValue: (documentId, path, label) =>
+      recordEdit(label, current => removeDraftEntry(current, documentId, path, label)),
+    onSetValue: (documentId, path, value, label) =>
+      recordEdit(label, current => setDraftValue(current, documentId, path, value, label)),
+    onView: view => setBuildWorkspace(current => setBuildView(current, view)),
     onRunRevision: () => runRevision(),
     onSelectDocument: documentId =>
       setBuildWorkspace(current => selectBuildDocument(current, documentId)),

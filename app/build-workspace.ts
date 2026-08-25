@@ -1,19 +1,27 @@
 import type { AuthoringDocument } from '../src/index.js';
 import { button, element } from './dom.js';
+import { createFormView } from './editing/form-view.js';
+import { formSpecFor } from './editing/forms.js';
+import { createLayoutCanvas } from './editing/layout-canvas.js';
+import { draftPathFromDiagnostic, getAtPath } from './editing/paths.js';
 import { activeDocumentElement, morphChildren } from './morph.js';
 import {
   buildDirty,
   buildProblems,
   buildRevisionPending,
+  type BuildEditorView,
   type BuildProblem,
   type BuildWorkspace,
+  type EditorCamera,
   type EditorViewport,
 } from './workspace.js';
 
 /**
  * Build workspace presentation: a content explorer over the document graph, a
- * raw JSON draft editor (the advanced view that precedes the Phase 8D editors),
- * and a document inspector with provenance, references, and problems.
+ * central editor (a specialized form for every document kind, a spatial canvas
+ * for environment layouts, and raw JSON as the advanced view over the same
+ * draft and transactions), and a document inspector with provenance, the
+ * current selection, references, and problems.
  *
  * The panels never touch Simulate state. Every change goes through the handlers,
  * which the shell routes into the pure workspace model, and the panels are
@@ -21,8 +29,21 @@ import {
  * selection, editor scroll, and caret survive every render.
  */
 export interface BuildHandlers {
+  onCamera: (documentId: string, camera: EditorCamera) => void;
   onEdit: (documentId: string, draft: unknown, label: string) => void;
+  onInsertEntry: (documentId: string, listPath: string, item: unknown, label: string) => void;
+  onMoveEntry: (
+    documentId: string,
+    listPath: string,
+    from: number,
+    to: number,
+    label: string,
+  ) => void;
   onRedo: () => void;
+  onRemoveEntry: (documentId: string, path: string, label: string) => void;
+  onRemoveValue: (documentId: string, path: string, label: string) => void;
+  onSetValue: (documentId: string, path: string, value: unknown, label: string) => void;
+  onView: (view: BuildEditorView) => void;
   onRunRevision: () => void;
   onSelectDocument: (documentId: string) => void;
   onSelectPath: (path: string | null) => void;
@@ -121,6 +142,11 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   const undo = button('Undo', 'button subtle');
   const redo = button('Redo', 'button subtle');
   const runRevision = button('Run revision', 'button primary');
+  const viewTabs = element('div', 'build-view-tabs');
+  const formTab = button('Form', 'build-view-tab');
+  const canvasTab = button('Canvas', 'build-view-tab');
+  const jsonTab = button('JSON', 'build-view-tab');
+  const editorBody = element('div', 'build-editor-body');
   const textarea = element('textarea', 'build-draft');
   const editorStatus = element('p', 'build-editor-status');
   const problemsHeading = element('h3', 'build-problems-title');
@@ -154,8 +180,24 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   inspector.dataset.testid = 'build-inspector';
   inspector.setAttribute('aria-label', 'Document inspector');
   inspector.append(inspectorContent);
+  viewTabs.setAttribute('role', 'radiogroup');
+  viewTabs.setAttribute('aria-label', 'Editor view');
+  for (const [tab, view] of [
+    [formTab, 'form'],
+    [canvasTab, 'canvas'],
+    [jsonTab, 'json'],
+  ] as const) {
+    tab.dataset.view = view;
+    tab.dataset.testid = `build-view-${view}`;
+    tab.setAttribute('role', 'radio');
+    tab.addEventListener('click', () => handlers.onView(view));
+  }
+  formTab.title = 'Specialized fields for this document kind';
+  canvasTab.title = 'Spatial layout editor (environment layouts)';
+  jsonTab.title = 'Advanced view: the raw draft as JSON over the same transactions';
+  viewTabs.append(formTab, canvasTab, jsonTab);
   toolbar.append(editorTitle, editorMeta, applyEdit, revertEdit, undo, redo, runRevision);
-  editor.append(toolbar, textarea, editorStatus, problemsHeading, problemsList);
+  editor.append(toolbar, viewTabs, editorBody, editorStatus, problemsHeading, problemsList);
 
   let renderedDocumentId: string | null = null;
   let renderedDraftText = '';
@@ -172,6 +214,40 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
       selectionEnd: textarea.selectionEnd,
       selectionStart: textarea.selectionStart,
     });
+  };
+
+  const withSelected = (apply: (documentId: string) => void): void => {
+    const id = current?.selectedDocumentId;
+    if (id !== undefined) apply(id);
+  };
+  const formView = createFormView({
+    onInsert: (listPath, item, label) =>
+      withSelected(id => handlers.onInsertEntry(id, listPath, item, label)),
+    onMove: (listPath, from, to, label) =>
+      withSelected(id => handlers.onMoveEntry(id, listPath, from, to, label)),
+    onNavigate: documentId => handlers.onSelectDocument(documentId),
+    onRemove: (path, label) => withSelected(id => handlers.onRemoveEntry(id, path, label)),
+    onRemoveValue: (path, label) => withSelected(id => handlers.onRemoveValue(id, path, label)),
+    onSelectPath: path => handlers.onSelectPath(path),
+    onSetValue: (path, value, label) =>
+      withSelected(id => handlers.onSetValue(id, path, value, label)),
+  });
+  const layoutCanvas = createLayoutCanvas({
+    onCamera: camera => withSelected(id => handlers.onCamera(id, camera)),
+    onMoveLocation: (index, x, y, label) =>
+      withSelected(id => {
+        const item = getAtPath(selectedDocument()?.draft, `layout.locations[${index}]`);
+        if (item === null || typeof item !== 'object') return;
+        handlers.onSetValue(id, `layout.locations[${index}]`, { ...item, x, y }, label);
+      }),
+    onSelectPath: path => handlers.onSelectPath(path),
+  });
+  editorBody.append(formView.element, layoutCanvas.element, textarea);
+
+  /** Map an authored problem path onto the draft path editors use, for one document. */
+  const draftPathFor = (documentId: string, path: string): string | null => {
+    const document = current?.graph.documents.find(candidate => candidate.id === documentId);
+    return document === undefined ? null : draftPathFromDiagnostic(document.kind, path);
   };
 
   explorerList.addEventListener('click', event => {
@@ -191,21 +267,21 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
       return;
     }
     const problem = target.closest<HTMLElement>('[data-problem-path]');
-    if (problem?.dataset.problemPath !== undefined)
-      handlers.onSelectPath(problem.dataset.problemPath);
+    if (problem?.dataset.problemPath !== undefined) {
+      withSelected(id =>
+        handlers.onSelectPath(draftPathFor(id, problem.dataset.problemPath ?? '')),
+      );
+    }
   });
   problemsList.addEventListener('click', event => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
     const problem = target.closest<HTMLElement>('[data-problem-path]');
     if (problem?.dataset.problemPath === undefined) return;
-    if (
-      problem.dataset.problemDocument !== undefined &&
-      problem.dataset.problemDocument !== current?.selectedDocumentId
-    ) {
-      handlers.onSelectDocument(problem.dataset.problemDocument);
-    }
-    handlers.onSelectPath(problem.dataset.problemPath);
+    const documentId = problem.dataset.problemDocument ?? current?.selectedDocumentId;
+    if (documentId === undefined) return;
+    if (documentId !== current?.selectedDocumentId) handlers.onSelectDocument(documentId);
+    handlers.onSelectPath(draftPathFor(documentId, problem.dataset.problemPath));
   });
   applyEdit.addEventListener('click', () => {
     const document = selectedDocument();
@@ -235,7 +311,7 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   undo.addEventListener('click', () => handlers.onUndo());
   redo.addEventListener('click', () => handlers.onRedo());
   runRevision.addEventListener('click', () => {
-    if (editorDirty()) {
+    if (!textarea.hidden && editorDirty()) {
       editorStatus.textContent = 'Apply or revert the editor text before running a revision.';
       editorStatus.dataset.tone = 'error';
       return;
@@ -295,6 +371,38 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   function renderEditor(workspace: BuildWorkspace): void {
     const document = selectedDocument();
     if (document === null) return;
+    const spatial = document.kind === 'environment-layout';
+    const view: BuildEditorView = workspace.view === 'canvas' && !spatial ? 'form' : workspace.view;
+    for (const tab of [formTab, canvasTab, jsonTab]) {
+      tab.setAttribute('aria-checked', String(tab.dataset.view === view));
+      tab.classList.toggle('selected', tab.dataset.view === view);
+    }
+    canvasTab.disabled = !spatial;
+    formView.element.hidden = view !== 'form';
+    layoutCanvas.element.hidden = view !== 'canvas';
+    textarea.hidden = view !== 'json';
+    applyEdit.hidden = view !== 'json';
+    revertEdit.hidden = view !== 'json';
+    const documentProblems = buildProblems(workspace)
+      .filter(problem => problem.documentId === document.id)
+      .flatMap(problem => {
+        const path = draftPathFromDiagnostic(document.kind, problem.path);
+        return path === null ? [] : [{ message: problem.message, path }];
+      });
+    if (view === 'form') {
+      formView.render({
+        draft: document.draft,
+        problems: documentProblems,
+        selectedPath: workspace.selectedPath,
+        spec: formSpecFor(document, workspace.graph),
+      });
+    } else if (view === 'canvas') {
+      layoutCanvas.render({
+        camera: workspace.cameras[document.id] ?? null,
+        draft: document.draft,
+        selectedPath: workspace.selectedPath,
+      });
+    }
     const draftText = formatDraft(document.draft);
     const documentChanged = renderedDocumentId !== document.id;
     const focused = activeDocumentElement() === textarea;
@@ -338,7 +446,7 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
       problemsList,
       problems.map(problem => problemItem(problem, true)),
     );
-    if (workspace.selectedPath !== null && !focused) {
+    if (view === 'json' && workspace.selectedPath !== null && !focused) {
       const needle = workspace.selectedPath
         .split(/[.[\]]/)
         .filter(Boolean)
@@ -390,6 +498,42 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
     detailsBody.append(grid);
     details.append(detailsHeading, detailsBody);
 
+    const selection = element('section', 'inspector-section');
+    const selectionHeading = element('div', 'section-heading');
+    const selectionTitle = element('h3');
+    const selectionBody = element('div', 'section-body');
+    selectionTitle.textContent = 'Selection';
+    selectionHeading.append(selectionTitle);
+    if (workspace.selectedPath === null || workspace.selectedPath === '') {
+      const empty = element('p', 'empty-copy');
+      empty.textContent = 'Select a field, list item, or canvas location to inspect it here.';
+      selectionBody.append(empty);
+    } else {
+      const pathLine = element('code', 'build-selection-path');
+      pathLine.textContent = workspace.selectedPath;
+      const value = getAtPath(document.draft, workspace.selectedPath);
+      const preview = element('pre', 'build-selection-value');
+      const text = value === undefined ? 'absent' : JSON.stringify(value, null, 1);
+      preview.textContent = text.length > 1200 ? `${text.slice(0, 1200)}\n...` : text;
+      selectionBody.append(pathLine, preview);
+      if (
+        value !== null &&
+        typeof value === 'object' &&
+        'kind' in value &&
+        'packageId' in value &&
+        'resourceId' in value
+      ) {
+        const address = value as { kind: string; packageId: string; resourceId: string };
+        const open = button(
+          `Open ${address.packageId}:${address.kind}:${address.resourceId}`,
+          'build-reference',
+        );
+        open.dataset.documentId = `${address.packageId}:${address.kind}:${address.resourceId}`;
+        selectionBody.append(open);
+      }
+    }
+    selection.append(selectionHeading, selectionBody);
+
     const referenceSection = (label: string, ids: readonly string[]): HTMLElement => {
       const section = element('section', 'inspector-section');
       const heading = element('div', 'section-heading');
@@ -439,6 +583,7 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
     morphChildren(inspectorContent, [
       hero,
       details,
+      selection,
       referenceSection('Outgoing references', document.outgoing),
       referenceSection('Incoming references', document.incoming),
       problemSection,
