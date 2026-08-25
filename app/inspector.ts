@@ -41,6 +41,7 @@ import {
 import { button, clamp, element } from './dom.js';
 import { controlIcon } from './icons.js';
 import { inspectionIndicatorSettings } from './indicators.js';
+import { activeDocumentElement, morphChildren } from './morph.js';
 import { formatWorkbenchTime } from './playback.js';
 import type { ApplicationPreferences, ClockFormat } from './preferences.js';
 import { formatDistance } from './units.js';
@@ -95,6 +96,81 @@ function traceValue(value: boolean | number | string | null): string {
   return value === null ? 'none' : String(value);
 }
 
+interface InterventionContext {
+  agent: CharacterInstance;
+  setState: (next: SimulationState) => void;
+  state: SimulationState;
+}
+
+const interventionContexts = new WeakMap<HTMLElement, InterventionContext>();
+
+/** Focused controls whose in-progress edit must survive a render; focus elsewhere never blocks updates. */
+const LIVE_CONTROL_TAGS = new Set(['INPUT', 'SELECT', 'TEXTAREA']);
+
+/**
+ * One delegated listener per container applies live interventions from the
+ * latest rendered state, so rendered controls carry no closures over stale
+ * state and can be kept across renders.
+ */
+function ensureInterventionHandlers(container: HTMLElement): void {
+  if (interventionContexts.has(container)) return;
+  container.addEventListener('change', event => {
+    const context = interventionContexts.get(container);
+    const target = event.target;
+    if (context === undefined || !(target instanceof HTMLInputElement)) return;
+    const { agent, setState, state } = context;
+    switch (target.dataset.intervention) {
+      case 'value': {
+        const valueId = target.dataset.valueId;
+        if (valueId !== undefined && VALUE_IDS.includes(valueId as (typeof VALUE_IDS)[number])) {
+          setState(
+            setCharacterValueCharge(
+              state,
+              agent.id,
+              valueId as (typeof VALUE_IDS)[number],
+              target.valueAsNumber,
+            ),
+          );
+        }
+        return;
+      }
+      case 'resource': {
+        const resourceId = target.dataset.resourceId;
+        if (resourceId !== undefined && resourceId in RESOURCE_LABELS) {
+          setState(
+            setCharacterResource(
+              state,
+              agent.id,
+              resourceId as keyof ResourceState,
+              target.valueAsNumber,
+            ),
+          );
+        }
+        return;
+      }
+      case 'world-fact': {
+        const factId = target.dataset.factId;
+        if (factId !== undefined && Number.isFinite(target.valueAsNumber)) {
+          setState(setWorldFactAmount(state, factId, target.valueAsNumber));
+        }
+        return;
+      }
+      default:
+        return;
+    }
+  });
+  container.addEventListener('click', event => {
+    const context = interventionContexts.get(container);
+    const target = event.target;
+    if (context === undefined || !(target instanceof HTMLElement)) return;
+    const control = target.closest<HTMLElement>('[data-intervention="redirect"]');
+    if (control === null) return;
+    const select = container.querySelector<HTMLSelectElement>('[data-testid="redirect-select"]');
+    if (select === null) return;
+    context.setState(redirectCharacter(context.state, context.agent.id, select.value));
+  });
+}
+
 export function renderInspector(
   container: HTMLElement,
   state: SimulationState,
@@ -102,6 +178,8 @@ export function renderInspector(
   preferences: ApplicationPreferences,
   setState: (next: SimulationState) => void,
 ): void {
+  ensureInterventionHandlers(container);
+  interventionContexts.set(container, { agent, setState, state });
   const observation = describeCharacter(agent);
   const hero = element('section', 'character-hero');
   const name = element('h2');
@@ -183,13 +261,12 @@ export function renderInspector(
     option.value = location.id;
     option.textContent = location.name;
     option.selected = location.id === selectedDestination;
+    if (option.selected) option.setAttribute('selected', '');
     redirectSelect.append(option);
   }
   redirectButton.dataset.testid = 'redirect-button';
+  redirectButton.dataset.intervention = 'redirect';
   redirectButton.title = 'Send this character to the selected location from its current position';
-  redirectButton.addEventListener('click', () => {
-    setState(redirectCharacter(state, agent.id, redirectSelect.value));
-  });
   redirectField.append(redirectSelect, redirectButton);
   destination.body.append(destinationSummary, redirectField);
 
@@ -249,13 +326,13 @@ export function renderInspector(
     input.max = '1';
     input.step = '0.01';
     input.value = String(stateValue.charge);
+    input.setAttribute('value', input.value);
     input.setAttribute('aria-label', `${VALUE_LABELS[valueId]} charge`);
+    input.dataset.intervention = 'value';
+    input.dataset.valueId = valueId;
     detail.textContent = `weight ${effectiveValueWeight(agent, valueId).toFixed(2)} / deficit ${stateValue.deficitIntegral.toFixed(2)} / variance ${stateValue.variance.toFixed(2)}`;
     heading.append(label, output);
     field.append(heading, input, detail);
-    input.addEventListener('change', () => {
-      setState(setCharacterValueCharge(state, agent.id, valueId, input.valueAsNumber));
-    });
     values.body.append(field);
   }
 
@@ -273,11 +350,12 @@ export function renderInspector(
     input.max = '1';
     input.step = '0.01';
     input.value = String(agent.resources[resourceId]);
+    input.setAttribute('value', input.value);
+    input.setAttribute('aria-label', `${RESOURCE_LABELS[resourceId]} pool`);
+    input.dataset.intervention = 'resource';
+    input.dataset.resourceId = resourceId;
     heading.append(label, output);
     field.append(heading, input);
-    input.addEventListener('change', () => {
-      setState(setCharacterResource(state, agent.id, resourceId, input.valueAsNumber));
-    });
     resources.body.append(field);
   }
 
@@ -447,11 +525,10 @@ export function renderInspector(
       input.max = '1000000';
       input.step = '1';
       input.value = String(fact.amount);
-      input.addEventListener('change', () => {
-        if (Number.isFinite(input.valueAsNumber)) {
-          setState(setWorldFactAmount(state, fact.id, input.valueAsNumber));
-        }
-      });
+      input.setAttribute('value', input.value);
+      input.setAttribute('aria-label', `${fact.id} amount`);
+      input.dataset.intervention = 'world-fact';
+      input.dataset.factId = fact.id;
       field.append(label, input);
       facts.body.append(field);
     }
@@ -689,29 +766,36 @@ export function renderInspector(
   }
   trace.body.append(traceList);
 
-  container.replaceChildren(
-    hero,
-    mind.section,
-    destination.section,
-    spatial.section,
-    values.section,
-    resources.section,
-    coping.section,
-    agenda.section,
-    facts.section,
-    constitution.section,
-    capabilities.section,
-    physical.section,
-    evaluationShape.section,
-    identity.section,
-    narrative.section,
-    decisionSection.section,
-    relationships.section,
-    relationshipDecisionSection.section,
-    observationSection.section,
-    disclosureSection.section,
-    memories.section,
-    trace.section,
+  // Reconcile into the existing subtree so scroll position, focus, text
+  // selection, and an edit in progress survive every advancement.
+  const active = activeDocumentElement();
+  morphChildren(
+    container,
+    [
+      hero,
+      mind.section,
+      destination.section,
+      spatial.section,
+      values.section,
+      resources.section,
+      coping.section,
+      agenda.section,
+      facts.section,
+      constitution.section,
+      capabilities.section,
+      physical.section,
+      evaluationShape.section,
+      identity.section,
+      narrative.section,
+      decisionSection.section,
+      relationships.section,
+      relationshipDecisionSection.section,
+      observationSection.section,
+      disclosureSection.section,
+      memories.section,
+      trace.section,
+    ],
+    { isActive: node => node === active && LIVE_CONTROL_TAGS.has(node.nodeName) },
   );
 }
 

@@ -71,6 +71,7 @@ Phases 8A and 8B are recorded in COMPLETED.md; Phases 9A and 10A are recorded in
 
 The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
 Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
+That half is in place: `app/morph.ts` reconciles rendered sections into the existing DOM with delegated intervention handlers, covered by `test/morph.test.ts` and an isolated-browser check of focus and scroll across real-time playback; the mode switch and workspace ownership remain.
 Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
 Build retains its selected document, property selection, editor camera, dirty state, and undo history; Simulate retains only runtime state derived from the explicitly applied revision.
 Returning to Build must not import interventions, snapshot state, runtime selection, or camera state into the authored draft.
