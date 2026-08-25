@@ -21,7 +21,7 @@ import {
 } from '../src/index.js';
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
-import { createBuildPanels } from './build-workspace.js';
+import { canvasViewActive, createBuildPanels } from './build-workspace.js';
 import { createIndexedDbAuthoringStore } from './project-store.js';
 import {
   insertDraftEntry,
@@ -808,6 +808,17 @@ function createWorkbench(): HTMLElement {
     onViewport: viewport => setBuildWorkspace(current => setBuildViewport(current, viewport)),
   });
 
+  // The zoom control, zoom menu, and camera shortcuts drive whichever view is
+  // showing: the simulation map, or the layout canvas while editing a layout.
+  const canvasActive = createMemo(() => mode() === 'build' && canvasViewActive(buildWorkspace()));
+  const activeZoom = (): number =>
+    canvasActive()
+      ? (buildWorkspace().cameras[buildWorkspace().selectedDocumentId]?.zoom ?? 1)
+      : worldView.camera().zoom;
+  const canvasHasSelection = createMemo(
+    () => canvasActive() && /^layout\.locations\[\d+\]/.test(buildWorkspace().selectedPath ?? ''),
+  );
+
   shell.append(
     appMenu,
     scenarioMenu,
@@ -1220,34 +1231,51 @@ function createWorkbench(): HTMLElement {
       keywords: ['canvas', 'floor', 'layer', 'lower', 'projection'],
       label: 'Show next lower layer',
       run: () =>
-        worldView.setProjection(
-          projectionAfterVerticalStep(state().environment, worldView.activeProjection(), 'lower'),
-        ),
+        canvasActive()
+          ? buildPanels.canvas.stepLayer('lower')
+          : worldView.setProjection(
+              projectionAfterVerticalStep(
+                state().environment,
+                worldView.activeProjection(),
+                'lower',
+              ),
+            ),
       shortcut: '[',
     },
     {
       id: 'projection-higher',
-      keywords: ['canvas', 'floor', 'layer', 'higher', 'projection'],
+      keywords: ['canvas', 'floor', 'higher', 'layer', 'projection'],
       label: 'Show next higher layer',
       run: () =>
-        worldView.setProjection(
-          projectionAfterVerticalStep(state().environment, worldView.activeProjection(), 'higher'),
-        ),
+        canvasActive()
+          ? buildPanels.canvas.stepLayer('higher')
+          : worldView.setProjection(
+              projectionAfterVerticalStep(
+                state().environment,
+                worldView.activeProjection(),
+                'higher',
+              ),
+            ),
       shortcut: ']',
     },
     {
       id: 'projection-exterior',
+      enabled: () => !canvasActive(),
       keywords: ['canvas', 'exterior', 'roof', 'layer', 'projection'],
       label: 'Show Exterior projection',
       run: () => worldView.setProjection(EXTERIOR_PROJECTION),
       shortcut: '\\',
     },
     {
-      enabled: () => selectedInstanceId() !== null,
+      enabled: () => (canvasActive() ? canvasHasSelection() : selectedInstanceId() !== null),
       id: 'zoom-selection',
-      keywords: ['character', 'center', 'selection', 'view', 'zoom'],
-      label: 'Zoom to selected character',
+      keywords: ['character', 'center', 'location', 'selection', 'view', 'zoom'],
+      label: 'Zoom to selection',
       run: () => {
+        if (canvasActive()) {
+          buildPanels.canvas.zoomToSelection();
+          return;
+        }
         const selected = selectedInstanceId();
         if (selected !== null) worldView.focusCharacter(selected);
       },
@@ -1257,28 +1285,28 @@ function createWorkbench(): HTMLElement {
       id: 'fit-environment',
       keywords: ['canvas', 'frame', 'view', 'zoom'],
       label: 'Fit environment',
-      run: worldView.fit,
+      run: () => (canvasActive() ? buildPanels.canvas.fit() : worldView.fit()),
       shortcut: 'Shift+1 / Shift+9',
     },
     {
       id: 'actual-size',
       keywords: ['100', 'actual', 'canvas', 'view', 'zoom'],
       label: 'Zoom to 100%',
-      run: worldView.actualSize,
+      run: () => (canvasActive() ? buildPanels.canvas.actualSize() : worldView.actualSize()),
       shortcut: 'Shift+0',
     },
     {
       id: 'zoom-in',
       keywords: ['canvas', 'view'],
       label: 'Zoom in',
-      run: () => worldView.zoomBy(1.25),
+      run: () => (canvasActive() ? buildPanels.canvas.zoomBy(1.25) : worldView.zoomBy(1.25)),
       shortcut: '=',
     },
     {
       id: 'zoom-out',
       keywords: ['canvas', 'view'],
       label: 'Zoom out',
-      run: () => worldView.zoomBy(0.8),
+      run: () => (canvasActive() ? buildPanels.canvas.zoomBy(0.8) : worldView.zoomBy(0.8)),
       shortcut: '-',
     },
     ...INDICATOR_VERBOSITIES.map(verbosity => ({
@@ -1916,7 +1944,7 @@ function createWorkbench(): HTMLElement {
     // The transport, rate, clock, day period, conditions, and world zoom all
     // describe the running simulation; editing has no use for them.
     transport.hidden = building;
-    zoomLevelButton.hidden = building;
+    zoomLevelButton.hidden = building && !canvasActive();
     editModeButton.title = building ? 'Stop editing (Shift+B)' : 'Edit scenario (Shift+B)';
     editModeButton.setAttribute('aria-label', building ? 'Stop editing' : 'Edit scenario');
     roster.inert = building;
@@ -1932,7 +1960,7 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     if (mode() !== 'build') return;
-    buildPanels.render(buildWorkspace());
+    buildPanels.render(buildWorkspace(), { distanceUnit: preferences().distanceUnit });
   });
 
   createEffect(() => {
@@ -1963,8 +1991,8 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
-    const percent = Math.round(worldView.camera().zoom * 100);
-    const hasSelection = selectedInstanceId() !== null;
+    const percent = Math.round(activeZoom() * 100);
+    const hasSelection = canvasActive() ? canvasHasSelection() : selectedInstanceId() !== null;
     zoomLevelValue.textContent = `${percent}%`;
     zoomLevelButton.title = `Canvas zoom: ${percent}%`;
     zoomLevelButton.setAttribute('aria-label', `Canvas zoom: ${percent}%`);
@@ -2221,11 +2249,12 @@ function createWorkbench(): HTMLElement {
     event.preventDefault();
     const percent = Number(zoomInput.value);
     if (!Number.isFinite(percent)) {
-      zoomInput.value = String(Math.round(worldView.camera().zoom * 100));
+      zoomInput.value = String(Math.round(activeZoom() * 100));
       zoomInput.select();
       return;
     }
-    worldView.setZoom(clamp(percent, 12, 500) / 100);
+    if (canvasActive()) buildPanels.canvas.setZoom(clamp(percent, 12, 500) / 100);
+    else worldView.setZoom(clamp(percent, 12, 500) / 100);
     setZoomMenuOpen(false, true);
   });
   zoomMenu.addEventListener('click', event => {

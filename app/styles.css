@@ -3338,33 +3338,8 @@ input[type="search"]::placeholder {
 }
 
 .layout-canvas {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.layout-canvas-toolbar {
-  display: flex;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--line);
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-}
-
-.layout-canvas-toolbar select {
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel-deep);
-  color: inherit;
-  font: inherit;
-  font-size: 12px;
-}
-
-.layout-canvas-readout {
-  margin-left: auto;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+  position: relative;
+  overflow: hidden;
 }
 
 .layout-canvas-surface {

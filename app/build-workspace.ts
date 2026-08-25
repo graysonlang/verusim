@@ -1,8 +1,9 @@
 import type { AuthoringDocument } from '../src/index.js';
+import type { DistanceUnit } from './preferences.js';
 import { button, element } from './dom.js';
 import { createFormView } from './editing/form-view.js';
 import { formSpecFor } from './editing/forms.js';
-import { createLayoutCanvas } from './editing/layout-canvas.js';
+import { type CanvasCameraControls, createLayoutCanvas } from './editing/layout-canvas.js';
 import { draftPathFromDiagnostic, getAtPath } from './editing/paths.js';
 import { activeDocumentElement, morphChildren } from './morph.js';
 import {
@@ -54,11 +55,26 @@ export interface BuildHandlers {
   onViewport: (viewport: EditorViewport) => void;
 }
 
+export interface BuildRenderOptions {
+  distanceUnit: DistanceUnit;
+}
+
 export interface BuildPanels {
+  /** The layout canvas camera, for the shell's zoom control and shortcuts while the canvas is active. */
+  canvas: CanvasCameraControls;
   editor: HTMLElement;
   explorer: HTMLElement;
   inspector: HTMLElement;
-  render: (workspace: BuildWorkspace) => void;
+  render: (workspace: BuildWorkspace, options?: BuildRenderOptions) => void;
+}
+
+/** True when the selected document is an environment layout shown in the spatial canvas. */
+export function canvasViewActive(workspace: BuildWorkspace): boolean {
+  if (workspace.view !== 'canvas') return false;
+  const document = workspace.graph.documents.find(
+    candidate => candidate.id === workspace.selectedDocumentId,
+  );
+  return document?.kind === 'environment-layout';
 }
 
 const KIND_LABELS: Record<string, string> = {
@@ -220,6 +236,7 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   let renderedDocumentId: string | null = null;
   let renderedDraftText = '';
   let current: BuildWorkspace | null = null;
+  let distanceUnit: DistanceUnit = 'meters';
 
   const selectedDocument = (): AuthoringDocument | null =>
     current?.graph.documents.find(document => document.id === current?.selectedDocumentId) ?? null;
@@ -419,6 +436,7 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
     } else if (view === 'canvas') {
       layoutCanvas.render({
         camera: workspace.cameras[document.id] ?? null,
+        distanceUnit,
         draft: document.draft,
         selectedPath: workspace.selectedPath,
       });
@@ -615,11 +633,13 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   }
 
   return {
+    canvas: layoutCanvas,
     editor,
     explorer,
     inspector,
-    render(workspace) {
+    render(workspace, options) {
       current = workspace;
+      if (options !== undefined) distanceUnit = options.distanceUnit;
       renderExplorer(workspace);
       renderEditor(workspace);
       renderInspector(workspace);
