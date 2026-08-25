@@ -435,28 +435,40 @@ function fireOutlet(
   };
 }
 
-export function advanceCoping(state: SimulationState): SimulationState {
-  let trace = state.trace;
-  const agents = state.characters.map(agent => {
-    const cascadeLoad = clamp(
-      agent.cascadeLoad -
-        (agent.profile.constitution.recoveryRate * state.scenario.tickSeconds) / SECONDS_PER_HOUR,
-      0,
-      1.5,
-    );
-    let next: CharacterInstance = {
+/** Continuous coping state: cascade load decays and the active outlet runs down with elapsed time. */
+export function advanceCopingTimers(
+  state: SimulationState,
+  elapsedSeconds: number,
+): SimulationState {
+  return {
+    ...state,
+    characters: state.characters.map(agent => ({
       ...agent,
-      cascadeLoad,
+      cascadeLoad: clamp(
+        agent.cascadeLoad -
+          (agent.profile.constitution.recoveryRate * elapsedSeconds) / SECONDS_PER_HOUR,
+        0,
+        1.5,
+      ),
       currentOutlet:
         agent.currentOutlet === null
           ? null
-          : agent.currentOutlet.remainingSeconds <= state.scenario.tickSeconds
+          : agent.currentOutlet.remainingSeconds <= elapsedSeconds
             ? null
             : {
                 ...agent.currentOutlet,
-                remainingSeconds: agent.currentOutlet.remainingSeconds - state.scenario.tickSeconds,
+                remainingSeconds: agent.currentOutlet.remainingSeconds - elapsedSeconds,
               },
-    };
+    })),
+  };
+}
+
+/** Discrete coping evaluation at a tick boundary: cascade rung recovery and outlet selection. */
+export function evaluateCoping(state: SimulationState): SimulationState {
+  let trace = state.trace;
+  const agents = state.characters.map(agent => {
+    const cascadeLoad = agent.cascadeLoad;
+    let next: CharacterInstance = agent;
     if (
       next.cascade !== 'none' &&
       state.second >= next.cascadeDwellUntilSecond &&

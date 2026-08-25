@@ -1,4 +1,9 @@
-import { SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '../model/time.js';
+import {
+  SECONDS_PER_DAY,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
+  secondOfDay,
+} from '../model/time.js';
 import { appendBounded, clamp, memoryWindow } from '../model/retention.js';
 import {
   VALUE_IDS,
@@ -26,7 +31,7 @@ import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { resolveDisplayEvent } from './display.js';
-import { advanceCoping, resolveAppraisalEvent } from './coping.js';
+import { advanceCopingTimers, evaluateCoping, resolveAppraisalEvent } from './coping.js';
 import { initializeHistoryDerivedState } from './history.js';
 import { resolveIncidentEvent } from './incident.js';
 import {
@@ -398,9 +403,12 @@ function advanceValueState(
 ): ValueState {
   const charge = clamp(state.charge + (turnPerHour * tickSeconds) / SECONDS_PER_HOUR, -1, 1);
   const dayFraction = tickSeconds / SECONDS_PER_DAY;
+  // Charge drifts linearly between boundaries, so the trapezoid rule integrates
+  // the deficit exactly and the result cannot depend on how an interval is split.
+  const deficitRate = (value: number): number =>
+    value < 0 ? -value : -Math.min(value, 0.25) * 0.08;
   const deficitIntegral = clamp(
-    state.deficitIntegral +
-      (charge < 0 ? -charge * dayFraction : -Math.min(charge, 0.25) * dayFraction * 0.08),
+    state.deficitIntegral + ((deficitRate(state.charge) + deficitRate(charge)) / 2) * dayFraction,
     0,
     1,
   );
@@ -470,10 +478,14 @@ function advanceAgent(
   agent: CharacterInstance,
   nextSecond: number,
   nextTick: number,
+  completesTick: boolean,
 ): CharacterAdvanceResult {
+  const elapsedSeconds = nextSecond - state.second;
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
   const task = intendedTask(state, agent.id);
-  const block = task === null ? activeScheduleBlock(agent.schedule, nextSecond) : null;
+  // Inputs are constant across an interval because advanceTo splits at every
+  // schedule start, so the block in force is the one active when it begins.
+  const block = task === null ? activeScheduleBlock(agent.schedule, state.second) : null;
   const locationId = task?.locationId ?? block?.locationId;
   if (locationId === undefined)
     throw new Error('An agent always has a task or schedule destination');
@@ -483,27 +495,33 @@ function advanceAgent(
   const remaining = preempted
     ? 0
     : navigationDistance(state.environment, agent.position, destination);
-  const travel = agent.walkingMetersPerMinute * state.scenario.tickSeconds;
+  const travel = (agent.walkingMetersPerMinute / SECONDS_PER_MINUTE) * elapsedSeconds;
   const position = preempted
     ? agent.position
     : advanceLayerPosition(state.environment, agent.position, destination, travel);
   const arrived = !preempted && sameLayerPosition(position, destination);
-  const currentActivity = preempted
-    ? agent.currentActivity
-    : arrived
-      ? task === null
-        ? (block?.activity ?? agent.currentActivity)
-        : intention?.phase === 'waiting'
-          ? `Waiting to ${task.label.toLowerCase()}`
-          : task.label
-      : `Walking to ${location.name}${task === null ? '' : ` to ${task.label.toLowerCase()}`}`;
+  const activityLabel = (atDestination: boolean): string =>
+    preempted
+      ? agent.currentActivity
+      : atDestination
+        ? task === null
+          ? (block?.activity ?? agent.currentActivity)
+          : intention?.phase === 'waiting'
+            ? `Waiting to ${task.label.toLowerCase()}`
+            : task.label
+        : `Walking to ${location.name}${task === null ? '' : ` to ${task.label.toLowerCase()}`}`;
+  // A departure or a new obligation is stamped at the second the interval
+  // begins; an arrival at the second it ends. Neither depends on how the
+  // interval was partitioned.
+  const startActivity = activityLabel(!preempted && remaining === 0);
+  const currentActivity = activityLabel(arrived);
   const currentLocationId = preempted ? agent.currentLocationId : arrived ? locationId : null;
   const values = {} as ValueMap<ValueState>;
   for (const valueId of VALUE_IDS) {
     values[valueId] = advanceValueState(
       agent.values[valueId],
       state.scenario.ambientTurnsPerHour?.[valueId] ?? 0,
-      state.scenario.tickSeconds,
+      elapsedSeconds,
     );
   }
   const scheduleRecoveryMode = task === null && arrived ? (block?.recoveryMode ?? 'none') : 'none';
@@ -515,14 +533,14 @@ function advanceAgent(
     recoveryMode === 'none'
       ? 0
       : task === null
-        ? clamp(state.scenario.tickSeconds - arrivalSeconds, 0, state.scenario.tickSeconds)
-        : state.scenario.tickSeconds;
+        ? clamp(elapsedSeconds - arrivalSeconds, 0, elapsedSeconds)
+        : elapsedSeconds;
   const authoredDrains = arrived
     ? (task?.resourceDrainsPerHour ?? block?.resourceDrainsPerHour ?? {})
     : {};
   const activeMasking = arrived ? (task?.maskingDemand ?? block?.maskingDemand ?? null) : null;
   const drains = combinedResourceDrains(authoredDrains, maskingDrains(activeMasking));
-  const activeSeconds = arrived ? state.scenario.tickSeconds : 0;
+  const activeSeconds = arrived ? elapsedSeconds : 0;
   const recovery = advanceResources(
     agent.resources,
     recoveryMode,
@@ -530,12 +548,8 @@ function advanceAgent(
     activeSeconds,
     drains,
   );
-  const somatic = advanceSomaticState(agent.somatic, state.scenario.tickSeconds);
-  const resources = applySomaticResourceTax(
-    recovery.resources,
-    somatic,
-    state.scenario.tickSeconds,
-  );
+  const somatic = advanceSomaticState(agent.somatic, elapsedSeconds);
+  const resources = applySomaticResourceTax(recovery.resources, somatic, elapsedSeconds);
   const recoverySource =
     task === null
       ? `characters.${agent.id}.schedule.recoveryMode`
@@ -564,10 +578,10 @@ function advanceAgent(
 
   let memories = agent.memories;
   const trace: TraceEntryInput[] = [];
-  if (somatic.attentionTax > 0) {
+  if (completesTick && somatic.attentionTax > 0) {
     trace.push({
       instanceId: agent.id,
-      id: `${nextTick}:${agent.id}:somatic`,
+      id: `${nextTick}:${nextSecond}:${agent.id}:somatic`,
       kind: 'somatic',
       second: nextSecond,
       selection: null,
@@ -584,18 +598,30 @@ function advanceAgent(
       tick: nextTick,
     });
   }
-  if (currentActivity !== agent.currentActivity) {
-    const summary = `${agent.profile.name}: ${currentActivity}`;
+  const activityChanges: { label: string; second: number }[] = [];
+  if (startActivity !== agent.currentActivity) {
+    activityChanges.push({ label: startActivity, second: state.second });
+  }
+  if (currentActivity !== startActivity) {
+    activityChanges.push({ label: currentActivity, second: nextSecond });
+  }
+  for (const change of activityChanges) {
+    const summary = `${agent.profile.name}: ${change.label}`;
     memories = appendBounded(
       memories,
-      { id: `${nextTick}:${agent.id}:activity`, second: nextSecond, summary, type: 'activity' },
+      {
+        id: `${nextTick}:${change.second}:${agent.id}:activity`,
+        second: change.second,
+        summary,
+        type: 'activity',
+      },
       memoryWindow(agent.tier),
     );
     trace.push({
       instanceId: agent.id,
-      id: `${nextTick}:${agent.id}:activity`,
+      id: `${nextTick}:${change.second}:${agent.id}:activity`,
       kind: 'activity',
-      second: nextSecond,
+      second: change.second,
       selection: null,
       summary,
       terms:
@@ -627,7 +653,7 @@ function advanceAgent(
     if (activeTurns.length > 0) {
       trace.push({
         instanceId: agent.id,
-        id: `${nextTick}:${agent.id}:ambient`,
+        id: `${nextTick}:${nextSecond}:${agent.id}:ambient`,
         kind: 'value-turn',
         second: nextSecond,
         selection: null,
@@ -647,7 +673,7 @@ function advanceAgent(
     ) {
       trace.push({
         instanceId: agent.id,
-        id: `${nextTick}:${agent.id}:resource`,
+        id: `${nextTick}:${nextSecond}:${agent.id}:resource`,
         kind: 'resource',
         second: nextSecond,
         selection: null,
@@ -737,12 +763,93 @@ function dueDuringTick<Event extends { atSecond: number; id: string }>(
   );
 }
 
-function advanceOneTick(state: SimulationState): SimulationState {
-  const prepared = prepareAgenda(prepareNarrativeAgency(state));
-  const nextTick = prepared.tick + 1;
-  const nextSecond = prepared.second + prepared.scenario.tickSeconds;
+function tickStartSecond(state: SimulationState): number {
+  const elapsed = state.second - state.scenario.startSecond;
+  return state.second - (elapsed % state.scenario.tickSeconds);
+}
+
+function nextScheduleStart(schedule: readonly ScheduleBlock[], second: number): number | null {
+  const dayStart = second - secondOfDay(second);
+  let nearest: number | null = null;
+  for (const block of schedule) {
+    for (const candidate of [
+      dayStart + block.startSecond,
+      dayStart + SECONDS_PER_DAY + block.startSecond,
+    ]) {
+      if (candidate > second && (nearest === null || candidate < nearest)) nearest = candidate;
+    }
+  }
+  return nearest;
+}
+
+/**
+ * The next second at which authoritative state may change discontinuously:
+ * an authored event, a schedule block start, an arrival, a timer completion,
+ * an hour mark, or the end of the current authored tick. Advancing across one
+ * of these in a single continuous step would blur the discrete change into
+ * the interval, so `advanceTo` always splits there.
+ */
+function nextBoundary(state: SimulationState, target: number): number {
+  const now = state.second;
+  let boundary = Math.min(target, tickStartSecond(state) + state.scenario.tickSeconds);
+  // Boundaries are integer seconds: a fractional arrival rounds up to the next
+  // whole second and the interval's proration accounts for the remainder.
+  const consider = (second: number | null | undefined): void => {
+    if (typeof second !== 'number' || !Number.isFinite(second)) return;
+    const whole = Math.ceil(second);
+    if (whole > now && whole < boundary) boundary = whole;
+  };
+  const families: readonly (readonly { atSecond: number; id: string }[])[] = [
+    state.scenario.somaticEvents,
+    state.scenario.behaviorOpportunities,
+    state.scenario.disclosureOpportunities,
+    state.scenario.observationEvents,
+    state.scenario.incidentEvents,
+    state.scenario.displayEvents,
+    state.scenario.relationshipEvents,
+    state.scenario.relationshipRequests,
+    state.scenario.appraisalEvents,
+    state.scenario.narrativeEvents,
+    state.scenario.aspirationOpportunities,
+  ];
+  for (const family of families) for (const event of family) consider(event.atSecond);
+  consider(Math.floor(now / SECONDS_PER_HOUR + 1) * SECONDS_PER_HOUR);
+  for (const agent of state.characters) {
+    consider(nextScheduleStart(agent.schedule, now));
+    if (agent.currentOutlet !== null) consider(now + agent.currentOutlet.remainingSeconds);
+    if (agent.somatic.level < 3) {
+      const task = intendedTask(state, agent.id);
+      const block = task === null ? activeScheduleBlock(agent.schedule, now) : null;
+      const locationId = task?.locationId ?? block?.locationId;
+      if (locationId !== undefined) {
+        const remaining = navigationDistance(
+          state.environment,
+          agent.position,
+          locationCenter(findLocation(state.environment, locationId)),
+        );
+        if (remaining > 0) {
+          consider(now + (remaining / agent.walkingMetersPerMinute) * SECONDS_PER_MINUTE);
+        }
+      }
+    }
+  }
+  for (const intention of state.intentions) {
+    if (intention.phase === 'work') consider(now + intention.remainingSeconds);
+    const task = state.scenario.taskOperators.find(candidate => candidate.id === intention.taskId);
+    if (intention.phase === 'waiting') consider(task?.availableFromSecond ?? null);
+  }
+  for (const goal of state.agendaGoals) consider(goal.deadlineSecond);
+  return boundary;
+}
+
+function advanceInterval(state: SimulationState, toSecond: number): SimulationState {
+  const startsTick = state.second === tickStartSecond(state);
+  const prepared = startsTick ? prepareAgenda(prepareNarrativeAgency(state)) : state;
+  const nextTick = startsTick ? prepared.tick + 1 : prepared.tick;
+  const completesTick = toSecond === tickStartSecond(prepared) + prepared.scenario.tickSeconds;
+  const fromSecond = prepared.second;
   const results = prepared.characters.map(agent =>
-    advanceAgent(prepared, agent, nextSecond, nextTick),
+    advanceAgent(prepared, agent, toSecond, nextTick, completesTick),
   );
   let trace = prepared.trace;
   for (const result of results) {
@@ -751,89 +858,68 @@ function advanceOneTick(state: SimulationState): SimulationState {
   let next: SimulationState = {
     ...prepared,
     characters: results.map(result => result.agent),
-    second: nextSecond,
+    second: toSecond,
     tick: nextTick,
     trace,
   };
-  const dueSomaticEvents = dueDuringTick(
-    prepared.scenario.somaticEvents,
-    prepared.second,
-    nextSecond,
-    prepared.resolvedSomaticEventIds,
-  );
+  const elapsedSeconds = toSecond - fromSecond;
+  const due = <Event extends { atSecond: number; id: string }>(
+    events: readonly Event[],
+    resolved: readonly string[],
+  ): Event[] => dueDuringTick(events, fromSecond, toSecond, resolved);
+  next = advanceCopingTimers(next, elapsedSeconds);
+  const dueSomaticEvents = due(prepared.scenario.somaticEvents, prepared.resolvedSomaticEventIds);
   for (const event of dueSomaticEvents) next = resolveSomaticEvent(next, event);
   if (dueSomaticEvents.length > 0) next = prepareAgenda(next);
-  next = advanceIntentions(next);
-  const dueOpportunities = dueDuringTick(
+  next = advanceIntentions(next, elapsedSeconds);
+  for (const opportunity of due(
     prepared.scenario.behaviorOpportunities,
-    prepared.second,
-    nextSecond,
     prepared.resolvedOpportunityIds,
-  );
-  for (const opportunity of dueOpportunities) next = resolveOpportunity(next, opportunity);
-  const dueDisclosureOpportunities = dueDuringTick(
+  )) {
+    next = resolveOpportunity(next, opportunity);
+  }
+  for (const opportunity of due(
     prepared.scenario.disclosureOpportunities,
-    prepared.second,
-    nextSecond,
     prepared.resolvedDisclosureOpportunityIds,
-  );
-  for (const opportunity of dueDisclosureOpportunities) {
+  )) {
     next = resolveDisclosureOpportunity(next, opportunity);
   }
-  const dueObservationEvents = dueDuringTick(
+  for (const event of due(
     prepared.scenario.observationEvents,
-    prepared.second,
-    nextSecond,
     prepared.resolvedObservationEventIds,
-  );
-  for (const event of dueObservationEvents) next = resolveObservationEvent(next, event);
-  const dueIncidentEvents = dueDuringTick(
-    prepared.scenario.incidentEvents,
-    prepared.second,
-    nextSecond,
-    prepared.resolvedIncidentEventIds,
-  );
-  for (const event of dueIncidentEvents) next = resolveIncidentEvent(next, event);
-  const dueDisplayEvents = dueDuringTick(
-    prepared.scenario.displayEvents,
-    prepared.second,
-    nextSecond,
-    prepared.resolvedDisplayEventIds,
-  );
-  for (const event of dueDisplayEvents) next = resolveDisplayEvent(next, event);
-  const dueRelationshipEvents = dueDuringTick(
+  )) {
+    next = resolveObservationEvent(next, event);
+  }
+  for (const event of due(prepared.scenario.incidentEvents, prepared.resolvedIncidentEventIds)) {
+    next = resolveIncidentEvent(next, event);
+  }
+  for (const event of due(prepared.scenario.displayEvents, prepared.resolvedDisplayEventIds)) {
+    next = resolveDisplayEvent(next, event);
+  }
+  for (const event of due(
     prepared.scenario.relationshipEvents,
-    prepared.second,
-    nextSecond,
     prepared.resolvedRelationshipEventIds,
-  );
-  for (const event of dueRelationshipEvents) next = resolveRelationshipEvent(next, event);
-  const dueRelationshipRequests = dueDuringTick(
+  )) {
+    next = resolveRelationshipEvent(next, event);
+  }
+  for (const request of due(
     prepared.scenario.relationshipRequests,
-    prepared.second,
-    nextSecond,
     prepared.resolvedRelationshipRequestIds,
-  );
-  for (const request of dueRelationshipRequests) next = resolveRelationshipRequest(next, request);
-  const dueAppraisalEvents = dueDuringTick(
-    prepared.scenario.appraisalEvents,
-    prepared.second,
-    nextSecond,
-    prepared.resolvedAppraisalEventIds,
-  );
-  for (const event of dueAppraisalEvents) next = resolveAppraisalEvent(next, event);
-  const dueNarrativeEvents = dueDuringTick(
-    prepared.scenario.narrativeEvents,
-    prepared.second,
-    nextSecond,
-    prepared.resolvedNarrativeEventIds,
-  );
-  for (const event of dueNarrativeEvents) next = resolveNarrativeEvent(next, event);
+  )) {
+    next = resolveRelationshipRequest(next, request);
+  }
+  for (const event of due(prepared.scenario.appraisalEvents, prepared.resolvedAppraisalEventIds)) {
+    next = resolveAppraisalEvent(next, event);
+  }
+  for (const event of due(prepared.scenario.narrativeEvents, prepared.resolvedNarrativeEventIds)) {
+    next = resolveNarrativeEvent(next, event);
+  }
+  if (!completesTick) return next;
   next = consolidateRelationshipMemories(
     next,
     results.filter(result => result.sleeping).map(result => result.agent.id),
   );
-  next = advanceCoping(next);
+  next = evaluateCoping(next);
   const signalsByAgent = new Map(
     results.map(result => [result.agent.id, result.plasticitySignals]),
   );
@@ -853,12 +939,26 @@ function advanceOneTick(state: SimulationState): SimulationState {
   };
 }
 
+/**
+ * Advance authoritative time to an exact second, splitting at every discrete
+ * boundary so events resolve at their authored second in stable pipeline
+ * order and continuous state is integrated piecewise over constant inputs.
+ */
+export function advanceTo(state: SimulationState, targetSecond: number): SimulationState {
+  if (!Number.isInteger(targetSecond) || targetSecond < state.second) {
+    throw new RangeError('targetSecond must be an integer at or after the current second');
+  }
+  let next = state;
+  while (next.second < targetSecond) {
+    next = advanceInterval(next, nextBoundary(next, targetSecond));
+  }
+  return next;
+}
+
 export function advanceSimulation(state: SimulationState, ticks = 1): SimulationState {
   if (!Number.isInteger(ticks) || ticks < 0)
     throw new RangeError('ticks must be a non-negative integer');
-  let next = state;
-  for (let index = 0; index < ticks; index += 1) next = advanceOneTick(next);
-  return next;
+  return advanceTo(state, state.second + ticks * state.scenario.tickSeconds);
 }
 
 function interventionEntry(

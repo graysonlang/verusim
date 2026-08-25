@@ -734,6 +734,26 @@ Scenario schema versions 18 and 19, snapshot schema versions 18 and 19, environm
 Browser validation ran through Playwright MCP against an isolated preview: the workbench loads the default scenario at 7:50 am in the morning period, playback at the one-simulated-minute-per-second rate advances the clock one minute per real second, pause holds it, and the session recorded no console errors or warnings.
 The full verification gate passes with 291 deterministic tests.
 
+## Phase 9B — event-delimited advancement
+
+Status: complete.
+
+Add an `advanceTo` boundary that progresses from the current logical time to a requested target while splitting at authored events, player inputs, evaluator wakeups, and other discrete deadlines.
+Parameterize continuous transitions by elapsed duration and preserve deterministic ordering for coincident events without allowing wall-clock frame timing to enter state.
+
+Gate: two events inside one authored minute resolve at their distinct second timestamps in stable order, and a player action changes the addressed NPC's authoritative appraisal and action before the former minute boundary.
+
+`advanceTo` splits at authored event times across every family, schedule block starts, arrivals, intention and outlet completions, goal deadlines, hour marks, and tick ends; boundaries are integer seconds, and a player input is a barrier by construction because it is applied between two `advanceTo` calls.
+Continuous state integrates per interval with constant inputs - the block in force is chosen at the interval start, movement is pace times elapsed seconds, the deficit integral uses the trapezoid rule, and timers run before the interval's events - while discrete evaluation stays on the authored tick, with preparation at tick start and consolidation, coping evaluation, plasticity, and the somatic trace at tick completion.
+Activity changes are stamped at the second they occur, and `advanceSimulation` is now the tick-count convenience over `advanceTo`.
+The slice also corrected a Phase 9A conversion that multiplied walking pace by tick seconds rather than minutes, which the new pace regression pins.
+
+`test/advance-to.test.ts` proves a walking character covers pace times elapsed seconds, two behavior opportunities at seconds 20 and 40 of one minute produce decisions and trace entries at exactly those seconds in order within one tick, a value intervention at second 20 changes the candidate appraisals of the opportunity at second 30 before the minute boundary, out-of-domain targets are rejected, and every built-in scenario reaches the same discrete state under whole, per-tick, and per-ten-second advancement with continuous accumulators equal to nine decimals.
+The only remaining partition difference is floating-point summation order in the deficit integral; positions, events, decisions, and traces are already byte-identical, and exact accumulation belongs to the Phase 9D gate.
+No scenario, snapshot, or trace schema changes are introduced; activity entry identifiers now include their second.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 296 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

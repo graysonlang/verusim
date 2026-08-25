@@ -243,7 +243,8 @@ export {
   somaticActionAvailable,
 } from './simulation/somatic.js';
 export {
-  advanceCoping,
+  advanceCopingTimers,
+  evaluateCoping,
   allostaticLoadFor,
   resolveAppraisalEvent,
 } from './simulation/coping.js';
@@ -267,6 +268,7 @@ export {
 } from './simulation/value-turn.js';
 export {
   advanceSimulation,
+  advanceTo,
   createSimulationFromPrepared,
   createSimulationFromPreparedSnapshot,
   setCharacterResource,

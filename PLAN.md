@@ -18,22 +18,24 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8C: shared Build and Simulate application shell.
-Refactor the workbench around a persistent Build/Simulate mode switch with independently owned workspace state, and make live inspector updates incremental.
+The active slice is Phase 9C: interruptible timed movement.
+Store timed route segments with a pure position-at-time operation so interruption settles exact positions and replacement routes start from the settled point.
 
 ### Current-focus non-goals
 
-- no specialized editors, store adapters, or pack writer in this slice
+- no cadence policy or playback changes; those are Phases 9D and 9E
 - no behavior-model or evaluator-fidelity expansion
-- no draft mutation of a running simulation or its reset baseline
+- no general-purpose physics or collision response
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phases 8C through 8F — application shell, editors, store adapters, and packing
-2. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+1. Phases 9C through 9E — timed movement, cadence policy, and workbench integration
+2. Phases 8C through 8F — application shell, editors, store adapters, and packing
 3. Phase 10B — remaining acceptance vignettes
+
+Phase 9 now runs to completion ahead of the presentation slices: the time-domain dependency that ordered 9A first is settled, and the shell in Phase 8C should integrate the finished advancement model rather than one that changes underneath it.
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -133,14 +135,7 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 ### Phase 9 implementation sequence
 
-Phase 9A is recorded in COMPLETED.md; Phases 9B through 9E follow Phase 8F.
-
-#### Phase 9B — event-delimited advancement
-
-Add an `advanceTo` boundary that progresses from the current logical time to a requested target while splitting at authored events, player inputs, evaluator wakeups, and other discrete deadlines.
-Parameterize continuous transitions by elapsed duration and preserve deterministic ordering for coincident events without allowing wall-clock frame timing to enter state.
-
-Gate: two events inside one authored minute resolve at their distinct second timestamps in stable order, and a player action changes the addressed NPC's authoritative appraisal and action before the former minute boundary.
+Phases 9A and 9B are recorded in COMPLETED.md; the remaining Phase 9 slices proceed directly.
 
 #### Phase 9C — interruptible timed movement
 

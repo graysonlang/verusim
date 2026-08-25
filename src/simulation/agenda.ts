@@ -835,7 +835,7 @@ function completeTask(
   return settleGoals(next);
 }
 
-export function advanceIntentions(state: SimulationState): SimulationState {
+export function advanceIntentions(state: SimulationState, elapsedSeconds: number): SimulationState {
   let next = state;
   for (const initialIntention of state.intentions) {
     const intention = next.intentions.find(
@@ -865,7 +865,7 @@ export function advanceIntentions(state: SimulationState): SimulationState {
       });
       continue;
     }
-    const remainingSeconds = intention.remainingSeconds - next.scenario.tickSeconds;
+    const remainingSeconds = intention.remainingSeconds - elapsedSeconds;
     if (remainingSeconds > 0) {
       next = replaceIntention(next, { ...intention, remainingSeconds });
     } else {

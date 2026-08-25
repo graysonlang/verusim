@@ -80,15 +80,23 @@ describe('workbench playback', () => {
   });
 
   it('projects each partial tick at the authoritative walking pace and endpoint', () => {
-    const beforeDeparture = advanceSimulation(
-      createSimulation({
-        characterLibrary: characters,
-        environmentLibrary: environments,
-        scenario,
-      }),
-      9,
-    );
-    const next = advanceSimulation(beforeDeparture, 1);
+    // Find the tick in which Mara departs: departure now begins exactly at the
+    // authored schedule start rather than during the tick that reaches it.
+    let beforeDeparture = createSimulation({
+      characterLibrary: characters,
+      environmentLibrary: environments,
+      scenario,
+    });
+    let next = advanceSimulation(beforeDeparture, 1);
+    for (let guard = 0; guard < 30; guard += 1) {
+      const from = beforeDeparture.characters.find(agent => agent.id === 'mara');
+      const to = next.characters.find(agent => agent.id === 'mara');
+      assert.ok(from);
+      assert.ok(to);
+      if (navigationDistance(beforeDeparture.environment, from.position, to.position) > 0) break;
+      beforeDeparture = next;
+      next = advanceSimulation(beforeDeparture, 1);
+    }
     const currentMara = beforeDeparture.characters.find(agent => agent.id === 'mara');
     const nextMara = next.characters.find(agent => agent.id === 'mara');
     assert.ok(currentMara);

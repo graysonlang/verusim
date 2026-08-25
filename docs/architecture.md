@@ -73,7 +73,11 @@ Sub-second precision is deferred to a future scale factor between solver ticks a
 Calendar formatting, display units, and playback speed are observer concerns.
 Discrete authored event times may equal but never precede the scenario start minute.
 The first transition includes that lower boundary, every later transition remains protected by the event family's resolved-identifier ledger, and all tick-dispatched event families share the same inclusive interval rule.
-Within one tick interval, due events resolve in a fixed family pipeline order and in authored order within each family rather than interleaving by authored minute; Phase 9 event-delimited advancement replaces this batching with resolution at exact event times.
+Advancement is event-delimited: `advanceTo` progresses to an exact target second by splitting at every discrete boundary - authored event times across all families, schedule block starts, arrivals, intention and outlet completions, goal deadlines, hour marks, and the end of the current authored tick - and boundaries are always integer seconds, with a fractional arrival rounded up and prorated inside its interval.
+Each interval integrates continuous state over its elapsed seconds with inputs held constant: the schedule block in force is the one active when the interval begins, movement covers pace times elapsed time, value drift and the deficit integral use the trapezoid rule so the result cannot depend on how an interval is partitioned, and timers run before the interval's events so an event sees state at its exact second.
+Due events within an interval resolve in the fixed family pipeline order and in authored order within a family.
+Discrete evaluation stays on the authored tick: agenda and narrative preparation run when a tick starts, and memory consolidation, coping evaluation, baseline plasticity, and the somatic trace run when it completes, so sixty one-second requests and one sixty-second request perform the same discrete work.
+Activity changes are stamped at the second they occur - a departure or new obligation at the interval start, an arrival at its end - and `advanceSimulation` remains the tick-count convenience over `advanceTo`.
 
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
