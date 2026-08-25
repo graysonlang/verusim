@@ -506,6 +506,10 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
     summary.textContent = `${KIND_LABELS[document.kind] ?? document.kind} document`;
     hero.append(title, summary);
 
+    const documentProblems = buildProblems(workspace).filter(
+      problem => problem.documentId === document.id,
+    ).length;
+
     const details = element('section', 'inspector-section');
     const detailsHeading = element('div', 'section-heading');
     const detailsTitle = element('h3');
@@ -528,6 +532,12 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
       [
         'Project store',
         workspace.storeRevision === null ? 'Not saved' : workspace.storeRevision.slice(0, 16),
+      ],
+      [
+        'Problems',
+        documentProblems === 0
+          ? 'None in this document'
+          : `${documentProblems} in this document (listed under the editor)`,
       ],
     ] as const) {
       const dt = element('dt');
@@ -602,33 +612,12 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
       return section;
     };
 
-    const problemSection = element('section', 'inspector-section');
-    const problemHeading = element('div', 'section-heading');
-    const problemTitle = element('h3');
-    const problemBody = element('div', 'section-body');
-    const documentProblems = buildProblems(workspace).filter(
-      problem => problem.documentId === document.id,
-    );
-    problemTitle.textContent = `Problems (${documentProblems.length})`;
-    problemHeading.append(problemTitle);
-    if (documentProblems.length === 0) {
-      const empty = element('p', 'empty-copy');
-      empty.textContent = 'No problems in this document.';
-      problemBody.append(empty);
-    } else {
-      const list = element('ol', 'build-problems');
-      list.append(...documentProblems.map(problem => problemItem(problem, false)));
-      problemBody.append(list);
-    }
-    problemSection.append(problemHeading, problemBody);
-
     morphChildren(inspectorContent, [
       hero,
       details,
       selection,
       referenceSection('Outgoing references', document.outgoing),
       referenceSection('Incoming references', document.incoming),
-      problemSection,
     ]);
   }
 
