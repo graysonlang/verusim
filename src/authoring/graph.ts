@@ -297,6 +297,27 @@ export function redoTransaction(graph: AuthoringGraph): AuthoringGraph {
   };
 }
 
+/**
+ * Make the current drafts of the given documents their baselines, as after a
+ * store commit, so dirty state means "changed since the last commit". History
+ * is untouched: undoing past a commit simply makes the document dirty again.
+ */
+export function rebaselineDocuments(
+  graph: AuthoringGraph,
+  documentIds: readonly string[],
+): AuthoringGraph {
+  const ids = new Set(documentIds);
+  for (const id of ids) documentById(graph, id);
+  return {
+    ...graph,
+    documents: graph.documents.map(document =>
+      ids.has(document.id)
+        ? { ...document, baseline: clone(document.draft), dirty: false }
+        : document,
+    ),
+  };
+}
+
 /** Change where a document came from without touching identity, drafts, or references. */
 export function relocateDocument(
   graph: AuthoringGraph,

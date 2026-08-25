@@ -7,6 +7,7 @@ export {
   createAuthoringGraph,
   documentById,
   documentIdentity,
+  rebaselineDocuments,
   redoTransaction,
   relocateDocument,
   scenarioDocumentId,
@@ -27,6 +28,23 @@ export {
   type RevisionSimulation,
   revisionDigest,
 } from './authoring/revision.js';
+export {
+  AuthoringStoreConflictError,
+  changeSetForGraph,
+  commitAuthoringProject,
+  createAuthoringStore,
+  createMemoryAuthoringStore,
+  loadAuthoringProject,
+  storeRevision,
+  type AuthoringChangeSet,
+  type AuthoringCommitResult,
+  type AuthoringStore,
+  type AuthoringStoreBackend,
+  type AuthoringStoreEntry,
+  type AuthoringStoreRecord,
+  type CommittedAuthoringProject,
+  type LoadedAuthoringProject,
+} from './authoring/store.js';
 export {
   ENSEMBLE_ALGORITHM,
   gradeOutcome,
