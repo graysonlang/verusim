@@ -128,6 +128,7 @@ import {
 } from './scenarios.js';
 import {
   canvasBackgroundAction,
+  chordActionForShortcut,
   workbenchActionForShortcut,
   workbenchEscapeAction,
 } from './shortcuts.js';
@@ -1210,6 +1211,19 @@ function createWorkbench(): HTMLElement {
       keywords: ['footer', 'interface', 'status', 'visibility'],
       label: 'Toggle status bar',
       run: () => setPreferences(current => ({ ...current, showStatusBar: !current.showStatusBar })),
+      shortcut: 'Control+`',
+    },
+    {
+      enabled: () => buildAvailable() && mode() === 'build',
+      id: 'toggle-problems-pane',
+      keywords: ['build', 'diagnostics', 'problems', 'pane', 'visibility'],
+      label: 'Toggle problems pane',
+      run: () =>
+        setPreferences(current => ({
+          ...current,
+          problemsPaneExpanded: !current.problemsPaneExpanded,
+        })),
+      shortcut: 'Control+Shift+`',
     },
     {
       id: 'toggle-left-sidebar',
@@ -2563,6 +2577,12 @@ function createWorkbench(): HTMLElement {
       return;
     }
     if (quickActionsOverlay.classList.contains('open')) return;
+    const chordAction = chordActionForShortcut(event);
+    if (chordAction !== null) {
+      event.preventDefault();
+      executeActionById(chordAction);
+      return;
+    }
     const target = event.target;
     if (
       target instanceof HTMLInputElement ||

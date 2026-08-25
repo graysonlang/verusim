@@ -14,8 +14,10 @@ export type WorkbenchShortcutActionId =
   | 'settings'
   | 'toggle-left-sidebar'
   | 'toggle-mode'
+  | 'toggle-problems-pane'
   | 'toggle-right-sidebar'
-  | 'toggle-sidebars';
+  | 'toggle-sidebars'
+  | 'toggle-status-bar';
 
 export interface ShortcutInput {
   altKey: boolean;
@@ -64,7 +66,19 @@ export function zoomActionForShortcut(input: ShortcutInput): ZoomActionId | null
   return null;
 }
 
+/**
+ * Control+Backquote chords: Control (not Command, which macOS reserves for
+ * window switching) toggles the status bar; adding Shift toggles the problems
+ * pane. They type nothing, so they are honored inside editable fields too.
+ */
+export function chordActionForShortcut(input: ShortcutInput): WorkbenchShortcutActionId | null {
+  if (input.code !== 'Backquote' || !input.ctrlKey || input.metaKey || input.altKey) return null;
+  return input.shiftKey ? 'toggle-problems-pane' : 'toggle-status-bar';
+}
+
 export function workbenchActionForShortcut(input: ShortcutInput): WorkbenchShortcutActionId | null {
+  const chord = chordActionForShortcut(input);
+  if (chord !== null) return chord;
   if (
     input.code === 'Comma' &&
     !input.altKey &&

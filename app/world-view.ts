@@ -1244,9 +1244,23 @@ export function createWorldView(options: WorldViewOptions): WorldView {
     if (activePointers.size === 0) options.onHover(null);
   }
 
+  // Trackpads report a pinch as a wheel event with ctrlKey set and a two-finger
+  // drag as a plain wheel event with both deltas, so pinch zooms around the
+  // pointer and two-finger movement pans; a mouse wheel pans the same way.
   function onWheel(event: WheelEvent): void {
     event.preventDefault();
-    zoomAt(Math.exp(-event.deltaY * 0.0014), screenPoint(canvas, event));
+    if (event.ctrlKey) {
+      zoomAt(Math.exp(-event.deltaY * 0.01), screenPoint(canvas, event));
+      return;
+    }
+    options.onHover(null);
+    const current = camera();
+    const screenPixelsPerMeter = pixelsPerMeter(current.zoom);
+    setCamera({
+      ...current,
+      x: current.x + event.deltaX / screenPixelsPerMeter,
+      y: current.y + event.deltaY / screenPixelsPerMeter,
+    });
   }
 
   canvas.addEventListener('pointerdown', onPointerDown);

@@ -490,10 +490,30 @@ export function createLayoutCanvas(handlers: CanvasHandlers): LayoutCanvas {
   };
   canvas.addEventListener('pointerup', finishDrag);
   canvas.addEventListener('pointercancel', finishDrag);
-  canvas.addEventListener('wheel', event => {
-    event.preventDefault();
-    zoomAt(event.deltaY < 0 ? 1.1 : 1 / 1.1, { x: event.offsetX, y: event.offsetY });
-  });
+  // Pinch (wheel with ctrlKey) zooms around the pointer; two-finger movement pans.
+  let wheelPanTimer: ReturnType<typeof setTimeout> | null = null;
+  canvas.addEventListener(
+    'wheel',
+    event => {
+      event.preventDefault();
+      if (event.ctrlKey) {
+        zoomAt(Math.exp(-event.deltaY * 0.01), { x: event.offsetX, y: event.offsetY });
+        return;
+      }
+      camera = {
+        ...camera,
+        x: camera.x + event.deltaX / pixelsPerMeter(),
+        y: camera.y + event.deltaY / pixelsPerMeter(),
+      };
+      draw();
+      if (wheelPanTimer !== null) clearTimeout(wheelPanTimer);
+      wheelPanTimer = setTimeout(() => {
+        wheelPanTimer = null;
+        handlers.onCamera(camera);
+      }, 150);
+    },
+    { passive: false },
+  );
   canvas.addEventListener('keydown', event => {
     if (event.key === 'Escape') {
       selectedIndex = null;

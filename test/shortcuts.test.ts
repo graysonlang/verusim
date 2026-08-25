@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   canvasBackgroundAction,
+  chordActionForShortcut,
   workbenchActionForShortcut,
   workbenchEscapeAction,
   zoomActionForShortcut,
@@ -133,5 +134,31 @@ describe('workbench shortcuts', () => {
       workbenchActionForShortcut(shortcut('KeyR', { metaKey: true, shiftKey: true })),
       null,
     );
+  });
+});
+
+describe('control-backquote chords', () => {
+  const chord = (overrides: Partial<Parameters<typeof chordActionForShortcut>[0]>) => ({
+    altKey: false,
+    code: 'Backquote',
+    ctrlKey: true,
+    metaKey: false,
+    shiftKey: false,
+    ...overrides,
+  });
+
+  it('toggles the status bar on Control+Backquote and the problems pane with Shift', () => {
+    assert.equal(chordActionForShortcut(chord({})), 'toggle-status-bar');
+    assert.equal(chordActionForShortcut(chord({ shiftKey: true })), 'toggle-problems-pane');
+    assert.equal(workbenchActionForShortcut(chord({})), 'toggle-status-bar');
+    assert.equal(workbenchActionForShortcut(chord({ shiftKey: true })), 'toggle-problems-pane');
+  });
+
+  it('leaves Command+Backquote to macOS window switching and ignores other keys', () => {
+    assert.equal(chordActionForShortcut(chord({ ctrlKey: false, metaKey: true })), null);
+    assert.equal(chordActionForShortcut(chord({ metaKey: true })), null);
+    assert.equal(chordActionForShortcut(chord({ altKey: true })), null);
+    assert.equal(chordActionForShortcut(chord({ ctrlKey: false })), null);
+    assert.equal(chordActionForShortcut(chord({ code: 'KeyB' })), null);
   });
 });
