@@ -308,7 +308,7 @@ describe('seeded environment generation', () => {
     assert.deepEqual(second, first);
     assert.equal(first.generation.samplerStart, 211);
     assert.equal(first.generation.samplerEnd, 211 + first.generation.draws.length);
-    assert.equal(first.resource.schemaVersion, 3);
+    assert.equal(first.resource.schemaVersion, 4);
     assert.equal(first.resource.layout.layers.length, 2);
     assert.equal(first.resource.layout.connectors[0]?.from.layerId, 'surface');
     assert.equal(first.resource.layout.connectors[0]?.to.layerId, 'loft');

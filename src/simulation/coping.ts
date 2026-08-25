@@ -1,3 +1,4 @@
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '../model/time.js';
 import {
   appendBounded,
   clamp,
@@ -79,8 +80,10 @@ function targetCascade(
   return 'flop';
 }
 
-function dwellMinutes(agent: CharacterInstance): number {
-  return Math.max(5, Math.ceil(12 * (1 - agent.profile.constitution.recoveryRate)));
+function dwellSeconds(agent: CharacterInstance): number {
+  return (
+    Math.max(5, Math.ceil(12 * (1 - agent.profile.constitution.recoveryRate))) * SECONDS_PER_MINUTE
+  );
 }
 
 function applyCascadeTarget(
@@ -92,16 +95,16 @@ function applyCascadeTarget(
 ): CharacterInstance {
   const descending = CASCADE_DEPTH[target] > CASCADE_DEPTH[agent.cascade];
   const mayRecover =
-    state.minute >= agent.cascadeDwellUntilMinute &&
+    state.second >= agent.cascadeDwellUntilSecond &&
     load < agent.profile.constitution.threshold * 0.75;
   const cascade = descending || agent.cascade === 'none' || mayRecover ? target : agent.cascade;
   const changed = cascade !== agent.cascade;
   return {
     ...agent,
     cascade,
-    cascadeDwellUntilMinute: changed
-      ? state.minute + dwellMinutes(agent)
-      : agent.cascadeDwellUntilMinute,
+    cascadeDwellUntilSecond: changed
+      ? state.second + dwellSeconds(agent)
+      : agent.cascadeDwellUntilSecond,
     cascadeLoad: descending ? Math.max(agent.cascadeLoad, load) : load,
     cascadeTargetId: cascade === 'fawn' ? targetId : null,
   };
@@ -151,7 +154,7 @@ export function resolveAppraisalEvent(
     effectiveCoping,
     eventId: event.id,
     id: `${state.tick}:${event.id}`,
-    minute: state.minute,
+    second: state.second,
     nextCascade: updated.cascade,
     previousCascade: agent.cascade,
     socialTargetId: updated.cascadeTargetId,
@@ -162,7 +165,7 @@ export function resolveAppraisalEvent(
   const memory: RuntimeMemory = {
     emotionalTurn: -cascadeLoad,
     id: `${state.tick}:${event.id}:appraisal`,
-    minute: state.minute,
+    second: state.second,
     subjectId: event.socialTargetId ?? undefined,
     summary: event.summary,
     type: 'aftermath',
@@ -171,7 +174,7 @@ export function resolveAppraisalEvent(
     instanceId: agent.id,
     id: `${state.tick}:${event.id}:appraisal`,
     kind: 'appraisal',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `${agent.profile.name} appraised ${event.summary.toLowerCase()}`,
     terms: [
@@ -213,7 +216,7 @@ export function resolveAppraisalEvent(
     instanceId: agent.id,
     id: `${state.tick}:${event.id}:cascade`,
     kind: 'cascade',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `${agent.profile.name} entered ${updated.cascade}`,
     terms: [
@@ -232,8 +235,8 @@ export function resolveAppraisalEvent(
       ),
       traceTerm(
         'dwell-until',
-        updated.cascadeDwellUntilMinute,
-        `characters.${agent.id}.cascadeDwellUntilMinute`,
+        updated.cascadeDwellUntilSecond,
+        `characters.${agent.id}.cascadeDwellUntilSecond`,
       ),
     ],
     tick: state.tick,
@@ -363,8 +366,8 @@ function fireOutlet(
     affordanceId: affordance.id,
     label: affordance.label,
     operation: affordance.operation,
-    remainingMinutes: affordance.durationMinutes,
-    startedMinute: state.minute,
+    remainingSeconds: affordance.durationSeconds,
+    startedSecond: state.second,
     targetValueId: affordance.targetValueId,
     yield: outletYield,
   };
@@ -386,7 +389,7 @@ function fireOutlet(
       instanceId: agent.id,
       id: `${state.tick}:${agent.id}:${affordance.id}:outlet`,
       kind: 'outlet',
-      minute: state.minute,
+      second: state.second,
       selection: { rule: 'highest-score-then-authored-order', selectedId: affordance.id },
       summary: `${agent.profile.name} turned to ${affordance.label.toLowerCase()}`,
       terms: [
@@ -437,7 +440,7 @@ export function advanceCoping(state: SimulationState): SimulationState {
   const agents = state.characters.map(agent => {
     const cascadeLoad = clamp(
       agent.cascadeLoad -
-        (agent.profile.constitution.recoveryRate * state.scenario.tickMinutes) / 60,
+        (agent.profile.constitution.recoveryRate * state.scenario.tickSeconds) / SECONDS_PER_HOUR,
       0,
       1.5,
     );
@@ -447,16 +450,16 @@ export function advanceCoping(state: SimulationState): SimulationState {
       currentOutlet:
         agent.currentOutlet === null
           ? null
-          : agent.currentOutlet.remainingMinutes <= state.scenario.tickMinutes
+          : agent.currentOutlet.remainingSeconds <= state.scenario.tickSeconds
             ? null
             : {
                 ...agent.currentOutlet,
-                remainingMinutes: agent.currentOutlet.remainingMinutes - state.scenario.tickMinutes,
+                remainingSeconds: agent.currentOutlet.remainingSeconds - state.scenario.tickSeconds,
               },
     };
     if (
       next.cascade !== 'none' &&
-      state.minute >= next.cascadeDwellUntilMinute &&
+      state.second >= next.cascadeDwellUntilSecond &&
       cascadeLoad < next.profile.constitution.threshold * 0.75
     ) {
       const previous = next.cascade;
@@ -464,14 +467,14 @@ export function advanceCoping(state: SimulationState): SimulationState {
       next = {
         ...next,
         cascade,
-        cascadeDwellUntilMinute: state.minute + dwellMinutes(next),
+        cascadeDwellUntilSecond: state.second + dwellSeconds(next),
         cascadeTargetId: cascade === 'fawn' ? next.cascadeTargetId : null,
       };
       trace = appendTrace(trace, {
         instanceId: next.id,
         id: `${state.tick}:${next.id}:cascade-recovery`,
         kind: 'cascade',
-        minute: state.minute,
+        second: state.second,
         selection: null,
         summary: `${next.profile.name} recovered from ${previous} toward ${cascade}`,
         terms: [

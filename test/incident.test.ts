@@ -100,7 +100,7 @@ function incidentEvent(): IncidentEvent {
   return {
     actorId: 'reeve',
     affectedInstanceId: 'resident',
-    atMinute: 601,
+    atSecond: 36060,
     attribution: 'ambiguous',
     audibleRadiusMeters: 20,
     context: { groupIds: [], institutionIds: [], locationId: 'market-square' },
@@ -244,7 +244,7 @@ describe('objective incidents and social interpretation', () => {
     const state = incidentState();
     const opportunity = {
       actorId: 'visitor',
-      atMinute: state.minute,
+      atSecond: state.second,
       candidates: [
         {
           claimExpressions: [],
@@ -360,7 +360,7 @@ describe('seeded incident sampling', () => {
       ),
     };
     const request = {
-      atMinute: 601,
+      atSecond: 36060,
       audibleRadiusMeters: 20,
       baseRate: 1,
       context: { groupIds: [], institutionIds: [], locationId: 'market-square' },

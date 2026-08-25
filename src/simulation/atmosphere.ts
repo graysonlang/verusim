@@ -1,3 +1,4 @@
+import { SECONDS_PER_MINUTE, secondOfDay } from '../model/time.js';
 import type { Season } from '../model/types.js';
 
 export const DAY_PERIOD_IDS = [
@@ -27,37 +28,33 @@ export const DAY_PERIOD_LABELS: Record<DayPeriod, string> = {
 };
 
 interface DaylightSchedule {
-  sunriseMinute: number;
-  sunsetMinute: number;
+  sunriseSecond: number;
+  sunsetSecond: number;
 }
 
 const DAYLIGHT_SCHEDULES: Record<Season, DaylightSchedule> = {
-  autumn: { sunriseMinute: 390, sunsetMinute: 1065 },
-  spring: { sunriseMinute: 360, sunsetMinute: 1110 },
-  summer: { sunriseMinute: 315, sunsetMinute: 1245 },
-  winter: { sunriseMinute: 450, sunsetMinute: 990 },
+  autumn: { sunriseSecond: 390 * SECONDS_PER_MINUTE, sunsetSecond: 1065 * SECONDS_PER_MINUTE },
+  spring: { sunriseSecond: 360 * SECONDS_PER_MINUTE, sunsetSecond: 1110 * SECONDS_PER_MINUTE },
+  summer: { sunriseSecond: 315 * SECONDS_PER_MINUTE, sunsetSecond: 1245 * SECONDS_PER_MINUTE },
+  winter: { sunriseSecond: 450 * SECONDS_PER_MINUTE, sunsetSecond: 990 * SECONDS_PER_MINUTE },
 };
-
-function minuteOfDay(minute: number): number {
-  return ((minute % 1440) + 1440) % 1440;
-}
 
 export function daylightScheduleForSeason(season: Season): DaylightSchedule {
   return { ...DAYLIGHT_SCHEDULES[season] };
 }
 
-export function dayPeriodAtMinute(minute: number, season: Season): DayPeriod {
-  const current = minuteOfDay(minute);
-  const { sunriseMinute, sunsetMinute } = DAYLIGHT_SCHEDULES[season];
-  const dawnStart = sunriseMinute - 60;
-  const sunriseStart = sunriseMinute - 15;
-  const sunriseEnd = sunriseMinute + 45;
-  const middayStart = 690;
-  const afternoonStart = 810;
-  const eveningStart = sunsetMinute - 90;
-  const sunsetStart = sunsetMinute - 20;
-  const sunsetEnd = sunsetMinute + 30;
-  const duskEnd = sunsetMinute + 75;
+export function dayPeriodAtSecond(second: number, season: Season): DayPeriod {
+  const current = secondOfDay(second);
+  const { sunriseSecond, sunsetSecond } = DAYLIGHT_SCHEDULES[season];
+  const dawnStart = sunriseSecond - 60 * SECONDS_PER_MINUTE;
+  const sunriseStart = sunriseSecond - 15 * SECONDS_PER_MINUTE;
+  const sunriseEnd = sunriseSecond + 45 * SECONDS_PER_MINUTE;
+  const middayStart = 690 * SECONDS_PER_MINUTE;
+  const afternoonStart = 810 * SECONDS_PER_MINUTE;
+  const eveningStart = sunsetSecond - 90 * SECONDS_PER_MINUTE;
+  const sunsetStart = sunsetSecond - 20 * SECONDS_PER_MINUTE;
+  const sunsetEnd = sunsetSecond + 30 * SECONDS_PER_MINUTE;
+  const duskEnd = sunsetSecond + 75 * SECONDS_PER_MINUTE;
 
   if (current < dawnStart || current >= duskEnd) return 'night';
   if (current < sunriseStart) return 'dawn';

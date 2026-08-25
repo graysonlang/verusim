@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "alders-edge-town",
   "title": "Alder's Edge Town",
   "summary": "A compact working town where homes sit above trades, stores and secrets sit below them, and civic, sacred, agricultural, and river life meet within one walkable layout.",
-  "startMinute": 470,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "spring",
     "temperatureCelsius": 8,
@@ -33,60 +31,60 @@
       "walkingMetersPerMinute": 82,
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "wayfarer-quarters",
           "activity": "Sleeping above the inn",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 360,
           "locationId": "wayfarer-cellar",
           "activity": "Checking cellar stores",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 21600
         },
         {
-          "startMinute": 420,
           "locationId": "wayfarer-common-room",
           "activity": "Preparing the common room",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 25200
         },
         {
-          "startMinute": 480,
           "locationId": "wayfarer-common-room",
           "activity": "Opening the inn",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 28800
         },
         {
-          "startMinute": 720,
           "locationId": "market-square",
           "activity": "Buying provisions",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 43200
         },
         {
-          "startMinute": 780,
           "locationId": "wayfarer-common-room",
           "activity": "Serving travelers",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 46800
         },
         {
-          "startMinute": 1320,
           "locationId": "wayfarer-quarters",
           "activity": "Sleeping above the inn",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 79200
         }
       ],
       "normPerspectives": [],
@@ -110,64 +108,64 @@
       "walkingMetersPerMinute": 83,
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "smith-residence",
           "activity": "Sleeping over the smithy",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 390,
           "locationId": "iron-yard",
           "activity": "Sharpening tools",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 23400
         },
         {
-          "startMinute": 480,
           "locationId": "iron-yard",
           "activity": "Working the forge",
           "recoveryMode": "none",
           "maskingDemand": null,
           "resourceDrainsPerHour": {
             "physicalStamina": 0.04
-          }
+          },
+          "startSecond": 28800
         },
         {
-          "startMinute": 750,
           "locationId": "market-square",
           "activity": "Inspecting commissions",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 45000
         },
         {
-          "startMinute": 840,
           "locationId": "iron-yard",
           "activity": "Working the forge",
           "recoveryMode": "none",
           "maskingDemand": null,
           "resourceDrainsPerHour": {
             "physicalStamina": 0.04
-          }
+          },
+          "startSecond": 50400
         },
         {
-          "startMinute": 1140,
           "locationId": "wayfarer-common-room",
           "activity": "Eating alone",
           "recoveryMode": "break",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 68400
         },
         {
-          "startMinute": 1260,
           "locationId": "smith-residence",
           "activity": "Sleeping over the smithy",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 75600
         }
       ],
       "normPerspectives": [],
@@ -191,52 +189,52 @@
       "walkingMetersPerMinute": 79,
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "healer-residence",
           "activity": "Sleeping above the apothecary",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 420,
           "locationId": "apothecary-shop",
           "activity": "Sorting remedies",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 25200
         },
         {
-          "startMinute": 600,
           "locationId": "market-square",
           "activity": "Holding an open clinic",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 36000
         },
         {
-          "startMinute": 780,
           "locationId": "apothecary-shop",
           "activity": "Receiving patients",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 46800
         },
         {
-          "startMinute": 1110,
           "locationId": "churchyard",
           "activity": "Gathering graveyard herbs",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 66600
         },
         {
-          "startMinute": 1260,
           "locationId": "healer-residence",
           "activity": "Reading above the shop",
           "recoveryMode": "rest",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 75600
         }
       ],
       "normPerspectives": [],
@@ -260,60 +258,60 @@
       "walkingMetersPerMinute": 80,
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "watch-loft",
           "activity": "Sleeping in the gatehouse",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 360,
           "locationId": "watch-house",
           "activity": "Reading the night report",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 21600
         },
         {
-          "startMinute": 450,
           "locationId": "north-gate",
           "activity": "Watching arrivals",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 27000
         },
         {
-          "startMinute": 720,
           "locationId": "market-square",
           "activity": "Walking the market",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 43200
         },
         {
-          "startMinute": 810,
           "locationId": "north-gate",
           "activity": "Watching arrivals",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 48600
         },
         {
-          "startMinute": 1080,
           "locationId": "wayfarer-common-room",
           "activity": "Meeting the late patrol",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 64800
         },
         {
-          "startMinute": 1260,
           "locationId": "watch-loft",
           "activity": "Sleeping in the gatehouse",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 75600
         }
       ],
       "normPerspectives": [],
@@ -337,54 +335,54 @@
       "walkingMetersPerMinute": 78,
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "mill-loft",
           "activity": "Sleeping above the mill",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 330,
           "locationId": "alder-mill",
           "activity": "Checking the millrace",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 19800
         },
         {
-          "startMinute": 540,
           "locationId": "market-square",
           "activity": "Collecting grain accounts",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 32400
         },
         {
-          "startMinute": 630,
           "locationId": "alder-mill",
           "activity": "Milling grain",
           "recoveryMode": "none",
           "maskingDemand": null,
           "resourceDrainsPerHour": {
             "physicalStamina": 0.03
-          }
+          },
+          "startSecond": 37800
         },
         {
-          "startMinute": 1080,
           "locationId": "granary",
           "activity": "Inspecting the winter reserve",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 64800
         },
         {
-          "startMinute": 1170,
           "locationId": "mill-loft",
           "activity": "Keeping her books",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 70200
         }
       ],
       "normPerspectives": [],
@@ -415,5 +413,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 28200,
+  "tickSeconds": 60
 }

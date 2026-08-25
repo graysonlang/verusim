@@ -18,7 +18,7 @@ import {
   type ScenarioFile,
 } from '../src/index.js';
 
-const YEAR_MINUTES = 365 * 24 * 60;
+const SECONDS_PER_YEAR = 365 * 24 * 60 * 60;
 
 function createNarrativeSimulation(
   input: unknown = narrativeScenario,
@@ -50,7 +50,7 @@ function expressionScenario(valueId: 'belonging' | 'competence'): ScenarioFile {
   scenario.behaviorOpportunities = [
     {
       actorId: 'invoker',
-      atMinute: 1,
+      atSecond: 60,
       candidates: [
         {
           claimExpressions: [{ claimId: 'claim-1', strength: 1, valueId: 'belonging' }],
@@ -175,7 +175,7 @@ describe('narrative-driven agency', () => {
       ],
     };
     const validator = evaluateRelationshipRequest(withDyads, {
-      atMinute: 1,
+      atSecond: 60,
       id: 'validator-ask',
       label: 'request',
       magnitude: 0.5,
@@ -183,7 +183,7 @@ describe('narrative-driven agency', () => {
       responderId: 'responder',
     });
     const substitute = evaluateRelationshipRequest(withDyads, {
-      atMinute: 1,
+      atSecond: 60,
       id: 'substitute-ask',
       label: 'request',
       magnitude: 0.5,
@@ -216,8 +216,8 @@ describe('narrative-driven agency', () => {
       'regulationReserve',
       0.05,
     );
-    const event = (id: string, atMinute: number): AttributionEvent => ({
-      atMinute,
+    const event = (id: string, atSecond: number): AttributionEvent => ({
+      atSecond,
       audienceId: 'neighbors',
       audienceType: 'group',
       claim: 'Persistently unreliable',
@@ -234,10 +234,10 @@ describe('narrative-driven agency', () => {
     worn = resolveNarrativeEvent(worn, event('wear-two', 2));
     const before = worn.characters.find(agent => agent.id === 'invoker')?.narrative?.claims[0]
       ?.wearIn;
-    worn = resolveNarrativeEvent(worn, event('wear-three', YEAR_MINUTES + 2));
+    worn = resolveNarrativeEvent(worn, event('wear-three', SECONDS_PER_YEAR + 2));
     const after = worn.characters.find(agent => agent.id === 'invoker')?.narrative?.claims[0]
       ?.wearIn;
-    worn = resolveNarrativeEvent(worn, event('wear-four', YEAR_MINUTES + 2));
+    worn = resolveNarrativeEvent(worn, event('wear-four', SECONDS_PER_YEAR + 2));
     const capped = worn.characters.find(agent => agent.id === 'invoker')?.narrative?.claims[0]
       ?.wearIn;
 

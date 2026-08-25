@@ -113,3 +113,46 @@ export function renameKeysDeep(value: unknown, renames: Readonly<Record<string, 
   }
   for (const child of Object.values(record)) renameKeysDeep(child, renames);
 }
+
+/** Authored minute-domain keys and their canonical second-domain names. */
+export const LEGACY_MINUTE_KEYS: Readonly<Record<string, string>> = {
+  activationMinute: 'activationSecond',
+  atMinute: 'atSecond',
+  availableFromMinute: 'availableFromSecond',
+  availableUntilMinute: 'availableUntilSecond',
+  cascadeDwellUntilMinute: 'cascadeDwellUntilSecond',
+  createdMinute: 'createdSecond',
+  deadlineMinute: 'deadlineSecond',
+  durationMinutes: 'durationSeconds',
+  estimatedCompletionMinute: 'estimatedCompletionSecond',
+  estimatedDurationMinutes: 'estimatedDurationSeconds',
+  firstMinute: 'firstSecond',
+  lastMinute: 'lastSecond',
+  minute: 'second',
+  originMinute: 'originSecond',
+  promotedMinute: 'promotedSecond',
+  remainingMinutes: 'remainingSeconds',
+  resolvedMinute: 'resolvedSecond',
+  startMinute: 'startSecond',
+  startedMinute: 'startedSecond',
+  tickMinutes: 'tickSeconds',
+  urgencyHorizonMinutes: 'urgencyHorizonSeconds',
+};
+
+/** Rename minute-domain keys everywhere below a value and scale their finite values by 60. */
+export function migrateMinutesToSeconds(value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const item of value) migrateMinutesToSeconds(item);
+    return;
+  }
+  if (typeof value !== 'object' || value === null) return;
+  const record = value as Record<string, unknown>;
+  for (const [key, replacement] of Object.entries(LEGACY_MINUTE_KEYS)) {
+    if (key in record) {
+      const current = record[key];
+      record[replacement] = typeof current === 'number' ? current * 60 : current;
+      delete record[key];
+    }
+  }
+  for (const child of Object.values(record)) migrateMinutesToSeconds(child);
+}

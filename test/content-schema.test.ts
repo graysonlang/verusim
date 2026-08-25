@@ -8,11 +8,11 @@ const CONTENT_ROOT = path.resolve('content');
 const SCENARIO_ROOT = path.join(CONTENT_ROOT, 'scenarios');
 const CURRENT_RESOURCE_VERSIONS: Record<string, number> = {
   'character-profile': 1,
-  'environment-layout': 3,
+  'environment-layout': 4,
   norm: 2,
   'social-contract': 2,
 };
-const CURRENT_SCENARIO_VERSION = 18;
+const CURRENT_SCENARIO_VERSION = 19;
 
 function jsonFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true })

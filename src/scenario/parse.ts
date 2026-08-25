@@ -46,6 +46,7 @@ import {
   objectValue,
   stringValue,
   validateLayerPosition,
+  migrateMinutesToSeconds,
   renameKeysDeep,
 } from './primitives.js';
 
@@ -563,6 +564,7 @@ function legacyAreaDefaults(area: Record<string, unknown>): void {
 
 function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'environmentLibrary'));
+  if (file.schemaVersion === 4) return file;
   if (file.schemaVersion === 2 || file.schemaVersion === 3) {
     eachObject(
       file.environments,
@@ -582,7 +584,8 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
         });
       },
     );
-    file.schemaVersion = 3;
+    migrateMinutesToSeconds(file);
+    file.schemaVersion = 4;
     return file;
   }
   if (file.schemaVersion !== 1) {
@@ -612,7 +615,8 @@ function migrateEnvironmentLibrary(value: unknown): Record<string, unknown> {
       });
     },
   );
-  file.schemaVersion = 3;
+  migrateMinutesToSeconds(file);
+  file.schemaVersion = 4;
   return file;
 }
 
@@ -622,12 +626,12 @@ function normAddress(resourceId: string): Record<string, unknown> {
 
 function migrateScenario(value: unknown): Record<string, unknown> {
   const file = clone(objectValue(value, 'scenario'));
-  if (file.schemaVersion === 18) return file;
+  if (file.schemaVersion === 19) return file;
   if (
     typeof file.schemaVersion !== 'number' ||
     !Number.isInteger(file.schemaVersion) ||
     file.schemaVersion < 1 ||
-    file.schemaVersion > 17
+    file.schemaVersion > 18
   ) {
     throw new ScenarioValidationError('scenario.schemaVersion', 'unsupported schema version');
   }
@@ -838,7 +842,8 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       placement.tier = 'secondary';
     });
   }
-  file.schemaVersion = 18;
+  if (sourceVersion < 19) migrateMinutesToSeconds(file);
+  file.schemaVersion = 19;
   return file;
 }
 
@@ -991,7 +996,7 @@ export function parseCharacterLibrary(value: unknown): CharacterLibraryFile {
 
 export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile {
   const file = migrateEnvironmentLibrary(value);
-  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 3);
+  schemaVersion(file.schemaVersion, 'environmentLibrary.schemaVersion', 4);
   const environments = arrayValue(file.environments, 'environmentLibrary.environments').map(
     (item, index) => {
       const path = `environmentLibrary.environments[${index}]`;
@@ -1167,7 +1172,7 @@ export function parseEnvironmentLibrary(value: unknown): EnvironmentLibraryFile 
         numberValue(affordance.potency, `${affordancePath}.potency`, 0, 1);
         numberValue(affordance.toleranceBuild, `${affordancePath}.toleranceBuild`, 0, 1);
         numberValue(affordance.valueDamage, `${affordancePath}.valueDamage`, 0, 1);
-        integerValue(affordance.durationMinutes, `${affordancePath}.durationMinutes`, 1, 100_000);
+        integerValue(affordance.durationSeconds, `${affordancePath}.durationSeconds`, 1, 6_000_000);
         if (
           typeof affordance.reinforcementSchedule !== 'string' ||
           !REINFORCEMENT_SCHEDULES.has(affordance.reinforcementSchedule)
@@ -1266,7 +1271,12 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
       schemaVersion: 2,
     }) as unknown as SocialContractResourceFile;
   }
-  if (file.schemaVersion !== 1 && file.schemaVersion !== 2 && file.schemaVersion !== 3) {
+  if (
+    file.schemaVersion !== 1 &&
+    file.schemaVersion !== 2 &&
+    file.schemaVersion !== 3 &&
+    file.schemaVersion !== 4
+  ) {
     throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
   }
   let layout: EnvironmentLibraryFile['environments'][number] | undefined;
@@ -1291,7 +1301,7 @@ export function parseResourceFile(value: unknown, path = 'resource'): ResourceFi
   return clone({
     address: address as EnvironmentLayoutAddress,
     layout,
-    schemaVersion: 3,
+    schemaVersion: 4,
   }) as EnvironmentLayoutResourceFile;
 }
 
@@ -1321,10 +1331,10 @@ const SCENARIO_FILE_KEYS: readonly string[] = [
   'schemaVersion',
   'socialContractPlacements',
   'somaticEvents',
-  'startMinute',
+  'startSecond',
   'summary',
   'taskOperators',
-  'tickMinutes',
+  'tickSeconds',
   'title',
   'worldFacts',
 ];
@@ -1348,12 +1358,12 @@ const SCHEDULE_BLOCK_KEYS: readonly string[] = [
   'maskingDemand',
   'recoveryMode',
   'resourceDrainsPerHour',
-  'startMinute',
+  'startSecond',
 ];
 
 export function parseScenario(value: unknown): ScenarioFile {
   const file = migrateScenario(value);
-  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 18);
+  schemaVersion(file.schemaVersion, 'scenario.schemaVersion', 19);
   knownKeys(file, 'scenario', SCENARIO_FILE_KEYS);
   eachObject(file.characters, 'scenario.characters', (placement, placementPath) => {
     knownKeys(placement, placementPath, CHARACTER_PLACEMENT_KEYS);
@@ -1393,13 +1403,13 @@ export function parseScenario(value: unknown): ScenarioFile {
       'expected a known weather identifier',
     );
   }
-  const startMinute = integerValue(
-    file.startMinute,
-    'scenario.startMinute',
+  const startSecond = integerValue(
+    file.startSecond,
+    'scenario.startSecond',
     0,
     Number.MAX_SAFE_INTEGER,
   );
-  integerValue(file.tickMinutes, 'scenario.tickMinutes', 1, 1440);
+  integerValue(file.tickSeconds, 'scenario.tickSeconds', 1, 86_400);
   if (
     file.initialTimeRate !== undefined &&
     (typeof file.initialTimeRate !== 'string' || !TIME_RATE_ID_SET.has(file.initialTimeRate))
@@ -1488,27 +1498,27 @@ export function parseScenario(value: unknown): ScenarioFile {
     }
     numberValue(goal.commitment, `${path}.commitment`, 0, 1);
     validateClaimExpressions(goal.claimExpressions, `${path}.claimExpressions`);
-    const activationMinute = integerValue(
-      goal.activationMinute,
-      `${path}.activationMinute`,
+    const activationSecond = integerValue(
+      goal.activationSecond,
+      `${path}.activationSecond`,
       0,
       Number.MAX_SAFE_INTEGER,
     );
-    if (goal.deadlineMinute !== null) {
-      const deadlineMinute = integerValue(
-        goal.deadlineMinute,
-        `${path}.deadlineMinute`,
+    if (goal.deadlineSecond !== null) {
+      const deadlineSecond = integerValue(
+        goal.deadlineSecond,
+        `${path}.deadlineSecond`,
         0,
         Number.MAX_SAFE_INTEGER,
       );
-      if (deadlineMinute <= activationMinute) {
+      if (deadlineSecond <= activationSecond) {
         throw new ScenarioValidationError(
-          `${path}.deadlineMinute`,
+          `${path}.deadlineSecond`,
           'expected a deadline after activation',
         );
       }
     }
-    integerValue(goal.urgencyHorizonMinutes, `${path}.urgencyHorizonMinutes`, 1, 100_000);
+    integerValue(goal.urgencyHorizonSeconds, `${path}.urgencyHorizonSeconds`, 1, 6_000_000);
     validateFactConditions(goal.desired, `${path}.desired`, true);
     validateValueTurns(goal.successTurns, `${path}.successTurns`);
     validateValueTurns(goal.failureTurns, `${path}.failureTurns`);
@@ -1523,30 +1533,30 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(task.id, `${path}.id`);
       stringValue(task.label, `${path}.label`);
       identifierValue(task.locationId, `${path}.locationId`);
-      integerValue(task.durationMinutes, `${path}.durationMinutes`, 1, 100_000);
+      integerValue(task.durationSeconds, `${path}.durationSeconds`, 1, 6_000_000);
       numberValue(task.contractViolation, `${path}.contractViolation`, 0, 1);
       validateClaimExpressions(task.claimExpressions, `${path}.claimExpressions`);
-      if (task.availableFromMinute !== null) {
+      if (task.availableFromSecond !== null) {
         integerValue(
-          task.availableFromMinute,
-          `${path}.availableFromMinute`,
+          task.availableFromSecond,
+          `${path}.availableFromSecond`,
           0,
           Number.MAX_SAFE_INTEGER,
         );
       }
-      if (task.availableUntilMinute !== null) {
-        const availableUntilMinute = integerValue(
-          task.availableUntilMinute,
-          `${path}.availableUntilMinute`,
+      if (task.availableUntilSecond !== null) {
+        const availableUntilSecond = integerValue(
+          task.availableUntilSecond,
+          `${path}.availableUntilSecond`,
           0,
           Number.MAX_SAFE_INTEGER,
         );
         if (
-          task.availableFromMinute !== null &&
-          availableUntilMinute <= (task.availableFromMinute as number)
+          task.availableFromSecond !== null &&
+          availableUntilSecond <= (task.availableFromSecond as number)
         ) {
           throw new ScenarioValidationError(
-            `${path}.availableUntilMinute`,
+            `${path}.availableUntilSecond`,
             'expected the window to close after it opens',
           );
         }
@@ -1691,7 +1701,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       (entry, scheduleIndex) => {
         const schedulePath = `${path}.schedule[${scheduleIndex}]`;
         const block = objectValue(entry, schedulePath);
-        integerValue(block.startMinute, `${schedulePath}.startMinute`, 0, 1439);
+        integerValue(block.startSecond, `${schedulePath}.startSecond`, 0, 86_399);
         identifierValue(block.locationId, `${schedulePath}.locationId`);
         stringValue(block.activity, `${schedulePath}.activity`);
         if (
@@ -1717,10 +1727,10 @@ export function parseScenario(value: unknown): ScenarioFile {
       if (
         previous === undefined ||
         current === undefined ||
-        (previous.startMinute as number) >= (current.startMinute as number)
+        (previous.startSecond as number) >= (current.startSecond as number)
       ) {
         throw new ScenarioValidationError(
-          `${path}.schedule[${scheduleIndex}].startMinute`,
+          `${path}.schedule[${scheduleIndex}].startSecond`,
           'schedule blocks must be ordered with unique start times',
         );
       }
@@ -1783,7 +1793,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(opportunity.id, `${path}.id`);
     identifierValue(opportunity.ownerId, `${path}.ownerId`);
     identifierValue(opportunity.itemId, `${path}.itemId`);
-    integerValue(opportunity.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+    integerValue(opportunity.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
     numberValue(opportunity.disclosureBenefit, `${path}.disclosureBenefit`, 0, 4);
     numberValue(opportunity.networkConductivity, `${path}.networkConductivity`, 0, 1);
     const audiences = arrayValue(opportunity.audienceIds, `${path}.audienceIds`);
@@ -1807,7 +1817,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.observerId, `${path}.observerId`);
       identifierValue(event.subjectId, `${path}.subjectId`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       const turn = numberValue(event.stanceTurn, `${path}.stanceTurn`, -1, 1);
       if (turn === 0) {
@@ -1827,7 +1837,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(request.id, `${path}.id`);
     identifierValue(request.requesterId, `${path}.requesterId`);
     identifierValue(request.responderId, `${path}.responderId`);
-    integerValue(request.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+    integerValue(request.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
     stringValue(request.label, `${path}.label`);
     numberValue(request.magnitude, `${path}.magnitude`, 0, 1);
     return request;
@@ -1840,7 +1850,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.instanceId, `${path}.instanceId`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       numberValue(event.threat, `${path}.threat`, 0, 1);
       numberValue(event.copingPotential, `${path}.copingPotential`, 0, 1);
@@ -1886,23 +1896,23 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(opportunity.actorId, `${path}.actorId`);
     identifierValue(opportunity.claimId, `${path}.claimId`);
     stringValue(opportunity.label, `${path}.label`);
-    integerValue(opportunity.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+    integerValue(opportunity.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
     numberValue(opportunity.commitment, `${path}.commitment`, 0, 1);
-    if (opportunity.deadlineMinute !== null) {
+    if (opportunity.deadlineSecond !== null) {
       const deadline = integerValue(
-        opportunity.deadlineMinute,
-        `${path}.deadlineMinute`,
+        opportunity.deadlineSecond,
+        `${path}.deadlineSecond`,
         0,
         Number.MAX_SAFE_INTEGER,
       );
-      if (deadline <= (opportunity.atMinute as number)) {
+      if (deadline <= (opportunity.atSecond as number)) {
         throw new ScenarioValidationError(
-          `${path}.deadlineMinute`,
+          `${path}.deadlineSecond`,
           'expected a deadline after availability',
         );
       }
     }
-    integerValue(opportunity.urgencyHorizonMinutes, `${path}.urgencyHorizonMinutes`, 1, 100_000);
+    integerValue(opportunity.urgencyHorizonSeconds, `${path}.urgencyHorizonSeconds`, 1, 6_000_000);
     validateFactConditions(opportunity.desired, `${path}.desired`, true);
     validateValueTurns(opportunity.successTurns, `${path}.successTurns`);
     validateValueTurns(opportunity.failureTurns, `${path}.failureTurns`);
@@ -1916,7 +1926,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const path = `scenario.narrativeEvents[${index}]`;
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       if (event.eventType === 'claim-evidence') {
         identifierValue(event.actorId, `${path}.actorId`);
@@ -1960,7 +1970,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.subjectId, `${path}.subjectId`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       if (event.eventType !== 'mind-model' && event.eventType !== 'norm') {
         throw new ScenarioValidationError(`${path}.eventType`, 'expected mind-model or norm');
       }
@@ -2007,7 +2017,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.affectedInstanceId, `${path}.affectedInstanceId`);
       if (event.actorId !== null) identifierValue(event.actorId, `${path}.actorId`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       if (typeof event.rootImpact !== 'string' || !INCIDENT_ROOT_IMPACT_SET.has(event.rootImpact)) {
         throw new ScenarioValidationError(`${path}.rootImpact`, 'expected a known root impact');
@@ -2121,7 +2131,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.displayId, `${path}.displayId`);
       identifierValue(event.wearerId, `${path}.wearerId`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       stringValue(event.summary, `${path}.summary`);
       stringValue(event.statusMarker, `${path}.statusMarker`);
       if (typeof event.domainContested !== 'boolean') {
@@ -2164,7 +2174,7 @@ export function parseScenario(value: unknown): ScenarioFile {
       const event = objectValue(entry, path);
       identifierValue(event.id, `${path}.id`);
       identifierValue(event.instanceId, `${path}.instanceId`);
-      integerValue(event.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+      integerValue(event.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
       identifierValue(event.sourceId, `${path}.sourceId`);
       stringValue(event.summary, `${path}.summary`);
       numberValue(event.visualProminence, `${path}.visualProminence`, 0, 1);
@@ -2202,7 +2212,7 @@ export function parseScenario(value: unknown): ScenarioFile {
     identifierValue(opportunity.id, `${path}.id`);
     identifierValue(opportunity.actorId, `${path}.actorId`);
     if (opportunity.targetId !== null) identifierValue(opportunity.targetId, `${path}.targetId`);
-    integerValue(opportunity.atMinute, `${path}.atMinute`, startMinute, Number.MAX_SAFE_INTEGER);
+    integerValue(opportunity.atSecond, `${path}.atSecond`, startSecond, Number.MAX_SAFE_INTEGER);
 
     const contextPath = `${path}.context`;
     const context = objectValue(opportunity.context, contextPath);

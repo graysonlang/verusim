@@ -1,3 +1,4 @@
+import { SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '../model/time.js';
 import { clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import type {
   CapabilityResolution,
@@ -25,7 +26,7 @@ import {
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
 
-const STEADY_HABITUATION_MINUTES = 120;
+const STEADY_HABITUATION_SECONDS = 120 * SECONDS_PER_MINUTE;
 
 function compareSources(left: SomaticSourceState, right: SomaticSourceState): number {
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
@@ -73,13 +74,13 @@ export function createSomaticState(sources: readonly SomaticSourceSeed[]): Somat
   return deriveSomaticState(sources.map(source => ({ ...source, habituation: 0 })));
 }
 
-export function advanceSomaticState(state: SomaticState, elapsedMinutes: number): SomaticState {
+export function advanceSomaticState(state: SomaticState, elapsedSeconds: number): SomaticState {
   return deriveSomaticState(
     state.sources.map(source => ({
       ...source,
       habituation:
         source.cadence === 'steady'
-          ? clamp(source.habituation + elapsedMinutes / STEADY_HABITUATION_MINUTES, 0, 1)
+          ? clamp(source.habituation + elapsedSeconds / STEADY_HABITUATION_SECONDS, 0, 1)
           : source.habituation,
     })),
   );
@@ -121,12 +122,12 @@ export function isDerivedSomaticState(state: SomaticState): boolean {
 export function applySomaticResourceTax(
   resources: ResourceState,
   somatic: SomaticState,
-  elapsedMinutes: number,
+  elapsedSeconds: number,
 ): ResourceState {
   return {
     ...resources,
     executiveBudget: clamp(
-      resources.executiveBudget - (somatic.attentionTax * elapsedMinutes) / 60,
+      resources.executiveBudget - (somatic.attentionTax * elapsedSeconds) / SECONDS_PER_HOUR,
       0,
       1,
     ),
@@ -239,7 +240,7 @@ function observationFor(
       helpProbability: 0,
       id,
       inferredSeverity: null,
-      minute: state.minute,
+      second: state.second,
       observerId,
       outcome: 'missed',
       perceptionStrength: perception.sight.strength,
@@ -262,7 +263,7 @@ function observationFor(
     helpProbability: crowd?.helpProbability ?? 0,
     id,
     inferredSeverity,
-    minute: state.minute,
+    second: state.second,
     observerId,
     outcome: 'observed',
     perceptionStrength: perception.sight.strength,
@@ -282,7 +283,7 @@ function somaticTrace(
     instanceId: event.instanceId,
     id: `${record.id}:trace`,
     kind: 'somatic',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: event.summary,
     terms: [
@@ -324,7 +325,7 @@ export function resolveSomaticEvent(state: SimulationState, event: SomaticEvent)
     id: `${state.tick}:${event.id}`,
     levelAfter: somatic.level,
     levelBefore: subject.somatic.level,
-    minute: state.minute,
+    second: state.second,
     observations,
     subjectId: subject.id,
     tick: state.tick,

@@ -45,11 +45,11 @@
         "targetValueId": "safety",
         "satisfierFlavor": "control of exits",
         "potency": 0.58,
-        "durationMinutes": 20,
         "toleranceBuild": 0.6,
         "valueDamage": 0,
         "displacesRepair": false,
-        "reinforcementSchedule": "fixed"
+        "reinforcementSchedule": "fixed",
+        "durationSeconds": 1200
       }
     ],
     "environmentId": "coping-yard",
@@ -63,5 +63,5 @@
     ],
     "connectors": []
   },
-  "schemaVersion": 3
+  "schemaVersion": 4
 }

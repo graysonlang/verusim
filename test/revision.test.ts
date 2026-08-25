@@ -68,29 +68,29 @@ describe('authoring revisions', () => {
       string,
       unknown
     >;
-    draft.tickMinutes = 0;
+    draft.tickSeconds = 0;
     const invalid = applyTransaction(graph, {
       edits: [{ documentId: SCENARIO_ID, draft }],
       label: 'break',
     });
-    assert.throws(() => prepareRevision(invalid, SCENARIO_ID), /scenario\.tickMinutes/);
+    assert.throws(() => prepareRevision(invalid, SCENARIO_ID), /scenario\.tickSeconds/);
 
     const unknown = structuredClone(documentById(graph, SCENARIO_ID).draft) as Record<
       string,
       unknown
     >;
-    unknown.tickMinute = 1;
+    unknown.tickSecond = 1;
     const withUnknown = applyTransaction(graph, {
       edits: [{ documentId: SCENARIO_ID, draft: unknown }],
       label: 'typo',
     });
     assert.throws(
       () => prepareRevision(withUnknown, SCENARIO_ID),
-      /scenario\.tickMinute: unknown field/,
+      /scenario\.tickSecond: unknown field/,
     );
     assert.ok(
       documentById(withUnknown, SCENARIO_ID).diagnostics.some(
-        d => d.path === 'scenario.tickMinute',
+        d => d.path === 'scenario.tickSecond',
       ),
     );
 
@@ -156,7 +156,7 @@ describe('authoring revisions', () => {
     const { graph } = project();
     const revision = prepareRevision(graph, SCENARIO_ID);
     const snapshot = serializeSnapshot(advanceSimulation(createSimulation(revision.prepared), 3));
-    assert.equal(snapshot.schemaVersion, 18);
+    assert.equal(snapshot.schemaVersion, 19);
     assert.equal(snapshot.resourceLock.digest, revision.prepared.resourceLock.digest);
     const resumed = createSimulationFromSnapshot({ prepared: revision.prepared, snapshot });
     assert.deepEqual(serializeSnapshot(resumed), snapshot);

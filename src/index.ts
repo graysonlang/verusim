@@ -204,7 +204,7 @@ export { serializeScenario, serializeSnapshot } from './scenario/serialize.js';
 export { parseSnapshot } from './scenario/snapshot.js';
 export {
   ADULT_BASELINE_CHANGE_CAP_PER_YEAR,
-  BASELINE_PLASTICITY_YEAR_MINUTES,
+  BASELINE_PLASTICITY_YEAR_SECONDS,
   advanceBaselinePlasticity,
   baselinePlasticityRateForAge,
 } from './simulation/plasticity.js';
@@ -312,7 +312,7 @@ export {
   DAY_PERIOD_IDS,
   DAY_PERIOD_LABELS,
   daylightScheduleForSeason,
-  dayPeriodAtMinute,
+  dayPeriodAtSecond,
 } from './simulation/atmosphere.js';
 export type { DayPeriod } from './simulation/atmosphere.js';
 export { effectiveValueWeights } from './simulation/salience.js';

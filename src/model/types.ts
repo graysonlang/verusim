@@ -292,7 +292,7 @@ export interface BaselinePlasticityRecord {
   appliedChange: number;
   integratedYears: number;
   mechanism: BaselinePlasticityMechanism;
-  minute: number;
+  second: number;
   previous: number;
   resulting: number;
   source: string;
@@ -454,13 +454,13 @@ export interface EnvironmentDefinition {
 
 export interface EnvironmentLibraryFile {
   environments: EnvironmentDefinition[];
-  schemaVersion: 3;
+  schemaVersion: 4;
 }
 
 export interface EnvironmentLayoutResourceFile {
   address: EnvironmentLayoutAddress;
   layout: EnvironmentDefinition;
-  schemaVersion: 3;
+  schemaVersion: 4;
 }
 
 export interface NormDefinition {
@@ -523,7 +523,7 @@ export type ReinforcementSchedule = 'fixed' | 'variable-ratio';
 
 export interface OutletAffordance {
   displacesRepair: boolean;
-  durationMinutes: number;
+  durationSeconds: number;
   id: string;
   label: string;
   operation: OutletOperation;
@@ -543,7 +543,7 @@ export interface ScheduleBlock {
   maskingDemand: MaskingDemand | null;
   recoveryMode: RecoveryMode;
   resourceDrainsPerHour: Partial<ResourceState>;
-  startMinute: number;
+  startSecond: number;
 }
 
 export interface MaskingDemand {
@@ -618,7 +618,7 @@ export interface DyadSeed {
 export type DyadState = DyadSeed;
 
 export interface RelationshipEvent {
-  atMinute: number;
+  atSecond: number;
   id: string;
   observerId: string;
   stanceTurn: number;
@@ -627,7 +627,7 @@ export interface RelationshipEvent {
 }
 
 export interface RelationshipRequestOpportunity {
-  atMinute: number;
+  atSecond: number;
   id: string;
   label: string;
   magnitude: number;
@@ -644,7 +644,7 @@ export interface DisclosureItemSeed {
 }
 
 export interface DisclosureOpportunity {
-  atMinute: number;
+  atSecond: number;
   audienceIds: string[];
   disclosureBenefit: number;
   id: string;
@@ -666,7 +666,7 @@ export const OBSERVATION_EVENT_TYPES = ['mind-model', 'norm'] as const;
 export type ObservationEventType = (typeof OBSERVATION_EVENT_TYPES)[number];
 
 export interface ObservationEventBase {
-  atMinute: number;
+  atSecond: number;
   audibleRadiusMeters: number;
   channel: ObservationChannel;
   id: string;
@@ -744,7 +744,7 @@ export interface IncidentContext {
 export interface IncidentEvent {
   actorId: string | null;
   affectedInstanceId: string;
-  atMinute: number;
+  atSecond: number;
   attribution: IncidentAttribution;
   audibleRadiusMeters: number;
   context: IncidentContext;
@@ -761,7 +761,7 @@ export interface IncidentEvent {
 }
 
 export interface DisplayEvent {
-  atMinute: number;
+  atSecond: number;
   context: IncidentContext;
   displayId: string;
   domainContested: boolean;
@@ -809,7 +809,7 @@ export interface SomaticState {
 
 export interface SomaticEvent {
   instanceId: string;
-  atMinute: number;
+  atSecond: number;
   id: string;
   observerIds: string[];
   operation: 'clear' | 'set';
@@ -858,27 +858,27 @@ export interface FactEffect {
 export type GoalSource = 'aspiration' | 'need' | 'obligation' | 'scenario' | 'want';
 
 export interface AgendaGoalSeed {
-  activationMinute: number;
+  activationSecond: number;
   actorId: string;
   commitment: number;
   claimExpressions: ClaimExpression[];
-  deadlineMinute: number | null;
+  deadlineSecond: number | null;
   desired: FactCondition[];
   failureTurns: Partial<ValueMap<number>>;
   id: string;
   label: string;
   source: GoalSource;
   successTurns: Partial<ValueMap<number>>;
-  urgencyHorizonMinutes: number;
+  urgencyHorizonSeconds: number;
 }
 
 export interface TaskOperator {
   actorIds: string[];
-  availableFromMinute: number | null;
-  availableUntilMinute: number | null;
+  availableFromSecond: number | null;
+  availableUntilSecond: number | null;
   contractViolation: number;
   claimExpressions: ClaimExpression[];
-  durationMinutes: number;
+  durationSeconds: number;
   effects: FactEffect[];
   id: string;
   label: string;
@@ -916,18 +916,18 @@ export interface ClaimExpression {
 }
 
 export interface AspirationOpportunity {
-  atMinute: number;
+  atSecond: number;
   actorId: string;
   claimExpressions: ClaimExpression[];
   claimId: string;
   commitment: number;
-  deadlineMinute: number | null;
+  deadlineSecond: number | null;
   desired: FactCondition[];
   failureTurns: Partial<ValueMap<number>>;
   id: string;
   label: string;
   successTurns: Partial<ValueMap<number>>;
-  urgencyHorizonMinutes: number;
+  urgencyHorizonSeconds: number;
 }
 
 export interface ReputationGroup {
@@ -939,7 +939,7 @@ export interface ReputationGroup {
 export interface ClaimEvidenceEvent {
   actorId: string;
   alignment: number;
-  atMinute: number;
+  atSecond: number;
   claimId: string;
   eventType: 'claim-evidence';
   id: string;
@@ -948,7 +948,7 @@ export interface ClaimEvidenceEvent {
 
 export interface SelfDeprecationAgreementEvent {
   actorId: string;
-  atMinute: number;
+  atSecond: number;
   claimId: string;
   disclosureItemId: string | null;
   eventType: 'self-deprecation-agreement';
@@ -958,7 +958,7 @@ export interface SelfDeprecationAgreementEvent {
 }
 
 export interface AttributionEvent {
-  atMinute: number;
+  atSecond: number;
   audienceId: string;
   audienceType: 'agent' | 'group';
   claim: string;
@@ -983,7 +983,7 @@ export interface DecisionContext {
 
 export interface BehaviorOpportunity {
   actorId: string;
-  atMinute: number;
+  atSecond: number;
   candidates: ActionCandidate[];
   context: DecisionContext;
   id: string;
@@ -1043,13 +1043,13 @@ export interface ScenarioFile {
   relationshipEvents: RelationshipEvent[];
   relationshipRequests: RelationshipRequestOpportunity[];
   reputationGroups: ReputationGroup[];
-  schemaVersion: 18;
+  schemaVersion: 19;
   socialContractPlacements: SocialContractPlacement[];
   somaticEvents: SomaticEvent[];
-  startMinute: number;
+  startSecond: number;
   summary: string;
   taskOperators: TaskOperator[];
-  tickMinutes: number;
+  tickSeconds: number;
   title: string;
   worldFacts: WorldFact[];
 }
@@ -1057,7 +1057,7 @@ export interface ScenarioFile {
 export interface RuntimeMemory {
   emotionalTurn?: number;
   id: string;
-  minute: number;
+  second: number;
   provenance?: FormativeMemoryProvenance;
   subjectId?: string;
   summary: string;
@@ -1075,7 +1075,7 @@ export interface RuntimeMemory {
 
 export interface AppraisalEvent {
   instanceId: string;
-  atMinute: number;
+  atSecond: number;
   believedLeverage: boolean;
   copingPotential: number;
   exitAvailable: boolean;
@@ -1091,7 +1091,7 @@ export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 
 
 export interface CharacterInstance {
   cascade: CascadePosition;
-  cascadeDwellUntilMinute: number;
+  cascadeDwellUntilSecond: number;
   cascadeLoad: number;
   cascadeTargetId: string | null;
   currentOutlet: OutletSelection | null;
@@ -1165,7 +1165,7 @@ export interface TraceEntry {
   instanceId: string | null;
   id: string;
   kind: TraceKind;
-  minute: number;
+  second: number;
   sequence: number;
   selection: TraceSelection | null;
   summary: string;
@@ -1199,7 +1199,7 @@ export interface SimulationState {
   environment: EnvironmentDefinition;
   incidentRecords: IncidentAppraisalRecord[];
   intentions: TaskIntention[];
-  minute: number;
+  second: number;
   narrativeRecords: NarrativeRecord[];
   norms: readonly NormResourceFile[];
   observations: ObservationRecord[];
@@ -1231,8 +1231,8 @@ export interface OutletSelection {
   affordanceId: string;
   label: string;
   operation: OutletOperation;
-  remainingMinutes: number;
-  startedMinute: number;
+  remainingSeconds: number;
+  startedSecond: number;
   targetValueId: ValueId;
   yield: number;
 }
@@ -1251,7 +1251,7 @@ export interface AppraisalRecord {
   effectiveCoping: number;
   eventId: string;
   id: string;
-  minute: number;
+  second: number;
   nextCascade: CascadePosition;
   previousCascade: CascadePosition;
   socialTargetId: string | null;
@@ -1352,7 +1352,7 @@ export interface DecisionRecord {
   actorId: string;
   candidates: CandidateEvaluation[];
   id: string;
-  minute: number;
+  second: number;
   opportunityId: string;
   selectedCandidateId: string;
   targetId: string | null;
@@ -1373,7 +1373,7 @@ export interface DisclosureDecisionRecord {
   disclosureBenefit: number;
   id: string;
   itemId: string;
-  minute: number;
+  second: number;
   opportunityId: string;
   outcome: 'conceal' | 'disclose';
   ownerId: string;
@@ -1387,7 +1387,7 @@ export interface RelationshipDecisionRecord {
   cooperationPosition: number;
   id: string;
   magnitude: number;
-  minute: number;
+  second: number;
   newStance: number;
   outcome: 'accepted' | 'refused';
   previousStance: number;
@@ -1411,7 +1411,7 @@ export interface MindModelObservationRecord {
   eventType: 'mind-model';
   gateThreshold: number | null;
   id: string;
-  minute: number;
+  second: number;
   newConfidence: number | null;
   newEstimate: number | null;
   newPredictionError: number | null;
@@ -1444,7 +1444,7 @@ export interface NormObservationRecord {
   legibilityBand: CapabilityResolutionBand | null;
   legibilityMargin: number | null;
   internalization: number;
-  minute: number;
+  second: number;
   normId: string;
   observerId: string;
   outcome: NormObservationOutcome;
@@ -1473,7 +1473,7 @@ export interface IncidentAppraisalRecord {
   contractTerms: IncidentContractTerm[];
   eventId: string;
   id: string;
-  minute: number;
+  second: number;
   observerId: string;
   outcome: 'appraised' | 'missed';
   perceivedAttribution: IncidentPerceivedAttribution | null;
@@ -1513,7 +1513,7 @@ export interface DisplayObserverAppraisal {
   exposureBefore: number;
   id: string;
   markerCentrality: number;
-  minute: number;
+  second: number;
   observerId: string;
   outcome: DisplayResponse;
   perceptionStrength: number;
@@ -1527,7 +1527,7 @@ export interface DisplayResolutionRecord {
   appraisals: DisplayObserverAppraisal[];
   eventId: string;
   id: string;
-  minute: number;
+  second: number;
   perceivedAudienceCount: number;
   tick: number;
   wearerId: string;
@@ -1544,7 +1544,7 @@ export interface SomaticObservationRecord {
   helpProbability: number;
   id: string;
   inferredSeverity: number | null;
-  minute: number;
+  second: number;
   observerId: string;
   outcome: 'missed' | 'observed';
   perceptionStrength: number;
@@ -1559,7 +1559,7 @@ export interface SomaticResolutionRecord {
   id: string;
   levelAfter: SomaticLevel;
   levelBefore: SomaticLevel;
-  minute: number;
+  second: number;
   observations: SomaticObservationRecord[];
   subjectId: string;
   tick: number;
@@ -1569,14 +1569,14 @@ export type AgendaGoalStatus = 'active' | 'blocked' | 'completed' | 'failed' | '
 
 export interface AgendaGoalState extends AgendaGoalSeed {
   lastPlannedWorldRevision: number | null;
-  resolvedMinute: number | null;
+  resolvedSecond: number | null;
   status: AgendaGoalStatus;
 }
 
 export interface PlanCandidateEvaluation {
   appraisal: ActionAppraisal;
-  estimatedCompletionMinute: number;
-  estimatedDurationMinutes: number;
+  estimatedCompletionSecond: number;
+  estimatedDurationSeconds: number;
   goalId: string;
   goalUtility: number;
   id: string;
@@ -1592,7 +1592,7 @@ export interface AgendaDecisionRecord {
   actorId: string;
   candidates: PlanCandidateEvaluation[];
   id: string;
-  minute: number;
+  second: number;
   selectedPlanId: string | null;
   tick: number;
   worldRevision: number;
@@ -1600,8 +1600,8 @@ export interface AgendaDecisionRecord {
 
 export interface AgendaPlan {
   actorId: string;
-  createdMinute: number;
-  estimatedCompletionMinute: number;
+  createdSecond: number;
+  estimatedCompletionSecond: number;
   goalId: string;
   id: string;
   score: number;
@@ -1615,14 +1615,14 @@ export interface TaskIntention {
   goalId: string;
   phase: TaskIntentionPhase;
   planId: string;
-  remainingMinutes: number;
-  startedMinute: number | null;
+  remainingSeconds: number;
+  startedSecond: number | null;
   taskId: string;
 }
 
 export interface CharacterInstanceSnapshot {
   cascade: CascadePosition;
-  cascadeDwellUntilMinute: number;
+  cascadeDwellUntilSecond: number;
   cascadeLoad: number;
   cascadeTargetId: string | null;
   currentOutlet: OutletSelection | null;
@@ -1659,7 +1659,7 @@ export interface SimulationSnapshotFile {
   environment: EnvironmentLayoutAddress;
   incidentRecords: IncidentAppraisalRecord[];
   intentions: TaskIntention[];
-  minute: number;
+  second: number;
   narrativeRecords: NarrativeRecord[];
   observations: ObservationRecord[];
   plans: AgendaPlan[];
@@ -1678,7 +1678,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipRequestIds: string[];
   resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 18;
+  schemaVersion: 19;
   somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;
@@ -1696,7 +1696,7 @@ export interface NarrativeClaimState extends NarrativeClaimSeed {
 
 export interface NarrativeState {
   claims: NarrativeClaimState[];
-  promotedMinute: number;
+  promotedSecond: number;
 }
 
 export type NarrativeDisposition =
@@ -1717,7 +1717,7 @@ export interface NarrativeRecord {
   disposition: NarrativeDisposition;
   eventId: string;
   id: string;
-  minute: number;
+  second: number;
   regulationCost: number;
   summary: string;
   tick: number;
@@ -1728,8 +1728,8 @@ export interface AttributedNarrative {
   audienceType: 'agent' | 'group';
   claim: string;
   confidence: number;
-  firstMinute: number;
-  lastMinute: number;
+  firstSecond: number;
+  lastSecond: number;
   repetitions: number;
   sourceIds: string[];
   subjectId: string;

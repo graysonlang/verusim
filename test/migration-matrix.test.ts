@@ -19,12 +19,12 @@ const catalog = createResourceCatalog(BUILT_IN_RESOURCES);
 // corresponding migration gate would reinstate, so a downgrade to any legacy
 // version must migrate back to exactly this parsed value.
 const minimalScenario = {
-  schemaVersion: 18,
+  schemaVersion: 19,
   id: 'migration-matrix',
   title: 'Migration matrix',
   summary: 'A minimal scenario whose legacy downgrades migrate back to itself.',
-  startMinute: 600,
-  tickMinutes: 1,
+  startSecond: 36000,
+  tickSeconds: 60,
   environmentConditions: { season: 'spring', temperatureCelsius: 15, weather: 'clear' },
   dyads: [],
   disclosureItems: [],
@@ -44,7 +44,7 @@ const minimalScenario = {
       position: { x: 50, y: 40, layerId: 'surface' },
       schedule: [
         {
-          startMinute: 0,
+          startSecond: 0,
           locationId: 'common-room',
           activity: 'Holding the common room together',
           recoveryMode: 'none',
@@ -99,7 +99,7 @@ describe('migration matrix', () => {
       for (const version of LEGACY_SCENARIO_VERSIONS) {
         const legacy = downgradeScenario(entry.scenario, version);
         const migrated = parseScenario(legacy);
-        assert.equal(migrated.schemaVersion, 18, `${entry.id} from version ${version}`);
+        assert.equal(migrated.schemaVersion, 19, `${entry.id} from version ${version}`);
         const prepared = prepareScenario({ catalog, scenario: legacy });
         const tick = serializeSnapshot(advanceSimulation(createSimulation(prepared), 1));
         // Versions before 8 cannot represent norm-typed observation events,

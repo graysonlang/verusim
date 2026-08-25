@@ -97,7 +97,7 @@ export function createResourceCatalogFromLibraries(input: {
           resourceId: layout.layoutId,
         },
         layout,
-        schemaVersion: 3,
+        schemaVersion: 4,
       } satisfies EnvironmentLayoutResourceFile,
     })),
   ]);
@@ -221,7 +221,7 @@ export function prepareScenario(input: {
     } satisfies CharacterLibraryFile,
     environmentLibrary: {
       environments: environmentFiles.map(resource => resource.layout),
-      schemaVersion: 3,
+      schemaVersion: 4,
     } satisfies EnvironmentLibraryFile,
     norms: normFiles,
     scenario,
@@ -331,7 +331,7 @@ export function validatePreparedScenario(value: unknown): PreparedScenario {
     throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
   }
   const scenario = objectValue(file.scenario, `${path}.scenario`);
-  if (scenario.schemaVersion !== 18) {
+  if (scenario.schemaVersion !== 19) {
     throw new ScenarioValidationError(
       `${path}.scenario.schemaVersion`,
       'unsupported schema version',

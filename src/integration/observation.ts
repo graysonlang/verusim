@@ -6,7 +6,7 @@ const MAX_TRACE_REFERENCES = 8;
 export interface TextObservationProjection {
   instanceId: string;
   medium: 'text';
-  minute: number;
+  second: number;
   sourceTraceIds: string[];
   summary: string;
   tells: string[];
@@ -18,7 +18,7 @@ export interface EmbodiedObservationProjection {
   attention: 'available' | 'elsewhere' | 'fixed' | 'survival';
   expression: string;
   medium: 'embodied';
-  minute: number;
+  second: number;
   motion: MovementSpeedClass;
   posture: 'braced' | 'collapsed' | 'guarded' | 'neutral' | 'placating' | 'rigid';
   sourceTraceIds: string[];
@@ -61,7 +61,7 @@ export function projectTextObservation(
   return {
     instanceId,
     medium: 'text',
-    minute: state.minute,
+    second: state.second,
     sourceTraceIds: sourceTraceIds(state, instanceId),
     summary: `${agent.profile.name} is ${observed.mood} while ${agent.currentActivity.toLowerCase()}.`,
     tells: [...new Set(tells)],
@@ -96,7 +96,7 @@ export function projectEmbodiedObservation(
     attention: embodiedAttention(agent),
     expression: observed.mood,
     medium: 'embodied',
-    minute: state.minute,
+    second: state.second,
     motion: observed.movementSpeedClass,
     posture: embodiedPosture(agent),
     sourceTraceIds: sourceTraceIds(state, instanceId),

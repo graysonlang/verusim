@@ -1,3 +1,4 @@
+import { SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE } from '../model/time.js';
 import { appendBounded, clamp, memoryWindow } from '../model/retention.js';
 import {
   VALUE_IDS,
@@ -57,8 +58,6 @@ import {
 } from './relationship.js';
 import { appendTrace, createTrace, traceTerm, traceWindows } from './trace.js';
 
-const DAY_MINUTES = 1440;
-
 const DEFAULT_RESOURCES: ResourceState = {
   executiveBudget: 0.78,
   physicalStamina: 0.82,
@@ -109,11 +108,11 @@ function findLocation(environment: EnvironmentDefinition, locationId: string): L
   return location;
 }
 
-function activeScheduleBlock(schedule: ScheduleBlock[], minute: number): ScheduleBlock {
-  const minuteOfDay = ((minute % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES;
+function activeScheduleBlock(schedule: ScheduleBlock[], second: number): ScheduleBlock {
+  const secondOfDay = ((second % SECONDS_PER_DAY) + SECONDS_PER_DAY) % SECONDS_PER_DAY;
   let active = schedule[schedule.length - 1];
   for (const block of schedule) {
-    if (block.startMinute > minuteOfDay) break;
+    if (block.startSecond > secondOfDay) break;
     active = block;
   }
   if (active === undefined) throw new Error('Validated schedules always contain a block');
@@ -141,10 +140,10 @@ function initializeAgent(
   profile: CharacterDefinition,
   placement: CharacterPlacement,
   environment: EnvironmentDefinition,
-  minute: number,
+  second: number,
   ambientSomaticSources: readonly SomaticSourceSeed[],
 ): CharacterInstance {
-  const block = activeScheduleBlock(placement.schedule, minute);
+  const block = activeScheduleBlock(placement.schedule, second);
   const destination = locationCenter(findLocation(environment, block.locationId));
   const arrived = sameLayerPosition(placement.position, destination);
   const formative = initializeHistoryDerivedState(profile);
@@ -156,7 +155,7 @@ function initializeAgent(
   );
   const agent: CharacterInstance = {
     cascade: 'none',
-    cascadeDwellUntilMinute: minute,
+    cascadeDwellUntilSecond: second,
     cascadeLoad: 0,
     cascadeTargetId: null,
     currentOutlet: null,
@@ -194,7 +193,7 @@ function initializeAgent(
   };
   agent.currentActivity = somaticActivityLabel(agent.somatic) ?? agent.currentActivity;
   if (placement.agency === 'responder') return agent;
-  const narrative = createNarrativeState(agent, minute);
+  const narrative = createNarrativeState(agent, second);
   return {
     ...agent,
     narrative: {
@@ -214,7 +213,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
       profile,
       placement,
       environment,
-      prepared.scenario.startMinute,
+      prepared.scenario.startSecond,
       prepared.scenario.ambientSomaticSources,
     ),
   );
@@ -227,7 +226,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
       desired: goal.desired.map(condition => ({ ...condition })),
       failureTurns: { ...goal.failureTurns },
       lastPlannedWorldRevision: null,
-      resolvedMinute: null,
+      resolvedSecond: null,
       status: 'pending',
       successTurns: { ...goal.successTurns },
     })),
@@ -248,7 +247,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     environment,
     incidentRecords: [],
     intentions: [],
-    minute: prepared.scenario.startMinute,
+    second: prepared.scenario.startSecond,
     narrativeRecords: [],
     norms: prepared.norms,
     observations: [],
@@ -276,7 +275,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
         instanceId: null,
         id: '0:scenario',
         kind: 'scenario',
-        minute: prepared.scenario.startMinute,
+        second: prepared.scenario.startSecond,
         selection: null,
         summary: `Loaded ${prepared.scenario.title}`,
         terms: [
@@ -315,7 +314,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     if (agent === undefined) throw new Error('Validated snapshot agents exist in the base state');
     return {
       cascade: saved.cascade,
-      cascadeDwellUntilMinute: saved.cascadeDwellUntilMinute,
+      cascadeDwellUntilSecond: saved.cascadeDwellUntilSecond,
       cascadeLoad: saved.cascadeLoad,
       cascadeTargetId: saved.cascadeTargetId,
       currentOutlet: saved.currentOutlet === null ? null : { ...saved.currentOutlet },
@@ -367,7 +366,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     dyads: structuredClone(snapshot.dyads),
     incidentRecords: structuredClone(snapshot.incidentRecords),
     intentions: structuredClone(snapshot.intentions),
-    minute: snapshot.minute,
+    second: snapshot.second,
     narrativeRecords: structuredClone(snapshot.narrativeRecords),
     observations: structuredClone(snapshot.observations),
     plans: structuredClone(snapshot.plans),
@@ -395,10 +394,10 @@ export function createSimulationFromPreparedSnapshot(input: {
 function advanceValueState(
   state: ValueState,
   turnPerHour: number,
-  tickMinutes: number,
+  tickSeconds: number,
 ): ValueState {
-  const charge = clamp(state.charge + (turnPerHour * tickMinutes) / 60, -1, 1);
-  const dayFraction = tickMinutes / DAY_MINUTES;
+  const charge = clamp(state.charge + (turnPerHour * tickSeconds) / SECONDS_PER_HOUR, -1, 1);
+  const dayFraction = tickSeconds / SECONDS_PER_DAY;
   const deficitIntegral = clamp(
     state.deficitIntegral +
       (charge < 0 ? -charge * dayFraction : -Math.min(charge, 0.25) * dayFraction * 0.08),
@@ -416,8 +415,8 @@ interface ResourceRecoveryResult {
 function advanceResources(
   resources: ResourceState,
   recoveryMode: RecoveryMode,
-  recoveryMinutes: number,
-  drainMinutes: number,
+  recoverySeconds: number,
+  drainSeconds: number,
   drainsPerHour: Partial<ResourceState>,
 ): ResourceRecoveryResult {
   const rates = RECOVERY_RATES_PER_HOUR[recoveryMode];
@@ -426,8 +425,8 @@ function advanceResources(
   for (const resourceId of RESOURCE_IDS) {
     next[resourceId] = clamp(
       resources[resourceId] +
-        (rates[resourceId] * recoveryMinutes) / 60 -
-        ((drainsPerHour[resourceId] ?? 0) * drainMinutes) / 60,
+        (rates[resourceId] * recoverySeconds) / SECONDS_PER_HOUR -
+        ((drainsPerHour[resourceId] ?? 0) * drainSeconds) / SECONDS_PER_HOUR,
       0,
       1,
     );
@@ -469,12 +468,12 @@ interface CharacterAdvanceResult {
 function advanceAgent(
   state: SimulationState,
   agent: CharacterInstance,
-  nextMinute: number,
+  nextSecond: number,
   nextTick: number,
 ): CharacterAdvanceResult {
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
   const task = intendedTask(state, agent.id);
-  const block = task === null ? activeScheduleBlock(agent.schedule, nextMinute) : null;
+  const block = task === null ? activeScheduleBlock(agent.schedule, nextSecond) : null;
   const locationId = task?.locationId ?? block?.locationId;
   if (locationId === undefined)
     throw new Error('An agent always has a task or schedule destination');
@@ -484,7 +483,7 @@ function advanceAgent(
   const remaining = preempted
     ? 0
     : navigationDistance(state.environment, agent.position, destination);
-  const travel = agent.walkingMetersPerMinute * state.scenario.tickMinutes;
+  const travel = agent.walkingMetersPerMinute * state.scenario.tickSeconds;
   const position = preempted
     ? agent.position
     : advanceLayerPosition(state.environment, agent.position, destination, travel);
@@ -504,38 +503,38 @@ function advanceAgent(
     values[valueId] = advanceValueState(
       agent.values[valueId],
       state.scenario.ambientTurnsPerHour?.[valueId] ?? 0,
-      state.scenario.tickMinutes,
+      state.scenario.tickSeconds,
     );
   }
   const scheduleRecoveryMode = task === null && arrived ? (block?.recoveryMode ?? 'none') : 'none';
   const taskRecoveryMode =
     task !== null && arrived && intention?.phase === 'work' ? task.recoveryMode : 'none';
   const recoveryMode = task === null ? scheduleRecoveryMode : taskRecoveryMode;
-  const arrivalMinutes = remaining / agent.walkingMetersPerMinute;
-  const recoveryMinutes =
+  const arrivalSeconds = (remaining / agent.walkingMetersPerMinute) * SECONDS_PER_MINUTE;
+  const recoverySeconds =
     recoveryMode === 'none'
       ? 0
       : task === null
-        ? clamp(state.scenario.tickMinutes - arrivalMinutes, 0, state.scenario.tickMinutes)
-        : state.scenario.tickMinutes;
+        ? clamp(state.scenario.tickSeconds - arrivalSeconds, 0, state.scenario.tickSeconds)
+        : state.scenario.tickSeconds;
   const authoredDrains = arrived
     ? (task?.resourceDrainsPerHour ?? block?.resourceDrainsPerHour ?? {})
     : {};
   const activeMasking = arrived ? (task?.maskingDemand ?? block?.maskingDemand ?? null) : null;
   const drains = combinedResourceDrains(authoredDrains, maskingDrains(activeMasking));
-  const activeMinutes = arrived ? state.scenario.tickMinutes : 0;
+  const activeSeconds = arrived ? state.scenario.tickSeconds : 0;
   const recovery = advanceResources(
     agent.resources,
     recoveryMode,
-    recoveryMinutes,
-    activeMinutes,
+    recoverySeconds,
+    activeSeconds,
     drains,
   );
-  const somatic = advanceSomaticState(agent.somatic, state.scenario.tickMinutes);
+  const somatic = advanceSomaticState(agent.somatic, state.scenario.tickSeconds);
   const resources = applySomaticResourceTax(
     recovery.resources,
     somatic,
-    state.scenario.tickMinutes,
+    state.scenario.tickSeconds,
   );
   const recoverySource =
     task === null
@@ -570,7 +569,7 @@ function advanceAgent(
       instanceId: agent.id,
       id: `${nextTick}:${agent.id}:somatic`,
       kind: 'somatic',
-      minute: nextMinute,
+      second: nextSecond,
       selection: null,
       summary: `${agent.profile.name} carries a somatic attention tax`,
       terms: [
@@ -589,20 +588,20 @@ function advanceAgent(
     const summary = `${agent.profile.name}: ${currentActivity}`;
     memories = appendBounded(
       memories,
-      { id: `${nextTick}:${agent.id}:activity`, minute: nextMinute, summary, type: 'activity' },
+      { id: `${nextTick}:${agent.id}:activity`, second: nextSecond, summary, type: 'activity' },
       memoryWindow(agent.tier),
     );
     trace.push({
       instanceId: agent.id,
       id: `${nextTick}:${agent.id}:activity`,
       kind: 'activity',
-      minute: nextMinute,
+      second: nextSecond,
       selection: null,
       summary,
       terms:
         task === null
           ? [
-              traceTerm('schedule', block?.startMinute ?? 0, `characters.${agent.id}.schedule`),
+              traceTerm('schedule', block?.startSecond ?? 0, `characters.${agent.id}.schedule`),
               traceTerm('location', locationId, `environment.locations.${locationId}`),
               traceTerm(
                 'recovery-mode',
@@ -619,8 +618,8 @@ function advanceAgent(
     });
   }
 
-  const previousHour = Math.floor(state.minute / 60);
-  const nextHour = Math.floor(nextMinute / 60);
+  const previousHour = Math.floor(state.second / SECONDS_PER_HOUR);
+  const nextHour = Math.floor(nextSecond / SECONDS_PER_HOUR);
   if (previousHour !== nextHour) {
     const activeTurns = VALUE_IDS.filter(
       valueId => (state.scenario.ambientTurnsPerHour?.[valueId] ?? 0) !== 0,
@@ -630,7 +629,7 @@ function advanceAgent(
         instanceId: agent.id,
         id: `${nextTick}:${agent.id}:ambient`,
         kind: 'value-turn',
-        minute: nextMinute,
+        second: nextSecond,
         selection: null,
         summary: `${agent.profile.name} remains under the scenario's ambient pressure`,
         terms: activeTurns.map(valueId =>
@@ -650,7 +649,7 @@ function advanceAgent(
         instanceId: agent.id,
         id: `${nextTick}:${agent.id}:resource`,
         kind: 'resource',
-        minute: nextMinute,
+        second: nextSecond,
         selection: null,
         summary: `${agent.profile.name}'s resources shift through ${task?.label ?? block?.activity ?? recoveryMode}`,
         terms: [
@@ -724,16 +723,16 @@ function rupturePlasticitySignals(
     }));
 }
 
-function dueDuringTick<Event extends { atMinute: number; id: string }>(
+function dueDuringTick<Event extends { atSecond: number; id: string }>(
   events: readonly Event[],
-  currentMinute: number,
-  nextMinute: number,
+  currentSecond: number,
+  nextSecond: number,
   resolvedIds: readonly string[],
 ): Event[] {
   return events.filter(
     event =>
-      event.atMinute >= currentMinute &&
-      event.atMinute <= nextMinute &&
+      event.atSecond >= currentSecond &&
+      event.atSecond <= nextSecond &&
       !resolvedIds.includes(event.id),
   );
 }
@@ -741,9 +740,9 @@ function dueDuringTick<Event extends { atMinute: number; id: string }>(
 function advanceOneTick(state: SimulationState): SimulationState {
   const prepared = prepareAgenda(prepareNarrativeAgency(state));
   const nextTick = prepared.tick + 1;
-  const nextMinute = prepared.minute + prepared.scenario.tickMinutes;
+  const nextSecond = prepared.second + prepared.scenario.tickSeconds;
   const results = prepared.characters.map(agent =>
-    advanceAgent(prepared, agent, nextMinute, nextTick),
+    advanceAgent(prepared, agent, nextSecond, nextTick),
   );
   let trace = prepared.trace;
   for (const result of results) {
@@ -752,14 +751,14 @@ function advanceOneTick(state: SimulationState): SimulationState {
   let next: SimulationState = {
     ...prepared,
     characters: results.map(result => result.agent),
-    minute: nextMinute,
+    second: nextSecond,
     tick: nextTick,
     trace,
   };
   const dueSomaticEvents = dueDuringTick(
     prepared.scenario.somaticEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedSomaticEventIds,
   );
   for (const event of dueSomaticEvents) next = resolveSomaticEvent(next, event);
@@ -767,15 +766,15 @@ function advanceOneTick(state: SimulationState): SimulationState {
   next = advanceIntentions(next);
   const dueOpportunities = dueDuringTick(
     prepared.scenario.behaviorOpportunities,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedOpportunityIds,
   );
   for (const opportunity of dueOpportunities) next = resolveOpportunity(next, opportunity);
   const dueDisclosureOpportunities = dueDuringTick(
     prepared.scenario.disclosureOpportunities,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedDisclosureOpportunityIds,
   );
   for (const opportunity of dueDisclosureOpportunities) {
@@ -783,50 +782,50 @@ function advanceOneTick(state: SimulationState): SimulationState {
   }
   const dueObservationEvents = dueDuringTick(
     prepared.scenario.observationEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedObservationEventIds,
   );
   for (const event of dueObservationEvents) next = resolveObservationEvent(next, event);
   const dueIncidentEvents = dueDuringTick(
     prepared.scenario.incidentEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedIncidentEventIds,
   );
   for (const event of dueIncidentEvents) next = resolveIncidentEvent(next, event);
   const dueDisplayEvents = dueDuringTick(
     prepared.scenario.displayEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedDisplayEventIds,
   );
   for (const event of dueDisplayEvents) next = resolveDisplayEvent(next, event);
   const dueRelationshipEvents = dueDuringTick(
     prepared.scenario.relationshipEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedRelationshipEventIds,
   );
   for (const event of dueRelationshipEvents) next = resolveRelationshipEvent(next, event);
   const dueRelationshipRequests = dueDuringTick(
     prepared.scenario.relationshipRequests,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedRelationshipRequestIds,
   );
   for (const request of dueRelationshipRequests) next = resolveRelationshipRequest(next, request);
   const dueAppraisalEvents = dueDuringTick(
     prepared.scenario.appraisalEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedAppraisalEventIds,
   );
   for (const event of dueAppraisalEvents) next = resolveAppraisalEvent(next, event);
   const dueNarrativeEvents = dueDuringTick(
     prepared.scenario.narrativeEvents,
-    prepared.minute,
-    nextMinute,
+    prepared.second,
+    nextSecond,
     prepared.resolvedNarrativeEventIds,
   );
   for (const event of dueNarrativeEvents) next = resolveNarrativeEvent(next, event);
@@ -842,9 +841,9 @@ function advanceOneTick(state: SimulationState): SimulationState {
     ...next,
     characters: next.characters.map(agent =>
       advanceBaselinePlasticity(agent, {
-        elapsedMinutes: next.scenario.tickMinutes,
-        minute: next.minute,
-        originMinute: next.scenario.startMinute,
+        elapsedSeconds: next.scenario.tickSeconds,
+        second: next.second,
+        originSecond: next.scenario.startSecond,
         signals: [
           ...(signalsByAgent.get(agent.id) ?? []),
           ...rupturePlasticitySignals(next, agent),
@@ -881,7 +880,7 @@ function interventionEntry(
     instanceId: agent.id,
     id: `${idPrefix}${ordinal}`,
     kind: 'intervention',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary,
     terms: [traceTerm(termId, value, source)],
@@ -915,7 +914,7 @@ export function setCharacterValueCharge(
             ...candidate,
             memories: appendBounded(
               candidate.memories,
-              { id: entry.id, minute: state.minute, summary, type: 'intervention' },
+              { id: entry.id, second: state.second, summary, type: 'intervention' },
               memoryWindow(candidate.tier),
             ),
             values: {

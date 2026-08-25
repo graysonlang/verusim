@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "cascade-room",
   "title": "Two Audiences in One Room",
   "summary": "One threat drives target-specific fawning toward an abuser while a separate request from a therapist still receives superficial cooperation.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "spring",
     "temperatureCelsius": 18,
@@ -43,15 +41,14 @@
       "id": "answer-therapist",
       "requesterId": "therapist",
       "responderId": "witness",
-      "atMinute": 601,
       "label": "request to keep answering",
-      "magnitude": 0.4
+      "magnitude": 0.4,
+      "atSecond": 36060
     }
   ],
   "appraisalEvents": [
     {
       "id": "abuser-enters",
-      "atMinute": 601,
       "summary": "the abuser entering the room",
       "turns": {
         "safety": -0.3,
@@ -63,7 +60,8 @@
       "believedLeverage": false,
       "exitAvailable": false,
       "socialTargetId": "abuser",
-      "instanceId": "witness"
+      "instanceId": "witness",
+      "atSecond": 36060
     }
   ],
   "worldFacts": [],
@@ -81,12 +79,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Answering careful questions",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -109,12 +107,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Listening",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -137,12 +135,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Watching",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -169,5 +167,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

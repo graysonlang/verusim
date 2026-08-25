@@ -16,16 +16,16 @@ import { characters, environments } from './fixtures.js';
 describe('workbench playback', () => {
   it('formats the visible clock as 12-hour time', () => {
     assert.equal(formatWorkbenchTime(0), '12:00 am');
-    assert.equal(formatWorkbenchTime(960), '4:00 pm');
-    assert.equal(formatWorkbenchTime(1445), 'Day 2, 12:05 am');
-    assert.equal(formatWorkbenchTime(470 + 7 / 60, '12-hour', true), '7:50:07 am');
+    assert.equal(formatWorkbenchTime(57600), '4:00 pm');
+    assert.equal(formatWorkbenchTime(86700), 'Day 2, 12:05 am');
+    assert.equal(formatWorkbenchTime(28200 + 7, '12-hour', true), '7:50:07 am');
   });
 
   it('formats the visible clock as 24-hour time when requested', () => {
     assert.equal(formatWorkbenchTime(0, '24-hour'), '00:00');
-    assert.equal(formatWorkbenchTime(960, '24-hour'), '16:00');
-    assert.equal(formatWorkbenchTime(1445, '24-hour'), 'Day 2, 00:05');
-    assert.equal(formatWorkbenchTime(1445.5, '24-hour', true), 'Day 2, 00:05:30');
+    assert.equal(formatWorkbenchTime(57600, '24-hour'), '16:00');
+    assert.equal(formatWorkbenchTime(86700, '24-hour'), 'Day 2, 00:05');
+    assert.equal(formatWorkbenchTime(86730, '24-hour', true), 'Day 2, 00:05:30');
   });
 
   it('expresses every rate as simulated seconds per real second', () => {
@@ -56,25 +56,25 @@ describe('workbench playback', () => {
     assert.equal(playbackRateShowsSeconds(playbackRateForId('1-minute-per-second')), false);
   });
 
-  it('carries partial simulated minutes until a complete tick is available', () => {
+  it('carries partial simulated seconds until a complete tick is available', () => {
     const rate = playbackRateForId('real-time');
-    const partial = accumulatePlayback(0, 30, rate, 1);
+    const partial = accumulatePlayback(0, 30, rate, 60);
     assert.equal(partial.ticks, 0);
-    assert.equal(partial.carriedMinutes, 0.5);
-    assert.deepEqual(accumulatePlayback(partial.carriedMinutes, 30, rate, 1), {
-      carriedMinutes: 0,
+    assert.equal(partial.carriedSeconds, 30);
+    assert.deepEqual(accumulatePlayback(partial.carriedSeconds, 30, rate, 60), {
+      carriedSeconds: 0,
       ticks: 1,
     });
   });
 
   it('carries partial simulated time across playback rate changes', () => {
-    const realTime = accumulatePlayback(0, 30, playbackRateForId('real-time'), 1);
+    const realTime = accumulatePlayback(0, 30, playbackRateForId('real-time'), 60);
     assert.deepEqual(realTime, {
-      carriedMinutes: 0.5,
+      carriedSeconds: 30,
       ticks: 0,
     });
-    assert.deepEqual(accumulatePlayback(realTime.carriedMinutes, 15, playbackRateForId('2x'), 1), {
-      carriedMinutes: 0,
+    assert.deepEqual(accumulatePlayback(realTime.carriedSeconds, 15, playbackRateForId('2x'), 60), {
+      carriedSeconds: 0,
       ticks: 1,
     });
   });
@@ -102,8 +102,8 @@ describe('workbench playback', () => {
       currentMara.position,
       nextMara.position,
     );
-    const partialTickMinutes = tickDistance / currentMara.walkingMetersPerMinute / 2;
-    const halfway = projectPlaybackMovement(beforeDeparture, next, partialTickMinutes);
+    const partialTickSeconds = ((tickDistance / currentMara.walkingMetersPerMinute) * 60) / 2;
+    const halfway = projectPlaybackMovement(beforeDeparture, next, partialTickSeconds);
     const halfwayMara = halfway.characters.find(agent => agent.id === 'mara');
     assert.ok(halfwayMara);
     assert.ok(
@@ -113,11 +113,11 @@ describe('workbench playback', () => {
           currentMara.position,
           halfwayMara.position,
         ) -
-          currentMara.walkingMetersPerMinute * partialTickMinutes,
+          (currentMara.walkingMetersPerMinute / 60) * partialTickSeconds,
       ) < 1e-9,
     );
     assert.deepEqual(
-      projectPlaybackState(beforeDeparture, partialTickMinutes).characters.map(
+      projectPlaybackState(beforeDeparture, partialTickSeconds).characters.map(
         agent => agent.position,
       ),
       halfway.characters.map(agent => agent.position),
@@ -127,23 +127,23 @@ describe('workbench playback', () => {
       currentMara,
     );
 
-    const endpoint = projectPlaybackMovement(beforeDeparture, next, 1);
+    const endpoint = projectPlaybackMovement(beforeDeparture, next, 60);
     assert.deepEqual(
       endpoint.characters.map(agent => agent.position),
       next.characters.map(agent => agent.position),
     );
-    assert.equal(endpoint.minute, beforeDeparture.minute);
+    assert.equal(endpoint.second, beforeDeparture.second);
     assert.equal(endpoint.tick, beforeDeparture.tick);
   });
 
   it('batches accelerated time according to the loaded scenario cadence', () => {
     const rate = playbackRateForId('10-minutes-per-second');
-    assert.deepEqual(accumulatePlayback(0, 0.5, rate, 1), {
-      carriedMinutes: 0,
+    assert.deepEqual(accumulatePlayback(0, 0.5, rate, 60), {
+      carriedSeconds: 0,
       ticks: 5,
     });
-    assert.deepEqual(accumulatePlayback(0, 0.5, rate, 5), {
-      carriedMinutes: 0,
+    assert.deepEqual(accumulatePlayback(0, 0.5, rate, 300), {
+      carriedSeconds: 0,
       ticks: 1,
     });
   });

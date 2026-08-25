@@ -1,3 +1,9 @@
+import {
+  SECONDS_PER_DAY,
+  SECONDS_PER_HOUR,
+  SECONDS_PER_MINUTE,
+  secondOfDay,
+} from '../model/time.js';
 import { clamp } from '../model/retention.js';
 import { VALUE_IDS, type CharacterInstance, type ValueId } from '../model/types.js';
 import { allostaticLoadFor } from './coping.js';
@@ -147,10 +153,10 @@ export function describeCharacter(agent: CharacterInstance): CharacterObservatio
   };
 }
 
-export function formatSimulationTime(minute: number): string {
-  const day = Math.floor(minute / 1440) + 1;
-  const minuteOfDay = ((minute % 1440) + 1440) % 1440;
-  const hour = Math.floor(minuteOfDay / 60);
-  const minutePart = minuteOfDay % 60;
+export function formatSimulationTime(second: number): string {
+  const day = Math.floor(second / SECONDS_PER_DAY) + 1;
+  const daySecond = secondOfDay(second);
+  const hour = Math.floor(daySecond / SECONDS_PER_HOUR);
+  const minutePart = Math.floor((daySecond % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
   return `Day ${day}, ${String(hour).padStart(2, '0')}:${String(minutePart).padStart(2, '0')}`;
 }

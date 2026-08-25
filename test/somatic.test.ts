@@ -68,7 +68,7 @@ function crowdScenario(observerIds: string[]): ScenarioFile {
   scenario.somaticEvents = [
     {
       instanceId: 'witness',
-      atMinute: 601,
+      atSecond: 36060,
       id: 'witness-incapacitated',
       observerIds,
       operation: 'set',
@@ -221,7 +221,7 @@ describe('somatic state and preemption', () => {
     scenario.behaviorOpportunities = [
       {
         actorId: 'witness',
-        atMinute: 601,
+        atSecond: 36060,
         candidates: [
           {
             claimExpressions: [],
@@ -275,7 +275,7 @@ describe('somatic state and preemption', () => {
     scenario.somaticEvents = [
       {
         instanceId: 'witness',
-        atMinute: 601,
+        atSecond: 36060,
         id: 'subtle-impairment',
         observerIds: ['therapist'],
         operation: 'set',
@@ -286,7 +286,7 @@ describe('somatic state and preemption', () => {
       },
       {
         instanceId: 'witness',
-        atMinute: 602,
+        atSecond: 36120,
         id: 'marked-impairment',
         observerIds: ['therapist'],
         operation: 'set',
@@ -315,7 +315,7 @@ describe('somatic state and preemption', () => {
     scenario.somaticEvents = [
       {
         instanceId: 'witness',
-        atMinute: 601,
+        atSecond: 36060,
         id: 'acute-emergency',
         observerIds: [],
         operation: 'set',
@@ -332,7 +332,7 @@ describe('somatic state and preemption', () => {
     scenario.behaviorOpportunities = [
       {
         actorId: 'witness',
-        atMinute: 601,
+        atSecond: 36060,
         candidates: [
           {
             claimExpressions: [],
@@ -431,7 +431,7 @@ describe('somatic state and preemption', () => {
       delete characterValue.initialSomaticSources;
     }
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 18);
+    assert.equal(migratedScenario.schemaVersion, 19);
     assert.deepEqual(migratedScenario.ambientSomaticSources, []);
     assert.ok(
       migratedScenario.characters.every(character => character.initialSomaticSources.length === 0),
@@ -447,7 +447,7 @@ describe('somatic state and preemption', () => {
       delete agentValue.somatic;
     }
     const migratedSnapshot = parseSnapshot(legacySnapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 18);
+    assert.equal(migratedSnapshot.schemaVersion, 19);
     assert.deepEqual(migratedSnapshot.somaticRecords, []);
     assert.ok(migratedSnapshot.characters.every(agent => agent.somatic.level === 0));
 

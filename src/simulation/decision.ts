@@ -130,7 +130,7 @@ export function evaluateOpportunity(
     actorId: opportunity.actorId,
     candidates,
     id: `${state.tick}:${opportunity.id}`,
-    minute: state.minute,
+    second: state.second,
     opportunityId: opportunity.id,
     selectedCandidateId: selected.candidateId,
     targetId: opportunity.targetId,
@@ -149,7 +149,7 @@ function somaticGateTrace(
     instanceId: actor.id,
     id: `${state.tick}:${opportunity.id}:somatic-gate`,
     kind: 'gate',
-    minute: state.minute,
+    second: state.second,
     selection: { rule: 'preempt-gate', selectedId },
     summary: `${actor.profile.name}'s somatic state restricted ${opportunity.id}`,
     terms: [
@@ -221,7 +221,7 @@ function appraisalTrace(
     instanceId: opportunity.actorId,
     id: `${state.tick}:${opportunity.id}:appraisal:${candidate.candidateId}`,
     kind: 'appraisal',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `${candidate.label}: utility ${appraisal.utility.toFixed(4)}`,
     terms: [
@@ -314,7 +314,7 @@ export function resolveOpportunity(
   if (remorse >= 0.05) {
     aftermathMemory = {
       id: `${state.tick}:${opportunity.id}:aftermath`,
-      minute: state.minute,
+      second: state.second,
       summary: `Remorse followed ${selectedCandidate.label.toLowerCase()}`,
       type: 'aftermath',
     };
@@ -352,7 +352,7 @@ export function resolveOpportunity(
     instanceId: opportunity.actorId,
     id: `${state.tick}:${opportunity.id}:decision`,
     kind: 'decision',
-    minute: state.minute,
+    second: state.second,
     selection: {
       rule: 'highest-utility-then-authored-order',
       selectedId: selectedCandidate.id,
@@ -373,7 +373,7 @@ export function resolveOpportunity(
       instanceId: opportunity.actorId,
       id: `${state.tick}:${opportunity.id}:aftermath`,
       kind: 'aftermath',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `${findAgent(state, opportunity.actorId).profile.name} carries remorse from ${selectedCandidate.label.toLowerCase()}`,
       terms: [

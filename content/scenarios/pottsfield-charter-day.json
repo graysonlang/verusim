@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "pottsfield-charter-day",
   "title": "Pottsfield Charter Day",
   "summary": "Harvest and market contracts coexist across institutional, group, and event scopes without changing the town layout.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "autumn",
     "temperatureCelsius": 11,
@@ -105,12 +103,12 @@
       ],
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Reading the market charter",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -138,5 +136,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

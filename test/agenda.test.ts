@@ -65,8 +65,8 @@ describe('agenda planning', () => {
     const marketTask = later.taskOperators.find(task => task.id === 'sell-market-bread');
     assert.ok(marketGoal);
     assert.ok(marketTask);
-    marketGoal.deadlineMinute = 760;
-    marketTask.availableUntilMinute = 760;
+    marketGoal.deadlineSecond = 760 * 60;
+    marketTask.availableUntilSecond = 760 * 60;
     const state = createBakerSimulation(later);
     assert.equal(state.intentions[0]?.taskId, 'prepare-common-room');
   });
@@ -135,19 +135,19 @@ describe('agenda planning', () => {
     );
   });
 
-  it('fails an infeasible deadline at the exact authored minute', () => {
+  it('fails an infeasible deadline at the exact authored second', () => {
     const impossible = structuredClone(bakerScenario);
     const marketGoal = impossible.agendaGoals.find(goal => goal.id === 'sell-market-bread');
     const marketTask = impossible.taskOperators.find(task => task.id === 'sell-market-bread');
     assert.ok(marketGoal);
     assert.ok(marketTask);
-    marketGoal.deadlineMinute = 627;
-    marketTask.availableUntilMinute = 627;
+    marketGoal.deadlineSecond = 627 * 60;
+    marketTask.availableUntilSecond = 627 * 60;
     const completed = advanceSimulation(createBakerSimulation(impossible), 27);
     const failed = completed.agendaGoals.find(goal => goal.id === 'sell-market-bread');
-    assert.equal(completed.minute, 627);
+    assert.equal(completed.second, 37620);
     assert.equal(failed?.status, 'failed');
-    assert.equal(failed?.resolvedMinute, 627);
+    assert.equal(failed?.resolvedSecond, 37620);
     assert.ok(
       completed.trace.entries.some(entry => entry.kind === 'goal' && entry.id.endsWith(':failed')),
     );

@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "baker-deadline",
   "title": "Bread Before Market Close",
   "summary": "Mara must prepare market bread without flour while the common room also needs work.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "summer",
     "temperatureCelsius": 24,
@@ -38,9 +36,6 @@
       "actorId": "mara",
       "label": "Sell the market bread",
       "source": "obligation",
-      "activationMinute": 600,
-      "deadlineMinute": 640,
-      "urgencyHorizonMinutes": 60,
       "commitment": 0.92,
       "desired": [
         {
@@ -56,16 +51,16 @@
         "competence": -0.22,
         "respect": -0.12
       },
-      "claimExpressions": []
+      "claimExpressions": [],
+      "activationSecond": 36000,
+      "deadlineSecond": 38400,
+      "urgencyHorizonSeconds": 3600
     },
     {
       "id": "prepare-common-room",
       "actorId": "mara",
       "label": "Prepare the common room",
       "source": "obligation",
-      "activationMinute": 600,
-      "deadlineMinute": null,
-      "urgencyHorizonMinutes": 120,
       "commitment": 0.84,
       "desired": [
         {
@@ -77,7 +72,10 @@
         "competence": 0.55
       },
       "failureTurns": {},
-      "claimExpressions": []
+      "claimExpressions": [],
+      "activationSecond": 36000,
+      "deadlineSecond": null,
+      "urgencyHorizonSeconds": 7200
     }
   ],
   "taskOperators": [
@@ -86,9 +84,6 @@
       "label": "Fetch flour from the mill",
       "actorIds": ["mara"],
       "locationId": "alder-mill",
-      "durationMinutes": 5,
-      "availableFromMinute": null,
-      "availableUntilMinute": null,
       "preconditions": [],
       "recoveryMode": "none",
       "effects": [
@@ -106,16 +101,16 @@
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
       "claimExpressions": [],
-      "somaticDemand": 0
+      "somaticDemand": 0,
+      "availableFromSecond": null,
+      "availableUntilSecond": null,
+      "durationSeconds": 300
     },
     {
       "id": "bake-bread-standard",
       "label": "Bake bread carefully",
       "actorIds": ["mara"],
       "locationId": "wayfarer-inn",
-      "durationMinutes": 30,
-      "availableFromMinute": null,
-      "availableUntilMinute": null,
       "preconditions": [
         {
           "factId": "flour-on-hand",
@@ -144,16 +139,16 @@
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
       "claimExpressions": [],
-      "somaticDemand": 0
+      "somaticDemand": 0,
+      "availableFromSecond": null,
+      "availableUntilSecond": null,
+      "durationSeconds": 1800
     },
     {
       "id": "bake-bread-rush",
       "label": "Rush the bread",
       "actorIds": ["mara"],
       "locationId": "wayfarer-inn",
-      "durationMinutes": 15,
-      "availableFromMinute": null,
-      "availableUntilMinute": null,
       "preconditions": [
         {
           "factId": "flour-on-hand",
@@ -184,16 +179,16 @@
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
       "claimExpressions": [],
-      "somaticDemand": 0
+      "somaticDemand": 0,
+      "availableFromSecond": null,
+      "availableUntilSecond": null,
+      "durationSeconds": 900
     },
     {
       "id": "sell-market-bread",
       "label": "Sell bread at the market",
       "actorIds": ["mara"],
       "locationId": "market-square",
-      "durationMinutes": 5,
-      "availableFromMinute": null,
-      "availableUntilMinute": 640,
       "preconditions": [
         {
           "factId": "bread-on-hand",
@@ -217,16 +212,16 @@
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
       "claimExpressions": [],
-      "somaticDemand": 0
+      "somaticDemand": 0,
+      "availableFromSecond": null,
+      "availableUntilSecond": 38400,
+      "durationSeconds": 300
     },
     {
       "id": "prepare-common-room",
       "label": "Prepare the common room",
       "actorIds": ["mara"],
       "locationId": "wayfarer-inn",
-      "durationMinutes": 20,
-      "availableFromMinute": null,
-      "availableUntilMinute": null,
       "preconditions": [],
       "recoveryMode": "none",
       "effects": [
@@ -245,7 +240,10 @@
       "maskingDemand": null,
       "resourceDrainsPerHour": {},
       "claimExpressions": [],
-      "somaticDemand": 0
+      "somaticDemand": 0,
+      "availableFromSecond": null,
+      "availableUntilSecond": null,
+      "durationSeconds": 1200
     }
   ],
   "behaviorOpportunities": [],
@@ -260,12 +258,12 @@
       "walkingMetersPerMinute": 82,
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "wayfarer-inn",
           "activity": "Preparing the inn",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -296,5 +294,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

@@ -58,7 +58,7 @@ function observationTrace(
     instanceId: observer.id,
     id: `${state.tick}:${event.id}:${observer.id}:observation`,
     kind: 'observation',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: perceived
       ? `${observer.profile.name} observed ${subject.profile.name}'s ${event.dimension} signal`
@@ -102,7 +102,7 @@ function missedRecord(
     eventType: 'mind-model',
     gateThreshold: null,
     id: `${state.tick}:${event.id}:${observerId}`,
-    minute: state.minute,
+    second: state.second,
     newConfidence: null,
     newEstimate: null,
     newPredictionError: null,
@@ -134,7 +134,7 @@ function predictionTrace(
     instanceId: record.observerId,
     id: `${state.tick}:${event.id}:${record.observerId}:prediction`,
     kind: 'prediction',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary:
       record.outcome === 'corrected'
@@ -305,7 +305,7 @@ function resolveForObserver(
     eventType: 'mind-model',
     gateThreshold,
     id: `${state.tick}:${event.id}:${observerId}`,
-    minute: state.minute,
+    second: state.second,
     newConfidence: nextConfidence,
     newEstimate: nextEstimate,
     newPredictionError: nextPredictionError,

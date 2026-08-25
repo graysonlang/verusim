@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "endicott-margueritte",
   "title": "Endicott and Margueritte",
   "summary": "Two guarded neighbors sustain mistaken models of one another until a sufficiently revealing exchange supplies corrective evidence.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "autumn",
     "temperatureCelsius": 12,
@@ -61,7 +59,6 @@
   "observationEvents": [
     {
       "id": "endicott-ambiguous-one",
-      "atMinute": 602,
       "subjectId": "margueritte",
       "observerIds": ["endicott"],
       "dimension": "empathy",
@@ -71,11 +68,11 @@
       "channel": "sight",
       "audibleRadiusMeters": 12,
       "visualProminence": 1,
-      "eventType": "mind-model"
+      "eventType": "mind-model",
+      "atSecond": 36120
     },
     {
       "id": "margueritte-ambiguous-one",
-      "atMinute": 602,
       "subjectId": "endicott",
       "observerIds": ["margueritte"],
       "dimension": "empathy",
@@ -85,11 +82,11 @@
       "channel": "sight",
       "audibleRadiusMeters": 12,
       "visualProminence": 1,
-      "eventType": "mind-model"
+      "eventType": "mind-model",
+      "atSecond": 36120
     },
     {
       "id": "endicott-ambiguous-two",
-      "atMinute": 604,
       "subjectId": "margueritte",
       "observerIds": ["endicott"],
       "dimension": "empathy",
@@ -99,11 +96,11 @@
       "channel": "sight",
       "audibleRadiusMeters": 12,
       "visualProminence": 1,
-      "eventType": "mind-model"
+      "eventType": "mind-model",
+      "atSecond": 36240
     },
     {
       "id": "margueritte-ambiguous-two",
-      "atMinute": 604,
       "subjectId": "endicott",
       "observerIds": ["margueritte"],
       "dimension": "empathy",
@@ -113,11 +110,11 @@
       "channel": "sight",
       "audibleRadiusMeters": 12,
       "visualProminence": 1,
-      "eventType": "mind-model"
+      "eventType": "mind-model",
+      "atSecond": 36240
     },
     {
       "id": "endicott-forced-exchange",
-      "atMinute": 610,
       "subjectId": "margueritte",
       "observerIds": ["endicott"],
       "dimension": "empathy",
@@ -127,11 +124,11 @@
       "channel": "hearing",
       "audibleRadiusMeters": 18,
       "visualProminence": 1,
-      "eventType": "mind-model"
+      "eventType": "mind-model",
+      "atSecond": 36600
     },
     {
       "id": "margueritte-forced-exchange",
-      "atMinute": 610,
       "subjectId": "endicott",
       "observerIds": ["margueritte"],
       "dimension": "empathy",
@@ -141,7 +138,8 @@
       "channel": "hearing",
       "audibleRadiusMeters": 18,
       "visualProminence": 1,
-      "eventType": "mind-model"
+      "eventType": "mind-model",
+      "atSecond": 36600
     }
   ],
   "worldFacts": [],
@@ -158,12 +156,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Avoiding a difficult conversation",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -186,12 +184,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Waiting for the other to speak",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -222,5 +220,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

@@ -154,7 +154,7 @@ function gateTrace(
     instanceId: initiator.id,
     id: `${state.tick}:${exchange.id}:somatic-gate`,
     kind: 'gate',
-    minute: state.minute,
+    second: state.second,
     selection: { rule: 'preempt-gate', selectedId: null },
     summary: `${exchange.summary} was preempted by somatic state`,
     terms: [
@@ -201,7 +201,7 @@ export function resolveOrbitExchange(
     instanceId: initiator.id,
     id: `${settlement.id}:orbit`,
     kind: 'relationship',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: exchange.summary,
     terms: [

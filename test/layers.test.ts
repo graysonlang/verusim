@@ -66,7 +66,7 @@ describe('layered environments', () => {
       { elevationMeters: 0, id: 'surface', name: 'Surface' },
     ]);
     assert.deepEqual(migrated.environments[0]?.connectors, []);
-    assert.equal(migrated.schemaVersion, 3);
+    assert.equal(migrated.schemaVersion, 4);
     assert.ok(migrated.environments[0]?.areas.every(area => area.layerId === 'surface'));
     const building = migrated.environments[0]?.areas.find(area => area.kind === 'building');
     assert.equal(building?.enclosure, 'interior');
@@ -125,7 +125,7 @@ describe('layered environments', () => {
     });
 
     assert.deepEqual(resumed, advanced);
-    assert.equal(serializeSnapshot(resumed).schemaVersion, 18);
+    assert.equal(serializeSnapshot(resumed).schemaVersion, 19);
   });
 
   it('rejects a floor that has no authored connection to the layout', () => {

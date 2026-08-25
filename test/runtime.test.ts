@@ -30,7 +30,7 @@ function starterSimulation() {
 
 function recoverySimulation(mode: RecoveryMode) {
   const authored = structuredClone(scenario) as unknown as ScenarioFile;
-  authored.startMinute = 0;
+  authored.startSecond = 0;
   authored.ambientTurnsPerHour = {};
   const mara = authored.characters.find(placement => placement.instanceId === 'mara');
   assert.ok(mara);
@@ -76,7 +76,7 @@ describe('simulation runtime', () => {
     const first = advanceSimulation(starterSimulation(), 60);
     const second = advanceSimulation(starterSimulation(), 60);
     assert.deepEqual(first, second);
-    assert.equal(first.minute, 530);
+    assert.equal(first.second, 31800);
 
     const mara = first.characters.find(agent => agent.id === 'mara');
     assert.ok(mara);
@@ -204,7 +204,7 @@ describe('simulation runtime', () => {
     authored.behaviorOpportunities = [
       {
         actorId: 'mara',
-        atMinute: authored.startMinute,
+        atSecond: authored.startSecond,
         candidates: [
           {
             claimExpressions: [],
@@ -305,8 +305,8 @@ describe('simulation runtime', () => {
     const advanced = advanceSimulation(starterSimulation(), 20);
     const authored = serializeScenario(advanced);
     const snapshot = serializeSnapshot(advanced);
-    assert.equal(authored.startMinute, scenario.startMinute);
-    assert.equal(snapshot.minute, advanced.minute);
+    assert.equal(authored.startSecond, scenario.startSecond);
+    assert.equal(snapshot.second, advanced.second);
     assert.deepEqual(parseScenario(authored), authored);
     assert.deepEqual(parseSnapshot(snapshot), snapshot);
     const resumed = createSimulationFromSnapshot({

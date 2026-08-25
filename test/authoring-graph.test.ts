@@ -151,7 +151,7 @@ describe('authoring graph', () => {
       string,
       unknown
     >;
-    badScenario.tickMinutes = 0;
+    badScenario.tickSeconds = 0;
     const badContract = structuredClone(documentById(graph, CONTRACT_ID).draft) as {
       contract: { norms: unknown[] };
     };
@@ -164,7 +164,7 @@ describe('authoring graph', () => {
       label: 'introduce two problems',
     });
     assert.ok(
-      documentById(edited, scenarioId).diagnostics.some(d => d.path === 'scenario.tickMinutes'),
+      documentById(edited, scenarioId).diagnostics.some(d => d.path === 'scenario.tickSeconds'),
     );
     assert.ok(
       documentById(edited, CONTRACT_ID).diagnostics.some(d =>

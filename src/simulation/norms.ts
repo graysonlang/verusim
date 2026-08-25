@@ -105,7 +105,7 @@ function observationTrace(
     instanceId: observer.id,
     id: `${state.tick}:${event.id}:${observer.id}:observation`,
     kind: 'observation',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: perceived
       ? `${observer.profile.name} observed ${event.summary.toLowerCase()}`
@@ -143,7 +143,7 @@ function missedRecord(
     legibilityBand: null,
     legibilityMargin: null,
     internalization: effectiveNormInternalization(agentFor(state, observerId), event.norm),
-    minute: state.minute,
+    second: state.second,
     normId: key,
     observerId,
     outcome: 'missed',
@@ -174,7 +174,7 @@ function appraisalTrace(
     instanceId: record.observerId,
     id: `${state.tick}:${event.id}:${record.observerId}:norm-appraisal`,
     kind: 'norm-appraisal',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `${observer.profile.name} derived a ${direction} turn from ${event.summary.toLowerCase()}`,
     terms: [
@@ -283,7 +283,7 @@ function resolveForObserver(
     legibilityBand: legibility.band,
     legibilityMargin: legibility.margin,
     internalization,
-    minute: state.minute,
+    second: state.second,
     normId: key,
     observerId,
     outcome: 'appraised',

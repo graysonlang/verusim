@@ -1,3 +1,4 @@
+import { SECONDS_PER_YEAR } from '../model/time.js';
 import { appendBounded, clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import type {
   AspirationOpportunity,
@@ -16,7 +17,6 @@ import { appendTrace, traceTerm } from './trace.js';
 import { applyCharacterValueTurns } from './value-turn.js';
 
 const MAX_REPUTATIONS = 160;
-const YEAR_MINUTES = 365 * 24 * 60;
 const ADULT_WEAR_IN_RATE_PER_YEAR = 0.02;
 
 function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
@@ -27,7 +27,7 @@ function agentFor(state: SimulationState, instanceId: string): CharacterInstance
 
 export function createNarrativeState(
   agent: CharacterInstance,
-  promotedMinute: number,
+  promotedSecond: number,
 ): NarrativeState {
   return {
     claims: agent.profile.narrativeClaims.map(claim => ({
@@ -37,7 +37,7 @@ export function createNarrativeState(
       revisions: 0,
       wearIn: 0,
     })),
-    promotedMinute,
+    promotedSecond,
   };
 }
 
@@ -100,7 +100,7 @@ function addRecord(
     disposition,
     eventId: event.id,
     id: `${state.tick}:${event.id}:narrative`,
-    minute: state.minute,
+    second: state.second,
     regulationCost,
     summary: event.summary,
     tick: state.tick,
@@ -115,7 +115,7 @@ function addRecord(
               agent.memories,
               {
                 id: record.id,
-                minute: state.minute,
+                second: state.second,
                 summary: `${disposition}: ${event.summary}`,
                 type: 'narrative',
               },
@@ -135,7 +135,7 @@ function addRecord(
       instanceId: actorId,
       id: record.id,
       kind: event.eventType === 'attribution' ? 'reputation' : 'narrative',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `${actor.profile.name}: ${disposition}`,
       terms: [
@@ -273,8 +273,8 @@ function resolveAttribution(state: SimulationState, event: NarrativeEvent): Simu
           audienceType: event.audienceType,
           claim: event.claim,
           confidence: event.confidence,
-          firstMinute: event.atMinute,
-          lastMinute: event.atMinute,
+          firstSecond: event.atSecond,
+          lastSecond: event.atSecond,
           repetitions: 1,
           sourceIds: [event.sourceId],
           subjectId: event.subjectId,
@@ -286,7 +286,7 @@ function resolveAttribution(state: SimulationState, event: NarrativeEvent): Simu
             0,
             1,
           ),
-          lastMinute: event.atMinute,
+          lastSecond: event.atSecond,
           repetitions: existing.repetitions + 1,
           sourceIds: existing.sourceIds.includes(event.sourceId)
             ? existing.sourceIds
@@ -307,7 +307,7 @@ function resolveAttribution(state: SimulationState, event: NarrativeEvent): Simu
   if (event.compatibility >= 0 || validator) {
     return addRecord(next, event, subject.id, claim.id, 'accepted', 0);
   }
-  const spanYears = (reputation.lastMinute - reputation.firstMinute) / YEAR_MINUTES;
+  const spanYears = (reputation.lastSecond - reputation.firstSecond) / SECONDS_PER_YEAR;
   const remainingWearInAllowance = Math.max(
     0,
     ADULT_WEAR_IN_RATE_PER_YEAR * spanYears - claim.wearIn,
@@ -356,21 +356,21 @@ export function resolveNarrativeEvent(
 
 function aspirationGoal(state: SimulationState, opportunity: AspirationOpportunity) {
   return {
-    activationMinute: state.minute,
+    activationSecond: state.second,
     actorId: opportunity.actorId,
     claimExpressions: opportunity.claimExpressions,
     commitment: opportunity.commitment,
-    deadlineMinute: opportunity.deadlineMinute,
+    deadlineSecond: opportunity.deadlineSecond,
     desired: opportunity.desired,
     failureTurns: opportunity.failureTurns,
     id: opportunity.id,
     label: opportunity.label,
     lastPlannedWorldRevision: null,
-    resolvedMinute: null,
+    resolvedSecond: null,
     source: 'aspiration' as const,
     status: 'active' as const,
     successTurns: opportunity.successTurns,
-    urgencyHorizonMinutes: opportunity.urgencyHorizonMinutes,
+    urgencyHorizonSeconds: opportunity.urgencyHorizonSeconds,
   };
 }
 
@@ -378,7 +378,7 @@ export function prepareNarrativeAgency(state: SimulationState): SimulationState 
   let next = state;
   for (const opportunity of state.scenario.aspirationOpportunities) {
     if (
-      opportunity.atMinute > state.minute ||
+      opportunity.atSecond > state.second ||
       next.resolvedAspirationOpportunityIds.includes(opportunity.id)
     ) {
       continue;
@@ -396,7 +396,7 @@ export function prepareNarrativeAgency(state: SimulationState): SimulationState 
         instanceId: agent.id,
         id: `${next.tick}:${opportunity.id}:aspiration`,
         kind: 'narrative',
-        minute: next.minute,
+        second: next.second,
         selection: { rule: 'positive-utility', selectedId: goal.id },
         summary: `${agent.profile.name} formed an aspiration goal: ${goal.label}`,
         terms: [
@@ -423,5 +423,5 @@ export function prepareNarrativeAgency(state: SimulationState): SimulationState 
 export function promoteToInvoker(state: SimulationState, instanceId: string): SimulationState {
   const agent = agentFor(state, instanceId);
   if (agent.narrative !== null) return state;
-  return replaceAgent(state, { ...agent, narrative: createNarrativeState(agent, state.minute) });
+  return replaceAgent(state, { ...agent, narrative: createNarrativeState(agent, state.second) });
 }

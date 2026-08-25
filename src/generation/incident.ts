@@ -38,7 +38,7 @@ export interface IncidentTemplate {
 }
 
 export interface IncidentGenerationRequest {
-  atMinute: number;
+  atSecond: number;
   audibleRadiusMeters: number;
   baseRate: number;
   context: IncidentContext;
@@ -78,8 +78,8 @@ function validateRequest(request: IncidentGenerationRequest): void {
   validateGenerationSeed(request.seed);
   validateSamplerPosition(request.samplerPosition ?? 0);
   validateIdentifier(request.id, 'id');
-  if (!Number.isInteger(request.atMinute) || request.atMinute < request.state.minute) {
-    throw new RangeError('atMinute must be an integer at or after the current state minute');
+  if (!Number.isInteger(request.atSecond) || request.atSecond < request.state.second) {
+    throw new RangeError('atSecond must be an integer at or after the current state second');
   }
   for (const [field, value] of [
     ['baseRate', request.baseRate],
@@ -239,7 +239,7 @@ export function generateIncident(request: IncidentGenerationRequest): GeneratedI
   const event: IncidentEvent = {
     actorId: actor.id,
     affectedInstanceId: template.affectedInstanceId ?? actor.id,
-    atMinute: request.atMinute,
+    atSecond: request.atSecond,
     attribution: template.attribution,
     audibleRadiusMeters: request.audibleRadiusMeters,
     context: cloneGenerated(request.context),

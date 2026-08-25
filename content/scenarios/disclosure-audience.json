@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "disclosure-audience",
   "title": "Disclosure Under Mixed Audiences",
   "summary": "A guarded healer decides whether to disclose one costly item as the audience changes.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "autumn",
     "temperatureCelsius": 13,
@@ -71,18 +69,18 @@
       "ownerId": "owner",
       "itemId": "family-debt",
       "audienceIds": ["friend"],
-      "atMinute": 605,
       "disclosureBenefit": 0.45,
-      "networkConductivity": 1
+      "networkConductivity": 1,
+      "atSecond": 36300
     },
     {
       "id": "public-follow-up",
       "ownerId": "owner",
       "itemId": "family-debt",
       "audienceIds": ["friend", "hostile"],
-      "atMinute": 610,
       "disclosureBenefit": 0.45,
-      "networkConductivity": 1
+      "networkConductivity": 1,
+      "atSecond": 36600
     }
   ],
   "observationEvents": [],
@@ -100,12 +98,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Considering a reply",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -128,12 +126,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Listening privately",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -156,12 +154,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Waiting nearby",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -192,5 +190,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

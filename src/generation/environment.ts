@@ -292,7 +292,7 @@ export function generateEnvironmentLayout(
         resourceId: layout.layoutId,
       },
       layout,
-      schemaVersion: 3,
+      schemaVersion: 4,
     },
     `generated-environment:${layout.layoutId}`,
   );

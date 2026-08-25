@@ -26,22 +26,22 @@ export const PLAYBACK_RATES = [
 export type PlaybackRateId = TimeRateId;
 
 export interface PlaybackAdvance {
-  carriedMinutes: number;
+  carriedSeconds: number;
   ticks: number;
 }
 
 export function projectPlaybackMovement(
   state: SimulationState,
   nextState: SimulationState,
-  partialTickMinutes: number,
+  partialTickSeconds: number,
 ): SimulationState {
-  if (!Number.isFinite(partialTickMinutes) || partialTickMinutes < 0) {
-    throw new RangeError('partialTickMinutes must be a non-negative finite number');
+  if (!Number.isFinite(partialTickSeconds) || partialTickSeconds < 0) {
+    throw new RangeError('partialTickSeconds must be a non-negative finite number');
   }
-  if (partialTickMinutes > state.scenario.tickMinutes) {
-    throw new RangeError('partialTickMinutes cannot exceed the scenario tick cadence');
+  if (partialTickSeconds > state.scenario.tickSeconds) {
+    throw new RangeError('partialTickSeconds cannot exceed the scenario tick cadence');
   }
-  if (partialTickMinutes === 0) return state;
+  if (partialTickSeconds === 0) return state;
   const nextAgents = new Map(nextState.characters.map(agent => [agent.id, agent]));
   let changed = false;
   const agents = state.characters.map(agent => {
@@ -53,7 +53,7 @@ export function projectPlaybackMovement(
       state.environment,
       agent.position,
       nextAgent.position,
-      agent.walkingMetersPerMinute * partialTickMinutes,
+      (agent.walkingMetersPerMinute / 60) * partialTickSeconds,
     );
     if (position === agent.position) return agent;
     changed = true;
@@ -64,16 +64,16 @@ export function projectPlaybackMovement(
 
 export function projectPlaybackState(
   state: SimulationState,
-  partialTickMinutes: number,
+  partialTickSeconds: number,
 ): SimulationState {
-  if (!Number.isFinite(partialTickMinutes) || partialTickMinutes < 0) {
-    throw new RangeError('partialTickMinutes must be a non-negative finite number');
+  if (!Number.isFinite(partialTickSeconds) || partialTickSeconds < 0) {
+    throw new RangeError('partialTickSeconds must be a non-negative finite number');
   }
-  if (partialTickMinutes > state.scenario.tickMinutes) {
-    throw new RangeError('partialTickMinutes cannot exceed the scenario tick cadence');
+  if (partialTickSeconds > state.scenario.tickSeconds) {
+    throw new RangeError('partialTickSeconds cannot exceed the scenario tick cadence');
   }
-  if (partialTickMinutes === 0) return state;
-  return projectPlaybackMovement(state, advanceSimulation(state, 1), partialTickMinutes);
+  if (partialTickSeconds === 0) return state;
+  return projectPlaybackMovement(state, advanceSimulation(state, 1), partialTickSeconds);
 }
 
 export function playbackRateShowsSeconds(rate: PlaybackRate): boolean {
@@ -81,11 +81,11 @@ export function playbackRateShowsSeconds(rate: PlaybackRate): boolean {
 }
 
 export function formatWorkbenchTime(
-  minute: number,
+  second: number,
   clockFormat: ClockFormat = '12-hour',
   showSeconds = false,
 ): string {
-  const totalSeconds = Math.floor(minute * 60 + 1e-6);
+  const totalSeconds = Math.floor(second + 1e-6);
   const day = Math.floor(totalSeconds / 86400) + 1;
   const secondOfDay = ((totalSeconds % 86400) + 86400) % 86400;
   const hour = Math.floor(secondOfDay / 3600);
@@ -108,24 +108,24 @@ export function playbackRateForId(id: PlaybackRateId): (typeof PLAYBACK_RATES)[n
 }
 
 export function accumulatePlayback(
-  carriedMinutes: number,
+  carriedSeconds: number,
   elapsedSeconds: number,
   rate: PlaybackRate,
-  tickMinutes: number,
+  tickSeconds: number,
 ): PlaybackAdvance {
-  if (!Number.isFinite(carriedMinutes) || carriedMinutes < 0) {
-    throw new RangeError('carriedMinutes must be a non-negative finite number');
+  if (!Number.isFinite(carriedSeconds) || carriedSeconds < 0) {
+    throw new RangeError('carriedSeconds must be a non-negative finite number');
   }
   if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) {
     throw new RangeError('elapsedSeconds must be a non-negative finite number');
   }
-  if (!Number.isFinite(tickMinutes) || tickMinutes <= 0) {
-    throw new RangeError('tickMinutes must be a positive finite number');
+  if (!Number.isFinite(tickSeconds) || tickSeconds <= 0) {
+    throw new RangeError('tickSeconds must be a positive finite number');
   }
-  const availableMinutes = carriedMinutes + (elapsedSeconds * rate.rate) / 60;
-  const ticks = Math.floor((availableMinutes + tickMinutes * 1e-9) / tickMinutes);
+  const availableSeconds = carriedSeconds + elapsedSeconds * rate.rate;
+  const ticks = Math.floor((availableSeconds + tickSeconds * 1e-9) / tickSeconds);
   return {
-    carriedMinutes: Math.max(0, availableMinutes - ticks * tickMinutes),
+    carriedSeconds: Math.max(0, availableSeconds - ticks * tickSeconds),
     ticks,
   };
 }

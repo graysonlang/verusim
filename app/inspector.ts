@@ -250,7 +250,7 @@ export function renderInspector(
   const copingGrid = element('dl', 'definition-grid');
   const copingDetails: Array<[string, string]> = [
     ['Cascade position', agent.cascade],
-    ['Dwell until', formatWorkbenchTime(agent.cascadeDwellUntilMinute, preferences.clockFormat)],
+    ['Dwell until', formatWorkbenchTime(agent.cascadeDwellUntilSecond, preferences.clockFormat)],
     ['Current outlet', agent.currentOutlet?.label ?? 'None'],
     [
       'Outlet operation',
@@ -330,8 +330,8 @@ export function renderInspector(
     const task = state.scenario.taskOperators.find(item => item.id === intention.taskId);
     const summary = element('p', 'agenda-summary');
     const planPath = element('small', 'agenda-path');
-    summary.textContent = `${intention.phase} / ${task?.label ?? intention.taskId} / ${intention.remainingMinutes} minutes remaining`;
-    planPath.textContent = `plan ${activePlan.taskIds.join(' -> ')} / score ${activePlan.score.toFixed(3)} / estimated ${formatWorkbenchTime(activePlan.estimatedCompletionMinute, preferences.clockFormat)}`;
+    summary.textContent = `${intention.phase} / ${task?.label ?? intention.taskId} / ${intention.remainingSeconds} seconds remaining`;
+    planPath.textContent = `plan ${activePlan.taskIds.join(' -> ')} / score ${activePlan.score.toFixed(3)} / estimated ${formatWorkbenchTime(activePlan.estimatedCompletionSecond, preferences.clockFormat)}`;
     agenda.body.append(summary, planPath);
   }
   const agentGoals = state.agendaGoals.filter(goal => goal.actorId === agent.id);
@@ -354,7 +354,7 @@ export function renderInspector(
         .join(' / ');
       status.textContent = goal.status;
       copy.textContent = goal.label;
-      terms.textContent = `${goal.source} / commitment ${goal.commitment.toFixed(2)} / ${goal.deadlineMinute === null ? 'no deadline' : `due ${formatWorkbenchTime(goal.deadlineMinute, preferences.clockFormat)}`} / ${progress}`;
+      terms.textContent = `${goal.source} / commitment ${goal.commitment.toFixed(2)} / ${goal.deadlineSecond === null ? 'no deadline' : `due ${formatWorkbenchTime(goal.deadlineSecond, preferences.clockFormat)}`} / ${progress}`;
       item.append(status, copy, terms);
       goalList.append(item);
     }
@@ -378,7 +378,7 @@ export function renderInspector(
       const terms = element('small');
       label.textContent = candidate.taskIds.join(' -> ');
       score.textContent = candidate.score.toFixed(3);
-      terms.textContent = `goal ${candidate.goalUtility.toFixed(3)} x commitment and urgency ${candidate.urgency.toFixed(2)} / task ${candidate.taskUtility.toFixed(3)} / resources -${candidate.resourceCost.toFixed(3)} / complete ${formatWorkbenchTime(candidate.estimatedCompletionMinute, preferences.clockFormat)}`;
+      terms.textContent = `goal ${candidate.goalUtility.toFixed(3)} x commitment and urgency ${candidate.urgency.toFixed(2)} / task ${candidate.taskUtility.toFixed(3)} / resources -${candidate.resourceCost.toFixed(3)} / complete ${formatWorkbenchTime(candidate.estimatedCompletionSecond, preferences.clockFormat)}`;
       heading.append(label, score);
       item.append(heading, terms);
       candidateList.append(item);
@@ -572,7 +572,7 @@ export function renderInspector(
               ];
         }).join(' / ');
         copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${norm?.norm.label ?? observation.normId}`;
-        terms.textContent = `${observation.affiliated ? 'affiliated' : 'nonmember'} / internalization ${observation.internalization.toFixed(2)} / legibility ${observation.legibility.toFixed(2)} (${observation.legibilityBand ?? 'n/a'}) / felt ${observation.subjectiveTurn?.toFixed(3) ?? 'not perceived'} / ${turnDetails || 'no value turn'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+        terms.textContent = `${observation.affiliated ? 'affiliated' : 'nonmember'} / internalization ${observation.internalization.toFixed(2)} / legibility ${observation.legibility.toFixed(2)} (${observation.legibilityBand ?? 'n/a'}) / felt ${observation.subjectiveTurn?.toFixed(3) ?? 'not perceived'} / ${turnDetails || 'no value turn'} / ${formatWorkbenchTime(observation.second, preferences.clockFormat)}`;
       } else {
         const predicted =
           observation.predictedValue === null
@@ -583,7 +583,7 @@ export function renderInspector(
         const gate =
           observation.gateThreshold === null ? 'n/a' : observation.gateThreshold.toFixed(3);
         copy.textContent = `${subject?.profile.name ?? observation.subjectId}: ${observation.dimension}`;
-        terms.textContent = `predicted ${predicted} / observed ${observation.observedValue.toFixed(3)} / estimate ${estimate} / evidence ${observation.effectiveEvidence.toFixed(3)} / gate ${gate} / calibration ${observation.calibrationBand ?? 'n/a'} / ${formatWorkbenchTime(observation.minute, preferences.clockFormat)}`;
+        terms.textContent = `predicted ${predicted} / observed ${observation.observedValue.toFixed(3)} / estimate ${estimate} / evidence ${observation.effectiveEvidence.toFixed(3)} / gate ${gate} / calibration ${observation.calibrationBand ?? 'n/a'} / ${formatWorkbenchTime(observation.second, preferences.clockFormat)}`;
       }
       terms.title = terms.textContent;
       item.append(outcome, copy, terms);
@@ -628,7 +628,7 @@ export function renderInspector(
     time.textContent =
       memory.type === 'formative'
         ? 'History'
-        : formatWorkbenchTime(memory.minute, preferences.clockFormat);
+        : formatWorkbenchTime(memory.second, preferences.clockFormat);
     copy.textContent = memory.summary;
     item.append(time, copy);
     memoryList.append(item);
@@ -642,7 +642,7 @@ export function renderInspector(
     const time = element('span', 'event-time');
     const copy = element('span');
     const causes = element('small');
-    time.textContent = formatWorkbenchTime(entry.minute, preferences.clockFormat);
+    time.textContent = formatWorkbenchTime(entry.second, preferences.clockFormat);
     copy.textContent = entry.summary;
     const terms = entry.terms.map(term => `${term.id}:${traceValue(term.value)}`);
     if (entry.selection !== null) {
@@ -760,7 +760,7 @@ export function createActivityInspector(): ActivityInspector {
       const kind = element('span', 'activity-kind');
       const character = element('strong');
       const summary = element('p');
-      time.textContent = formatWorkbenchTime(entry.minute, currentClockFormat);
+      time.textContent = formatWorkbenchTime(entry.second, currentClockFormat);
       kind.textContent = entry.kind.replaceAll('-', ' ');
       character.textContent =
         entry.instanceId === null

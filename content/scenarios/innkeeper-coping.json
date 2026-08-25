@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "innkeeper-coping",
   "title": "The Innkeeper Under Load",
   "summary": "A directly seeded safety deficit drives Mara toward the highest-ranked control outlet the current environment actually supplies.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "winter",
     "temperatureCelsius": 5,
@@ -45,7 +43,6 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "common-room",
           "activity": "Holding the common room together",
           "recoveryMode": "none",
@@ -58,7 +55,8 @@
             "exposureRisk": 0.7,
             "audienceCount": 3,
             "fabricated": false
-          }
+          },
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -85,5 +83,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "relationship-momentum",
   "title": "The Requests at Bellweather",
   "summary": "Graduated requests move one dyad while a separate fall in estimated regard reprices an old disclosure before sleep consolidates the episodes.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "autumn",
     "temperatureCelsius": 14,
@@ -94,14 +92,14 @@
       "id": "regard-falls",
       "subjectId": "abrasive",
       "observerIds": ["requester"],
-      "atMinute": 604,
       "channel": "sight",
       "audibleRadiusMeters": 0,
       "visualProminence": 1,
       "interpretationDifficulty": 0,
       "dimension": "empathy",
       "observedValue": 0.05,
-      "diagnosticity": 1
+      "diagnosticity": 1,
+      "atSecond": 36240
     }
   ],
   "relationshipEvents": [
@@ -109,17 +107,17 @@
       "id": "brief-civility",
       "observerId": "responder",
       "subjectId": "abrasive",
-      "atMinute": 605,
       "stanceTurn": 0.3,
-      "summary": "Abrasive offered a brief courtesy."
+      "summary": "Abrasive offered a brief courtesy.",
+      "atSecond": 36300
     },
     {
       "id": "public-rebuke",
       "observerId": "responder",
       "subjectId": "abrasive",
-      "atMinute": 606,
       "stanceTurn": -0.3,
-      "summary": "Abrasive answered with a public rebuke."
+      "summary": "Abrasive answered with a public rebuke.",
+      "atSecond": 36360
     }
   ],
   "relationshipRequests": [
@@ -127,25 +125,25 @@
       "id": "small-errand",
       "requesterId": "requester",
       "responderId": "responder",
-      "atMinute": 601,
       "label": "small errand",
-      "magnitude": 0.4
+      "magnitude": 0.4,
+      "atSecond": 36060
     },
     {
       "id": "second-errand",
       "requesterId": "requester",
       "responderId": "responder",
-      "atMinute": 602,
       "label": "second errand",
-      "magnitude": 0.45
+      "magnitude": 0.45,
+      "atSecond": 36120
     },
     {
       "id": "larger-favor",
       "requesterId": "requester",
       "responderId": "responder",
-      "atMinute": 603,
       "label": "larger favor",
-      "magnitude": 0.5
+      "magnitude": 0.5,
+      "atSecond": 36180
     }
   ],
   "worldFacts": [],
@@ -163,20 +161,20 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Making careful requests",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 660,
           "locationId": "market-square",
           "activity": "Sleeping",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 39600
         }
       ],
       "agency": "responder",
@@ -199,20 +197,20 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Considering each request",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         },
         {
-          "startMinute": 660,
           "locationId": "market-square",
           "activity": "Sleeping",
           "recoveryMode": "sleep",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 39600
         }
       ],
       "agency": "responder",
@@ -235,12 +233,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Working nearby",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -268,5 +266,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

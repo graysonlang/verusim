@@ -1,3 +1,4 @@
+import { SECONDS_PER_MINUTE } from '../model/time.js';
 import {
   appendBounded,
   clamp,
@@ -39,7 +40,7 @@ const MAX_SEARCH_NODES = 256;
 
 interface SearchNode {
   facts: Map<string, number>;
-  minute: number;
+  second: number;
   position: LayerPosition;
   resourceCosts: ResourceState;
   taskIds: string[];
@@ -100,8 +101,8 @@ function taskLocationCenter(state: SimulationState, locationId: string): LayerPo
   return locationCenter(location);
 }
 
-function tickDuration(minutes: number, tickMinutes: number): number {
-  return Math.ceil(minutes / tickMinutes) * tickMinutes;
+function tickDuration(seconds: number, tickSeconds: number): number {
+  return Math.ceil(seconds / tickSeconds) * tickSeconds;
 }
 
 function emptyResourceCosts(): ResourceState {
@@ -167,17 +168,19 @@ function completionForTask(
   agent: CharacterInstance,
   node: SearchNode,
   task: TaskOperator,
-): { minute: number; position: LayerPosition } | null {
+): { second: number; position: LayerPosition } | null {
   const position = taskLocationCenter(state, task.locationId);
-  const travelMinutes = tickDuration(
-    navigationDistance(state.environment, node.position, position) / agent.walkingMetersPerMinute,
-    state.scenario.tickMinutes,
+  const travelSeconds = tickDuration(
+    (navigationDistance(state.environment, node.position, position) /
+      agent.walkingMetersPerMinute) *
+      SECONDS_PER_MINUTE,
+    state.scenario.tickSeconds,
   );
-  const arrivalMinute = node.minute + travelMinutes;
-  const startMinute = Math.max(arrivalMinute, task.availableFromMinute ?? arrivalMinute);
-  const minute = startMinute + tickDuration(task.durationMinutes, state.scenario.tickMinutes);
-  if (task.availableUntilMinute !== null && minute > task.availableUntilMinute) return null;
-  return { minute, position };
+  const arrivalSecond = node.second + travelSeconds;
+  const startSecond = Math.max(arrivalSecond, task.availableFromSecond ?? arrivalSecond);
+  const second = startSecond + tickDuration(task.durationSeconds, state.scenario.tickSeconds);
+  if (task.availableUntilSecond !== null && second > task.availableUntilSecond) return null;
+  return { second, position };
 }
 
 function searchPlans(
@@ -189,7 +192,7 @@ function searchPlans(
   const queue: SearchNode[] = [
     {
       facts: factMap(state.worldFacts),
-      minute: state.minute,
+      second: state.second,
       position: agent.position,
       resourceCosts: emptyResourceCosts(),
       taskIds: [],
@@ -209,7 +212,7 @@ function searchPlans(
       const timing = completionForTask(state, agent, node, task);
       if (
         timing === null ||
-        (goal.deadlineMinute !== null && timing.minute > goal.deadlineMinute)
+        (goal.deadlineSecond !== null && timing.second > goal.deadlineSecond)
       ) {
         continue;
       }
@@ -217,7 +220,7 @@ function searchPlans(
       if (facts === null) continue;
       const next: SearchNode = {
         facts,
-        minute: timing.minute,
+        second: timing.second,
         position: timing.position,
         resourceCosts,
         taskIds: [...node.taskIds, task.id],
@@ -242,13 +245,13 @@ function planCandidates(
   goal: AgendaGoalState,
 ): PlanCandidateEvaluation[] {
   const nodes = searchPlans(state, agent, goal);
-  const shortestDuration = Math.min(...nodes.map(node => node.minute - state.minute));
+  const shortestDuration = Math.min(...nodes.map(node => node.second - state.second));
   const slack =
-    goal.deadlineMinute === null
+    goal.deadlineSecond === null
       ? Number.POSITIVE_INFINITY
-      : goal.deadlineMinute - state.minute - shortestDuration;
+      : goal.deadlineSecond - state.second - shortestDuration;
   const urgencyPosition =
-    goal.deadlineMinute === null ? 0 : clamp(1 - slack / goal.urgencyHorizonMinutes, 0, 1);
+    goal.deadlineSecond === null ? 0 : clamp(1 - slack / goal.urgencyHorizonSeconds, 0, 1);
   const urgency = 1 + urgencyPosition * urgencyPosition * 3;
   const goalTurns = subtractTurns(goal.successTurns, goal.failureTurns);
   const weights = effectiveValueWeights(agent);
@@ -294,8 +297,8 @@ function planCandidates(
     const taskUtility = taskAppraisal.utility;
     return {
       appraisal,
-      estimatedCompletionMinute: node.minute,
-      estimatedDurationMinutes: node.minute - state.minute,
+      estimatedCompletionSecond: node.second,
+      estimatedDurationSeconds: node.second - state.second,
       goalId: goal.id,
       goalUtility,
       id: `${goal.id}:${node.taskIds.join('+')}`,
@@ -339,7 +342,7 @@ function resolveGoal(
   let next: SimulationState = {
     ...state,
     agendaGoals: state.agendaGoals.map(candidate =>
-      candidate.id === goal.id ? { ...candidate, resolvedMinute: state.minute, status } : candidate,
+      candidate.id === goal.id ? { ...candidate, resolvedSecond: state.second, status } : candidate,
     ),
     characters: state.characters.map(candidate =>
       candidate.id === agent.id ? applyCharacterValueTurns(candidate, turns) : candidate,
@@ -349,7 +352,7 @@ function resolveGoal(
   };
   next = addMemory(next, agent.id, {
     id: `${state.tick}:${goal.id}:goal:${status}`,
-    minute: state.minute,
+    second: state.second,
     summary,
     type: 'goal',
   });
@@ -357,7 +360,7 @@ function resolveGoal(
     instanceId: agent.id,
     id: `${state.tick}:${goal.id}:goal:${status}`,
     kind: 'goal',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary,
     terms: [
@@ -381,7 +384,7 @@ function settleGoals(state: SimulationState): SimulationState {
   for (const initialGoal of state.agendaGoals) {
     let goal = next.agendaGoals.find(candidate => candidate.id === initialGoal.id);
     if (goal === undefined || goal.status === 'completed' || goal.status === 'failed') continue;
-    if (goal.status === 'pending' && next.minute >= goal.activationMinute) {
+    if (goal.status === 'pending' && next.second >= goal.activationSecond) {
       next = {
         ...next,
         agendaGoals: next.agendaGoals.map(candidate =>
@@ -394,7 +397,7 @@ function settleGoals(state: SimulationState): SimulationState {
         instanceId: goal.actorId,
         id: `${next.tick}:${goal.id}:goal:active`,
         kind: 'goal',
-        minute: next.minute,
+        second: next.second,
         selection: null,
         summary: `Activated goal: ${goal.label}`,
         terms: [
@@ -407,7 +410,7 @@ function settleGoals(state: SimulationState): SimulationState {
     if (goal.status === 'pending') continue;
     if (goalSatisfied(next, goal)) {
       next = resolveGoal(next, goal, 'completed');
-    } else if (goal.deadlineMinute !== null && next.minute >= goal.deadlineMinute) {
+    } else if (goal.deadlineSecond !== null && next.second >= goal.deadlineSecond) {
       next = resolveGoal(next, goal, 'failed');
     } else if (goal.status === 'blocked' && goal.lastPlannedWorldRevision !== next.worldRevision) {
       next = {
@@ -431,14 +434,14 @@ function createIntention(
   const agent = findAgent(state, plan.actorId);
   const atLocation = sameLayerPosition(agent.position, taskLocationCenter(state, task.locationId));
   const waiting =
-    atLocation && task.availableFromMinute !== null && state.minute < task.availableFromMinute;
+    atLocation && task.availableFromSecond !== null && state.second < task.availableFromSecond;
   return {
     actorId: plan.actorId,
     goalId: plan.goalId,
     phase: atLocation ? (waiting ? 'waiting' : 'work') : 'travel',
     planId: plan.id,
-    remainingMinutes: task.durationMinutes,
-    startedMinute: atLocation && !waiting ? state.minute : null,
+    remainingSeconds: task.durationSeconds,
+    startedSecond: atLocation && !waiting ? state.second : null,
     taskId: task.id,
   };
 }
@@ -476,7 +479,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
     actorId,
     candidates,
     id: `${state.tick}:${actorId}:agenda:${state.worldRevision}`,
-    minute: state.minute,
+    second: state.second,
     selectedPlanId: selected?.id ?? null,
     tick: state.tick,
     worldRevision: state.worldRevision,
@@ -496,7 +499,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
       instanceId: actorId,
       id: `${state.tick}:${actorId}:agenda:${candidate.id}`,
       kind: 'agenda',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `${candidate.id}: score ${candidate.score.toFixed(4)}`,
       terms: [
@@ -545,13 +548,13 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
         traceTerm(
           'urgency',
           candidate.urgency,
-          `agendaGoals.${candidate.goalId}.deadlineMinute`,
-          `agendaDecisions.${decision.id}.candidates.${candidate.id}.estimatedCompletionMinute`,
+          `agendaGoals.${candidate.goalId}.deadlineSecond`,
+          `agendaDecisions.${decision.id}.candidates.${candidate.id}.estimatedCompletionSecond`,
         ),
         traceTerm(
           'completion',
-          candidate.estimatedCompletionMinute,
-          ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.durationMinutes`),
+          candidate.estimatedCompletionSecond,
+          ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.durationSeconds`),
         ),
         ...candidate.taskIds.map(taskId =>
           traceTerm('task', taskId, `scenario.taskOperators.${taskId}`),
@@ -565,7 +568,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
       instanceId: actorId,
       id: `${state.tick}:${actorId}:agenda:blocked`,
       kind: 'agenda',
-      minute: state.minute,
+      second: state.second,
       selection: { rule: 'highest-score-then-authored-order', selectedId: null },
       summary: `${agent.profile.name} found no feasible plan`,
       terms: goals.map(goal => traceTerm('blocked-goal', goal.id, `agendaGoals.${goal.id}`)),
@@ -575,8 +578,8 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
 
   const plan: AgendaPlan = {
     actorId,
-    createdMinute: state.minute,
-    estimatedCompletionMinute: selected.estimatedCompletionMinute,
+    createdSecond: state.second,
+    estimatedCompletionSecond: selected.estimatedCompletionSecond,
     goalId: selected.goalId,
     id: selected.id,
     score: selected.score,
@@ -595,7 +598,7 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
     instanceId: actorId,
     id: `${state.tick}:${actorId}:intention:${task.id}`,
     kind: 'intention',
-    minute: state.minute,
+    second: state.second,
     selection: { rule: 'highest-score-then-authored-order', selectedId: plan.id },
     summary: `${agent.profile.name} intends to ${task.label.toLowerCase()}`,
     terms: [
@@ -620,7 +623,7 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
       goal.status !== 'active' ||
       !conditionsMet(facts, task.preconditions) ||
       !somaticActionAvailable(actor, task.somaticDemand) ||
-      (task.availableUntilMinute !== null && state.minute >= task.availableUntilMinute);
+      (task.availableUntilSecond !== null && state.second >= task.availableUntilSecond);
     if (!invalid) continue;
     next = {
       ...next,
@@ -636,7 +639,7 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
       instanceId: intention.actorId,
       id: `${state.tick}:${intention.actorId}:intention:canceled:${task.id}`,
       kind: 'intention',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `Canceled intention: ${task.label}`,
       terms: [
@@ -645,7 +648,7 @@ function cancelInvalidIntentions(state: SimulationState): SimulationState {
           'reason',
           'availability-changed',
           `scenario.taskOperators.${task.id}.preconditions`,
-          `scenario.taskOperators.${task.id}.availableUntilMinute`,
+          `scenario.taskOperators.${task.id}.availableUntilSecond`,
           `characters.${actor.id}.somatic`,
           'worldFacts',
         ),
@@ -701,7 +704,7 @@ export function setWorldFactAmount(
       instanceId: null,
       id: `${state.tick}:world-fact:${factId}:${worldRevision}`,
       kind: 'intervention',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `Set ${factId} to ${nextAmount}`,
       terms: [
@@ -747,7 +750,7 @@ function completeTask(
       instanceId: intention.actorId,
       id: `${state.tick}:${intention.actorId}:task:failed:${task.id}`,
       kind: 'task',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `${agent.profile.name} could not complete ${task.label.toLowerCase()}`,
       terms: [
@@ -797,7 +800,7 @@ function completeTask(
   };
   next = addMemory(next, agent.id, {
     id: `${state.tick}:${agent.id}:task:${task.id}`,
-    minute: state.minute,
+    second: state.second,
     summary,
     type: 'task',
   });
@@ -805,7 +808,7 @@ function completeTask(
     instanceId: agent.id,
     id: `${state.tick}:${agent.id}:task:${task.id}`,
     kind: 'task',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary,
     terms: [
@@ -845,26 +848,26 @@ export function advanceIntentions(state: SimulationState): SimulationState {
     const agent = findAgent(next, intention.actorId);
     if (intention.phase === 'travel') {
       if (agent.currentLocationId !== task.locationId) continue;
-      const waiting = task.availableFromMinute !== null && next.minute < task.availableFromMinute;
+      const waiting = task.availableFromSecond !== null && next.second < task.availableFromSecond;
       next = replaceIntention(next, {
         ...intention,
         phase: waiting ? 'waiting' : 'work',
-        startedMinute: waiting ? null : next.minute,
+        startedSecond: waiting ? null : next.second,
       });
       continue;
     }
     if (intention.phase === 'waiting') {
-      if (task.availableFromMinute !== null && next.minute < task.availableFromMinute) continue;
+      if (task.availableFromSecond !== null && next.second < task.availableFromSecond) continue;
       next = replaceIntention(next, {
         ...intention,
         phase: 'work',
-        startedMinute: next.minute,
+        startedSecond: next.second,
       });
       continue;
     }
-    const remainingMinutes = intention.remainingMinutes - next.scenario.tickMinutes;
-    if (remainingMinutes > 0) {
-      next = replaceIntention(next, { ...intention, remainingMinutes });
+    const remainingSeconds = intention.remainingSeconds - next.scenario.tickSeconds;
+    if (remainingSeconds > 0) {
+      next = replaceIntention(next, { ...intention, remainingSeconds });
     } else {
       next = completeTask(next, intention, task);
     }

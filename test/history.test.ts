@@ -5,7 +5,7 @@ import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import scenario from '../content/scenarios/market-morning.json';
 import {
   ADULT_BASELINE_CHANGE_CAP_PER_YEAR,
-  BASELINE_PLASTICITY_YEAR_MINUTES,
+  BASELINE_PLASTICITY_YEAR_SECONDS,
   advanceBaselinePlasticity,
   createSimulation,
   createSimulationFromSnapshot,
@@ -152,8 +152,8 @@ describe('history-derived instance state', () => {
   it('gates baseline plasticity on years, large gaps, age, and named mechanisms', () => {
     const adult = maraAgent();
     const ordinary = advanceBaselinePlasticity(adult, {
-      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
-      minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      elapsedSeconds: BASELINE_PLASTICITY_YEAR_SECONDS * 20,
+      second: BASELINE_PLASTICITY_YEAR_SECONDS * 20,
       signals: [
         {
           gap: 0.64,
@@ -199,13 +199,13 @@ describe('history-derived instance state', () => {
       },
     ];
     const changed = advanceBaselinePlasticity(child, {
-      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
-      minute: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
+      elapsedSeconds: BASELINE_PLASTICITY_YEAR_SECONDS * elapsedYears,
+      second: BASELINE_PLASTICITY_YEAR_SECONDS * elapsedYears,
       signals,
     });
     const replayed = advanceBaselinePlasticity(child, {
-      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
-      minute: BASELINE_PLASTICITY_YEAR_MINUTES * elapsedYears,
+      elapsedSeconds: BASELINE_PLASTICITY_YEAR_SECONDS * elapsedYears,
+      second: BASELINE_PLASTICITY_YEAR_SECONDS * elapsedYears,
       signals,
     });
 
@@ -223,8 +223,8 @@ describe('history-derived instance state', () => {
     const outletSignal = signals[0];
     assert.ok(outletSignal);
     const adultUnderPressure = advanceBaselinePlasticity(adult, {
-      elapsedMinutes: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
-      minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      elapsedSeconds: BASELINE_PLASTICITY_YEAR_SECONDS * 20,
+      second: BASELINE_PLASTICITY_YEAR_SECONDS * 20,
       signals: [outletSignal],
     });
     const adultChange = adultUnderPressure.history.plasticity.records.reduce(
@@ -247,7 +247,7 @@ describe('history-derived instance state', () => {
       characters: persistedState.characters.map(agent =>
         agent.id === adultUnderPressure.id ? adultUnderPressure : agent,
       ),
-      minute: BASELINE_PLASTICITY_YEAR_MINUTES * 20,
+      second: BASELINE_PLASTICITY_YEAR_SECONDS * 20,
     };
     const plasticitySnapshot = serializeSnapshot(stateWithPlasticity);
     assert.deepEqual(parseSnapshot(plasticitySnapshot), plasticitySnapshot);
@@ -269,7 +269,7 @@ describe('history-derived instance state', () => {
       scenario,
     });
     const snapshot = serializeSnapshot(initial);
-    assert.equal(snapshot.schemaVersion, 18);
+    assert.equal(snapshot.schemaVersion, 19);
     assert.deepEqual(parseSnapshot(snapshot), snapshot);
     assert.deepEqual(
       createSimulationFromSnapshot({
@@ -290,7 +290,7 @@ describe('history-derived instance state', () => {
       }
     }
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.deepEqual(migrated.characters[0]?.history, {
       formativeRecords: [],
       overrides: {},

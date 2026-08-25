@@ -17,7 +17,7 @@ function resourceId(address: unknown): string {
 }
 
 export const LEGACY_SCENARIO_VERSIONS: readonly number[] = Array.from(
-  { length: 17 },
+  { length: 18 },
   (_, index) => index + 1,
 );
 
@@ -44,9 +44,52 @@ function renameKeysDeepForLegacy(
   for (const child of Object.values(record)) renameKeysDeepForLegacy(child, renames, placements);
 }
 
+const SECOND_KEYS: Readonly<Record<string, string>> = {
+  activationSecond: 'activationMinute',
+  atSecond: 'atMinute',
+  availableFromSecond: 'availableFromMinute',
+  availableUntilSecond: 'availableUntilMinute',
+  cascadeDwellUntilSecond: 'cascadeDwellUntilMinute',
+  createdSecond: 'createdMinute',
+  deadlineSecond: 'deadlineMinute',
+  durationSeconds: 'durationMinutes',
+  estimatedCompletionSecond: 'estimatedCompletionMinute',
+  estimatedDurationSeconds: 'estimatedDurationMinutes',
+  firstSecond: 'firstMinute',
+  lastSecond: 'lastMinute',
+  originSecond: 'originMinute',
+  promotedSecond: 'promotedMinute',
+  remainingSeconds: 'remainingMinutes',
+  resolvedSecond: 'resolvedMinute',
+  second: 'minute',
+  startSecond: 'startMinute',
+  startedSecond: 'startedMinute',
+  tickSeconds: 'tickMinutes',
+  urgencyHorizonSeconds: 'urgencyHorizonMinutes',
+};
+
+/** Return second-domain keys to their minute-domain names, dividing values by 60. */
+export function downgradeSecondsToMinutes(value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const item of value) downgradeSecondsToMinutes(item);
+    return;
+  }
+  if (typeof value !== 'object' || value === null) return;
+  const record = value as Doc;
+  for (const [key, replacement] of Object.entries(SECOND_KEYS)) {
+    if (key in record) {
+      const current = record[key];
+      record[replacement] = typeof current === 'number' ? current / 60 : current;
+      delete record[key];
+    }
+  }
+  for (const child of Object.values(record)) downgradeSecondsToMinutes(child);
+}
+
 export function downgradeScenario(value: unknown, schemaVersion: number): Doc {
   const file = structuredClone(value) as Doc;
   const placements = objects(file.characters);
+  if (schemaVersion < 19) downgradeSecondsToMinutes(file);
   if (schemaVersion < 18) {
     renameKeysDeepForLegacy(
       file,
@@ -210,6 +253,10 @@ export function downgradeScenario(value: unknown, schemaVersion: number): Doc {
 
 /** Return a snapshot to the pre-18 vocabulary: `agents`, `agentId`, and `affectedAgentId`. */
 export function downgradeSnapshotVocabulary(snapshot: Doc): void {
+  const nested = snapshot.scenario as Doc | undefined;
+  delete snapshot.scenario;
+  downgradeSecondsToMinutes(snapshot);
+  if (nested !== undefined) snapshot.scenario = downgradeScenario(nested, 18);
   // Legacy files carried `agents`; the current alias stays on the fixture so a
   // test can keep mutating the same instance array after downgrading, and the
   // migration's `characters = agents` assignment overwrites it identically.

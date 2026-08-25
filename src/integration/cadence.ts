@@ -135,23 +135,23 @@ export function cadenceLogicalTick(session: CadenceSession): number {
 
 export function catchUpConstantRate(
   value: number,
-  ratePerMinute: number,
-  elapsedMinutes: number,
+  ratePerSecond: number,
+  elapsedSeconds: number,
   minimum: number,
   maximum: number,
 ): number {
   for (const [candidate, label] of [
     [value, 'value'],
-    [ratePerMinute, 'ratePerMinute'],
-    [elapsedMinutes, 'elapsedMinutes'],
+    [ratePerSecond, 'ratePerSecond'],
+    [elapsedSeconds, 'elapsedSeconds'],
     [minimum, 'minimum'],
     [maximum, 'maximum'],
   ] as const) {
     if (!Number.isFinite(candidate)) throw new RangeError(`${label} must be finite`);
   }
-  if (elapsedMinutes < 0) throw new RangeError('elapsedMinutes must not be negative');
+  if (elapsedSeconds < 0) throw new RangeError('elapsedSeconds must not be negative');
   if (maximum < minimum) throw new RangeError('maximum must not be below minimum');
-  return Math.min(maximum, Math.max(minimum, value + ratePerMinute * elapsedMinutes));
+  return Math.min(maximum, Math.max(minimum, value + ratePerSecond * elapsedSeconds));
 }
 
 export function serializeCadenceSave(session: CadenceSession): CadenceSaveFile {

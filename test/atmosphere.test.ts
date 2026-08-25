@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { DAY_PERIOD_IDS, daylightScheduleForSeason, dayPeriodAtMinute } from '../src/index.js';
+import { DAY_PERIOD_IDS, daylightScheduleForSeason, dayPeriodAtSecond } from '../src/index.js';
 
 describe('time of day', () => {
   it('derives every named day period from simulation time', () => {
+    // Probes are authored as minutes of day for legibility.
     const probes = [
       [0, 'night'],
       [300, 'dawn'],
@@ -17,7 +18,7 @@ describe('time of day', () => {
       [1185, 'night'],
     ] as const;
     assert.deepEqual(
-      probes.map(([minute]) => dayPeriodAtMinute(minute, 'spring')),
+      probes.map(([minute]) => dayPeriodAtSecond(minute * 60, 'spring')),
       probes.map(([, period]) => period),
     );
     assert.deepEqual(new Set(probes.map(([, period]) => period)), new Set(DAY_PERIOD_IDS));
@@ -25,11 +26,11 @@ describe('time of day', () => {
 
   it('shifts daylight boundaries by season and repeats across days', () => {
     assert.deepEqual(daylightScheduleForSeason('summer'), {
-      sunriseMinute: 315,
-      sunsetMinute: 1245,
+      sunriseSecond: 315 * 60,
+      sunsetSecond: 1245 * 60,
     });
-    assert.equal(dayPeriodAtMinute(400, 'spring'), 'sunrise');
-    assert.equal(dayPeriodAtMinute(400, 'winter'), 'dawn');
-    assert.equal(dayPeriodAtMinute(400 + 1440, 'winter'), 'dawn');
+    assert.equal(dayPeriodAtSecond(24000, 'spring'), 'sunrise');
+    assert.equal(dayPeriodAtSecond(24000, 'winter'), 'dawn');
+    assert.equal(dayPeriodAtSecond(24000 + 86400, 'winter'), 'dawn');
   });
 });

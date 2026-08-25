@@ -10,7 +10,7 @@ import type {
   SimulationState,
   WeatherCondition,
 } from '../src/model/types.js';
-import { dayPeriodAtMinute, type DayPeriod } from '../src/simulation/atmosphere.js';
+import { dayPeriodAtSecond, type DayPeriod } from '../src/simulation/atmosphere.js';
 import {
   environmentLayersTopDown,
   environmentSpatialContextAt,
@@ -808,7 +808,7 @@ function drawWorld(
   const screenPixelsPerMeter = pixelsPerMeter(camera.zoom);
   const conditions = state.scenario.environmentConditions;
   const palette = worldPaletteFor(
-    dayPeriodAtMinute(state.minute, conditions.season),
+    dayPeriodAtSecond(state.second, conditions.season),
     conditions.season,
     conditions.weather,
   );

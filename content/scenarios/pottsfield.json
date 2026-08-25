@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "pottsfield",
   "title": "Pottsfield",
   "summary": "Residents and a visitor read the same harvest observance through opposite value turns while the local rationale remains opaque to the outsider.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "autumn",
     "temperatureCelsius": 11,
@@ -78,7 +76,6 @@
     {
       "eventType": "norm",
       "id": "harvest-rite-completed",
-      "atMinute": 601,
       "subjectId": "reeve",
       "observerIds": ["resident", "visitor"],
       "norm": {
@@ -94,7 +91,8 @@
       "interpretationDifficulty": 0.35,
       "channel": "sight",
       "audibleRadiusMeters": 12,
-      "visualProminence": 1
+      "visualProminence": 1,
+      "atSecond": 36060
     }
   ],
   "worldFacts": [],
@@ -123,12 +121,12 @@
       ],
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Conducting the harvest observance",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -162,12 +160,12 @@
       ],
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Attending the harvest observance",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -201,12 +199,12 @@
       ],
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Watching an unfamiliar observance",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "agency": "responder",
@@ -234,5 +232,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

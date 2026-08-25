@@ -52,15 +52,15 @@ export const normCharacters = {
 
 export const environments = {
   environments: layouts(['alders-edge', 'alders-edge-town']),
-  schemaVersion: 1,
+  schemaVersion: 4,
 };
 
 export const copingEnvironments = {
   environments: layouts(['coping-inn', 'coping-yard', 'coping-storehouse']),
-  schemaVersion: 2,
+  schemaVersion: 4,
 };
 
 export const highwaymanEnvironments = {
   environments: layouts(['old-king-road']),
-  schemaVersion: 1,
+  schemaVersion: 4,
 };

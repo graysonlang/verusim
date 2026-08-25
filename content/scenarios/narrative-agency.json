@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "narrative-agency",
   "title": "Stories in the Square",
   "summary": "Agreement, contradiction, reputation, validators, and aspiration expose distinct consequences of the stories characters keep about themselves.",
-  "startMinute": 0,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "spring",
     "temperatureCelsius": 15,
@@ -51,7 +49,6 @@
   "appraisalEvents": [
     {
       "id": "dominance-threat",
-      "atMinute": 1,
       "summary": "The dominant listener made disagreement feel unsafe.",
       "threat": 1,
       "copingPotential": 0.35,
@@ -62,7 +59,8 @@
       "turns": {
         "safety": -0.3
       },
-      "instanceId": "lowering"
+      "instanceId": "lowering",
+      "atSecond": 60
     }
   ],
   "reputationGroups": [
@@ -85,8 +83,8 @@
       "responderId": "dominant",
       "claimId": "claim-1",
       "disclosureItemId": null,
-      "atMinute": 1,
-      "summary": "Someone agreed when Mara diminished herself."
+      "summary": "Someone agreed when Mara diminished herself.",
+      "atSecond": 60
     },
     {
       "id": "agree-preemptive",
@@ -95,8 +93,8 @@
       "responderId": "dominant",
       "claimId": "claim-1",
       "disclosureItemId": "shame-item",
-      "atMinute": 1,
-      "summary": "Someone agreed after Tomas named his own mistake first."
+      "summary": "Someone agreed after Tomas named his own mistake first.",
+      "atSecond": 60
     },
     {
       "id": "agree-genuine",
@@ -105,8 +103,8 @@
       "responderId": "dominant",
       "claimId": "claim-1",
       "disclosureItemId": null,
-      "atMinute": 1,
-      "summary": "Someone agreed with Nessa's low-confidence account."
+      "summary": "Someone agreed with Nessa's low-confidence account.",
+      "atSecond": 60
     },
     {
       "id": "agree-lowering",
@@ -115,8 +113,8 @@
       "responderId": "dominant",
       "claimId": "claim-1",
       "disclosureItemId": null,
-      "atMinute": 1,
-      "summary": "The dominant listener agreed with Elian's status-lowering claim."
+      "summary": "The dominant listener agreed with Elian's status-lowering claim.",
+      "atSecond": 60
     },
     {
       "id": "contradict-invoker",
@@ -124,8 +122,8 @@
       "actorId": "invoker",
       "claimId": "claim-1",
       "alignment": -0.7,
-      "atMinute": 1,
-      "summary": "The invoker acted against a committed self-claim."
+      "summary": "The invoker acted against a committed self-claim.",
+      "atSecond": 60
     },
     {
       "id": "guild-reliable",
@@ -138,8 +136,8 @@
       "selfClaimId": "claim-1",
       "compatibility": 0.8,
       "confidence": 0.7,
-      "atMinute": 1,
-      "summary": "The guild called the invoker reliable."
+      "summary": "The guild called the invoker reliable.",
+      "atSecond": 60
     },
     {
       "id": "neighbors-unreliable",
@@ -152,8 +150,8 @@
       "selfClaimId": "claim-1",
       "compatibility": -0.8,
       "confidence": 0.7,
-      "atMinute": 1,
-      "summary": "The neighbors called the invoker unreliable."
+      "summary": "The neighbors called the invoker unreliable.",
+      "atSecond": 60
     }
   ],
   "worldFacts": [
@@ -168,11 +166,8 @@
       "id": "invoker-help-square",
       "actorId": "invoker",
       "claimId": "claim-1",
-      "atMinute": 0,
       "label": "Help in the square",
       "commitment": 0.8,
-      "deadlineMinute": null,
-      "urgencyHorizonMinutes": 120,
       "desired": [
         {
           "factId": "square-helped",
@@ -192,17 +187,17 @@
           "valueId": "belonging",
           "strength": 0.8
         }
-      ]
+      ],
+      "atSecond": 0,
+      "deadlineSecond": null,
+      "urgencyHorizonSeconds": 7200
     },
     {
       "id": "responder-help-square",
       "actorId": "responder",
       "claimId": "claim-1",
-      "atMinute": 0,
       "label": "Help in the square",
       "commitment": 0.8,
-      "deadlineMinute": null,
-      "urgencyHorizonMinutes": 120,
       "desired": [
         {
           "factId": "square-helped",
@@ -222,7 +217,10 @@
           "valueId": "belonging",
           "strength": 0.8
         }
-      ]
+      ],
+      "atSecond": 0,
+      "deadlineSecond": null,
+      "urgencyHorizonSeconds": 7200
     }
   ],
   "taskOperators": [
@@ -237,7 +235,6 @@
           "delta": 1
         }
       ],
-      "durationMinutes": 10,
       "locationId": "market-square",
       "resourceCosts": {
         "executiveBudget": 0.05
@@ -247,8 +244,6 @@
       "recoveryMode": "none",
       "valueTurns": {},
       "contractViolation": 0,
-      "availableFromMinute": null,
-      "availableUntilMinute": null,
       "claimExpressions": [
         {
           "claimId": "claim-1",
@@ -256,7 +251,10 @@
           "strength": 0.7
         }
       ],
-      "somaticDemand": 0
+      "somaticDemand": 0,
+      "availableFromSecond": null,
+      "availableUntilSecond": null,
+      "durationSeconds": 600
     }
   ],
   "behaviorOpportunities": [],
@@ -279,12 +277,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Talking",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -307,12 +305,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Talking",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -340,12 +338,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Talking",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -368,12 +366,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Talking",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -396,12 +394,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Listening",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -424,12 +422,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Watching for work",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -452,12 +450,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "market-square",
           "activity": "Waiting",
           "recoveryMode": "none",
           "resourceDrainsPerHour": {},
-          "maskingDemand": null
+          "maskingDemand": null,
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -480,5 +478,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 0,
+  "tickSeconds": 60
 }

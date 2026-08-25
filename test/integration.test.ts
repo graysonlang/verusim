@@ -123,7 +123,7 @@ describe('integration adapters', () => {
   it('uses closed-form catch-up only for an exact constant-rate primitive', () => {
     const direct = catchUpConstantRate(0.25, 0.125, 4, 0, 1);
     let stepped = 0.25;
-    for (let minute = 0; minute < 4; minute += 1) {
+    for (let second = 0; second < 4; second += 1) {
       stepped = catchUpConstantRate(stepped, 0.125, 1, 0, 1);
     }
     assert.equal(direct, stepped);

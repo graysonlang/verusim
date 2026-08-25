@@ -32,27 +32,27 @@ function goalSeedSignature(goal: {
   actorId: string;
   claimExpressions: unknown;
   commitment: number;
-  deadlineMinute: number | null;
+  deadlineSecond: number | null;
   desired: unknown;
   failureTurns: unknown;
   id: string;
   label: string;
   source: string;
   successTurns: unknown;
-  urgencyHorizonMinutes: number;
+  urgencyHorizonSeconds: number;
 }): string {
   return JSON.stringify([
     goal.actorId,
     goal.claimExpressions,
     goal.commitment,
-    goal.deadlineMinute,
+    goal.deadlineSecond,
     goal.desired,
     goal.failureTurns,
     goal.id,
     goal.label,
     goal.source,
     goal.successTurns,
-    goal.urgencyHorizonMinutes,
+    goal.urgencyHorizonSeconds,
   ]);
 }
 
@@ -434,15 +434,15 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
       aspiration !== undefined &&
       goal.source === 'aspiration' &&
       goal.actorId === aspiration.actorId &&
-      goal.activationMinute >= aspiration.atMinute &&
+      goal.activationSecond >= aspiration.atSecond &&
       goal.commitment === aspiration.commitment &&
-      goal.deadlineMinute === aspiration.deadlineMinute &&
+      goal.deadlineSecond === aspiration.deadlineSecond &&
       JSON.stringify(goal.claimExpressions) === JSON.stringify(aspiration.claimExpressions) &&
       JSON.stringify(goal.desired) === JSON.stringify(aspiration.desired) &&
       JSON.stringify(goal.failureTurns) === JSON.stringify(aspiration.failureTurns) &&
       goal.label === aspiration.label &&
       JSON.stringify(goal.successTurns) === JSON.stringify(aspiration.successTurns) &&
-      goal.urgencyHorizonMinutes === aspiration.urgencyHorizonMinutes;
+      goal.urgencyHorizonSeconds === aspiration.urgencyHorizonSeconds;
     if (
       (scenarioGoal === undefined || goalSeedSignature(goal) !== goalSeedSignature(scenarioGoal)) &&
       !aspirationMatches
@@ -453,9 +453,9 @@ function validateCollections({ base, snapshot }: SnapshotReferenceContext): void
       );
     }
     const resolved = goal.status === 'completed' || goal.status === 'failed';
-    if (resolved !== (goal.resolvedMinute !== null)) {
+    if (resolved !== (goal.resolvedSecond !== null)) {
       throw new ScenarioValidationError(
-        `snapshot.agendaGoals[${index}].resolvedMinute`,
+        `snapshot.agendaGoals[${index}].resolvedSecond`,
         'must be present exactly when the goal is resolved',
       );
     }

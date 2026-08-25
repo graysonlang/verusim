@@ -33,7 +33,7 @@ describe('observation and prediction', () => {
       ...parsed,
       dyads: [],
       observationEvents: [
-        { ...missedEvent, atMinute: 601, id: 'imperceptible-signal', visualProminence: 0 },
+        { ...missedEvent, atSecond: 36060, id: 'imperceptible-signal', visualProminence: 0 },
       ],
     };
     const next = advanceSimulation(createMindModelSimulation(isolated), 1);
@@ -50,7 +50,7 @@ describe('observation and prediction', () => {
     const isolated = {
       ...parsed,
       dyads: [],
-      observationEvents: [{ ...firstEvent, atMinute: 601, id: 'first-encounter' }],
+      observationEvents: [{ ...firstEvent, atSecond: 36060, id: 'first-encounter' }],
     };
     const next = advanceSimulation(createMindModelSimulation(isolated), 1);
     const dyad = dyadFor(next, 'endicott');

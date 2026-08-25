@@ -74,7 +74,7 @@ describe('scenario validation', () => {
     delete legacy.behaviorOpportunities;
     delete legacy.socialRelations;
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.deepEqual(migrated.agendaGoals, []);
     assert.deepEqual(migrated.behaviorOpportunities, []);
     assert.deepEqual(migrated.disclosureItems, []);
@@ -132,7 +132,7 @@ describe('scenario validation', () => {
     });
 
     const migratedEnvironments = parseEnvironmentLibrary(environments);
-    assert.equal(migratedEnvironments.schemaVersion, 3);
+    assert.equal(migratedEnvironments.schemaVersion, 4);
     assert.deepEqual(migratedEnvironments.environments[0]?.outletAffordances, []);
 
     const legacyScenario = downgradeScenarioReferences(scenario, 2);
@@ -147,7 +147,7 @@ describe('scenario validation', () => {
       },
     ];
     const migratedScenario = parseScenario(legacyScenario);
-    assert.equal(migratedScenario.schemaVersion, 18);
+    assert.equal(migratedScenario.schemaVersion, 19);
     assert.equal(migratedScenario.dyads[0]?.mode, 'courteous');
     assert.equal(migratedScenario.dyads[0]?.estimateConfidence, 0.1);
     assert.equal(migratedScenario.dyads[0]?.suspicion, 0);
@@ -161,7 +161,7 @@ describe('scenario validation', () => {
     delete relationalScenario.taskOperators;
     delete relationalScenario.worldFacts;
     const migratedScenario = parseScenario(relationalScenario);
-    assert.equal(migratedScenario.schemaVersion, 18);
+    assert.equal(migratedScenario.schemaVersion, 19);
     assert.deepEqual(migratedScenario.agendaGoals, []);
 
     const snapshot = serializeSnapshot(
@@ -181,7 +181,7 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 18);
+    assert.equal(migratedSnapshot.schemaVersion, 19);
     assert.equal(migratedSnapshot.trace.schemaVersion, 2);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
@@ -206,7 +206,7 @@ describe('scenario validation', () => {
     replaceWithLegacyTrace(agendaSnapshot);
     downgradeSnapshotReferences(agendaSnapshot, 2);
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
-    assert.equal(migratedAgendaSnapshot.schemaVersion, 18);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 19);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 2);
   });
 
@@ -219,7 +219,7 @@ describe('scenario validation', () => {
     }
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.equal(migrated.characters[0]?.schedule[1]?.recoveryMode, 'none');
 
@@ -244,7 +244,7 @@ describe('scenario validation', () => {
     assert.equal(schedule[0]?.recoveryMode, 'sleep');
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.equal(migrated.characters[0]?.schedule[0]?.recoveryMode, 'sleep');
     assert.deepEqual(migrated.environmentConditions, {
       season: 'spring',
@@ -259,7 +259,7 @@ describe('scenario validation', () => {
     for (const dyad of prior.dyads as Array<Record<string, unknown>>) delete dyad.suspicion;
 
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.deepEqual(migrated.observationEvents, []);
     assert.equal(migrated.dyads[0]?.suspicion, 0);
     assert.deepEqual(migrated.environmentConditions, mindModelScenario.environmentConditions);
@@ -269,7 +269,7 @@ describe('scenario validation', () => {
     const prior = downgradeScenarioReferences(mindModelScenario, 7);
     const migrated = parseScenario(prior);
 
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.deepEqual(migrated.legacyLocalNorms, []);
     assert.ok(migrated.characters.every(placement => placement.normPerspectives.length === 0));
     assert.ok(migrated.observationEvents.every(event => event.eventType === 'mind-model'));
@@ -285,7 +285,7 @@ describe('scenario validation', () => {
     const snapshot = serializeSnapshot(observed) as unknown as Record<string, unknown>;
     downgradeSnapshotReferences(snapshot, 4);
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 18);
+    assert.equal(migratedSnapshot.schemaVersion, 19);
     assert.ok(migratedSnapshot.observations.length > 0);
     assert.ok(migratedSnapshot.observations.every(event => event.eventType === 'mind-model'));
     assert.ok(
@@ -316,7 +316,7 @@ describe('scenario validation', () => {
     delete event.norm;
 
     const migrated = parseScenario(legacy);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.equal(migrated.legacyLocalNorms[0]?.address.resourceId, 'harvest-observance');
     assert.equal(
       migrated.characters[0]?.normPerspectives[0]?.norm.resourceId,
@@ -344,7 +344,7 @@ describe('scenario validation', () => {
       }
     }
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.deepEqual(migrated.appraisalEvents, []);
     assert.ok(
       migrated.characters.every(placement =>
@@ -368,14 +368,14 @@ describe('scenario validation', () => {
     delete snapshot.appraisalRecords;
     delete snapshot.resolvedAppraisalEventIds;
     for (const agent of snapshot.characters as Array<Record<string, unknown>>) {
-      delete agent.cascadeDwellUntilMinute;
+      delete agent.cascadeDwellUntilSecond;
       delete agent.cascadeLoad;
       delete agent.cascadeTargetId;
       delete agent.currentOutlet;
       delete agent.outletHistory;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 18);
+    assert.equal(migratedSnapshot.schemaVersion, 19);
     assert.deepEqual(migratedSnapshot.appraisalRecords, []);
     assert.deepEqual(migratedSnapshot.resolvedAppraisalEventIds, []);
     assert.ok(migratedSnapshot.characters.every(agent => agent.currentOutlet === null));
@@ -394,7 +394,7 @@ describe('scenario validation', () => {
       delete dyad.validatorClaimIds;
     }
     const migrated = parseScenario(prior);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.equal(migrated.appraisalEvents.length, cascadeScenario.appraisalEvents.length);
     assert.deepEqual(migrated.aspirationOpportunities, []);
     assert.deepEqual(migrated.narrativeEvents, []);
@@ -420,7 +420,7 @@ describe('scenario validation', () => {
       delete agent.narrative;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 18);
+    assert.equal(migratedSnapshot.schemaVersion, 19);
     assert.ok(migratedSnapshot.characters.every(agent => agent.narrative === null));
     assert.ok(migratedSnapshot.characters.some(agent => agent.cascade !== 'none'));
   });
@@ -508,7 +508,7 @@ describe('scenario validation', () => {
       instanceId: 'mara',
       id: '0:mara:gate:emergency',
       kind: 'gate',
-      minute: snapshot.minute,
+      second: snapshot.second,
       sequence: 1,
       selection: { rule: 'preempt-gate', selectedId: 'emergency' },
       summary: 'Emergency preempted ordinary appraisal',
@@ -538,18 +538,18 @@ describe('scenario validation', () => {
     malformed.characters[0]?.schedule.reverse();
     assert.throws(
       () => parseScenario(malformed),
-      /scenario\.characters\[0\]\.schedule\[1\]\.startMinute/,
+      /scenario\.characters\[0\]\.schedule\[1\]\.startSecond/,
     );
   });
 
   it('rejects every pre-start event at its indexed authored path', () => {
     const eventCases: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
-      ['appraisalEvents', { instanceId: 'mara', atMinute: 469, id: 'pre-start-appraisal' }],
+      ['appraisalEvents', { instanceId: 'mara', atSecond: 28140, id: 'pre-start-appraisal' }],
       [
         'aspirationOpportunities',
         {
           actorId: 'mara',
-          atMinute: 469,
+          atSecond: 28140,
           claimId: 'claim-1',
           id: 'pre-start-aspiration',
           label: 'Already available',
@@ -557,12 +557,12 @@ describe('scenario validation', () => {
       ],
       [
         'behaviorOpportunities',
-        { actorId: 'mara', atMinute: 469, id: 'pre-start-behavior', targetId: null },
+        { actorId: 'mara', atSecond: 28140, id: 'pre-start-behavior', targetId: null },
       ],
       [
         'disclosureOpportunities',
         {
-          atMinute: 469,
+          atSecond: 28140,
           id: 'pre-start-disclosure',
           itemId: 'private-matter',
           ownerId: 'mara',
@@ -571,7 +571,7 @@ describe('scenario validation', () => {
       [
         'displayEvents',
         {
-          atMinute: 469,
+          atSecond: 28140,
           displayId: 'old-display',
           id: 'pre-start-display',
           wearerId: 'mara',
@@ -582,16 +582,16 @@ describe('scenario validation', () => {
         {
           actorId: null,
           affectedInstanceId: 'mara',
-          atMinute: 469,
+          atSecond: 28140,
           id: 'pre-start-incident',
         },
       ],
-      ['narrativeEvents', { atMinute: 469, id: 'pre-start-narrative' }],
-      ['observationEvents', { atMinute: 469, id: 'pre-start-observation', subjectId: 'mara' }],
+      ['narrativeEvents', { atSecond: 28140, id: 'pre-start-narrative' }],
+      ['observationEvents', { atSecond: 28140, id: 'pre-start-observation', subjectId: 'mara' }],
       [
         'relationshipEvents',
         {
-          atMinute: 469,
+          atSecond: 28140,
           id: 'pre-start-relationship',
           observerId: 'mara',
           subjectId: 'tomas',
@@ -600,13 +600,13 @@ describe('scenario validation', () => {
       [
         'relationshipRequests',
         {
-          atMinute: 469,
+          atSecond: 28140,
           id: 'pre-start-request',
           requesterId: 'mara',
           responderId: 'tomas',
         },
       ],
-      ['somaticEvents', { instanceId: 'mara', atMinute: 469, id: 'pre-start-somatic' }],
+      ['somaticEvents', { instanceId: 'mara', atSecond: 28140, id: 'pre-start-somatic' }],
     ];
 
     for (const [field, event] of eventCases) {
@@ -617,7 +617,7 @@ describe('scenario validation', () => {
       malformed[field] = [event];
       assert.throws(
         () => parseScenario(malformed),
-        new RegExp(`scenario\\.${field}\\[0\\]\\.atMinute`),
+        new RegExp(`scenario\\.${field}\\[0\\]\\.atSecond`),
         field,
       );
     }
@@ -667,10 +667,10 @@ describe('scenario validation', () => {
     const malformedEnvironments = structuredClone(copingEnvironments);
     const firstAffordance = malformedEnvironments.environments[0]?.outletAffordances[0];
     assert.ok(firstAffordance);
-    firstAffordance.durationMinutes = 0;
+    firstAffordance.durationSeconds = 0;
     assert.throws(
       () => parseEnvironmentLibrary(malformedEnvironments),
-      /environmentLibrary\.environments\[0\]\.outletAffordances\[0\]\.durationMinutes/,
+      /environmentLibrary\.environments\[0\]\.outletAffordances\[0\]\.durationSeconds/,
     );
 
     const malformedScenario = structuredClone(cascadeScenario);

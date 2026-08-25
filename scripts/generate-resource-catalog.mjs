@@ -50,7 +50,7 @@ function validateAddress(value, source) {
   }
   const supportedVersions =
     address.kind === 'environment-layout'
-      ? [1, 2, 3]
+      ? [1, 2, 3, 4]
       : address.kind === 'character-profile'
         ? [1]
         : [1, 2];

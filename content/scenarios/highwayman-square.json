@@ -1,10 +1,8 @@
 {
-  "schemaVersion": 18,
+  "schemaVersion": 19,
   "id": "highwayman-square",
   "title": "The Highwayman: Town Square",
   "summary": "The same merchant and opportunist meet under witnesses and enforcement.",
-  "startMinute": 600,
-  "tickMinutes": 1,
   "environmentConditions": {
     "season": "autumn",
     "temperatureCelsius": 11,
@@ -133,7 +131,6 @@
       "id": "public-encounter",
       "actorId": "actor",
       "targetId": "merchant",
-      "atMinute": 605,
       "context": {
         "witnessIds": ["warden"],
         "networkConductivity": 1,
@@ -193,7 +190,8 @@
           "selfDirected": false,
           "somaticDemand": 0
         }
-      ]
+      ],
+      "atSecond": 36300
     }
   ],
   "characters": [
@@ -206,12 +204,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "town-square",
           "activity": "Crossing the square",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -234,12 +232,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "town-square",
           "activity": "Opening a ledger",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -262,12 +260,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "watch-house",
           "activity": "Watching the square",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -290,12 +288,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "town-square",
           "activity": "Waiting by the road",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -318,12 +316,12 @@
       },
       "schedule": [
         {
-          "startMinute": 0,
           "locationId": "town-square",
           "activity": "Waiting by the stalls",
           "recoveryMode": "none",
           "maskingDemand": null,
-          "resourceDrainsPerHour": {}
+          "resourceDrainsPerHour": {},
+          "startSecond": 0
         }
       ],
       "normPerspectives": [],
@@ -354,5 +352,7 @@
   "incidentEvents": [],
   "displayEvents": [],
   "ambientSomaticSources": [],
-  "somaticEvents": []
+  "somaticEvents": [],
+  "startSecond": 36000,
+  "tickSeconds": 60
 }

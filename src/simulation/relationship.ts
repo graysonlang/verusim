@@ -1,3 +1,4 @@
+import { SECONDS_PER_MINUTE } from '../model/time.js';
 import { appendBounded, clamp, memoryWindow } from '../model/retention.js';
 import type {
   DyadMode,
@@ -15,7 +16,7 @@ import { effectiveDisclosure, effectiveEmpathy } from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
 
 const MAX_RELATIONSHIP_DECISIONS = 80;
-const SEMANTIC_COLLAPSE_MINUTES = 720;
+const SEMANTIC_COLLAPSE_SECONDS = 720 * SECONDS_PER_MINUTE;
 
 const DISTANT_FEATURES: SocialFeatureMap = {
   category: 0,
@@ -146,7 +147,7 @@ export function repriceExposureFor(
     instanceId: observerId,
     id: `${state.tick}:${observerId}:${subjectId}:exposure-debt:${state.trace.entries.length}`,
     kind: 'relationship',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `${observer.profile.name} repriced what ${subject.profile.name} knows`,
     terms: [
@@ -181,7 +182,7 @@ function relationshipMemory(
   return {
     emotionalTurn,
     id: `${state.tick}:${observerId}:${subjectId}:${suffix}`,
-    minute: state.minute,
+    second: state.second,
     subjectId,
     summary,
     type: 'relationship',
@@ -229,7 +230,7 @@ export function resolveRelationshipEvent(
     instanceId: event.observerId,
     id: `${state.tick}:${event.id}:relationship`,
     kind: 'relationship',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `${observer.profile.name} revised their stance toward ${subject.profile.name}`,
     terms: [
@@ -289,7 +290,7 @@ export function evaluateRelationshipRequest(
     cooperationPosition,
     id: `${state.tick}:${opportunity.id}`,
     magnitude: opportunity.magnitude,
-    minute: state.minute,
+    second: state.second,
     newStance: updated.stance,
     outcome,
     previousStance: dyad.stance,
@@ -329,7 +330,7 @@ export function resolveRelationshipRequest(
     instanceId: opportunity.responderId,
     id: `${state.tick}:${opportunity.id}:relationship-request`,
     kind: 'relationship',
-    minute: state.minute,
+    second: state.second,
     selection: { rule: 'positive-utility', selectedId: decision.outcome },
     summary,
     terms: [
@@ -383,7 +384,7 @@ export function resolveRelationshipRequest(
 function retainedRecentMemories(memories: RuntimeMemory[]): Set<string> {
   if (memories.length <= 2) return new Set(memories.map(memory => memory.id));
   const end = memories.reduce((latest, memory) =>
-    memory.minute >= latest.minute ? memory : latest,
+    memory.second >= latest.second ? memory : latest,
   );
   const peak = memories.reduce((strongest, memory) =>
     Math.abs(memory.emotionalTurn ?? 0) > Math.abs(strongest.emotionalTurn ?? 0)
@@ -413,7 +414,7 @@ export function consolidateRelationshipMemories(
       const recent = relationshipMemories.filter(
         memory =>
           memory.subjectId === subjectId &&
-          state.minute - memory.minute < SEMANTIC_COLLAPSE_MINUTES,
+          state.second - memory.second < SEMANTIC_COLLAPSE_SECONDS,
       );
       for (const memoryId of retainedRecentMemories(recent)) retained.add(memoryId);
     }
@@ -426,7 +427,7 @@ export function consolidateRelationshipMemories(
       instanceId: agent.id,
       id: `${state.tick}:${agent.id}:memory-consolidation`,
       kind: 'relationship',
-      minute: state.minute,
+      second: state.second,
       selection: null,
       summary: `${agent.profile.name} consolidated relationship memories during sleep`,
       terms: [

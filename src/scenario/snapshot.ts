@@ -21,6 +21,7 @@ import {
   stringValue,
   validateLayerPosition,
   renameKeysDeep,
+  migrateMinutesToSeconds,
 } from './primitives.js';
 
 const CASCADE_POSITIONS = new Set(['none', 'freeze', 'fight', 'flight', 'fawn', 'flop']);
@@ -386,7 +387,7 @@ function validateHistoryState(value: unknown, path: string): Map<string, Record<
     numberValue(entry.appliedChange, `${entryPath}.appliedChange`, 0, 1);
     numberValue(entry.integratedYears, `${entryPath}.integratedYears`, 0);
     validateBaselinePlasticityMechanism(entry.mechanism, `${entryPath}.mechanism`);
-    integerValue(entry.minute, `${entryPath}.minute`, 0);
+    integerValue(entry.second, `${entryPath}.second`, 0);
     numberValue(entry.previous, `${entryPath}.previous`, 0, 1);
     numberValue(entry.resulting, `${entryPath}.resulting`, 0, 1);
     stringValue(entry.source, `${entryPath}.source`);
@@ -482,7 +483,7 @@ function validateAgent(value: unknown, path: string): void {
     throw new ScenarioValidationError(`${path}.cascade`, 'expected a known cascade position');
   }
   numberValue(agent.cascadeLoad, `${path}.cascadeLoad`, 0, 1.5);
-  integerValue(agent.cascadeDwellUntilMinute, `${path}.cascadeDwellUntilMinute`);
+  integerValue(agent.cascadeDwellUntilSecond, `${path}.cascadeDwellUntilSecond`);
   if (agent.cascadeTargetId !== null) {
     stringValue(agent.cascadeTargetId, `${path}.cascadeTargetId`);
   }
@@ -505,13 +506,13 @@ function validateAgent(value: unknown, path: string): void {
         'expected a known value identifier',
       );
     }
-    integerValue(outlet.remainingMinutes, `${path}.currentOutlet.remainingMinutes`, 1);
-    integerValue(outlet.startedMinute, `${path}.currentOutlet.startedMinute`);
+    integerValue(outlet.remainingSeconds, `${path}.currentOutlet.remainingSeconds`, 1);
+    integerValue(outlet.startedSecond, `${path}.currentOutlet.startedSecond`);
     numberValue(outlet.yield, `${path}.currentOutlet.yield`, 0, 1);
   }
   if (agent.narrative !== null) {
     const narrative = objectValue(agent.narrative, `${path}.narrative`);
-    integerValue(narrative.promotedMinute, `${path}.narrative.promotedMinute`);
+    integerValue(narrative.promotedSecond, `${path}.narrative.promotedSecond`);
     const claimIds = new Set<string>();
     arrayValue(narrative.claims, `${path}.narrative.claims`).forEach((entry, index) => {
       const claimPath = `${path}.narrative.claims[${index}]`;
@@ -558,7 +559,7 @@ function validateAgent(value: unknown, path: string): void {
   schedule.forEach((value, index) => {
     const blockPath = `${path}.schedule[${index}]`;
     const block = objectValue(value, blockPath);
-    integerValue(block.startMinute, `${blockPath}.startMinute`);
+    integerValue(block.startSecond, `${blockPath}.startSecond`);
     stringValue(block.locationId, `${blockPath}.locationId`);
     stringValue(block.activity, `${blockPath}.activity`);
     if (
@@ -609,7 +610,7 @@ function validateAgent(value: unknown, path: string): void {
     const memoryPath = `${path}.memories[${index}]`;
     const memory = objectValue(value, memoryPath);
     stringValue(memory.id, `${memoryPath}.id`);
-    integerValue(memory.minute, `${memoryPath}.minute`, -1);
+    integerValue(memory.second, `${memoryPath}.second`, -1);
     stringValue(memory.summary, `${memoryPath}.summary`);
     if (typeof memory.type !== 'string' || !MEMORY_TYPES.has(memory.type)) {
       throw new ScenarioValidationError(`${memoryPath}.type`, 'expected a known memory type');
@@ -655,7 +656,7 @@ function validateRelationshipHistory(value: unknown, path: string): void {
     stringValue(entry.id, `${entryPath}.id`);
     stringValue(entry.requesterId, `${entryPath}.requesterId`);
     stringValue(entry.responderId, `${entryPath}.responderId`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     numberValue(entry.magnitude, `${entryPath}.magnitude`, 0, 1);
     numberValue(entry.cooperationPosition, `${entryPath}.cooperationPosition`, 0, 1);
@@ -675,7 +676,7 @@ function validateAppraisalHistory(value: unknown, path: string): void {
     stringValue(entry.id, `${entryPath}.id`);
     stringValue(entry.eventId, `${entryPath}.eventId`);
     stringValue(entry.instanceId, `${entryPath}.instanceId`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     numberValue(entry.copingPotential, `${entryPath}.copingPotential`, 0, 1);
     numberValue(entry.effectiveCoping, `${entryPath}.effectiveCoping`, 0, 1);
@@ -729,7 +730,7 @@ function validateTrace(value: unknown, path: string): void {
     const entry = objectValue(entryValue, entryPath);
     stringValue(entry.id, `${entryPath}.id`);
     if (entry.instanceId !== null) stringValue(entry.instanceId, `${entryPath}.instanceId`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     stringValue(entry.summary, `${entryPath}.summary`);
     if (typeof entry.kind !== 'string' || !TRACE_KINDS.has(entry.kind)) {
@@ -795,7 +796,7 @@ function validateDecisionHistory(value: unknown, path: string): void {
     stringValue(entry.opportunityId, `${entryPath}.opportunityId`);
     stringValue(entry.selectedCandidateId, `${entryPath}.selectedCandidateId`);
     if (entry.targetId !== null) stringValue(entry.targetId, `${entryPath}.targetId`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     const candidates = arrayValue(entry.candidates, `${entryPath}.candidates`);
     if (candidates.length === 0) {
@@ -878,7 +879,7 @@ function validateDisclosureHistory(value: unknown, path: string): void {
     stringValue(entry.ownerId, `${entryPath}.ownerId`);
     stringValue(entry.itemId, `${entryPath}.itemId`);
     stringValue(entry.opportunityId, `${entryPath}.opportunityId`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     numberValue(entry.disclosureBenefit, `${entryPath}.disclosureBenefit`);
     numberValue(entry.worstCost, `${entryPath}.worstCost`, 0);
@@ -930,7 +931,7 @@ function validateObservationHistory(value: unknown, path: string): void {
     stringValue(entry.eventId, `${entryPath}.eventId`);
     stringValue(entry.observerId, `${entryPath}.observerId`);
     stringValue(entry.subjectId, `${entryPath}.subjectId`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     if (typeof entry.channel !== 'string' || !OBSERVATION_CHANNELS.has(entry.channel)) {
       throw new ScenarioValidationError(`${entryPath}.channel`, 'expected hearing or sight');
@@ -1015,7 +1016,7 @@ function validateIncidentHistory(value: unknown, path: string): void {
     const entry = objectValue(entryValue, entryPath);
     stringValue(entry.eventId, `${entryPath}.eventId`);
     stringValue(entry.id, `${entryPath}.id`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     stringValue(entry.observerId, `${entryPath}.observerId`);
     integerValue(entry.tick, `${entryPath}.tick`);
     if (entry.outcome !== 'appraised' && entry.outcome !== 'missed') {
@@ -1059,7 +1060,7 @@ function validateDisplayHistory(value: unknown, path: string): void {
     const entry = objectValue(entryValue, entryPath);
     stringValue(entry.eventId, `${entryPath}.eventId`);
     stringValue(entry.id, `${entryPath}.id`);
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.perceivedAudienceCount, `${entryPath}.perceivedAudienceCount`, 0);
     integerValue(entry.tick, `${entryPath}.tick`);
     stringValue(entry.wearerId, `${entryPath}.wearerId`);
@@ -1070,7 +1071,7 @@ function validateDisplayHistory(value: unknown, path: string): void {
         const appraisal = objectValue(appraisalValue, appraisalPath);
         stringValue(appraisal.eventId, `${appraisalPath}.eventId`);
         stringValue(appraisal.id, `${appraisalPath}.id`);
-        integerValue(appraisal.minute, `${appraisalPath}.minute`);
+        integerValue(appraisal.second, `${appraisalPath}.second`);
         stringValue(appraisal.observerId, `${appraisalPath}.observerId`);
         integerValue(appraisal.tick, `${appraisalPath}.tick`);
         if (typeof appraisal.outcome !== 'string' || !DISPLAY_RESPONSES.has(appraisal.outcome)) {
@@ -1137,7 +1138,7 @@ function validateSomaticHistory(value: unknown, path: string): void {
     for (const field of ['eventId', 'id', 'subjectId']) {
       stringValue(entry[field], `${entryPath}.${field}`);
     }
-    integerValue(entry.minute, `${entryPath}.minute`);
+    integerValue(entry.second, `${entryPath}.second`);
     integerValue(entry.tick, `${entryPath}.tick`);
     for (const field of ['levelAfter', 'levelBefore']) {
       const level = integerValue(entry[field], `${entryPath}.${field}`);
@@ -1155,7 +1156,7 @@ function validateSomaticHistory(value: unknown, path: string): void {
         for (const field of ['eventId', 'id', 'observerId', 'subjectId']) {
           stringValue(observation[field], `${observationPath}.${field}`);
         }
-        integerValue(observation.minute, `${observationPath}.minute`);
+        integerValue(observation.second, `${observationPath}.second`);
         integerValue(observation.tick, `${observationPath}.tick`);
         integerValue(observation.witnessCount, `${observationPath}.witnessCount`);
         for (const field of ['empathy', 'helpProbability', 'perceptionStrength']) {
@@ -1218,8 +1219,8 @@ function validateAgendaState(value: unknown, path: string): void {
     if (goal.lastPlannedWorldRevision !== null) {
       integerValue(goal.lastPlannedWorldRevision, `${goalPath}.lastPlannedWorldRevision`);
     }
-    if (goal.resolvedMinute !== null) {
-      integerValue(goal.resolvedMinute, `${goalPath}.resolvedMinute`);
+    if (goal.resolvedSecond !== null) {
+      integerValue(goal.resolvedSecond, `${goalPath}.resolvedSecond`);
     }
   });
 }
@@ -1231,8 +1232,8 @@ function validatePlans(value: unknown, path: string): void {
     stringValue(plan.id, `${planPath}.id`);
     stringValue(plan.actorId, `${planPath}.actorId`);
     stringValue(plan.goalId, `${planPath}.goalId`);
-    integerValue(plan.createdMinute, `${planPath}.createdMinute`);
-    integerValue(plan.estimatedCompletionMinute, `${planPath}.estimatedCompletionMinute`);
+    integerValue(plan.createdSecond, `${planPath}.createdSecond`);
+    integerValue(plan.estimatedCompletionSecond, `${planPath}.estimatedCompletionSecond`);
     numberValue(plan.score, `${planPath}.score`);
     const taskIds = arrayValue(plan.taskIds, `${planPath}.taskIds`);
     if (taskIds.length === 0) {
@@ -1252,9 +1253,9 @@ function validateIntentions(value: unknown, path: string): void {
     stringValue(intention.goalId, `${intentionPath}.goalId`);
     stringValue(intention.planId, `${intentionPath}.planId`);
     stringValue(intention.taskId, `${intentionPath}.taskId`);
-    numberValue(intention.remainingMinutes, `${intentionPath}.remainingMinutes`, 0);
-    if (intention.startedMinute !== null) {
-      integerValue(intention.startedMinute, `${intentionPath}.startedMinute`);
+    numberValue(intention.remainingSeconds, `${intentionPath}.remainingSeconds`, 0);
+    if (intention.startedSecond !== null) {
+      integerValue(intention.startedSecond, `${intentionPath}.startedSecond`);
     }
     if (typeof intention.phase !== 'string' || !INTENTION_PHASES.has(intention.phase)) {
       throw new ScenarioValidationError(
@@ -1295,7 +1296,7 @@ function validateAgendaHistory(value: unknown, path: string): void {
     const decision = objectValue(decisionValue, decisionPath);
     stringValue(decision.id, `${decisionPath}.id`);
     stringValue(decision.actorId, `${decisionPath}.actorId`);
-    integerValue(decision.minute, `${decisionPath}.minute`);
+    integerValue(decision.second, `${decisionPath}.second`);
     integerValue(decision.tick, `${decisionPath}.tick`);
     integerValue(decision.worldRevision, `${decisionPath}.worldRevision`);
     if (decision.selectedPlanId !== null) {
@@ -1309,12 +1310,12 @@ function validateAgendaHistory(value: unknown, path: string): void {
         candidateIds.push(stringValue(candidate.id, `${candidatePath}.id`));
         stringValue(candidate.goalId, `${candidatePath}.goalId`);
         integerValue(
-          candidate.estimatedCompletionMinute,
-          `${candidatePath}.estimatedCompletionMinute`,
+          candidate.estimatedCompletionSecond,
+          `${candidatePath}.estimatedCompletionSecond`,
         );
         integerValue(
-          candidate.estimatedDurationMinutes,
-          `${candidatePath}.estimatedDurationMinutes`,
+          candidate.estimatedDurationSeconds,
+          `${candidatePath}.estimatedDurationSeconds`,
         );
         for (const key of ['goalUtility', 'resourceCost', 'score', 'taskUtility', 'urgency']) {
           numberValue(candidate[key], `${candidatePath}.${key}`);
@@ -1362,7 +1363,7 @@ function validateNarrativeHistory(value: unknown, path: string): void {
         'expected a known narrative disposition',
       );
     }
-    integerValue(record.minute, `${recordPath}.minute`);
+    integerValue(record.second, `${recordPath}.second`);
     integerValue(record.tick, `${recordPath}.tick`);
     numberValue(record.regulationCost, `${recordPath}.regulationCost`, 0, 1);
   });
@@ -1382,8 +1383,8 @@ function validateReputations(value: unknown, path: string): void {
       );
     }
     numberValue(reputation.confidence, `${reputationPath}.confidence`, 0, 1);
-    integerValue(reputation.firstMinute, `${reputationPath}.firstMinute`);
-    integerValue(reputation.lastMinute, `${reputationPath}.lastMinute`);
+    integerValue(reputation.firstSecond, `${reputationPath}.firstSecond`);
+    integerValue(reputation.lastSecond, `${reputationPath}.lastSecond`);
     integerValue(reputation.repetitions, `${reputationPath}.repetitions`, 1);
     arrayValue(reputation.sourceIds, `${reputationPath}.sourceIds`).forEach(
       (sourceId, sourceIndex) => {
@@ -1413,7 +1414,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 15 &&
     file.schemaVersion !== 16 &&
     file.schemaVersion !== 17 &&
-    file.schemaVersion !== 18
+    file.schemaVersion !== 18 &&
+    file.schemaVersion !== 19
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1491,7 +1493,7 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
   if (sourceVersion < 7) {
     for (const agentValue of arrayValue(file.characters, 'snapshot.characters')) {
       const agent = objectValue(agentValue, 'snapshot.characters');
-      agent.cascadeDwellUntilMinute = file.minute;
+      agent.cascadeDwellUntilSecond = file.second;
       agent.cascadeLoad = 0;
       agent.cascadeTargetId = null;
       agent.currentOutlet = null;
@@ -1687,7 +1689,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     trace.sequences = sequences;
     trace.windows = windows;
   }
-  file.schemaVersion = 18;
+  if (sourceVersion < 19) migrateMinutesToSeconds(file);
+  file.schemaVersion = 19;
   return file;
 }
 
@@ -1696,7 +1699,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 18) {
+  if (file.schemaVersion !== 19) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);
@@ -1748,7 +1751,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
       'must contain every direct scenario resource dependency',
     );
   }
-  integerValue(file.minute, 'snapshot.minute');
+  integerValue(file.second, 'snapshot.second');
   integerValue(file.tick, 'snapshot.tick');
 
   const agents = arrayValue(file.characters, 'snapshot.characters');

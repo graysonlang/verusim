@@ -73,8 +73,8 @@ export interface UnavailabilityDimension {
   /** Index of the character placement that leaves for independent business. */
   actorIndex: number;
   locationId: string;
-  /** Range of authored start minutes for that business, drawn per variant. */
-  startMinute: NumericGenerationRange;
+  /** Range of authored start seconds for that business, drawn per variant. */
+  startSecond: NumericGenerationRange;
 }
 
 export interface UnavailabilityContract {
@@ -179,7 +179,7 @@ export function materializeVariant(
   }
   const business = vignette.unavailability.dimension;
   if (business !== null) {
-    const start = sampler.integer('unavailability-start', business.startMinute);
+    const start = sampler.integer('unavailability-start', business.startSecond);
     const placements = (scenario as { characters?: { schedule?: unknown[] }[] }).characters ?? [];
     const placement = placements[business.actorIndex];
     if (placement === undefined || !Array.isArray(placement.schedule)) {
@@ -191,7 +191,7 @@ export function materializeVariant(
       maskingDemand: null,
       recoveryMode: 'none',
       resourceDrainsPerHour: {},
-      startMinute: start.value,
+      startSecond: start.value,
     });
   }
   return {

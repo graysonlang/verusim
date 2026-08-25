@@ -75,7 +75,7 @@ export function initializeHistoryDerivedState(profile: CharacterDefinition): {
     memories.push({
       emotionalTurn: appliedTurn,
       id: memoryId,
-      minute: -1,
+      second: -1,
       provenance: {
         age: event.age,
         attribution: event.attribution,

@@ -4,7 +4,7 @@ import {
   advanceSimulation,
   createSimulation,
   createSimulationFromSnapshot,
-  dayPeriodAtMinute,
+  dayPeriodAtSecond,
   describeCharacter,
   environmentLayersTopDown,
   parseSnapshot,
@@ -174,8 +174,8 @@ function createWorkbench(): HTMLElement {
     initialBuiltInScenario.id,
   );
   const [showTickNumber, setShowTickNumber] = createSignal(false);
-  const [playbackPreviewMinutes, setPlaybackPreviewMinutes] = createSignal(0);
-  const canvasState = createMemo(() => projectPlaybackState(state(), playbackPreviewMinutes()));
+  const [playbackPreviewSeconds, setPlaybackPreviewSeconds] = createSignal(0);
+  const canvasState = createMemo(() => projectPlaybackState(state(), playbackPreviewSeconds()));
 
   const shell = element('section', 'app-shell');
   const header = element('header', 'app-header');
@@ -855,7 +855,7 @@ function createWorkbench(): HTMLElement {
 
   function resetLoadedScenario(): void {
     setPlaying(false);
-    setPlaybackPreviewMinutes(0);
+    setPlaybackPreviewSeconds(0);
     setRosterHoverInstanceId(null);
     setState(loadedBaseline);
     setSelectedInstanceId(loadedBaseline.characters[0]?.id ?? null);
@@ -870,7 +870,7 @@ function createWorkbench(): HTMLElement {
   ): void {
     loadedBaseline = loaded;
     setPlaying(false);
-    setPlaybackPreviewMinutes(0);
+    setPlaybackPreviewSeconds(0);
     setRosterHoverInstanceId(null);
     setState(loaded);
     setPlaybackRateId(activeTimeRate => timeRateAfterScenarioLoad(loaded.scenario, activeTimeRate));
@@ -1357,21 +1357,21 @@ function createWorkbench(): HTMLElement {
       control.setAttribute('aria-checked', String(selected));
     }
     if (!isPlaying) return;
-    let carriedMinutes = untrack(playbackPreviewMinutes);
+    let carriedSeconds = untrack(playbackPreviewSeconds);
     let previousTime = performance.now();
     let animationFrame = 0;
     const updatePlayback = (currentTime: number) => {
       const elapsedSeconds = Math.max(0, (currentTime - previousTime) / 1000);
       previousTime = currentTime;
       const result = accumulatePlayback(
-        carriedMinutes,
+        carriedSeconds,
         elapsedSeconds,
         rate,
-        state().scenario.tickMinutes,
+        state().scenario.tickSeconds,
       );
-      carriedMinutes = result.carriedMinutes;
+      carriedSeconds = result.carriedSeconds;
       if (result.ticks > 0) advance(result.ticks);
-      setPlaybackPreviewMinutes(carriedMinutes);
+      setPlaybackPreviewSeconds(carriedSeconds);
       animationFrame = window.requestAnimationFrame(updatePlayback);
     };
     animationFrame = window.requestAnimationFrame(updatePlayback);
@@ -1447,7 +1447,7 @@ function createWorkbench(): HTMLElement {
     const current = state();
     const currentPreferences = preferences();
     const conditions = current.scenario.environmentConditions;
-    const dayPeriod = dayPeriodAtMinute(current.minute, conditions.season);
+    const dayPeriod = dayPeriodAtSecond(current.second, conditions.season);
     const dayPeriodName = DAY_PERIOD_LABELS[dayPeriod];
     const seasonName = classLabel(conditions.season);
     const weatherName = classLabel(conditions.weather);
@@ -1473,11 +1473,11 @@ function createWorkbench(): HTMLElement {
       ['Characters', String(characterCount)],
       [
         'Start time',
-        formatWorkbenchTime(current.scenario.startMinute, currentPreferences.clockFormat),
+        formatWorkbenchTime(current.scenario.startSecond, currentPreferences.clockFormat),
       ],
       [
         'Tick cadence',
-        `${current.scenario.tickMinutes} simulation minute${current.scenario.tickMinutes === 1 ? '' : 's'}`,
+        `${current.scenario.tickSeconds} simulation second${current.scenario.tickSeconds === 1 ? '' : 's'}`,
       ],
       ['Conditions', conditionSummary],
     ];
@@ -1518,10 +1518,10 @@ function createWorkbench(): HTMLElement {
     const showingTick = showTickNumber();
     const rate = playbackRateForId(playbackRateId());
     const showSeconds = playbackRateShowsSeconds(rate);
-    const displayedMinute =
-      current.minute + (!showingTick && showSeconds ? playbackPreviewMinutes() : 0);
+    const displayedSecond =
+      current.second + (!showingTick && showSeconds ? playbackPreviewSeconds() : 0);
     const formattedTime = formatWorkbenchTime(
-      displayedMinute,
+      displayedSecond,
       preferences().clockFormat,
       showSeconds,
     );

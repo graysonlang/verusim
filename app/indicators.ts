@@ -105,11 +105,11 @@ function moodTone(mood: string): IndicatorTone {
 }
 
 function recencyWindow(settings: IndicatorSettings): number {
-  return settings.verbosity === 'detailed' ? 30 : 10;
+  return (settings.verbosity === 'detailed' ? 30 : 10) * 60;
 }
 
-function isRecent(state: SimulationState, minute: number, settings: IndicatorSettings): boolean {
-  return state.minute - minute <= recencyWindow(settings);
+function isRecent(state: SimulationState, second: number, settings: IndicatorSettings): boolean {
+  return state.second - second <= recencyWindow(settings);
 }
 
 function currentAction(state: SimulationState, agent: CharacterInstance): string {
@@ -128,7 +128,7 @@ function speechIndicator(
   const decision = state.disclosureDecisions
     .filter(candidate => candidate.ownerId === agent.id && candidate.outcome === 'disclose')
     .at(-1);
-  if (decision === undefined || !isRecent(state, decision.minute, settings)) return null;
+  if (decision === undefined || !isRecent(state, decision.second, settings)) return null;
   const item = state.disclosureItems.find(candidate => candidate.id === decision.itemId);
   const subject = item?.summary ?? decision.itemId;
   return {
@@ -151,7 +151,7 @@ function eventIndicator(
     candidate =>
       candidate.instanceId === agent.id &&
       EVENT_KINDS.has(candidate.kind) &&
-      isRecent(state, candidate.minute, settings),
+      isRecent(state, candidate.second, settings),
   );
   if (entry === undefined) return null;
   return {

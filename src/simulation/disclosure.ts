@@ -93,7 +93,7 @@ export function evaluateDisclosureOpportunity(
     disclosureBenefit: opportunity.disclosureBenefit,
     id: `${state.tick}:${opportunity.id}`,
     itemId: opportunity.itemId,
-    minute: state.minute,
+    second: state.second,
     opportunityId: opportunity.id,
     outcome: utility > 0 ? 'disclose' : 'conceal',
     ownerId: opportunity.ownerId,
@@ -113,7 +113,7 @@ function appraisalTrace(
     instanceId: opportunity.ownerId,
     id: `${state.tick}:${opportunity.id}:disclosure-appraisal`,
     kind: 'disclosure-appraisal',
-    minute: state.minute,
+    second: state.second,
     selection: null,
     summary: `Disclosure utility ${decision.utility.toFixed(4)}`,
     terms: [
@@ -177,7 +177,7 @@ export function resolveDisclosureOpportunity(
     : `${owner.profile.name} concealed ${item.summary.toLowerCase()}`;
   const memory: RuntimeMemory = {
     id: `${state.tick}:${opportunity.id}:disclosure`,
-    minute: state.minute,
+    second: state.second,
     summary,
     type: 'disclosure',
   };
@@ -187,7 +187,7 @@ export function resolveDisclosureOpportunity(
     instanceId: opportunity.ownerId,
     id: `${state.tick}:${opportunity.id}:disclosure-decision`,
     kind: 'disclosure-decision',
-    minute: state.minute,
+    second: state.second,
     selection: { rule: 'positive-utility', selectedId: decision.outcome },
     summary,
     terms: [

@@ -23,7 +23,7 @@ function placement(instanceId: string, tier: string, x: number) {
     position: { x, y: 40, layerId: 'surface' },
     schedule: [
       {
-        startMinute: 0,
+        startSecond: 0,
         locationId: 'common-room',
         activity: 'Keeping house',
         recoveryMode: 'none',
@@ -41,12 +41,12 @@ function placement(instanceId: string, tier: string, x: number) {
 
 function tieredScenario(tiers: { noisy: string; quiet: string }) {
   return {
-    schemaVersion: 18,
+    schemaVersion: 19,
     id: 'retention-fixture',
     title: 'Retention fixture',
     summary: 'A quiet principal beside a noisy background character.',
-    startMinute: 600,
-    tickMinutes: 1,
+    startSecond: 36000,
+    tickSeconds: 60,
     environmentConditions: { season: 'spring', temperatureCelsius: 15, weather: 'clear' },
     dyads: [],
     disclosureItems: [],

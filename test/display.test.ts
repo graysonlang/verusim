@@ -95,7 +95,7 @@ function displayScenario(): ScenarioFile {
   const scenario = parseScenario(aldersEdge);
   const admirer = dyad('tomas', 'mara', 0.49, 1);
   admirer.features.kinship = 0.49;
-  scenario.startMinute = 470;
+  scenario.startSecond = 28200;
   scenario.observationEvents = [];
   scenario.incidentEvents = [];
   scenario.dyads = [
@@ -125,7 +125,7 @@ function displayScenario(): ScenarioFile {
         maskingDemand: null,
         recoveryMode: 'none',
         resourceDrainsPerHour: {},
-        startMinute: 0,
+        startSecond: 0,
       },
     ];
     placement.normPerspectives = [
@@ -137,8 +137,8 @@ function displayScenario(): ScenarioFile {
       },
     ];
   }
-  scenario.displayEvents = [471, 472].map((atMinute, index) => ({
-    atMinute,
+  scenario.displayEvents = [471 * 60, 472 * 60].map((atSecond, index) => ({
+    atSecond,
     context: { groupIds: [], institutionIds: [], locationId: 'market-square' },
     displayId: 'silver-brooch',
     domainContested: true,
@@ -239,7 +239,7 @@ describe('status displays and positional respect', () => {
       scenario.characters.push({ ...structuredClone(wearer), instanceId: wearerId });
       scenario.dyads.push(dyad('nessa', wearerId, 1, 1));
       scenario.displayEvents.push({
-        atMinute: 471 + index,
+        atSecond: 28260 + index * 60,
         context: { groupIds: [], institutionIds: [], locationId: 'market-square' },
         displayId: `rank-display-${index + 1}`,
         domainContested: true,
@@ -276,7 +276,7 @@ describe('status displays and positional respect', () => {
     }
 
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 18);
+    assert.equal(migrated.schemaVersion, 19);
     assert.deepEqual(migrated.scenario.displayEvents, []);
     assert.deepEqual(migrated.displayExposures, []);
     assert.deepEqual(migrated.displayRecords, []);

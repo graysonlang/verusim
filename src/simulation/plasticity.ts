@@ -1,3 +1,4 @@
+import { SECONDS_PER_YEAR } from '../model/time.js';
 import { appendBounded, clamp } from '../model/retention.js';
 import type {
   BaselinePlasticityAccumulator,
@@ -10,7 +11,7 @@ import type {
 } from '../model/types.js';
 import { effectiveCascadePrior, effectiveIdentity } from './history.js';
 
-export const BASELINE_PLASTICITY_YEAR_MINUTES = 365 * 24 * 60;
+export const BASELINE_PLASTICITY_YEAR_SECONDS = SECONDS_PER_YEAR;
 export const ADULT_BASELINE_CHANGE_CAP_PER_YEAR = 0.005;
 
 const LARGE_GAP_THRESHOLD = 0.65;
@@ -31,9 +32,9 @@ export interface BaselinePlasticitySignal {
 }
 
 export interface BaselinePlasticityAdvance {
-  elapsedMinutes: number;
-  minute: number;
-  originMinute?: number;
+  elapsedSeconds: number;
+  second: number;
+  originSecond?: number;
   signals: readonly BaselinePlasticitySignal[];
 }
 
@@ -161,21 +162,21 @@ function advanceSignal(
   input: BaselinePlasticityAdvance,
   signal: BaselinePlasticitySignal,
 ): CharacterInstance {
-  if (signal.gap < LARGE_GAP_THRESHOLD || signal.strength === 0 || input.elapsedMinutes === 0) {
+  if (signal.gap < LARGE_GAP_THRESHOLD || signal.strength === 0 || input.elapsedSeconds === 0) {
     return agent;
   }
   const key = accumulatorKey(signal.mechanism, signal.target);
   const existing = agent.history.plasticity.accumulators.find(candidate => candidate.key === key);
   const previousIntegratedYears = existing?.integratedYears ?? 0;
-  const elapsedYears = input.elapsedMinutes / BASELINE_PLASTICITY_YEAR_MINUTES;
+  const elapsedYears = input.elapsedSeconds / BASELINE_PLASTICITY_YEAR_SECONDS;
   const integratedYears = round(previousIntegratedYears + elapsedYears * signal.strength);
   const startAgeYears =
     agent.profile.physical.ageYears +
-    (input.minute - input.elapsedMinutes - (input.originMinute ?? 0)) /
-      BASELINE_PLASTICITY_YEAR_MINUTES;
+    (input.second - input.elapsedSeconds - (input.originSecond ?? 0)) /
+      BASELINE_PLASTICITY_YEAR_SECONDS;
   const endAgeYears =
     agent.profile.physical.ageYears +
-    (input.minute - (input.originMinute ?? 0)) / BASELINE_PLASTICITY_YEAR_MINUTES;
+    (input.second - (input.originSecond ?? 0)) / BASELINE_PLASTICITY_YEAR_SECONDS;
   const gateYears = startAgeYears < 18 ? CHILD_GATE_YEARS : ADULT_GATE_YEARS;
   const previousEligibleYears = Math.max(0, previousIntegratedYears - gateYears);
   const eligibleYears = Math.max(0, integratedYears - gateYears);
@@ -207,7 +208,7 @@ function advanceSignal(
         appliedChange: actualChange,
         integratedYears,
         mechanism: signal.mechanism,
-        minute: input.minute,
+        second: input.second,
         previous: applied.previous,
         resulting: applied.resulting,
         source: signal.source,
@@ -242,17 +243,17 @@ export function advanceBaselinePlasticity(
   agent: CharacterInstance,
   input: BaselinePlasticityAdvance,
 ): CharacterInstance {
-  if (!Number.isFinite(input.elapsedMinutes) || input.elapsedMinutes < 0) {
-    throw new RangeError('elapsedMinutes must be a non-negative finite number');
+  if (!Number.isFinite(input.elapsedSeconds) || input.elapsedSeconds < 0) {
+    throw new RangeError('elapsedSeconds must be a non-negative finite number');
   }
-  if (!Number.isFinite(input.minute) || input.minute < input.elapsedMinutes) {
-    throw new RangeError('minute must be finite and at least elapsedMinutes');
+  if (!Number.isFinite(input.second) || input.second < input.elapsedSeconds) {
+    throw new RangeError('second must be finite and at least elapsedSeconds');
   }
   if (
-    !Number.isFinite(input.originMinute ?? 0) ||
-    (input.originMinute ?? 0) > input.minute - input.elapsedMinutes
+    !Number.isFinite(input.originSecond ?? 0) ||
+    (input.originSecond ?? 0) > input.second - input.elapsedSeconds
   ) {
-    throw new RangeError('originMinute must be finite and no later than the interval start');
+    throw new RangeError('originSecond must be finite and no later than the interval start');
   }
   let next = agent;
   input.signals.forEach((signal, index) => {
