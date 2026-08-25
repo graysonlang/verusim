@@ -2053,9 +2053,18 @@ function createWorkbench(): HTMLElement {
       scenarioNavigationButtons.length;
     scenarioNavigationButtons[nextIndex]?.focus();
   });
-  scenarioInfoButton.addEventListener('pointerenter', () => setScenarioTooltipVisible(true));
+  // The tooltip is a hover affordance: it appears for hover-capable pointers
+  // and keyboard focus only. A touch tap opens the full dialog instead, and
+  // focus restored after closing that dialog must not leave a tooltip behind
+  // that no pointerleave or blur will ever dismiss.
+  scenarioInfoButton.addEventListener('pointerenter', event => {
+    if (event.pointerType === 'mouse') setScenarioTooltipVisible(true);
+  });
   scenarioInfoButton.addEventListener('pointerleave', () => setScenarioTooltipVisible(false));
-  scenarioInfoButton.addEventListener('focus', () => setScenarioTooltipVisible(true));
+  scenarioInfoButton.addEventListener('pointerdown', () => setScenarioTooltipVisible(false));
+  scenarioInfoButton.addEventListener('focus', () => {
+    if (scenarioInfoButton.matches(':focus-visible')) setScenarioTooltipVisible(true);
+  });
   scenarioInfoButton.addEventListener('blur', () => setScenarioTooltipVisible(false));
   scenarioInfoButton.addEventListener('click', openScenarioInfo);
   scenarioInfoCloseButton.addEventListener('click', () => closeScenarioInfo(true));
@@ -2298,6 +2307,9 @@ function createWorkbench(): HTMLElement {
 
   function onDocumentPointerDown(event: PointerEvent): void {
     if (!(event.target instanceof Node)) return;
+    if (!scenarioInfoTooltip.hidden && !scenarioInfoButton.contains(event.target)) {
+      setScenarioTooltipVisible(false);
+    }
     if (!appMenu.hidden && !appMenu.contains(event.target) && !menuButton.contains(event.target)) {
       setMenuOpen(false);
     }

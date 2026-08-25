@@ -48,6 +48,7 @@ It composes the ordinary parsers for diagnostics and imports no filesystem, brow
 `app` owns Solid signals, ordinary DOM construction, Canvas rendering, pointer gestures, file access, and downloads.
 It may display or edit simulation state but may not invent behavioral state.
 The workbench bundles the repository's authored scenarios into a title-bar catalog and presents their existing scenario summaries as hover and dialog information.
+The hover summary is a hover affordance only: it appears for hover-capable pointers and keyboard (`:focus-visible`) focus, hides on any pointer press, and never appears from a touch tap or from focus restored after the dialog closes, so a phone always reaches the dialog with nothing left behind.
 Choosing a bundled entry or an external file still uses the same validated simulation-loading path and establishes the reset baseline from that loaded state.
 
 ## State layers
