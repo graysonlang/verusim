@@ -1,4 +1,5 @@
 import { TIME_RATE_IDS, type ScenarioFile, type TimeRateId } from '../src/model/types.js';
+import { PROBLEMS_PANE_DEFAULT_HEIGHT, isStoredProblemsPaneHeight } from './problems-pane.js';
 import {
   LEFT_SIDEBAR_DEFAULT_WIDTH,
   RIGHT_SIDEBAR_DEFAULT_WIDTH,
@@ -15,6 +16,8 @@ export interface ApplicationPreferences {
   distanceUnit: DistanceUnit;
   leftSidebarVisible: boolean;
   leftSidebarWidth: number;
+  problemsPaneExpanded: boolean;
+  problemsPaneHeight: number;
   rightSidebarVisible: boolean;
   rightSidebarWidth: number;
   showStatusBar: boolean;
@@ -29,6 +32,8 @@ export const DEFAULT_APPLICATION_PREFERENCES: ApplicationPreferences = Object.fr
   distanceUnit: 'feet',
   leftSidebarVisible: true,
   leftSidebarWidth: LEFT_SIDEBAR_DEFAULT_WIDTH,
+  problemsPaneExpanded: false,
+  problemsPaneHeight: PROBLEMS_PANE_DEFAULT_HEIGHT,
   rightSidebarVisible: true,
   rightSidebarWidth: RIGHT_SIDEBAR_DEFAULT_WIDTH,
   showStatusBar: false,
@@ -93,6 +98,13 @@ export function parsePreferences(raw: unknown): ApplicationPreferences {
     leftSidebarWidth: isStoredSidebarWidth(record.leftSidebarWidth)
       ? record.leftSidebarWidth
       : DEFAULT_APPLICATION_PREFERENCES.leftSidebarWidth,
+    problemsPaneExpanded:
+      typeof record.problemsPaneExpanded === 'boolean'
+        ? record.problemsPaneExpanded
+        : DEFAULT_APPLICATION_PREFERENCES.problemsPaneExpanded,
+    problemsPaneHeight: isStoredProblemsPaneHeight(record.problemsPaneHeight)
+      ? record.problemsPaneHeight
+      : DEFAULT_APPLICATION_PREFERENCES.problemsPaneHeight,
     rightSidebarVisible:
       typeof record.rightSidebarVisible === 'boolean'
         ? record.rightSidebarVisible

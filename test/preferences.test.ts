@@ -25,6 +25,8 @@ describe('application preferences', () => {
         distanceUnit: 'feet',
         leftSidebarVisible: false,
         leftSidebarWidth: 300,
+        problemsPaneExpanded: true,
+        problemsPaneHeight: 200,
         rightSidebarVisible: false,
         rightSidebarWidth: 400,
         showStatusBar: true,
@@ -36,6 +38,8 @@ describe('application preferences', () => {
         distanceUnit: 'feet',
         leftSidebarVisible: false,
         leftSidebarWidth: 300,
+        problemsPaneExpanded: true,
+        problemsPaneHeight: 200,
         rightSidebarVisible: false,
         rightSidebarWidth: 400,
         showStatusBar: true,
@@ -49,6 +53,8 @@ describe('application preferences', () => {
         distanceUnit: 'yards',
         leftSidebarVisible: 'no',
         leftSidebarWidth: 79,
+        problemsPaneExpanded: 'yes',
+        problemsPaneHeight: 12,
         rightSidebarVisible: 'yes',
         rightSidebarWidth: Number.POSITIVE_INFINITY,
         showStatusBar: 'yes',
@@ -122,7 +128,7 @@ describe('application preferences', () => {
     assert.equal(savedKey, PREFERENCES_KEY);
     assert.equal(
       savedValue,
-      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","leftSidebarVisible":true,"leftSidebarWidth":250,"rightSidebarVisible":true,"rightSidebarWidth":350,"showStatusBar":true,"temperatureUnit":"celsius"}',
+      '{"clockFormat":"24-hour","defaultTimeRate":"5x","distanceUnit":"feet","leftSidebarVisible":true,"leftSidebarWidth":250,"problemsPaneExpanded":false,"problemsPaneHeight":140,"rightSidebarVisible":true,"rightSidebarWidth":350,"showStatusBar":true,"temperatureUnit":"celsius"}',
     );
   });
 });

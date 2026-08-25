@@ -5,7 +5,14 @@ import { createFormView } from './editing/form-view.js';
 import { formSpecFor } from './editing/forms.js';
 import { type CanvasCameraControls, createLayoutCanvas } from './editing/layout-canvas.js';
 import { draftPathFromDiagnostic, getAtPath } from './editing/paths.js';
+import { controlIcon } from './icons.js';
 import { activeDocumentElement, morphChildren } from './morph.js';
+import {
+  PROBLEMS_PANE_DEFAULT_HEIGHT,
+  type ProblemsPaneLayout,
+  bindProblemsPaneResize,
+  toggleProblemsPane,
+} from './problems-pane.js';
 import {
   buildDirty,
   buildProblems,
@@ -40,6 +47,7 @@ export interface BuildHandlers {
     to: number,
     label: string,
   ) => void;
+  onProblemsPane: (layout: ProblemsPaneLayout) => void;
   onRedo: () => void;
   onRemoveEntry: (documentId: string, path: string, label: string) => void;
   onReloadProject: () => void;
@@ -57,6 +65,7 @@ export interface BuildHandlers {
 
 export interface BuildRenderOptions {
   distanceUnit: DistanceUnit;
+  problemsPane: ProblemsPaneLayout;
 }
 
 export interface BuildPanels {
@@ -169,7 +178,10 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   const editorBody = element('div', 'build-editor-body');
   const textarea = element('textarea', 'build-draft');
   const editorStatus = element('p', 'build-editor-status');
+  const problemsResize = element('div', 'build-problems-resize');
+  const problemsHeader = element('div', 'build-problems-header');
   const problemsHeading = element('h3', 'build-problems-title');
+  const problemsToggle = button('', 'build-problems-toggle');
   const problemsList = element('ol', 'build-problems');
   const inspector = element('aside', 'build-inspector');
   const inspectorContent = element('div', 'build-inspector-content');
@@ -201,6 +213,18 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   editorStatus.dataset.testid = 'build-editor-status';
   editorStatus.setAttribute('aria-live', 'polite');
   problemsList.dataset.testid = 'build-problems';
+  problemsList.id = 'build-problems-list';
+  problemsResize.dataset.testid = 'build-problems-resize';
+  problemsResize.tabIndex = 0;
+  problemsResize.setAttribute('role', 'separator');
+  problemsResize.setAttribute('aria-orientation', 'horizontal');
+  problemsResize.setAttribute('aria-label', 'Resize problems pane');
+  problemsResize.setAttribute('aria-controls', problemsList.id);
+  problemsResize.title = 'Drag to resize; double-click for the default height';
+  problemsToggle.dataset.testid = 'build-problems-toggle';
+  problemsToggle.setAttribute('aria-controls', problemsList.id);
+  problemsToggle.append(controlIcon('chevron'));
+  problemsHeader.append(problemsHeading, problemsToggle);
   inspector.dataset.testid = 'build-inspector';
   inspector.setAttribute('aria-label', 'Document inspector');
   inspector.append(inspectorContent);
@@ -231,12 +255,49 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
     reloadProject,
     runRevision,
   );
-  editor.append(toolbar, viewTabs, editorBody, editorStatus, problemsHeading, problemsList);
+  editor.append(
+    toolbar,
+    viewTabs,
+    editorBody,
+    editorStatus,
+    problemsResize,
+    problemsHeader,
+    problemsList,
+  );
 
   let renderedDocumentId: string | null = null;
   let renderedDraftText = '';
   let current: BuildWorkspace | null = null;
   let distanceUnit: DistanceUnit = 'meters';
+  let problemsPane: ProblemsPaneLayout = {
+    expanded: false,
+    height: PROBLEMS_PANE_DEFAULT_HEIGHT,
+  };
+
+  /** Apply a pane layout to the editor grid; the header row always stays visible. */
+  const applyProblemsPane = (layout: ProblemsPaneLayout): void => {
+    editor.style.setProperty(
+      '--problems-pane-height',
+      layout.expanded ? `${layout.height}px` : '0px',
+    );
+    editor.classList.toggle('problems-collapsed', !layout.expanded);
+    problemsList.hidden = !layout.expanded;
+    problemsToggle.setAttribute('aria-expanded', String(layout.expanded));
+    problemsToggle.title = layout.expanded ? 'Collapse problems' : 'Expand problems';
+    problemsToggle.setAttribute('aria-label', problemsToggle.title);
+    problemsResize.setAttribute('aria-valuenow', String(layout.expanded ? layout.height : 0));
+  };
+  problemsToggle.addEventListener('click', () => {
+    handlers.onProblemsPane(toggleProblemsPane(problemsPane));
+  });
+  bindProblemsPaneResize({
+    commit: layout => handlers.onProblemsPane(layout),
+    containerHeight: () => editor.clientHeight,
+    defaultHeight: PROBLEMS_PANE_DEFAULT_HEIGHT,
+    handle: problemsResize,
+    preview: applyProblemsPane,
+    read: () => problemsPane,
+  });
 
   const selectedDocument = (): AuthoringDocument | null =>
     current?.graph.documents.find(document => document.id === current?.selectedDocumentId) ?? null;
@@ -628,7 +689,11 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
     inspector,
     render(workspace, options) {
       current = workspace;
-      if (options !== undefined) distanceUnit = options.distanceUnit;
+      if (options !== undefined) {
+        distanceUnit = options.distanceUnit;
+        problemsPane = options.problemsPane;
+      }
+      applyProblemsPane(problemsPane);
       renderExplorer(workspace);
       renderEditor(workspace);
       renderInspector(workspace);

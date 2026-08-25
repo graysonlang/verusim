@@ -789,6 +789,12 @@ function createWorkbench(): HTMLElement {
       recordEdit(label, current => insertDraftEntry(current, documentId, listPath, item, label)),
     onMoveEntry: (documentId, listPath, from, to, label) =>
       recordEdit(label, current => moveDraftEntry(current, documentId, listPath, from, to, label)),
+    onProblemsPane: layout =>
+      setPreferences(current => ({
+        ...current,
+        problemsPaneExpanded: layout.expanded,
+        problemsPaneHeight: layout.height,
+      })),
     onRedo: () => setBuildWorkspace(current => redoBuildEdit(current)),
     onReloadProject: () => void reloadProject(),
     onRemoveEntry: (documentId, path, label) =>
@@ -1960,7 +1966,14 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     if (mode() !== 'build') return;
-    buildPanels.render(buildWorkspace(), { distanceUnit: preferences().distanceUnit });
+    const current = preferences();
+    buildPanels.render(buildWorkspace(), {
+      distanceUnit: current.distanceUnit,
+      problemsPane: {
+        expanded: current.problemsPaneExpanded,
+        height: current.problemsPaneHeight,
+      },
+    });
   });
 
   createEffect(() => {
