@@ -161,6 +161,7 @@ function initializeAgent(
     ]),
   );
   const agent: CharacterInstance = {
+    arrivedSecond: null,
     cascade: 'none',
     cascadeDwellUntilSecond: second,
     cascadeLoad: 0,
@@ -322,6 +323,7 @@ export function createSimulationFromPreparedSnapshot(input: {
     const agent = baseAgents.get(saved.id);
     if (agent === undefined) throw new Error('Validated snapshot agents exist in the base state');
     return {
+      arrivedSecond: saved.arrivedSecond,
       cascade: saved.cascade,
       cascadeDwellUntilSecond: saved.cascadeDwellUntilSecond,
       cascadeLoad: saved.cascadeLoad,
@@ -486,7 +488,8 @@ function advanceAgent(
   nextTick: number,
   completesTick: boolean,
 ): CharacterAdvanceResult {
-  const elapsedSeconds = nextSecond - state.second;
+  const tickSeconds = state.scenario.tickSeconds;
+  const tickStart = nextSecond - tickSeconds;
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
   // A player-directed destination supersedes agenda and schedule until arrival.
   const task = agent.directedLocationId === null ? intendedTask(state, agent.id) : null;
@@ -533,6 +536,7 @@ function advanceAgent(
         ? destination
         : routePositionAtSecond(route, nextSecond);
   const arrived = !preempted && sameLayerPosition(position, destination);
+  const arrivedSecond = arrived && route !== null ? nextSecond : agent.arrivedSecond;
   const activityLabel = (atDestination: boolean): string =>
     preempted
       ? agent.currentActivity
@@ -549,40 +553,43 @@ function advanceAgent(
   const startActivity = activityLabel(!preempted && remaining === 0);
   const currentActivity = activityLabel(arrived);
   const currentLocationId = preempted ? agent.currentLocationId : arrived ? locationId : null;
-  const values = {} as ValueMap<ValueState>;
-  for (const valueId of VALUE_IDS) {
-    values[valueId] = advanceValueState(
-      agent.values[valueId],
-      state.scenario.ambientTurnsPerHour?.[valueId] ?? 0,
-      elapsedSeconds,
-    );
+  // Continuous accumulators integrate exactly once per authored tick, so no
+  // partition of the tick into intervals can change their arithmetic.
+  const values = completesTick ? ({} as ValueMap<ValueState>) : agent.values;
+  if (completesTick) {
+    for (const valueId of VALUE_IDS) {
+      values[valueId] = advanceValueState(
+        agent.values[valueId],
+        state.scenario.ambientTurnsPerHour?.[valueId] ?? 0,
+        tickSeconds,
+      );
+    }
   }
   const scheduleRecoveryMode = task === null && arrived ? (block?.recoveryMode ?? 'none') : 'none';
   const taskRecoveryMode =
     task !== null && arrived && intention?.phase === 'work' ? task.recoveryMode : 'none';
   const recoveryMode = task === null ? scheduleRecoveryMode : taskRecoveryMode;
-  const arrivalSeconds = Math.max(0, arrivalSecond - state.second);
+  const arrivalSeconds =
+    arrivedSecond !== null && arrivedSecond > tickStart ? arrivedSecond - tickStart : 0;
   const recoverySeconds =
     recoveryMode === 'none'
       ? 0
       : task === null
-        ? clamp(elapsedSeconds - arrivalSeconds, 0, elapsedSeconds)
-        : elapsedSeconds;
+        ? clamp(tickSeconds - arrivalSeconds, 0, tickSeconds)
+        : tickSeconds;
   const authoredDrains = arrived
     ? (task?.resourceDrainsPerHour ?? block?.resourceDrainsPerHour ?? {})
     : {};
   const activeMasking = arrived ? (task?.maskingDemand ?? block?.maskingDemand ?? null) : null;
   const drains = combinedResourceDrains(authoredDrains, maskingDrains(activeMasking));
-  const activeSeconds = arrived ? elapsedSeconds : 0;
-  const recovery = advanceResources(
-    agent.resources,
-    recoveryMode,
-    recoverySeconds,
-    activeSeconds,
-    drains,
-  );
-  const somatic = advanceSomaticState(agent.somatic, elapsedSeconds);
-  const resources = applySomaticResourceTax(recovery.resources, somatic, elapsedSeconds);
+  const activeSeconds = arrived ? tickSeconds : 0;
+  const recovery = completesTick
+    ? advanceResources(agent.resources, recoveryMode, recoverySeconds, activeSeconds, drains)
+    : { deltas: agent.resources, resources: agent.resources };
+  const somatic = completesTick ? advanceSomaticState(agent.somatic, tickSeconds) : agent.somatic;
+  const resources = completesTick
+    ? applySomaticResourceTax(recovery.resources, somatic, tickSeconds)
+    : agent.resources;
   const recoverySource =
     task === null
       ? `characters.${agent.id}.schedule.recoveryMode`
@@ -677,9 +684,9 @@ function advanceAgent(
     });
   }
 
-  const previousHour = Math.floor(state.second / SECONDS_PER_HOUR);
+  const previousHour = Math.floor(tickStart / SECONDS_PER_HOUR);
   const nextHour = Math.floor(nextSecond / SECONDS_PER_HOUR);
-  if (previousHour !== nextHour) {
+  if (completesTick && previousHour !== nextHour) {
     const activeTurns = VALUE_IDS.filter(
       valueId => (state.scenario.ambientTurnsPerHour?.[valueId] ?? 0) !== 0,
     );
@@ -745,6 +752,7 @@ function advanceAgent(
   return {
     agent: {
       ...agent,
+      arrivedSecond,
       currentActivity,
       currentLocationId,
       destination,

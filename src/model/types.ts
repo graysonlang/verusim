@@ -1107,6 +1107,8 @@ export type CascadePosition = 'none' | 'freeze' | 'fight' | 'flight' | 'fawn' | 
 
 export interface CharacterInstance {
   cascade: CascadePosition;
+  /** Second of the last arrival at a destination, or null if never arrived. */
+  arrivedSecond: number | null;
   cascadeDwellUntilSecond: number;
   cascadeLoad: number;
   cascadeTargetId: string | null;
@@ -1641,6 +1643,8 @@ export interface TaskIntention {
 
 export interface CharacterInstanceSnapshot {
   cascade: CascadePosition;
+  /** Second of the last arrival at a destination, or null if never arrived. */
+  arrivedSecond: number | null;
   cascadeDwellUntilSecond: number;
   cascadeLoad: number;
   cascadeTargetId: string | null;
@@ -1700,7 +1704,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipRequestIds: string[];
   resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 20;
+  schemaVersion: 21;
   somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;

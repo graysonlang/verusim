@@ -181,7 +181,7 @@ describe('scenario validation', () => {
     delete snapshot.worldFacts;
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 20);
+    assert.equal(migratedSnapshot.schemaVersion, 21);
     assert.equal(migratedSnapshot.trace.schemaVersion, 2);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
@@ -206,7 +206,7 @@ describe('scenario validation', () => {
     replaceWithLegacyTrace(agendaSnapshot);
     downgradeSnapshotReferences(agendaSnapshot, 2);
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
-    assert.equal(migratedAgendaSnapshot.schemaVersion, 20);
+    assert.equal(migratedAgendaSnapshot.schemaVersion, 21);
     assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 2);
   });
 
@@ -285,7 +285,7 @@ describe('scenario validation', () => {
     const snapshot = serializeSnapshot(observed) as unknown as Record<string, unknown>;
     downgradeSnapshotReferences(snapshot, 4);
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 20);
+    assert.equal(migratedSnapshot.schemaVersion, 21);
     assert.ok(migratedSnapshot.observations.length > 0);
     assert.ok(migratedSnapshot.observations.every(event => event.eventType === 'mind-model'));
     assert.ok(
@@ -375,7 +375,7 @@ describe('scenario validation', () => {
       delete agent.outletHistory;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 20);
+    assert.equal(migratedSnapshot.schemaVersion, 21);
     assert.deepEqual(migratedSnapshot.appraisalRecords, []);
     assert.deepEqual(migratedSnapshot.resolvedAppraisalEventIds, []);
     assert.ok(migratedSnapshot.characters.every(agent => agent.currentOutlet === null));
@@ -420,7 +420,7 @@ describe('scenario validation', () => {
       delete agent.narrative;
     }
     const migratedSnapshot = parseSnapshot(snapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 20);
+    assert.equal(migratedSnapshot.schemaVersion, 21);
     assert.ok(migratedSnapshot.characters.every(agent => agent.narrative === null));
     assert.ok(migratedSnapshot.characters.some(agent => agent.cascade !== 'none'));
   });

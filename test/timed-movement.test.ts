@@ -141,7 +141,7 @@ describe('interruptible timed movement', () => {
     const { state } = startLongWalk();
     const at20 = advanceTo(state, state.second + 20);
     const snapshot = serializeSnapshot(at20);
-    assert.equal(snapshot.schemaVersion, 20);
+    assert.equal(snapshot.schemaVersion, 21);
     assert.ok(snapshot.characters.some(character => character.route !== null));
     const resumed = createSimulationFromSnapshot({
       prepared: scenario('market-morning').prepared,
@@ -156,6 +156,7 @@ describe('interruptible timed movement', () => {
     for (const character of legacy.characters as Record<string, unknown>[]) {
       delete character.route;
       delete character.directedLocationId;
+      delete character.arrivedSecond;
     }
     const migrated = parseSnapshot(legacy);
     assert.ok(

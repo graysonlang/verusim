@@ -475,6 +475,9 @@ function validateAgent(value: unknown, path: string): void {
   parseResourceAddress(agent.profile, `${path}.profile`, 'character-profile');
   validateLayerPosition(agent.position, `${path}.position`);
   validateLayerPosition(agent.destination, `${path}.destination`);
+  if (agent.arrivedSecond !== null) {
+    integerValue(agent.arrivedSecond, `${path}.arrivedSecond`, 0);
+  }
   if (agent.directedLocationId !== null) {
     stringValue(agent.directedLocationId, `${path}.directedLocationId`);
   }
@@ -1434,7 +1437,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 17 &&
     file.schemaVersion !== 18 &&
     file.schemaVersion !== 19 &&
-    file.schemaVersion !== 20
+    file.schemaVersion !== 20 &&
+    file.schemaVersion !== 21
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1716,7 +1720,12 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
       record.route = null;
     }
   }
-  file.schemaVersion = 20;
+  if (sourceVersion < 21) {
+    for (const instance of arrayValue(file.characters, 'snapshot.characters')) {
+      objectValue(instance, 'snapshot.characters').arrivedSecond = null;
+    }
+  }
+  file.schemaVersion = 21;
   return file;
 }
 
@@ -1725,7 +1734,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 20) {
+  if (file.schemaVersion !== 21) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);

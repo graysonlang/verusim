@@ -101,25 +101,28 @@ describe('event-delimited advancement', () => {
     assert.equal(advanceTo(state, state.second), state);
   });
 
-  it('reaches the same discrete state and near-identical continuous state under any partition', () => {
-    // Discrete state (events, decisions, traces, activity, time) must be exact;
-    // continuous accumulators and incremental movement are integrated per
-    // interval and only float-sum order separates partitions until Phase 9C
-    // stores timed routes and Phase 9D proves byte equivalence.
-    const normalized = (value: unknown): string =>
-      JSON.stringify(value, (_key, item) =>
-        typeof item === 'number' && !Number.isInteger(item) ? Number(item.toFixed(9)) : item,
-      );
+  it('reaches byte-identical state under whole, per-tick, two-second, and one-second partitions', () => {
+    // Movement and timers integrate per interval from committed routes, while
+    // continuous accumulators integrate exactly once per authored tick, so no
+    // partition can change the arithmetic that produces authoritative state.
+    const partition = (
+      seconds: number,
+      target: number,
+      start: ReturnType<typeof marketMorning>,
+    ) => {
+      let state = start;
+      while (state.second < target)
+        state = advanceTo(state, Math.min(target, state.second + seconds));
+      return JSON.stringify(serializeSnapshot(state));
+    };
     for (const entry of BUILT_IN_SCENARIOS) {
       const state = createSimulation(entry.prepared);
       const target = state.second + 600;
-      const whole = normalized(serializeSnapshot(advanceTo(state, target)));
-      let perTick = state;
-      while (perTick.second < target) perTick = advanceTo(perTick, perTick.second + 60);
-      let perTen = state;
-      while (perTen.second < target) perTen = advanceTo(perTen, perTen.second + 10);
-      assert.equal(normalized(serializeSnapshot(perTick)), whole, `${entry.id}: per-tick`);
-      assert.equal(normalized(serializeSnapshot(perTen)), whole, `${entry.id}: per-ten-seconds`);
+      const whole = JSON.stringify(serializeSnapshot(advanceTo(state, target)));
+      assert.equal(partition(60, target, state), whole, `${entry.id}: 10 x 60s`);
+      assert.equal(partition(7, target, state), whole, `${entry.id}: 7s steps`);
+      assert.equal(partition(2, target, state), whole, `${entry.id}: 300 x 2s`);
+      assert.equal(partition(1, target, state), whole, `${entry.id}: 600 x 1s`);
     }
   });
 });

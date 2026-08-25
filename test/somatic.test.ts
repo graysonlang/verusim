@@ -447,7 +447,7 @@ describe('somatic state and preemption', () => {
       delete agentValue.somatic;
     }
     const migratedSnapshot = parseSnapshot(legacySnapshot);
-    assert.equal(migratedSnapshot.schemaVersion, 20);
+    assert.equal(migratedSnapshot.schemaVersion, 21);
     assert.deepEqual(migratedSnapshot.somaticRecords, []);
     assert.ok(migratedSnapshot.characters.every(agent => agent.somatic.level === 0));
 

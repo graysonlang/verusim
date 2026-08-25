@@ -23,6 +23,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     agendaDecisions: state.agendaDecisions,
     agendaGoals: state.agendaGoals,
     characters: state.characters.map(agent => ({
+      arrivedSecond: agent.arrivedSecond,
       cascade: agent.cascade,
       cascadeDwellUntilSecond: agent.cascadeDwellUntilSecond,
       cascadeLoad: agent.cascadeLoad,
@@ -76,7 +77,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
     resolvedRelationshipRequestIds: state.resolvedRelationshipRequestIds,
     resolvedSomaticEventIds: state.resolvedSomaticEventIds,
     scenario: state.scenario,
-    schemaVersion: 20,
+    schemaVersion: 21,
     somaticRecords: state.somaticRecords,
     tick: state.tick,
     trace: state.trace,

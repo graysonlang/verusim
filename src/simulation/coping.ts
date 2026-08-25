@@ -444,12 +444,6 @@ export function advanceCopingTimers(
     ...state,
     characters: state.characters.map(agent => ({
       ...agent,
-      cascadeLoad: clamp(
-        agent.cascadeLoad -
-          (agent.profile.constitution.recoveryRate * elapsedSeconds) / SECONDS_PER_HOUR,
-        0,
-        1.5,
-      ),
       currentOutlet:
         agent.currentOutlet === null
           ? null
@@ -467,8 +461,13 @@ export function advanceCopingTimers(
 export function evaluateCoping(state: SimulationState): SimulationState {
   let trace = state.trace;
   const agents = state.characters.map(agent => {
-    const cascadeLoad = agent.cascadeLoad;
-    let next: CharacterInstance = agent;
+    const cascadeLoad = clamp(
+      agent.cascadeLoad -
+        (agent.profile.constitution.recoveryRate * state.scenario.tickSeconds) / SECONDS_PER_HOUR,
+      0,
+      1.5,
+    );
+    let next: CharacterInstance = { ...agent, cascadeLoad };
     if (
       next.cascade !== 'none' &&
       state.second >= next.cascadeDwellUntilSecond &&

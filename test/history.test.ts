@@ -269,7 +269,7 @@ describe('history-derived instance state', () => {
       scenario,
     });
     const snapshot = serializeSnapshot(initial);
-    assert.equal(snapshot.schemaVersion, 20);
+    assert.equal(snapshot.schemaVersion, 21);
     assert.deepEqual(parseSnapshot(snapshot), snapshot);
     assert.deepEqual(
       createSimulationFromSnapshot({
@@ -290,7 +290,7 @@ describe('history-derived instance state', () => {
       }
     }
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 20);
+    assert.equal(migrated.schemaVersion, 21);
     assert.deepEqual(migrated.characters[0]?.history, {
       formativeRecords: [],
       overrides: {},

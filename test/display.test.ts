@@ -276,7 +276,7 @@ describe('status displays and positional respect', () => {
     }
 
     const migrated = parseSnapshot(legacy);
-    assert.equal(migrated.schemaVersion, 20);
+    assert.equal(migrated.schemaVersion, 21);
     assert.deepEqual(migrated.scenario.displayEvents, []);
     assert.deepEqual(migrated.displayExposures, []);
     assert.deepEqual(migrated.displayRecords, []);

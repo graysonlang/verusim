@@ -265,6 +265,7 @@ export function downgradeSnapshotVocabulary(snapshot: Doc): void {
     delete instance.tier;
     delete instance.route;
     delete instance.directedLocationId;
+    delete instance.arrivedSecond;
   }
   const trace = snapshot.trace as Doc | undefined;
   if (trace !== undefined && trace.schemaVersion === 2) {
