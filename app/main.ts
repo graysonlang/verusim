@@ -205,6 +205,9 @@ function createWorkbench(): HTMLElement {
   const [layoutMode, setLayoutMode] = createSignal<WorkbenchLayoutMode>(
     workbenchLayoutMode(window.innerWidth),
   );
+  // Build needs the three-panel wide layout; handset and compact layouts are
+  // Simulate-only, and the mode switch, shortcut, and actions disappear there.
+  const buildAvailable = createMemo(() => layoutMode() === 'wide');
   const [narrowPanelState, setNarrowPanelState] = createSignal({
     ...DEFAULT_NARROW_PANEL_STATE,
   });
@@ -1004,6 +1007,10 @@ function createWorkbench(): HTMLElement {
   // simulation stays where it was; nothing in Build can reach it.
   function setWorkbenchMode(next: WorkbenchMode): void {
     if (next === mode()) return;
+    if (next === 'build' && !buildAvailable()) {
+      setStatus('Build needs a wide window; widen the workbench to edit drafts');
+      return;
+    }
     if (next === 'build') setPlaying(false);
     setMode(next);
     setStatus(
@@ -1031,6 +1038,7 @@ function createWorkbench(): HTMLElement {
 
   const actions: readonly QuickAction[] = [
     {
+      enabled: () => buildAvailable(),
       id: 'toggle-mode',
       keywords: ['build', 'simulate', 'workspace', 'edit', 'draft'],
       label: 'Switch Build / Simulate',
@@ -1038,21 +1046,23 @@ function createWorkbench(): HTMLElement {
       shortcut: 'Shift+B',
     },
     {
-      enabled: () => mode() === 'build',
+      enabled: () => buildAvailable() && mode() === 'build',
       id: 'run-revision',
       keywords: ['build', 'apply', 'prepare', 'revision', 'start'],
       label: 'Run revision',
       run: runRevision,
     },
     {
-      enabled: () => mode() === 'build' && buildWorkspace().graph.undoStack.length > 0,
+      enabled: () =>
+        buildAvailable() && mode() === 'build' && buildWorkspace().graph.undoStack.length > 0,
       id: 'undo-edit',
       keywords: ['build', 'history', 'draft'],
       label: 'Undo draft edit',
       run: () => setBuildWorkspace(current => undoBuildEdit(current)),
     },
     {
-      enabled: () => mode() === 'build' && buildWorkspace().graph.redoStack.length > 0,
+      enabled: () =>
+        buildAvailable() && mode() === 'build' && buildWorkspace().graph.redoStack.length > 0,
       id: 'redo-edit',
       keywords: ['build', 'history', 'draft'],
       label: 'Redo draft edit',
@@ -1824,6 +1834,12 @@ function createWorkbench(): HTMLElement {
 
   createEffect(() => {
     statusText.textContent = status();
+  });
+
+  createEffect(() => {
+    const available = buildAvailable();
+    modeSwitch.hidden = !available;
+    if (!available && untrack(mode) === 'build') setWorkbenchMode('simulate');
   });
 
   createEffect(() => {

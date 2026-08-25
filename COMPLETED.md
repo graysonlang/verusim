@@ -712,6 +712,7 @@ The shell now has a persistent Build/Simulate mode switch (header control, `Shif
 Simulate keeps its existing signals; entering Build pauses playback and makes the Simulate panels inert, Simulate makes the Build panels inert, and the transport, step, play, and reset actions are enabled only in Simulate.
 Running a revision starts a new simulation and reset baseline through `startRevision` and switches to Simulate while the drafts, selection, viewport, and history stay in Build; a blocked revision records its problem at the authored path and changes nothing else.
 The spatial editor camera arrives with the layout editor in Phase 8D; Build's viewport is the draft editor's scroll and selection until then.
+A follow-up scoped Build to the wide layout: the compact and handset layouts hide the mode switch, disable the Build actions and shortcut, and return to Simulate when the window narrows, since the editors are too dense for a phone and need the three-panel grid.
 
 Live inspector updates reconcile through `app/morph.ts` (see the Phase 9E follow-ups): nodes are kept where tag and position match, equal subtrees are skipped, and the focused control is left untouched until focus leaves, with interventions routed through one delegated listener per container.
 
