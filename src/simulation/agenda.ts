@@ -1,3 +1,4 @@
+import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import {
   VALUE_IDS,
   type AgendaDecisionRecord,
@@ -27,11 +28,9 @@ import { appendTrace, traceTerm } from './trace.js';
 import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_AGENDA_DECISIONS = 80;
-const MAX_MEMORIES = 16;
 const MAX_PLAN_CANDIDATES = 24;
 const MAX_PLAN_DEPTH = 8;
 const MAX_SEARCH_NODES = 256;
-const MAX_TRACE_ENTRIES = 240;
 
 interface SearchNode {
   facts: Map<string, number>;
@@ -47,15 +46,6 @@ const EMPTY_RESOURCE_COSTS: ResourceState = {
   regulationReserve: 0,
   socialBattery: 0,
 };
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function appendBounded<Item>(items: Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
-}
 
 function findAgent(state: SimulationState, agentId: string): SimulationAgent {
   const agent = state.agents.find(candidate => candidate.id === agentId);
@@ -531,8 +521,8 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
           ...candidate.taskIds.map(taskId => `scenario.taskOperators.${taskId}.resourceCosts`),
           `agents.${actorId}.resources`,
         ),
-        ...(Object.keys(candidate.resourceCosts) as (keyof ResourceState)[])
-          .filter(resourceId => candidate.resourceCosts[resourceId] > 0)
+        ...(Object.keys(EMPTY_RESOURCE_COSTS) as (keyof ResourceState)[])
+          .filter(resourceId => (candidate.resourceCosts[resourceId] ?? 0) > 0)
           .map(resourceId =>
             traceTerm(
               `resource:${resourceId}`,
@@ -817,13 +807,15 @@ function completeTask(
           `scenario.taskOperators.${task.id}.effects.${effect.factId}`,
         ),
       ),
-      ...(Object.keys(task.resourceCosts) as (keyof ResourceState)[]).map(resourceId =>
-        traceTerm(
-          `resource:${resourceId}`,
-          -(task.resourceCosts[resourceId] ?? 0),
-          `scenario.taskOperators.${task.id}.resourceCosts.${resourceId}`,
+      ...(Object.keys(EMPTY_RESOURCE_COSTS) as (keyof ResourceState)[])
+        .filter(resourceId => resourceId in task.resourceCosts)
+        .map(resourceId =>
+          traceTerm(
+            `resource:${resourceId}`,
+            -(task.resourceCosts[resourceId] ?? 0),
+            `scenario.taskOperators.${task.id}.resourceCosts.${resourceId}`,
+          ),
         ),
-      ),
     ],
     tick: state.tick,
   });

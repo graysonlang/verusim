@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import type {
   IncidentAttribution,
   IncidentContext,
@@ -65,10 +66,6 @@ export interface IncidentSamplingProvenance {
 export interface GeneratedIncident {
   event: IncidentEvent | null;
   generation: IncidentSamplingProvenance;
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
 }
 
 function validateIdentifier(value: string, path: string): void {

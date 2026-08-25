@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import { VALUE_IDS, type SimulationAgent, type ValueId } from '../model/types.js';
 import { allostaticLoadFor } from './coping.js';
 import { effectiveValueWeight } from './history.js';
@@ -10,10 +11,6 @@ const VALUE_LABELS: Record<ValueId, string> = {
   competence: 'competence',
   fairness: 'fairness',
 };
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 export type MovementSpeedClass =
   | 'still'

@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import {
   VALUE_IDS,
   type CascadePosition,
@@ -18,10 +19,6 @@ import {
 import { applyValueTurns, reactiveValueTurn } from './value-turn.js';
 
 const FORMATIVE_WEIGHT_GAIN = 0.2;
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 function emptyFormativeValues(): ValueMap<ValueState> {
   return Object.fromEntries(

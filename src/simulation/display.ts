@@ -1,3 +1,4 @@
+import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import {
   VALUE_IDS,
   type DisplayEvent,
@@ -22,7 +23,6 @@ import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_DISPLAY_RECORDS = 160;
 const MAX_POSITIONAL_REFERENCES = 5;
-const MAX_TRACE_ENTRIES = 240;
 const POSITIONAL_DEADBAND = 0.02;
 const STATUS_RELEVANCE_FLOOR = 0.25;
 const ADMIRATION_EMPATHY_FLOOR = 0.55;
@@ -38,15 +38,6 @@ interface PerceptionResult {
 interface PositionalUpdate {
   observedStandingChange: number;
   state: PositionalRespectState;
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function appendBounded<Item>(items: readonly Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
 }
 
 function agentFor(state: SimulationState, agentId: string): SimulationAgent {

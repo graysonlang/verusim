@@ -1,8 +1,5 @@
+import { clamp } from '../model/retention.js';
 import { VALUE_IDS, type SimulationAgent, type ValueMap, type ValueState } from '../model/types.js';
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 export function reactiveValueTurn(reactivity: number, turn: number): number {
   return turn * reactivity;

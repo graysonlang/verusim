@@ -1,3 +1,4 @@
+import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import type {
   CapabilityResolution,
   ResourceState,
@@ -25,20 +26,10 @@ import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
 
 const MAX_SOMATIC_RECORDS = 160;
-const MAX_TRACE_ENTRIES = 240;
 const STEADY_HABITUATION_MINUTES = 120;
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 function compareSources(left: SomaticSourceState, right: SomaticSourceState): number {
   return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
-}
-
-function appendBounded<Item>(items: readonly Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
 }
 
 function levelFor(sources: readonly SomaticSourceState[], attentionTax: number): SomaticLevel {

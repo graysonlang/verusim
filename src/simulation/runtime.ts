@@ -1,3 +1,4 @@
+import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import {
   VALUE_IDS,
   type CharacterDefinition,
@@ -57,8 +58,6 @@ import {
 import { appendTrace, createTrace, traceTerm } from './trace.js';
 
 const DAY_MINUTES = 1440;
-const MAX_MEMORIES = 16;
-const MAX_TRACE_ENTRIES = 240;
 
 const DEFAULT_RESOURCES: ResourceState = {
   executiveBudget: 0.78,
@@ -98,10 +97,6 @@ const RECOVERY_RATES_PER_HOUR: Record<RecoveryMode, ResourceState> = {
     socialBattery: 0.12,
   },
 };
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 function findLocation(environment: EnvironmentDefinition, locationId: string): LocationDefinition {
   const location = environment.locations.find(candidate => candidate.id === locationId);
@@ -393,11 +388,6 @@ export function createSimulationFromPreparedSnapshot(input: {
     worldFacts: structuredClone(snapshot.worldFacts),
     worldRevision: snapshot.worldRevision,
   };
-}
-
-function appendBounded<Item>(items: Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
 }
 
 function advanceValueState(

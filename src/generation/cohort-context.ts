@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import type {
   CharacterProfileResourceFile,
   DyadSeed,
@@ -116,10 +117,6 @@ function validateIdentifier(value: string, path: string): void {
   if (!/^[a-z0-9]+(?:[.-][a-z0-9]+)*$/.test(value)) {
     throw new TypeError(`${path} must be a lowercase semantic identifier`);
   }
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
 }
 
 function weightedRecentTemplate(

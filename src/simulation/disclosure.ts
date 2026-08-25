@@ -1,3 +1,4 @@
+import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import {
   SOCIAL_FEATURE_IDS,
   type DisclosureAudienceEvaluation,
@@ -14,8 +15,6 @@ import { appendTrace, traceTerm } from './trace.js';
 import { repriceExposureFor } from './relationship.js';
 
 const MAX_DISCLOSURE_DECISIONS = 80;
-const MAX_MEMORIES = 16;
-const MAX_TRACE_ENTRIES = 240;
 
 const DISTANT_FEATURES: SocialFeatureMap = {
   category: 0,
@@ -24,15 +23,6 @@ const DISTANT_FEATURES: SocialFeatureMap = {
   reciprocity: 0,
   similarity: 0,
 };
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function appendBounded<Item>(items: Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
-}
 
 function dyadFor(state: SimulationState, observerId: string, subjectId: string): DyadState | null {
   return (

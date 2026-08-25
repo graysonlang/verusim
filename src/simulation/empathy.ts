@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import {
   SOCIAL_FEATURE_IDS,
   type EmpathyEvaluation,
@@ -13,10 +14,6 @@ const DISTANT_FEATURES: SocialFeatureMap = {
   reciprocity: 0,
   similarity: 0,
 };
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 export function evaluateEmpathy(
   state: SimulationState,

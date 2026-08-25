@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import {
   CAPABILITY_IDS,
   type AgentCapabilityCheck,
@@ -10,10 +11,6 @@ import {
 import { traceTerm } from './trace.js';
 
 const CAPABILITY_ID_SET = new Set<string>(CAPABILITY_IDS);
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 function unitValue(value: number, name: string): number {
   if (!Number.isFinite(value) || value < 0 || value > 1) {

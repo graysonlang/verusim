@@ -1,3 +1,4 @@
+import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
 import {
   VALUE_IDS,
   type IncidentAppraisalRecord,
@@ -18,16 +19,6 @@ import { appendTrace, traceTerm } from './trace.js';
 import { applyAgentValueTurns } from './value-turn.js';
 
 const MAX_INCIDENT_RECORDS = 160;
-const MAX_TRACE_ENTRIES = 240;
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
-function appendBounded<Item>(items: readonly Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
-}
 
 function agentFor(state: SimulationState, agentId: string): SimulationAgent {
   const agent = state.agents.find(candidate => candidate.id === agentId);

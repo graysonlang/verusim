@@ -1,3 +1,4 @@
+import { appendBounded, clamp } from '../model/retention.js';
 import type {
   BaselinePlasticityAccumulator,
   BaselinePlasticityMechanism,
@@ -36,17 +37,8 @@ export interface BaselinePlasticityAdvance {
   signals: readonly BaselinePlasticitySignal[];
 }
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
-
 function round(value: number): number {
   return Math.round(value * 1e12) / 1e12;
-}
-
-function appendBounded<Item>(items: readonly Item[], item: Item, maximum: number): Item[] {
-  const next = [...items, item];
-  return next.length <= maximum ? next : next.slice(next.length - maximum);
 }
 
 function plasticityMultiplierForAge(ageYears: number): number {

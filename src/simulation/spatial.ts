@@ -1,3 +1,4 @@
+import { clamp } from '../model/retention.js';
 import type {
   Bounds,
   DyadMode,
@@ -27,10 +28,6 @@ const MODE_DISTANCE_METERS: Record<DyadMode, number> = {
   ruptured: 0.45,
   warm: -0.12,
 };
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
-}
 
 function agentFor(state: SimulationState, agentId: string): SimulationAgent {
   const agent = state.agents.find(candidate => candidate.id === agentId);

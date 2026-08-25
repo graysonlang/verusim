@@ -1,8 +1,8 @@
+import { MAX_TRACE_ENTRIES, clamp } from '../model/retention.js';
 import type { DyadState, SimulationAgent, SimulationState, TraceEntry } from '../model/types.js';
 import { dyadFor, projectedDyad, turnDyad } from '../simulation/relationship.js';
 import { appendTrace, traceTerm } from '../simulation/trace.js';
 
-const MAX_TRACE_ENTRIES = 240;
 export const LOW_STAKES_EXCHANGE_MAX = 0.2;
 
 export interface LowStakesExchange {
@@ -27,10 +27,6 @@ export interface OrbitSettlement {
   settledIntimacy: number;
   settledPower: number;
   stanceTurn: number;
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
 }
 
 function agentFor(state: SimulationState, agentId: string): SimulationAgent {
