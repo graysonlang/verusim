@@ -18,8 +18,8 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 9A: authoritative seconds and schema migration.
-Centralize duplicated bounds and helpers, define the trace retention contract, then make integer simulated seconds canonical with exact migration of minute-based content and snapshots.
+The active slice is Phase 9A: authoritative seconds, character tiers, and retention.
+Adopt character vocabulary in the runtime, add narrative tiers with per-character retention windows, and make integer simulated seconds canonical with exact migration of minute-based content and snapshots.
 
 ### Current-focus non-goals
 
@@ -32,7 +32,7 @@ Centralize duplicated bounds and helpers, define the trace retention contract, t
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 9A — authoritative seconds and schema migration
+1. Phase 9A — authoritative seconds, character tiers, and retention
 2. Phases 8C through 8F — application shell, editors, store adapters, and packing
 3. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
 4. Phase 10B — remaining acceptance vignettes
@@ -138,15 +138,25 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 Phase 9A runs before the Phase 8 presentation slices; Phases 9B through 9E follow Phase 8F.
 
-#### Phase 9A — authoritative seconds and schema migration
+#### Phase 9A — authoritative seconds, character tiers, and retention
 
-Before increasing evaluator cadence, centralize duplicated trace and memory bounds and the repeated clamp and bounded-append helpers, then define a retention contract that prevents one noisy agent from evicting every other agent's recent causal sources.
-Keep trace-entry identity independent from retention and preserve bounded snapshot size with explicit per-agent or indexed-window semantics rather than an accidental global FIFO.
-Emit resource-cost trace terms in the fixed resource vocabulary order so authored JSON key order cannot reach trace output.
-Revise the time-domain contract in the design and architecture, then make integer simulated seconds canonical for runtime state, authored event resolution, trace timestamps, deadlines, and cadence scheduling.
-Migrate legacy minute-based scenarios and snapshots by exact conversion, keep calendar and schedule authoring legible, and separate monotonic transition identity from elapsed simulation time.
+Design decisions 18 through 21 in the spec's open-decision table settle this slice's contracts; the slice implements them together because each changes persisted schema, and one migration is cheaper than four.
 
-Gate: every legacy fixture migrates to exact second timestamps without changing its initial state or event order, an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion, and causal sources for a quiet observed agent survive a noisy neighbor across the documented retention window.
+Adopt character vocabulary throughout the runtime: `SimulationAgent` becomes `CharacterInstance`, `state.agents` becomes `state.characters`, and every record and trace field that addressed a character as `agentId` addresses it as `instanceId`, aligning runtime identity with the existing `characterId`, `profileId`, and `instanceId` levels rather than adding a fourth meaning.
+The player-facing rule is unchanged; `agent` leaves the model, API, and storage vocabulary.
+
+Add a narrative `tier` to character placements - `principal`, `secondary`, or `background`, defaulting to `secondary` on migration.
+Tier declares narrative salience and sizes retention budgets; it may inform host cadence policy but is orthogonal to LOD cadence and never changes evaluator fidelity.
+
+Replace the global trace FIFO with per-character retention windows sized by tier - principal 240 trace entries and 64 memories, secondary 96 and 32, background 32 and 16 - plus one shared window for entries with no character, and apply the same tiered bounds to decisions, observations, and other per-character records.
+Keep entry identity as a per-character monotonic sequence independent of retention, centralize every duplicated bound and the repeated clamp and bounded-append helpers, and emit resource-cost trace terms in the fixed resource vocabulary order so authored JSON key order cannot reach trace output.
+Tier pools may later cap total memory above those per-character floors but never replace them.
+
+Revise the time-domain contract in the design and architecture, then make integer simulated seconds canonical, epoch-style, for runtime state, authored event resolution, trace timestamps, deadlines, and cadence scheduling.
+Authored content moves to seconds as well: `tickSeconds` replaces `tickMinutes`, built-in scenarios tick at 60 seconds, and legacy minute-based scenarios and snapshots convert exactly by multiplication.
+Keep calendar and schedule authoring legible, separate monotonic transition identity from elapsed simulation time, and leave sub-second precision to a future scale factor between solver ticks and observed seconds rather than building it now.
+
+Gate: every legacy fixture migrates to exact second timestamps, default tiers, and character vocabulary without changing its initial state or event order; an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion; and a background character flooding the trace leaves a quiet principal's causal sources intact across the documented per-character window.
 
 #### Phase 9B — event-delimited advancement
 
@@ -223,4 +233,5 @@ Exit probes:
 
 Meaning as a value, moral exclusion, self-harm, context-indexed narratives, habituation class, stance decay constants, and task-specific physical capability checks beyond the existing build contributions should stay documented but unimplemented until their prerequisite phase.
 Self-deception remains an explicit scope decision to reconcile before Phase 10B encodes Wirt, while unavailability calibration belongs to the Phase 10A ensemble dimension and may not be silently omitted or tuned to zero.
+Sub-second simulation precision stays a documented scale factor between solver ticks and observed seconds until a phenomenon needs it; Phase 9A makes seconds canonical without building that factor.
 Premature fields would look authoritative while carrying no tested consequence.
