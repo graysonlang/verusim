@@ -39,7 +39,10 @@ A consumer with a content source supplies exact-address reads:
 const prepared = await prepareScenarioFromSource({ scenario, source });
 const state = createSimulation(prepared);
 const next = advanceSimulation(state, ticks);
+const later = advanceTo(next, next.second + 20);
 ```
+
+`advanceSimulation` steps whole authored ticks; `advanceTo` advances to an exact second and resolves every event boundary inside the interval, so any partition of the same interval reaches byte-identical state.
 
 A consumer that already owns resource objects builds an immutable catalog instead:
 

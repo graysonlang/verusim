@@ -18,24 +18,23 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 9E: workbench integration and verification.
-Drive authoritative advancement from wall time and the selected playback rate through `advanceTo`, interpolate frames only between committed movement samples, preserve fractional playback time across pause and rate changes, apply backpressure, and verify the interruption fixture in the isolated browser preview.
+The active slice is Phase 8C: the shared Build and Simulate application shell.
+Give the workbench a persistent Build/Simulate mode switch with independently owned workspace state, and make live inspector updates preserve scroll position, focus, and selection instead of rebuilding the subtree on every advancement.
 
 ### Current-focus non-goals
 
-- no reduced-fidelity evaluator or distance-gated authoritative state
-- no new editors or store adapters; those are Phases 8C through 8F
+- no specialized editors, problems surface, store adapters, or packing; those are Phases 8D through 8F
+- no simulation-model or time-domain changes; Phase 9 is complete
 - no behavior-model or evaluator-fidelity expansion
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 9E — workbench integration and verification
-2. Phases 8C through 8F — application shell, editors, store adapters, and packing
-3. Phase 10B — remaining acceptance vignettes
+1. Phases 8C through 8F — application shell, editors, store adapters, and packing
+2. Phase 10B — remaining acceptance vignettes
 
-Phase 9 now runs to completion ahead of the presentation slices: the time-domain dependency that ordered 9A first is settled, and the shell in Phase 8C should integrate the finished advancement model rather than one that changes underneath it.
+Phase 9 ran to completion ahead of the presentation slices so the shell in Phase 8C integrates the finished advancement model rather than one that changes underneath it.
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -114,50 +113,6 @@ Exit probes:
 - exporting one selected scenario includes every transitive character, environment, norm, and social-contract dependency exactly once and excludes unrelated resources
 - keyboard and pointer workflows can switch modes, navigate documents, edit representative fields, inspect diagnostics, and apply a valid revision without trapping focus or losing draft state
 
-## Phase 9 — subminute reactive simulation and adaptive cadence
-
-Replace the one-minute tick as the authoritative reaction boundary with a canonical integer-second time domain and event-delimited advancement.
-Real-time, player-adjacent simulation must be able to accept an input, settle current movement, appraise the event, and change action within the same authored minute rather than projecting toward a result chosen for the next minute boundary.
-Minute-based schedules remain convenient authored content, but migration converts their times exactly into the canonical runtime domain and transition sequence identity remains separate from elapsed time.
-
-Extend the completed cadence-session model rather than adding another simulation path.
-Playback rate and behavioral level of detail jointly select how often the host requests and observes authoritative work: real-time adjacent agents use fine cadence, while high-rate or distant simulation may use coarser scheduling boundaries.
-Every boundary still invokes the same evaluator.
-A coarse interval must split at discrete event times, replay coupled behavior in deterministic order where interval equivalence is not proven, and use closed-form catch-up only for primitives whose result is exactly independent of partitioning.
-
-Represent active travel as an authoritative timed route segment with a pure position-at-time operation.
-An interruption settles the old segment at the event timestamp, commits that position and the causal event, cancels the remaining route, and starts any replacement route from the settled position.
-Canvas interpolation remains an observer-only smoothing layer and never becomes solver input.
-
-Player input, promotion to a more immediate cadence tier, explicit observation, snapshot creation, and scenario handoff are observation barriers.
-Each barrier flushes pending work to its exact logical time before exposing or mutating authoritative state.
-Playback rate remains host presentation and scheduling state rather than a behavioral input, so changing rates may change batching and wall-clock cost but not the state or causal trace observed at an equivalent simulation time.
-
-### Phase 9 implementation sequence
-
-Phases 9A through 9D are recorded in COMPLETED.md; the remaining Phase 9 slice proceeds directly.
-
-#### Phase 9E — workbench integration and verification
-
-Drive authoritative advancement from elapsed wall time and the selected numeric playback rate while retaining frame interpolation only between committed movement samples.
-Preserve fractional playback time through pause, resume, and rate changes, apply backpressure rather than dropping due work, and expose enough timing detail to diagnose solver cadence separately from render cadence.
-
-Gate: isolated browser verification runs the interruption fixture in real time, changes playback rate during travel, observes the redirected character continuously across projection changes, and reaches the same saved state and trace as accelerated and headless runs without console or network errors.
-
-Exit probes:
-
-- a player-originated event at second 20 interrupts an adjacent character within the same authored minute, settles the exact route position, and produces an inspectable appraisal and action trace before movement resumes
-- changing the interrupted character's destination starts a new connector-aware route from the settled authoritative position rather than either tick endpoint or the Canvas-interpolated position
-- advancing the same interval as sixty one-second requests, thirty two-second requests, one sixty-second request, and an event-delimited request produces byte-equivalent authoritative state and causal traces at the observation boundary
-- real-time, accelerated, location, settlement, and on-demand cadence policies process every consequential event in deterministic order while differing only in scheduling and observation frequency
-- player input, cadence promotion, explicit observation, snapshot creation, and scenario handoff flush pending work to their exact logical time before exposing or mutating state
-- changing playback rate or pausing and resuming preserves fractional logical time and visible movement continuity without making playback rate part of simulation state
-- a snapshot saved during active travel and pending coarse-cadence work resumes to the same route position, event order, decisions, and final trace as uninterrupted execution
-- legacy minute-based authored content and snapshots migrate exactly into the canonical second time domain with actionable validation for nonrepresentable or malformed timestamps
-
-Phase 9 does not add a reduced-fidelity evaluator, distance-gated authoritative state, general-purpose physics, collision response, combat timing, or runtime-random action selection.
-Those are separate phenomena and must not be smuggled into the time-domain migration.
-
 ## Phase 10 — OTGW ensemble acceptance
 
 Turn the reference acceptance appendix into an executable long-range falsifier suite.
@@ -173,7 +128,7 @@ Phase 10A is recorded in COMPLETED.md.
 
 #### Phase 10B — remaining acceptance vignettes
 
-After Phase 9E, author the remaining eight vignettes against the harness, sequenced by the mechanism each falsifier isolates, and reconcile the self-deception scope decision before encoding Wirt.
+Author the remaining eight vignettes against the harness, sequenced by the mechanism each falsifier isolates, and reconcile the self-deception scope decision before encoding Wirt.
 
 Gate: every vignette meets the Phase 10A ensemble bar, and no vignette requires a per-character handler or authored selected behavior.
 

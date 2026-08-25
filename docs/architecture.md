@@ -84,12 +84,15 @@ A player-directed destination (`redirectCharacter`) supersedes schedule and agen
 Workbench pause state and time scale are orthogonal controls.
 Real-time means one simulated second per elapsed wall-clock second; the faster presets range from ordinary multipliers through simulated minutes per real second.
 Each preset also carries that speed as one numeric rate in simulated seconds per real second, so real-time is `1`, one simulated minute per second is `60`, and one simulated hour per second is `3600`.
-Changing the selected scale does not start or stop the simulation, and every elapsed whole scenario tick still passes through the same deterministic transition used by tests and manual stepping.
-Fractional simulated time survives pause, resume, and active scale changes so changing playback controls cannot move the projected clock or movement backward; reset and scenario load clear that observer state.
+Changing the selected scale does not start or stop the simulation.
+Active playback drives authoritative advancement from elapsed wall time: each animation frame turns the elapsed real time at the numeric rate into whole logical seconds and commits them through `advanceTo`, so the same event-delimited transition serves playback, manual stepping, cadence sessions, and tests.
+Each frame commits at most half a real second of logical time at the current rate; whole seconds beyond that budget wait as backlog and drain on later frames or at pause, so a slow solver or a stalled frame makes the logical clock lag rather than drop due work.
+Fractional simulated time and any backlog survive pause, resume, and active scale changes so changing playback controls cannot move the projected clock or movement backward or lose due work; reset and scenario load clear that observer state.
 The clock omits the Day 1 prefix and shows frame-projected seconds for rates below `60`; rates at or above `60` retain minute precision.
-Whenever playback retains fractional simulated time, whether active or paused, the workbench computes one pure next-tick lookahead and projects only locomotion between the current and next authoritative positions.
-Active playback updates that observer projection at animation-frame resolution, while pausing freezes it at the retained fraction.
-The projection uses the same connector-aware route and meters-per-simulation-minute walking pace as the solver, reaches the exact next position at the tick boundary, and never enters snapshots, traces, behavioral evaluation, or other authoritative state.
+Frame projection interpolates only between committed movement samples: each character with a committed route is placed along that route at the fractional logical second through `routePositionAtSecond`, nothing else is projected, and no lookahead evaluation runs for presentation.
+Active playback updates that observer projection at animation-frame resolution, while pausing freezes it at the retained fraction; the projection never enters snapshots, traces, behavioral evaluation, or other authoritative state.
+The status bar exposes per-frame timing - solver milliseconds, frame milliseconds, committed logical seconds, and backlog seconds - so solver cadence can be diagnosed separately from render cadence.
+The inspector's Destination section shows where a character is or is walking, whether that walk is a player redirect, and offers `redirectCharacter` as a live intervention from the authoritative position.
 The neutral walking calibration is 80 meters per simulation minute, or about 1.33 meters per second, before authored physical-build effects.
 Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, Fahrenheit, a hidden status bar, and visible 250-pixel roster and 350-pixel inspector sidebars.
 Distance and temperature units are independent presentation choices; a stored preference from before that split preserves its former meter/Celsius or feet/Fahrenheit pairing until the user changes either field.

@@ -713,6 +713,41 @@ No scenario, snapshot, or resource schema changes are introduced; the harness im
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 288 deterministic tests.
 
+## Phase 9 — subminute reactive simulation and adaptive cadence
+
+Status: complete; slices 9A through 9E follow.
+
+Replace the one-minute tick as the authoritative reaction boundary with a canonical integer-second time domain and event-delimited advancement.
+Real-time, player-adjacent simulation must be able to accept an input, settle current movement, appraise the event, and change action within the same authored minute rather than projecting toward a result chosen for the next minute boundary.
+Minute-based schedules remain convenient authored content, but migration converts their times exactly into the canonical runtime domain and transition sequence identity remains separate from elapsed time.
+
+Extend the completed cadence-session model rather than adding another simulation path.
+Playback rate and behavioral level of detail jointly select how often the host requests and observes authoritative work: real-time adjacent agents use fine cadence, while high-rate or distant simulation may use coarser scheduling boundaries.
+Every boundary still invokes the same evaluator.
+A coarse interval must split at discrete event times, replay coupled behavior in deterministic order where interval equivalence is not proven, and use closed-form catch-up only for primitives whose result is exactly independent of partitioning.
+
+Represent active travel as an authoritative timed route segment with a pure position-at-time operation.
+An interruption settles the old segment at the event timestamp, commits that position and the causal event, cancels the remaining route, and starts any replacement route from the settled position.
+Canvas interpolation remains an observer-only smoothing layer and never becomes solver input.
+
+Player input, promotion to a more immediate cadence tier, explicit observation, snapshot creation, and scenario handoff are observation barriers.
+Each barrier flushes pending work to its exact logical time before exposing or mutating authoritative state.
+Playback rate remains host presentation and scheduling state rather than a behavioral input, so changing rates may change batching and wall-clock cost but not the state or causal trace observed at an equivalent simulation time.
+
+Exit probes, each held by the deterministic suite (`test/advance-to.test.ts`, `test/timed-movement.test.ts`, `test/cadence.test.ts`, `test/playback.test.ts`, `test/migration-matrix.test.ts`) and the Phase 9E browser run:
+
+- a player-originated event at second 20 interrupts an adjacent character within the same authored minute, settles the exact route position, and produces an inspectable appraisal and action trace before movement resumes
+- changing the interrupted character's destination starts a new connector-aware route from the settled authoritative position rather than either tick endpoint or the Canvas-interpolated position
+- advancing the same interval as sixty one-second requests, thirty two-second requests, one sixty-second request, and an event-delimited request produces byte-equivalent authoritative state and causal traces at the observation boundary
+- real-time, accelerated, location, settlement, and on-demand cadence policies process every consequential event in deterministic order while differing only in scheduling and observation frequency
+- player input, cadence promotion, explicit observation, snapshot creation, and scenario handoff flush pending work to their exact logical time before exposing or mutating state
+- changing playback rate or pausing and resuming preserves fractional logical time and visible movement continuity without making playback rate part of simulation state
+- a snapshot saved during active travel and pending coarse-cadence work resumes to the same route position, event order, decisions, and final trace as uninterrupted execution
+- legacy minute-based authored content and snapshots migrate exactly into the canonical second time domain with actionable validation for nonrepresentable or malformed timestamps
+
+Phase 9 does not add a reduced-fidelity evaluator, distance-gated authoritative state, general-purpose physics, collision response, combat timing, or runtime-random action selection.
+Those are separate phenomena and must not be smuggled into the time-domain migration.
+
 ## Phase 9A — authoritative seconds, character tiers, and retention
 
 Status: complete.
@@ -789,6 +824,25 @@ Cadence-save schema version 2 stores pending seconds and migrates version 1 pend
 
 `test/cadence.test.ts` proves that real-time adjacent, accelerated adjacent, location, settlement, on-demand, and rate-scaled schedules over a road scenario with off-grid opportunities all reach the same bytes as a direct `advanceTo` at the observation boundary; that a settlement-to-adjacent tier change with 700 pending seconds and a player value push at second 1000 under every tier land at the same second and reach the same bytes as the direct run; that sessions commit only whole intervals; that save schema 2 round-trips and schema 1 migrates; and that a forty-character cohort commits a logical hour under the 3600x real-second budget as settlement batches and under the real-time budget as 3600 one-second requests (measured 7 ms and 123 ms), so no hot-path indexes were added.
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 307 deterministic tests.
+
+## Phase 9E — workbench integration and verification
+
+Status: complete.
+
+Drive authoritative advancement from elapsed wall time and the selected numeric playback rate while retaining frame interpolation only between committed movement samples.
+Preserve fractional playback time through pause, resume, and rate changes, apply backpressure rather than dropping due work, and expose enough timing detail to diagnose solver cadence separately from render cadence.
+
+Gate: isolated browser verification runs the interruption fixture in real time, changes playback rate during travel, observes the redirected character continuously across projection changes, and reaches the same saved state and trace as accelerated and headless runs without console or network errors.
+
+The workbench playback loop now plans each animation frame with `planPlaybackFrame`: elapsed wall time at the numeric rate becomes whole logical seconds committed through `advanceTo`, at most half a real second of logical time per frame, with the remainder kept as backlog that drains on later frames or at pause; the fractional second and backlog survive pause, resume, and rate changes, and reset or scenario load clears them.
+Frame projection (`projectPlaybackState`) places each character with a committed route along that route at the fractional second through `routePositionAtSecond` and projects nothing else, replacing the former next-tick lookahead; the tick-count `advanceSimulation` path is no longer used by the workbench.
+The status bar shows solver milliseconds, frame milliseconds, committed seconds, and backlog seconds per frame, and the inspector gained a Destination section that reports where a character is or is walking and offers `redirectCharacter` as a live intervention.
+
+`test/playback.test.ts` proves fractional carry across whole-second commits and rate changes, the per-frame budget with backlog retention and drain, route-based frame projection that matches `routePositionAtSecond` and leaves route-less characters untouched, and the diagnostics format.
+Browser verification ran against the isolated preview on port 48731 with the headless Playwright MCP server: Market Morning loaded at real time, Mara was redirected to East Field from the inspector, playback ran in real time while the inspector reported "Walking to East Field (redirected)" and her distances to other characters changed frame by frame, the rate changed to 10x during travel, the projection switched to the Surface layer and back to Exterior while she kept moving, playback paused, and the saved snapshot (captured through the download hook) was byte-identical to a headless `advanceTo` replay of the same redirect at second 28200 to second 28561 and to an accelerated settlement cadence session over the same interval.
+The console recorded no application errors or warnings and no non-static network requests; the only console entry was the esbuild live-reload stream closing when the preview was stopped.
+Screenshots and the accessibility snapshots are under `.playwright-mcp/`.
 The full verification gate passes with 307 deterministic tests.
 
 ## Phase 1 decisions
