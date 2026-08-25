@@ -475,6 +475,24 @@ function validateAgent(value: unknown, path: string): void {
   parseResourceAddress(agent.profile, `${path}.profile`, 'character-profile');
   validateLayerPosition(agent.position, `${path}.position`);
   validateLayerPosition(agent.destination, `${path}.destination`);
+  if (agent.directedLocationId !== null) {
+    stringValue(agent.directedLocationId, `${path}.directedLocationId`);
+  }
+  if (agent.route !== null) {
+    const route = objectValue(agent.route, `${path}.route`);
+    integerValue(route.departureSecond, `${path}.route.departureSecond`, 0);
+    stringValue(route.destinationLocationId, `${path}.route.destinationLocationId`);
+    numberValue(route.lengthMeters, `${path}.route.lengthMeters`, 0);
+    numberValue(route.metersPerSecond, `${path}.route.metersPerSecond`, 0.001);
+    validateLayerPosition(route.origin, `${path}.route.origin`);
+    for (const [index, stepValue] of arrayValue(route.steps, `${path}.route.steps`).entries()) {
+      const step = objectValue(stepValue, `${path}.route.steps[${index}]`);
+      if (step.connectorId !== null)
+        stringValue(step.connectorId, `${path}.route.steps[${index}].connectorId`);
+      numberValue(step.distanceMeters, `${path}.route.steps[${index}].distanceMeters`, 0);
+      validateLayerPosition(step.position, `${path}.route.steps[${index}].position`);
+    }
+  }
   if (agent.currentLocationId !== null) {
     stringValue(agent.currentLocationId, `${path}.currentLocationId`);
   }
@@ -1415,7 +1433,8 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.schemaVersion !== 16 &&
     file.schemaVersion !== 17 &&
     file.schemaVersion !== 18 &&
-    file.schemaVersion !== 19
+    file.schemaVersion !== 19 &&
+    file.schemaVersion !== 20
   ) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
@@ -1690,7 +1709,14 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     trace.windows = windows;
   }
   if (sourceVersion < 19) migrateMinutesToSeconds(file);
-  file.schemaVersion = 19;
+  if (sourceVersion < 20) {
+    for (const instance of arrayValue(file.characters, 'snapshot.characters')) {
+      const record = objectValue(instance, 'snapshot.characters');
+      record.directedLocationId = null;
+      record.route = null;
+    }
+  }
+  file.schemaVersion = 20;
   return file;
 }
 
@@ -1699,7 +1725,7 @@ export function parseSnapshot(value: unknown): SimulationSnapshotFile {
   if (file.type !== 'verusim-snapshot') {
     throw new ScenarioValidationError('snapshot.type', 'expected verusim-snapshot');
   }
-  if (file.schemaVersion !== 19) {
+  if (file.schemaVersion !== 20) {
     throw new ScenarioValidationError('snapshot.schemaVersion', 'unsupported schema version');
   }
   const scenario = parseScenario(file.scenario);

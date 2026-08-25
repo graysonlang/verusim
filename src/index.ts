@@ -271,6 +271,7 @@ export {
   advanceTo,
   createSimulationFromPrepared,
   createSimulationFromPreparedSnapshot,
+  redirectCharacter,
   setCharacterResource,
   setCharacterValueCharge,
 } from './simulation/runtime.js';
@@ -327,7 +328,10 @@ export {
   advanceLayerPosition,
   findNavigationRoute,
   locationCenter,
+  createTimedRoute,
   navigationDistance,
+  routeArrivalSecond,
+  routePositionAtSecond,
   sameLayerPosition,
 } from './simulation/navigation.js';
 

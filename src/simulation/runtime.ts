@@ -49,8 +49,10 @@ import {
 import { DEFAULT_WALKING_METERS_PER_MINUTE, applyBuildToWalkingPace } from './physical.js';
 import { advanceBaselinePlasticity, type BaselinePlasticitySignal } from './plasticity.js';
 import {
-  advanceLayerPosition,
+  createTimedRoute,
   locationCenter,
+  routeArrivalSecond,
+  routePositionAtSecond,
   navigationDistance,
   sameLayerPosition,
 } from './navigation.js';
@@ -169,6 +171,7 @@ function initializeAgent(
       : `Walking to ${findLocation(environment, block.locationId).name}`,
     currentLocationId: arrived ? block.locationId : null,
     destination,
+    directedLocationId: null,
     history: {
       ...formative.history,
       overrides: {
@@ -183,6 +186,7 @@ function initializeAgent(
     positionalRespect: { ambientCount: 0, ambientStanding: 0, references: [] },
     position: { ...placement.position },
     profile,
+    route: null,
     resources: { ...DEFAULT_RESOURCES, ...placement.initialResources },
     schedule: placement.schedule.map(scheduleBlock => ({ ...scheduleBlock })),
     somatic: createSomaticState([
@@ -326,6 +330,7 @@ export function createSimulationFromPreparedSnapshot(input: {
       currentActivity: saved.currentActivity,
       currentLocationId: saved.currentLocationId,
       destination: { ...saved.destination },
+      directedLocationId: saved.directedLocationId,
       history: {
         formativeRecords: saved.history.formativeRecords.map(record => ({ ...record })),
         overrides: structuredClone(saved.history.overrides),
@@ -348,6 +353,7 @@ export function createSimulationFromPreparedSnapshot(input: {
       position: { ...saved.position },
       profile: agent.profile,
       resources: { ...saved.resources },
+      route: saved.route === null ? null : structuredClone(saved.route),
       schedule: saved.schedule.map(block => ({ ...block })),
       somatic: structuredClone(saved.somatic),
       tier: saved.tier,
@@ -482,23 +488,50 @@ function advanceAgent(
 ): CharacterAdvanceResult {
   const elapsedSeconds = nextSecond - state.second;
   const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
-  const task = intendedTask(state, agent.id);
+  // A player-directed destination supersedes agenda and schedule until arrival.
+  const task = agent.directedLocationId === null ? intendedTask(state, agent.id) : null;
   // Inputs are constant across an interval because advanceTo splits at every
   // schedule start, so the block in force is the one active when it begins.
-  const block = task === null ? activeScheduleBlock(agent.schedule, state.second) : null;
-  const locationId = task?.locationId ?? block?.locationId;
+  const block =
+    task === null && agent.directedLocationId === null
+      ? activeScheduleBlock(agent.schedule, state.second)
+      : null;
+  const locationId = agent.directedLocationId ?? task?.locationId ?? block?.locationId;
   if (locationId === undefined)
     throw new Error('An agent always has a task or schedule destination');
   const location = findLocation(state.environment, locationId);
   const preempted = agent.somatic.level >= 3;
   const destination = preempted ? agent.position : locationCenter(location);
-  const remaining = preempted
-    ? 0
-    : navigationDistance(state.environment, agent.position, destination);
-  const travel = (agent.walkingMetersPerMinute / SECONDS_PER_MINUTE) * elapsedSeconds;
+  // A committed route makes position a pure function of absolute time. Any
+  // destination change settles the old route at this interval's start second
+  // (the previous interval already placed the character there) and commits a
+  // replacement from that settled position.
+  const atDestination = sameLayerPosition(agent.position, destination);
+  const route = preempted
+    ? null
+    : atDestination
+      ? null
+      : agent.route !== null &&
+          agent.route.destinationLocationId === locationId &&
+          agent.route.departureSecond <= state.second
+        ? agent.route
+        : createTimedRoute(
+            state.environment,
+            agent.position,
+            destination,
+            locationId,
+            state.second,
+            agent.walkingMetersPerMinute / SECONDS_PER_MINUTE,
+          );
+  const remaining = route === null ? 0 : route.lengthMeters;
+  const arrivalSecond = route === null ? state.second : routeArrivalSecond(route);
   const position = preempted
     ? agent.position
-    : advanceLayerPosition(state.environment, agent.position, destination, travel);
+    : route === null
+      ? agent.position
+      : nextSecond >= arrivalSecond
+        ? destination
+        : routePositionAtSecond(route, nextSecond);
   const arrived = !preempted && sameLayerPosition(position, destination);
   const activityLabel = (atDestination: boolean): string =>
     preempted
@@ -528,7 +561,7 @@ function advanceAgent(
   const taskRecoveryMode =
     task !== null && arrived && intention?.phase === 'work' ? task.recoveryMode : 'none';
   const recoveryMode = task === null ? scheduleRecoveryMode : taskRecoveryMode;
-  const arrivalSeconds = (remaining / agent.walkingMetersPerMinute) * SECONDS_PER_MINUTE;
+  const arrivalSeconds = Math.max(0, arrivalSecond - state.second);
   const recoverySeconds =
     recoveryMode === 'none'
       ? 0
@@ -715,8 +748,10 @@ function advanceAgent(
       currentActivity,
       currentLocationId,
       destination,
+      directedLocationId: arrived ? null : agent.directedLocationId,
       memories,
       position,
+      route: arrived ? null : route,
       resources,
       somatic,
       values,
@@ -818,9 +853,16 @@ function nextBoundary(state: SimulationState, target: number): number {
     consider(nextScheduleStart(agent.schedule, now));
     if (agent.currentOutlet !== null) consider(now + agent.currentOutlet.remainingSeconds);
     if (agent.somatic.level < 3) {
-      const task = intendedTask(state, agent.id);
-      const block = task === null ? activeScheduleBlock(agent.schedule, now) : null;
-      const locationId = task?.locationId ?? block?.locationId;
+      if (agent.route !== null) {
+        consider(routeArrivalSecond(agent.route));
+        continue;
+      }
+      const task = agent.directedLocationId === null ? intendedTask(state, agent.id) : null;
+      const block =
+        task === null && agent.directedLocationId === null
+          ? activeScheduleBlock(agent.schedule, now)
+          : null;
+      const locationId = agent.directedLocationId ?? task?.locationId ?? block?.locationId;
       if (locationId !== undefined) {
         const remaining = navigationDistance(
           state.environment,
@@ -959,6 +1001,39 @@ export function advanceSimulation(state: SimulationState, ticks = 1): Simulation
   if (!Number.isInteger(ticks) || ticks < 0)
     throw new RangeError('ticks must be a non-negative integer');
   return advanceTo(state, state.second + ticks * state.scenario.tickSeconds);
+}
+
+/**
+ * Direct a character toward a location. The current route settles where it
+ * stands at this second and a replacement route starts from that position on
+ * the next advance; the directed destination supersedes schedule and agenda
+ * until arrival.
+ */
+export function redirectCharacter(
+  state: SimulationState,
+  instanceId: string,
+  locationId: string,
+): SimulationState {
+  const agent = state.characters.find(candidate => candidate.id === instanceId);
+  if (agent === undefined) throw new RangeError(`Unknown character "${instanceId}"`);
+  const location = findLocation(state.environment, locationId);
+  const entry = interventionEntry(
+    state,
+    agent,
+    `${agent.profile.name} was redirected toward ${location.name}`,
+    'redirect',
+    state.second,
+    `environment.locations.${locationId}`,
+  );
+  return {
+    ...state,
+    characters: state.characters.map(candidate =>
+      candidate.id === instanceId
+        ? { ...candidate, directedLocationId: locationId, route: null }
+        : candidate,
+    ),
+    trace: appendTrace(state.trace, entry),
+  };
 }
 
 function interventionEntry(

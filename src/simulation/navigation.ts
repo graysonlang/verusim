@@ -1,4 +1,9 @@
-import type { EnvironmentDefinition, LayerPosition, LocationDefinition } from '../model/types.js';
+import type {
+  EnvironmentDefinition,
+  LayerPosition,
+  LocationDefinition,
+  TimedRoute,
+} from '../model/types.js';
 
 interface RouteNode {
   position: LayerPosition;
@@ -158,6 +163,65 @@ export function advanceLayerPosition(
     if (step.connectorId !== null) {
       current = step.position;
       remaining = Math.max(0, remaining - step.distanceMeters);
+      continue;
+    }
+    const distance = planarDistance(current, step.position);
+    if (distance <= remaining || distance === 0) {
+      current = step.position;
+      remaining -= distance;
+      continue;
+    }
+    return {
+      layerId: current.layerId,
+      x: current.x + ((step.position.x - current.x) / distance) * remaining,
+      y: current.y + ((step.position.y - current.y) / distance) * remaining,
+    };
+  }
+  return current;
+}
+
+/** Commit a connector-aware route from an origin at a departure second, or null when unreachable. */
+export function createTimedRoute(
+  environment: EnvironmentDefinition,
+  origin: LayerPosition,
+  destination: LayerPosition,
+  destinationLocationId: string,
+  departureSecond: number,
+  metersPerSecond: number,
+): TimedRoute | null {
+  const route = findNavigationRoute(environment, origin, destination);
+  if (route === null) return null;
+  return {
+    departureSecond,
+    destinationLocationId,
+    lengthMeters: route.distanceMeters,
+    metersPerSecond,
+    origin: { ...origin },
+    steps: route.steps.map(step => ({
+      connectorId: step.connectorId,
+      distanceMeters: step.distanceMeters,
+      position: { ...step.position },
+    })),
+  };
+}
+
+export function routeArrivalSecond(route: TimedRoute): number {
+  return route.departureSecond + route.lengthMeters / route.metersPerSecond;
+}
+
+/** Pure position along a committed route at an absolute second. */
+export function routePositionAtSecond(route: TimedRoute, second: number): LayerPosition {
+  const traveled = Math.min(
+    route.lengthMeters,
+    Math.max(0, (second - route.departureSecond) * route.metersPerSecond),
+  );
+  let current = route.origin;
+  let remaining = traveled;
+  for (const step of route.steps) {
+    if (step.connectorId !== null) {
+      if (remaining < step.distanceMeters) return current;
+      current = step.position;
+      remaining -= step.distanceMeters;
       continue;
     }
     const distance = planarDistance(current, step.position);

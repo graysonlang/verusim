@@ -18,20 +18,20 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 9C: interruptible timed movement.
-Store timed route segments with a pure position-at-time operation so interruption settles exact positions and replacement routes start from the settled point.
+The active slice is Phase 9D: playback and level-of-detail cadence policy.
+Evolve cadence sessions to logical durations and event boundaries, combine playback rate and level of detail into host scheduling policy, and prove byte-equivalent state across every schedule.
 
 ### Current-focus non-goals
 
-- no cadence policy or playback changes; those are Phases 9D and 9E
+- no reduced-fidelity evaluator or distance-gated authoritative state
+- no workbench playback changes; those are Phase 9E
 - no behavior-model or evaluator-fidelity expansion
-- no general-purpose physics or collision response
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phases 9C through 9E — timed movement, cadence policy, and workbench integration
+1. Phases 9D and 9E — cadence policy and workbench integration
 2. Phases 8C through 8F — application shell, editors, store adapters, and packing
 3. Phase 10B — remaining acceptance vignettes
 
@@ -135,14 +135,7 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 ### Phase 9 implementation sequence
 
-Phases 9A and 9B are recorded in COMPLETED.md; the remaining Phase 9 slices proceed directly.
-
-#### Phase 9C — interruptible timed movement
-
-Store enough timed route state to derive exact position at any event or observation boundary, including connector traversal between layers and interior/exterior transitions.
-Settling or interrupting movement must conserve traveled distance at authoritative walking pace and begin a replacement route from the settled position without reading the Canvas projection.
-
-Gate: a character walking from A to B is interrupted at second 20, commits the expected connector-aware route position, and redirects toward C without snapping to A or advancing toward the canceled destination.
+Phases 9A through 9C are recorded in COMPLETED.md; the remaining Phase 9 slices proceed directly.
 
 #### Phase 9D — playback and level-of-detail cadence policy
 

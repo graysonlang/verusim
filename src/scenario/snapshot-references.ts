@@ -121,6 +121,18 @@ function validateLockAndAgents({ base, snapshot }: SnapshotReferenceContext): vo
         `unknown layer "${saved.position.layerId}"`,
       );
     }
+    if (saved.directedLocationId !== null && !locationIds.has(saved.directedLocationId)) {
+      throw new ScenarioValidationError(
+        `snapshot.characters[${index}].directedLocationId`,
+        `unknown location "${saved.directedLocationId}"`,
+      );
+    }
+    if (saved.route !== null && !locationIds.has(saved.route.destinationLocationId)) {
+      throw new ScenarioValidationError(
+        `snapshot.characters[${index}].route.destinationLocationId`,
+        `unknown location "${saved.route.destinationLocationId}"`,
+      );
+    }
     if (!layerIds.has(saved.destination.layerId)) {
       throw new ScenarioValidationError(
         `snapshot.characters[${index}].destination.layerId`,

@@ -261,7 +261,11 @@ export function downgradeSnapshotVocabulary(snapshot: Doc): void {
   // test can keep mutating the same instance array after downgrading, and the
   // migration's `characters = agents` assignment overwrites it identically.
   if ('characters' in snapshot) snapshot.agents = snapshot.characters;
-  for (const instance of objects(snapshot.characters)) delete instance.tier;
+  for (const instance of objects(snapshot.characters)) {
+    delete instance.tier;
+    delete instance.route;
+    delete instance.directedLocationId;
+  }
   const trace = snapshot.trace as Doc | undefined;
   if (trace !== undefined && trace.schemaVersion === 2) {
     snapshot.trace = {

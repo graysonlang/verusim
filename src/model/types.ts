@@ -141,6 +141,22 @@ export interface LayerPosition extends Point {
   layerId: string;
 }
 
+/** A committed, timed route: position is a pure function of absolute time. */
+export interface TimedRouteStep {
+  connectorId: string | null;
+  distanceMeters: number;
+  position: LayerPosition;
+}
+
+export interface TimedRoute {
+  departureSecond: number;
+  destinationLocationId: string;
+  lengthMeters: number;
+  metersPerSecond: number;
+  origin: LayerPosition;
+  steps: TimedRouteStep[];
+}
+
 export interface Bounds extends Point {
   height: number;
   width: number;
@@ -1098,6 +1114,8 @@ export interface CharacterInstance {
   currentActivity: string;
   currentLocationId: string | null;
   destination: LayerPosition;
+  /** Player-directed destination that supersedes schedule and agenda until arrival. */
+  directedLocationId: string | null;
   history: HistoryDerivedState;
   id: string;
   memories: RuntimeMemory[];
@@ -1107,6 +1125,7 @@ export interface CharacterInstance {
   position: LayerPosition;
   profile: CharacterDefinition;
   resources: ResourceState;
+  route: TimedRoute | null;
   schedule: ScheduleBlock[];
   somatic: SomaticState;
   tier: CharacterTier;
@@ -1629,6 +1648,8 @@ export interface CharacterInstanceSnapshot {
   currentActivity: string;
   currentLocationId: string | null;
   destination: LayerPosition;
+  /** Player-directed destination that supersedes schedule and agenda until arrival. */
+  directedLocationId: string | null;
   history: HistoryDerivedState;
   id: string;
   memories: RuntimeMemory[];
@@ -1638,6 +1659,7 @@ export interface CharacterInstanceSnapshot {
   position: LayerPosition;
   profile: CharacterProfileAddress;
   resources: ResourceState;
+  route: TimedRoute | null;
   schedule: ScheduleBlock[];
   somatic: SomaticState;
   tier: CharacterTier;
@@ -1678,7 +1700,7 @@ export interface SimulationSnapshotFile {
   resolvedRelationshipRequestIds: string[];
   resolvedSomaticEventIds: string[];
   scenario: ScenarioFile;
-  schemaVersion: 19;
+  schemaVersion: 20;
   somaticRecords: SomaticResolutionRecord[];
   tick: number;
   trace: CausalTrace;

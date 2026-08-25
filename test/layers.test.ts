@@ -125,7 +125,7 @@ describe('layered environments', () => {
     });
 
     assert.deepEqual(resumed, advanced);
-    assert.equal(serializeSnapshot(resumed).schemaVersion, 19);
+    assert.equal(serializeSnapshot(resumed).schemaVersion, 20);
   });
 
   it('rejects a floor that has no authored connection to the layout', () => {

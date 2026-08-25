@@ -754,6 +754,23 @@ No scenario, snapshot, or trace schema changes are introduced; activity entry id
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 296 deterministic tests.
 
+## Phase 9C — interruptible timed movement
+
+Status: complete.
+
+Store enough timed route state to derive exact position at any event or observation boundary, including connector traversal between layers and interior/exterior transitions.
+Settling or interrupting movement must conserve traveled distance at authoritative walking pace and begin a replacement route from the settled position without reading the Canvas projection.
+
+Gate: a character walking from A to B is interrupted at second 20, commits the expected connector-aware route position, and redirects toward C without snapping to A or advancing toward the canceled destination.
+
+Each character carries a committed `TimedRoute` - departure second, destination location, connector-aware steps, length, and pace - and `routePositionAtSecond` derives position as a pure function of absolute time, so partitioning an interval cannot move a character differently and arrival is an exact boundary that `advanceTo` splits at.
+A destination change settles the old route at the interval start (the previous interval already placed the character there) and commits a replacement from that settled position; `redirectCharacter` is the player-directed form, superseding schedule and agenda until arrival and recording an intervention trace entry.
+Snapshot schema version 20 persists the route and the directed destination, with structural validation and a resolvable destination check beside snapshot parsing; earlier snapshots migrate with null routes.
+
+`test/timed-movement.test.ts` sends Mara on a long redirected walk and proves the committed route's origin, departure second, and pure positions at seconds 20 and 35; interrupts at second 20 with a redirect toward a third location and proves the replacement route departs at second 20 from the settled position, has covered exactly five seconds of pace at second 25, is neither the origin nor the canceled route's position, and arrives at the exact arrival second with route and directed destination cleared; routes across floors through a connector with layer-correct samples; and resumes a snapshot saved mid-travel to byte-equivalent state ninety seconds on while a pre-20 snapshot migrates to null routes.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply; the workbench projection still interpolates between committed positions until Phase 9E.
+The full verification gate passes with 300 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

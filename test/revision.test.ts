@@ -156,7 +156,7 @@ describe('authoring revisions', () => {
     const { graph } = project();
     const revision = prepareRevision(graph, SCENARIO_ID);
     const snapshot = serializeSnapshot(advanceSimulation(createSimulation(revision.prepared), 3));
-    assert.equal(snapshot.schemaVersion, 19);
+    assert.equal(snapshot.schemaVersion, 20);
     assert.equal(snapshot.resourceLock.digest, revision.prepared.resourceLock.digest);
     const resumed = createSimulationFromSnapshot({ prepared: revision.prepared, snapshot });
     assert.deepEqual(serializeSnapshot(resumed), snapshot);
