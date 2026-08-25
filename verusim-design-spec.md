@@ -1165,12 +1165,17 @@ This is the single most important engineering decision in this section, and it d
 
 **Do not** implement per-tier simplified evaluators. A reduced-fidelity path is a second implementation of the model that will diverge from the first and produce exactly the observation artifact the whole design is trying to avoid.
 
-| Tier | Tick cadence | Notes |
+| Cadence tier | Tick cadence | Notes |
 |---|---|---|
 | Player-adjacent | every tick | full cadence |
 | Same location, not engaged | every 5 ticks by default | host policy may select another positive integer |
 | Same settlement | every 30 ticks by default | host policy may select another positive integer |
 | Off-screen | on demand only | see §20.3 |
+
+**Time domain.** Simulation time is an integer number of seconds from the start of day one, epoch-style; authored content declares its tick as `tickSeconds`, built-in scenarios tick at 60 seconds, and every event time, deadline, duration, and trace timestamp is a second count.
+Cadence tiers count ticks, so they are unchanged by the unit; only the tick's length is authored.
+Sub-second precision is deferred to a scale factor between solver ticks and observed seconds with matching rate scaling, and is not built.
+Cadence tiers are distinct from the narrative **character tiers** (`principal`, `secondary`, `background`) that size retention: cadence is scheduling, character tier is how much explicable history a character keeps.
 
 Cadence tiers are a **schedule**, not a set of code paths.
 The integration adapter schedules a prepared simulation chunk as the smallest coupled authoritative unit, accumulates whole pending ticks, and replays every due tick through the ordinary evaluator.

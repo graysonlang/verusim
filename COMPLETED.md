@@ -713,6 +713,27 @@ No scenario, snapshot, or resource schema changes are introduced; the harness im
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 288 deterministic tests.
 
+## Phase 9A — authoritative seconds, character tiers, and retention
+
+Status: complete.
+
+Adopt character vocabulary throughout the runtime, add narrative tiers with per-character retention windows, centralize duplicated bounds and helpers, and make integer simulated seconds canonical with exact migration of minute-based content and snapshots, implementing spec decisions 18 through 21 as one schema migration.
+
+Gate: every legacy fixture migrates to exact second timestamps, default tiers, and character vocabulary without changing its initial state or event order; an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion; and a background character flooding the trace leaves a quiet principal's causal sources intact across the documented per-character window.
+
+The slice landed as four committed steps.
+`src/model/retention.ts` centralizes the former 23 copies of `clamp`, 13 of `appendBounded`, and the trace and memory bounds, and resource-cost trace terms now emit in the fixed resource vocabulary order.
+The runtime vocabulary is characters end to end: `CharacterInstance` under `state.characters`, `instanceId` on every record and trace entry, and character-named API exports, with scenario and snapshot schema 18 renaming the stored fields.
+Placements and instances carry a `tier`; trace schema 2 holds per-character windows sized by tier plus per-character monotonic sequences, `appendTrace` evicts only within a character's own window, and decisions, observations, and every other per-character record retain through the same tiered `retainCharacterRecord`.
+`src/model/time.ts` defines the second-domain constants; scenario schema 19, snapshot schema 19, and environment-layout resource schema 4 rename every minute-domain field to its second-domain name and multiply the value by 60, while rates keep their authored per-minute and per-hour units and convert explicitly.
+
+The discriminating evidence is the content rewrite: every shipped scenario and layout migrated through the time-domain change with prepared scenarios and 60-tick snapshots byte-equivalent before and after, so the arithmetic conversion preserved behavior exactly.
+`test/retention.test.ts` floods the trace from a background character two hundred times beside a quiet principal and proves the principal's entry survives, the background window holds exactly its tier's bound, sequences stay monotonic at 200 independent of eviction, memories respect their tier, and the snapshot round-trips windows and sequences; it also pins per-owner record retention and tier validation.
+The migration matrix now spans scenario versions 1 through 18 with the shared downgrade helper undoing the time-domain, tier, and vocabulary gates in reverse.
+Scenario schema versions 18 and 19, snapshot schema versions 18 and 19, environment-layout resource version 4, and trace schema 2 are recorded in the architecture.
+Browser validation ran through Playwright MCP against an isolated preview: the workbench loads the default scenario at 7:50 am in the morning period, playback at the one-simulated-minute-per-second rate advances the clock one minute per real second, pause holds it, and the session recorded no console errors or warnings.
+The full verification gate passes with 291 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

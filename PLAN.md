@@ -18,24 +18,22 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 9A: authoritative seconds, character tiers, and retention.
-Adopt character vocabulary in the runtime, add narrative tiers with per-character retention windows, and make integer simulated seconds canonical with exact migration of minute-based content and snapshots.
+The active slice is Phase 8C: shared Build and Simulate application shell.
+Refactor the workbench around a persistent Build/Simulate mode switch with independently owned workspace state, and make live inspector updates incremental.
 
 ### Current-focus non-goals
 
-- no event-delimited advancement, timed movement, or cadence policy changes; those are Phases 9B through 9D
+- no specialized editors, store adapters, or pack writer in this slice
 - no behavior-model or evaluator-fidelity expansion
-- no workbench presentation work
-- no reduced-fidelity evaluator or distance-gated authoritative state
+- no draft mutation of a running simulation or its reset baseline
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phase 9A — authoritative seconds, character tiers, and retention
-2. Phases 8C through 8F — application shell, editors, store adapters, and packing
-3. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
-4. Phase 10B — remaining acceptance vignettes
+1. Phases 8C through 8F — application shell, editors, store adapters, and packing
+2. Phases 9B through 9E — event-delimited advancement, timed movement, cadence policy, and workbench integration
+3. Phase 10B — remaining acceptance vignettes
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -66,11 +64,10 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A and 8B are recorded in COMPLETED.md; Phases 8C through 8F begin only after Phase 9A; Phase 10A is recorded in COMPLETED.md so the shell and editors are built once over the canonical time domain.
+Phases 8A and 8B are recorded in COMPLETED.md; Phases 9A and 10A are recorded in COMPLETED.md so the shell and editors are built once over the canonical time domain.
 
 #### Phase 8C — shared Build and Simulate application shell
 
-This slice begins after Phase 9A.
 The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
 Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
 Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
@@ -136,27 +133,7 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 ### Phase 9 implementation sequence
 
-Phase 9A runs before the Phase 8 presentation slices; Phases 9B through 9E follow Phase 8F.
-
-#### Phase 9A — authoritative seconds, character tiers, and retention
-
-Design decisions 18 through 21 in the spec's open-decision table settle this slice's contracts; the slice implements them together because each changes persisted schema, and one migration is cheaper than four.
-
-Adopt character vocabulary throughout the runtime: `SimulationAgent` becomes `CharacterInstance`, `state.agents` becomes `state.characters`, and every record and trace field that addressed a character as `agentId` addresses it as `instanceId`, aligning runtime identity with the existing `characterId`, `profileId`, and `instanceId` levels rather than adding a fourth meaning.
-The player-facing rule is unchanged; `agent` leaves the model, API, and storage vocabulary.
-
-Add a narrative `tier` to character placements - `principal`, `secondary`, or `background`, defaulting to `secondary` on migration.
-Tier declares narrative salience and sizes retention budgets; it may inform host cadence policy but is orthogonal to LOD cadence and never changes evaluator fidelity.
-
-Replace the global trace FIFO with per-character retention windows sized by tier - principal 240 trace entries and 64 memories, secondary 96 and 32, background 32 and 16 - plus one shared window for entries with no character, and apply the same tiered bounds to decisions, observations, and other per-character records.
-Keep entry identity as a per-character monotonic sequence independent of retention, centralize every duplicated bound and the repeated clamp and bounded-append helpers, and emit resource-cost trace terms in the fixed resource vocabulary order so authored JSON key order cannot reach trace output.
-Tier pools may later cap total memory above those per-character floors but never replace them.
-
-Revise the time-domain contract in the design and architecture, then make integer simulated seconds canonical, epoch-style, for runtime state, authored event resolution, trace timestamps, deadlines, and cadence scheduling.
-Authored content moves to seconds as well: `tickSeconds` replaces `tickMinutes`, built-in scenarios tick at 60 seconds, and legacy minute-based scenarios and snapshots convert exactly by multiplication.
-Keep calendar and schedule authoring legible, separate monotonic transition identity from elapsed simulation time, and leave sub-second precision to a future scale factor between solver ticks and observed seconds rather than building it now.
-
-Gate: every legacy fixture migrates to exact second timestamps, default tiers, and character vocabulary without changing its initial state or event order; an ordinary snapshot resumes at the same canonical time without fractional or timezone-dependent conversion; and a background character flooding the trace leaves a quiet principal's causal sources intact across the documented per-character window.
+Phase 9A is recorded in COMPLETED.md; Phases 9B through 9E follow Phase 8F.
 
 #### Phase 9B — event-delimited advancement
 
