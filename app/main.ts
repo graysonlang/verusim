@@ -1015,7 +1015,11 @@ function createWorkbench(): HTMLElement {
       setStatus('Build needs a wide window; widen the workbench to edit drafts');
       return;
     }
-    if (next === 'build') setPlaying(false);
+    if (next === 'build') {
+      setPlaying(false);
+      setTimeRateMenuOpen(false);
+      setZoomMenuOpen(false);
+    }
     setMode(next);
     setStatus(
       next === 'build'
@@ -1909,6 +1913,10 @@ function createWorkbench(): HTMLElement {
     shell.dataset.mode = mode();
     editModeButton.setAttribute('aria-pressed', String(building));
     editModeButton.classList.toggle('active', building);
+    // The transport, rate, clock, day period, conditions, and world zoom all
+    // describe the running simulation; editing has no use for them.
+    transport.hidden = building;
+    zoomLevelButton.hidden = building;
     editModeButton.title = building ? 'Stop editing (Shift+B)' : 'Edit scenario (Shift+B)';
     editModeButton.setAttribute('aria-label', building ? 'Stop editing' : 'Edit scenario');
     roster.inert = building;

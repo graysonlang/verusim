@@ -130,6 +130,19 @@ select:focus-visible {
   box-shadow: 0 4px 16px var(--shadow);
 }
 
+/* Explicit columns: hiding the transport must not let the signals cluster slide into its place. */
+.file-actions {
+  grid-column: 1;
+}
+
+.transport {
+  grid-column: 2;
+}
+
+.header-signals {
+  grid-column: 3;
+}
+
 .file-actions,
 .header-signals,
 .transport,
@@ -3383,4 +3396,10 @@ input[type="search"]::placeholder {
   font-size: 11px;
   overflow: auto;
   white-space: pre-wrap;
+}
+
+.transport[hidden],
+.zoom-level-button[hidden],
+.edit-mode-button[hidden] {
+  display: none;
 }
