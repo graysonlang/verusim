@@ -1,4 +1,4 @@
-import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { appendBounded, clamp, memoryWindow } from '../model/retention.js';
 import type {
   DyadMode,
   DyadState,
@@ -9,7 +9,7 @@ import type {
   CharacterInstance,
   SimulationState,
   SocialFeatureMap,
-  TraceEntry,
+  TraceEntryInput,
 } from '../model/types.js';
 import { effectiveDisclosure, effectiveEmpathy } from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
@@ -142,7 +142,7 @@ export function repriceExposureFor(
   }
   const observer = agentFor(state, observerId);
   const subject = agentFor(state, subjectId);
-  const entry: TraceEntry = {
+  const entry: TraceEntryInput = {
     instanceId: observerId,
     id: `${state.tick}:${observerId}:${subjectId}:exposure-debt:${state.trace.entries.length}`,
     kind: 'relationship',
@@ -167,7 +167,7 @@ export function repriceExposureFor(
     tick: state.tick,
   };
   const replaced = replaceDyad(state, repriced);
-  return { ...replaced, trace: appendTrace(replaced.trace, entry, MAX_TRACE_ENTRIES) };
+  return { ...replaced, trace: appendTrace(replaced.trace, entry) };
 }
 
 function relationshipMemory(
@@ -197,7 +197,7 @@ function addRelationshipMemory(
     ...state,
     characters: state.characters.map(agent =>
       agent.id === observerId
-        ? { ...agent, memories: appendBounded(agent.memories, memory, MAX_MEMORIES) }
+        ? { ...agent, memories: appendBounded(agent.memories, memory, memoryWindow(agent.tier)) }
         : agent,
     ),
   };
@@ -225,7 +225,7 @@ export function resolveRelationshipEvent(
       event.id,
     ),
   );
-  const entry: TraceEntry = {
+  const entry: TraceEntryInput = {
     instanceId: event.observerId,
     id: `${state.tick}:${event.id}:relationship`,
     kind: 'relationship',
@@ -261,7 +261,7 @@ export function resolveRelationshipEvent(
   return {
     ...next,
     resolvedRelationshipEventIds: [...next.resolvedRelationshipEventIds, event.id],
-    trace: appendTrace(next.trace, entry, MAX_TRACE_ENTRIES),
+    trace: appendTrace(next.trace, entry),
   };
 }
 
@@ -325,7 +325,7 @@ export function resolveRelationshipRequest(
       opportunity.id,
     ),
   );
-  const entry: TraceEntry = {
+  const entry: TraceEntryInput = {
     instanceId: opportunity.responderId,
     id: `${state.tick}:${opportunity.id}:relationship-request`,
     kind: 'relationship',
@@ -376,7 +376,7 @@ export function resolveRelationshipRequest(
       MAX_RELATIONSHIP_DECISIONS,
     ),
     resolvedRelationshipRequestIds: [...next.resolvedRelationshipRequestIds, opportunity.id],
-    trace: appendTrace(next.trace, entry, MAX_TRACE_ENTRIES),
+    trace: appendTrace(next.trace, entry),
   };
 }
 
@@ -422,24 +422,20 @@ export function consolidateRelationshipMemories(
     );
     const removed = agent.memories.length - memories.length;
     if (removed === 0) return agent;
-    trace = appendTrace(
-      trace,
-      {
-        instanceId: agent.id,
-        id: `${state.tick}:${agent.id}:memory-consolidation`,
-        kind: 'relationship',
-        minute: state.minute,
-        selection: null,
-        summary: `${agent.profile.name} consolidated relationship memories during sleep`,
-        terms: [
-          traceTerm('removed-episodes', removed, `characters.${agent.id}.memories`),
-          traceTerm('retained-episodes', retained.size, 'simulation.relationship.peakEndRetention'),
-          traceTerm('semantic-dyads', subjectIds.size, `dyads.${agent.id}`),
-        ],
-        tick: state.tick,
-      },
-      MAX_TRACE_ENTRIES,
-    );
+    trace = appendTrace(trace, {
+      instanceId: agent.id,
+      id: `${state.tick}:${agent.id}:memory-consolidation`,
+      kind: 'relationship',
+      minute: state.minute,
+      selection: null,
+      summary: `${agent.profile.name} consolidated relationship memories during sleep`,
+      terms: [
+        traceTerm('removed-episodes', removed, `characters.${agent.id}.memories`),
+        traceTerm('retained-episodes', retained.size, 'simulation.relationship.peakEndRetention'),
+        traceTerm('semantic-dyads', subjectIds.size, `dyads.${agent.id}`),
+      ],
+      tick: state.tick,
+    });
     return { ...agent, memories };
   });
   return { ...state, characters: agents, trace };

@@ -1,4 +1,4 @@
-import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import {
   VALUE_IDS,
   type IncidentAppraisalRecord,
@@ -7,7 +7,7 @@ import {
   type IncidentPerceivedAttribution,
   type CharacterInstance,
   type SimulationState,
-  type TraceEntry,
+  type TraceEntryInput,
   type ValueMap,
 } from '../model/types.js';
 import { effectiveIdentity } from './history.js';
@@ -17,8 +17,6 @@ import { evaluateSpatialPerception } from './spatial.js';
 import { activeSocialInterpretationTerms } from './social-context.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyCharacterValueTurns } from './value-turn.js';
-
-const MAX_INCIDENT_RECORDS = 160;
 
 function agentFor(state: SimulationState, instanceId: string): CharacterInstance {
   const agent = state.characters.find(candidate => candidate.id === instanceId);
@@ -135,7 +133,7 @@ function appraisalTrace(
   state: SimulationState,
   event: IncidentEvent,
   record: IncidentAppraisalRecord,
-): TraceEntry {
+): TraceEntryInput {
   const observer = agentFor(state, record.observerId);
   const weighted = VALUE_IDS.reduce(
     (total, valueId) =>
@@ -247,8 +245,13 @@ function resolveForObserver(
     };
     return {
       ...state,
-      incidentRecords: appendBounded(state.incidentRecords, record, MAX_INCIDENT_RECORDS),
-      trace: appendTrace(state.trace, appraisalTrace(state, event, record), MAX_TRACE_ENTRIES),
+      incidentRecords: retainCharacterRecord(
+        state.incidentRecords,
+        record,
+        record => record.observerId,
+        recordWindows(state.characters),
+      ),
+      trace: appendTrace(state.trace, appraisalTrace(state, event, record)),
     };
   }
   const observer = agentFor(state, observerId);
@@ -283,7 +286,12 @@ function resolveForObserver(
       characters: state.characters.map(agent =>
         agent.id === observerId ? applyCharacterValueTurns(agent, turns) : agent,
       ),
-      incidentRecords: appendBounded(state.incidentRecords, record, MAX_INCIDENT_RECORDS),
+      incidentRecords: retainCharacterRecord(
+        state.incidentRecords,
+        record,
+        record => record.observerId,
+        recordWindows(state.characters),
+      ),
     },
     event,
     observerId,
@@ -291,7 +299,7 @@ function resolveForObserver(
   );
   return {
     ...next,
-    trace: appendTrace(next.trace, appraisalTrace(next, event, record), MAX_TRACE_ENTRIES),
+    trace: appendTrace(next.trace, appraisalTrace(next, event, record)),
   };
 }
 

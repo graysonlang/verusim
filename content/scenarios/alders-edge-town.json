@@ -97,7 +97,8 @@
         "packageId": "verusim",
         "resourceId": "mara-vale"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "tomas",
@@ -177,7 +178,8 @@
         "packageId": "verusim",
         "resourceId": "tomas-reed"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "nessa",
@@ -245,7 +247,8 @@
         "packageId": "verusim",
         "resourceId": "nessa-arden"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "elian",
@@ -321,7 +324,8 @@
         "packageId": "verusim",
         "resourceId": "elian-voss"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "sera",
@@ -391,7 +395,8 @@
         "packageId": "verusim",
         "resourceId": "sera-dane"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],

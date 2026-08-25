@@ -68,7 +68,8 @@
         "packageId": "verusim",
         "resourceId": "mara-under-load"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "aspirationOpportunities": [],

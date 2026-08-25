@@ -1,4 +1,10 @@
-import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import {
+  appendBounded,
+  clamp,
+  memoryWindow,
+  recordWindows,
+  retainCharacterRecord,
+} from '../model/retention.js';
 import {
   VALUE_IDS,
   type AgendaDecisionRecord,
@@ -13,7 +19,7 @@ import {
   type SimulationState,
   type TaskIntention,
   type TaskOperator,
-  type TraceEntry,
+  type TraceEntryInput,
   type ValueMap,
   type WorldFact,
 } from '../model/types.js';
@@ -27,7 +33,6 @@ import { somaticActionAvailable } from './somatic.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyCharacterValueTurns } from './value-turn.js';
 
-const MAX_AGENDA_DECISIONS = 80;
 const MAX_PLAN_CANDIDATES = 24;
 const MAX_PLAN_DEPTH = 8;
 const MAX_SEARCH_NODES = 256;
@@ -304,8 +309,8 @@ function planCandidates(
   });
 }
 
-function addTrace(state: SimulationState, entry: TraceEntry): SimulationState {
-  return { ...state, trace: appendTrace(state.trace, entry, MAX_TRACE_ENTRIES) };
+function addTrace(state: SimulationState, entry: TraceEntryInput): SimulationState {
+  return { ...state, trace: appendTrace(state.trace, entry) };
 }
 
 function addMemory(
@@ -317,7 +322,7 @@ function addMemory(
     ...state,
     characters: state.characters.map(agent =>
       agent.id === instanceId
-        ? { ...agent, memories: appendBounded(agent.memories, memory, MAX_MEMORIES) }
+        ? { ...agent, memories: appendBounded(agent.memories, memory, memoryWindow(agent.tier)) }
         : agent,
     ),
   };
@@ -478,7 +483,12 @@ function planForActor(state: SimulationState, actorId: string): SimulationState 
   };
   let next: SimulationState = {
     ...state,
-    agendaDecisions: appendBounded(state.agendaDecisions, decision, MAX_AGENDA_DECISIONS),
+    agendaDecisions: retainCharacterRecord(
+      state.agendaDecisions,
+      decision,
+      record => record.actorId,
+      recordWindows(state.characters),
+    ),
     agendaGoals,
   };
   for (const candidate of candidates) {

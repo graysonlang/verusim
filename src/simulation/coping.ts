@@ -1,4 +1,10 @@
-import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import {
+  appendBounded,
+  clamp,
+  memoryWindow,
+  recordWindows,
+  retainCharacterRecord,
+} from '../model/retention.js';
 import {
   VALUE_IDS,
   type AppraisalEvent,
@@ -11,7 +17,7 @@ import {
   type RuntimeMemory,
   type CharacterInstance,
   type SimulationState,
-  type TraceEntry,
+  type TraceEntryInput,
   type ValueId,
   type ValueMap,
 } from '../model/types.js';
@@ -23,8 +29,6 @@ import {
 } from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyValueTurns, reactiveValueTurns } from './value-turn.js';
-
-const MAX_APPRAISAL_RECORDS = 120;
 
 const CASCADE_DEPTH: Record<CascadePosition, number> = {
   fawn: 3,
@@ -163,93 +167,93 @@ export function resolveAppraisalEvent(
     summary: event.summary,
     type: 'aftermath',
   };
-  let trace = appendTrace(
-    state.trace,
-    {
-      instanceId: agent.id,
-      id: `${state.tick}:${event.id}:appraisal`,
-      kind: 'appraisal',
-      minute: state.minute,
-      selection: null,
-      summary: `${agent.profile.name} appraised ${event.summary.toLowerCase()}`,
-      terms: [
-        traceTerm('event', event.id, `scenario.appraisalEvents.${event.id}`),
-        traceTerm('threat', event.threat, `scenario.appraisalEvents.${event.id}.threat`),
-        traceTerm(
-          'coping-potential',
-          event.copingPotential,
-          `scenario.appraisalEvents.${event.id}.copingPotential`,
-        ),
-        traceTerm('allostatic-load', allostaticLoad, `characters.${agent.id}.values`),
-        traceTerm(
-          'somatic-impairment',
-          turned.somatic.impairment,
-          `characters.${agent.id}.somatic.impairment`,
-        ),
-        traceTerm(
-          'somatic-threat',
-          turned.somatic.threatContribution,
-          `characters.${agent.id}.somatic.threatContribution`,
-        ),
-        traceTerm('effective-coping', effectiveCoping, `appraisalRecords.${record.id}`),
-        ...VALUE_IDS.flatMap(valueId =>
-          appliedTurns[valueId] === undefined
-            ? []
-            : [
-                traceTerm(
-                  `turn:${valueId}`,
-                  appliedTurns[valueId] ?? 0,
-                  `scenario.appraisalEvents.${event.id}.turns.${valueId}`,
-                  `characters.${agent.profile.profileId}.constitution.reactivity`,
-                ),
-              ],
-        ),
-      ],
-      tick: state.tick,
-    },
-    MAX_TRACE_ENTRIES,
-  );
-  trace = appendTrace(
-    trace,
-    {
-      instanceId: agent.id,
-      id: `${state.tick}:${event.id}:cascade`,
-      kind: 'cascade',
-      minute: state.minute,
-      selection: null,
-      summary: `${agent.profile.name} entered ${updated.cascade}`,
-      terms: [
-        traceTerm('previous-cascade', agent.cascade, `characters.${agent.id}.cascade`),
-        traceTerm('cascade-load', cascadeLoad, `appraisalRecords.${record.id}.cascadeLoad`),
-        traceTerm(
-          'threshold',
-          agent.profile.constitution.threshold,
-          `characters.${agent.profile.profileId}.constitution.threshold`,
-        ),
-        traceTerm('next-cascade', updated.cascade, `characters.${agent.id}.cascade`),
-        traceTerm(
-          'target',
-          updated.cascadeTargetId,
-          `scenario.appraisalEvents.${event.id}.socialTargetId`,
-        ),
-        traceTerm(
-          'dwell-until',
-          updated.cascadeDwellUntilMinute,
-          `characters.${agent.id}.cascadeDwellUntilMinute`,
-        ),
-      ],
-      tick: state.tick,
-    },
-    MAX_TRACE_ENTRIES,
-  );
+  let trace = appendTrace(state.trace, {
+    instanceId: agent.id,
+    id: `${state.tick}:${event.id}:appraisal`,
+    kind: 'appraisal',
+    minute: state.minute,
+    selection: null,
+    summary: `${agent.profile.name} appraised ${event.summary.toLowerCase()}`,
+    terms: [
+      traceTerm('event', event.id, `scenario.appraisalEvents.${event.id}`),
+      traceTerm('threat', event.threat, `scenario.appraisalEvents.${event.id}.threat`),
+      traceTerm(
+        'coping-potential',
+        event.copingPotential,
+        `scenario.appraisalEvents.${event.id}.copingPotential`,
+      ),
+      traceTerm('allostatic-load', allostaticLoad, `characters.${agent.id}.values`),
+      traceTerm(
+        'somatic-impairment',
+        turned.somatic.impairment,
+        `characters.${agent.id}.somatic.impairment`,
+      ),
+      traceTerm(
+        'somatic-threat',
+        turned.somatic.threatContribution,
+        `characters.${agent.id}.somatic.threatContribution`,
+      ),
+      traceTerm('effective-coping', effectiveCoping, `appraisalRecords.${record.id}`),
+      ...VALUE_IDS.flatMap(valueId =>
+        appliedTurns[valueId] === undefined
+          ? []
+          : [
+              traceTerm(
+                `turn:${valueId}`,
+                appliedTurns[valueId] ?? 0,
+                `scenario.appraisalEvents.${event.id}.turns.${valueId}`,
+                `characters.${agent.profile.profileId}.constitution.reactivity`,
+              ),
+            ],
+      ),
+    ],
+    tick: state.tick,
+  });
+  trace = appendTrace(trace, {
+    instanceId: agent.id,
+    id: `${state.tick}:${event.id}:cascade`,
+    kind: 'cascade',
+    minute: state.minute,
+    selection: null,
+    summary: `${agent.profile.name} entered ${updated.cascade}`,
+    terms: [
+      traceTerm('previous-cascade', agent.cascade, `characters.${agent.id}.cascade`),
+      traceTerm('cascade-load', cascadeLoad, `appraisalRecords.${record.id}.cascadeLoad`),
+      traceTerm(
+        'threshold',
+        agent.profile.constitution.threshold,
+        `characters.${agent.profile.profileId}.constitution.threshold`,
+      ),
+      traceTerm('next-cascade', updated.cascade, `characters.${agent.id}.cascade`),
+      traceTerm(
+        'target',
+        updated.cascadeTargetId,
+        `scenario.appraisalEvents.${event.id}.socialTargetId`,
+      ),
+      traceTerm(
+        'dwell-until',
+        updated.cascadeDwellUntilMinute,
+        `characters.${agent.id}.cascadeDwellUntilMinute`,
+      ),
+    ],
+    tick: state.tick,
+  });
   return {
     ...state,
     characters: state.characters.map(candidate =>
       candidate.id === agent.id
-        ? { ...updated, memories: appendBounded(updated.memories, memory, MAX_MEMORIES) }
+        ? {
+            ...updated,
+            memories: appendBounded(updated.memories, memory, memoryWindow(updated.tier)),
+          }
         : candidate,
     ),
-    appraisalRecords: appendBounded(state.appraisalRecords, record, MAX_APPRAISAL_RECORDS),
+    appraisalRecords: retainCharacterRecord(
+      state.appraisalRecords,
+      record,
+      record => record.instanceId,
+      recordWindows(state.characters),
+    ),
     resolvedAppraisalEventIds: [...state.resolvedAppraisalEventIds, event.id],
     trace,
   };
@@ -325,7 +329,7 @@ function fireOutlet(
   state: SimulationState,
   agent: CharacterInstance,
   affordance: OutletAffordance,
-): { agent: CharacterInstance; trace: TraceEntry } {
+): { agent: CharacterInstance; trace: TraceEntryInput } {
   const previousUse = outletUseFor(agent, affordance.id);
   const scheduleResistance = affordance.reinforcementSchedule === 'variable-ratio' ? 0.35 : 1;
   const habituation = clamp(
@@ -463,24 +467,20 @@ export function advanceCoping(state: SimulationState): SimulationState {
         cascadeDwellUntilMinute: state.minute + dwellMinutes(next),
         cascadeTargetId: cascade === 'fawn' ? next.cascadeTargetId : null,
       };
-      trace = appendTrace(
-        trace,
-        {
-          instanceId: next.id,
-          id: `${state.tick}:${next.id}:cascade-recovery`,
-          kind: 'cascade',
-          minute: state.minute,
-          selection: null,
-          summary: `${next.profile.name} recovered from ${previous} toward ${cascade}`,
-          terms: [
-            traceTerm('previous-cascade', previous, `characters.${next.id}.cascade`),
-            traceTerm('cascade-load', cascadeLoad, `characters.${next.id}.cascadeLoad`),
-            traceTerm('next-cascade', cascade, `characters.${next.id}.cascade`),
-          ],
-          tick: state.tick,
-        },
-        MAX_TRACE_ENTRIES,
-      );
+      trace = appendTrace(trace, {
+        instanceId: next.id,
+        id: `${state.tick}:${next.id}:cascade-recovery`,
+        kind: 'cascade',
+        minute: state.minute,
+        selection: null,
+        summary: `${next.profile.name} recovered from ${previous} toward ${cascade}`,
+        terms: [
+          traceTerm('previous-cascade', previous, `characters.${next.id}.cascade`),
+          traceTerm('cascade-load', cascadeLoad, `characters.${next.id}.cascadeLoad`),
+          traceTerm('next-cascade', cascade, `characters.${next.id}.cascade`),
+        ],
+        tick: state.tick,
+      });
     }
     if (next.currentOutlet === null) {
       const deficit = dominantDeficit(next);
@@ -490,7 +490,7 @@ export function advanceCoping(state: SimulationState): SimulationState {
         if (affordance !== null) {
           const fired = fireOutlet(state, next, affordance);
           next = fired.agent;
-          trace = appendTrace(trace, fired.trace, MAX_TRACE_ENTRIES);
+          trace = appendTrace(trace, fired.trace);
         }
       }
     }

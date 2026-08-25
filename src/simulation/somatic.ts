@@ -1,4 +1,4 @@
-import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import type {
   CapabilityResolution,
   ResourceState,
@@ -12,7 +12,7 @@ import type {
   SomaticSourceSeed,
   SomaticSourceState,
   SomaticState,
-  TraceEntry,
+  TraceEntryInput,
 } from '../model/types.js';
 import { resolveCharacterCapabilityCheck } from './capability.js';
 import { evaluateEmpathy } from './empathy.js';
@@ -25,7 +25,6 @@ import {
 import { evaluateSpatialPerception } from './spatial.js';
 import { appendTrace, traceTerm } from './trace.js';
 
-const MAX_SOMATIC_RECORDS = 160;
 const STEADY_HABITUATION_MINUTES = 120;
 
 function compareSources(left: SomaticSourceState, right: SomaticSourceState): number {
@@ -278,7 +277,7 @@ function somaticTrace(
   state: SimulationState,
   event: SomaticEvent,
   record: SomaticResolutionRecord,
-): TraceEntry {
+): TraceEntryInput {
   return {
     instanceId: event.instanceId,
     id: `${record.id}:trace`,
@@ -342,7 +341,12 @@ export function resolveSomaticEvent(state: SimulationState, event: SomaticEvent)
         : agent,
     ),
     resolvedSomaticEventIds: [...state.resolvedSomaticEventIds, event.id],
-    somaticRecords: appendBounded(state.somaticRecords, record, MAX_SOMATIC_RECORDS),
-    trace: appendTrace(state.trace, somaticTrace(state, event, record), MAX_TRACE_ENTRIES),
+    somaticRecords: retainCharacterRecord(
+      state.somaticRecords,
+      record,
+      record => record.subjectId,
+      recordWindows(state.characters),
+    ),
+    trace: appendTrace(state.trace, somaticTrace(state, event, record)),
   };
 }

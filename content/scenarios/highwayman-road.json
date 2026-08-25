@@ -134,7 +134,8 @@
         "packageId": "verusim",
         "resourceId": "corvin-rusk"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "merchant",
@@ -161,7 +162,8 @@
         "packageId": "verusim",
         "resourceId": "jon-mere"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],

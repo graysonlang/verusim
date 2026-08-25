@@ -120,7 +120,8 @@
         "packageId": "verusim",
         "resourceId": "pottsfield-reeve"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],

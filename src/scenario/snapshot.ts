@@ -7,6 +7,9 @@ import {
   type SimulationSnapshotFile,
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
+const CHARACTER_TIER_SET: ReadonlySet<string> = new Set(CHARACTER_TIERS);
+import { RETENTION_BY_TIER, SYSTEM_TRACE_KEY } from '../model/retention.js';
+import { CHARACTER_TIERS } from '../model/types.js';
 import { parseResourceAddress, parseScenario, resourceAddressKey } from './parse.js';
 import {
   arrayValue,
@@ -530,6 +533,9 @@ function validateAgent(value: unknown, path: string): void {
   }
   const formativeRecords = validateHistoryState(agent.history, `${path}.history`);
   numberValue(agent.walkingMetersPerMinute, `${path}.walkingMetersPerMinute`, 0.1, 500);
+  if (typeof agent.tier !== 'string' || !CHARACTER_TIER_SET.has(agent.tier)) {
+    throw new ScenarioValidationError(`${path}.tier`, 'expected a known character tier');
+  }
 
   const resources = objectValue(agent.resources, `${path}.resources`);
   for (const resourceId of [
@@ -709,8 +715,14 @@ function validateAppraisalHistory(value: unknown, path: string): void {
 
 function validateTrace(value: unknown, path: string): void {
   const trace = objectValue(value, path);
-  if (trace.schemaVersion !== 1) {
+  if (trace.schemaVersion !== 2) {
     throw new ScenarioValidationError(`${path}.schemaVersion`, 'unsupported schema version');
+  }
+  for (const field of ['sequences', 'windows'] as const) {
+    const record = objectValue(trace[field], `${path}.${field}`);
+    for (const [key, value] of Object.entries(record)) {
+      integerValue(value, `${path}.${field}.${key}`, 0);
+    }
   }
   arrayValue(trace.entries, `${path}.entries`).forEach((entryValue, index) => {
     const entryPath = `${path}.entries[${index}]`;
@@ -1411,6 +1423,9 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
     file.characters = file.agents;
     delete file.agents;
     renameKeysDeep(file, { affectedAgentId: 'affectedInstanceId', agentId: 'instanceId' });
+    for (const instance of arrayValue(file.characters, 'snapshot.characters')) {
+      objectValue(instance, 'snapshot.characters').tier = 'secondary';
+    }
   }
   if (sourceVersion === 1) {
     const scenario = parseScenario(file.scenario);
@@ -1649,6 +1664,28 @@ function migrateSnapshot(value: unknown): Record<string, unknown> {
   if (sourceVersion < 17) {
     const lock = objectValue(file.resourceLock, 'snapshot.resourceLock');
     lock.digest = null;
+  }
+  if (sourceVersion < 18) {
+    // Trace retention contract, after older gates have shaped the trace object.
+    const scenario = objectValue(file.scenario, 'snapshot.scenario');
+    const windows: Record<string, number> = {};
+    for (const placement of arrayValue(scenario.characters, 'snapshot.scenario.characters')) {
+      const record = objectValue(placement, 'snapshot.scenario.characters');
+      if (typeof record.instanceId === 'string') {
+        windows[record.instanceId] = RETENTION_BY_TIER.secondary.trace;
+      }
+    }
+    const trace = objectValue(file.trace, 'snapshot.trace');
+    const sequences: Record<string, number> = {};
+    trace.entries = arrayValue(trace.entries, 'snapshot.trace.entries').map(entryValue => {
+      const entry = objectValue(entryValue, 'snapshot.trace.entries');
+      const key = typeof entry.instanceId === 'string' ? entry.instanceId : SYSTEM_TRACE_KEY;
+      sequences[key] = (sequences[key] ?? 0) + 1;
+      return { ...entry, sequence: sequences[key] };
+    });
+    trace.schemaVersion = 2;
+    trace.sequences = sequences;
+    trace.windows = windows;
   }
   file.schemaVersion = 18;
   return file;

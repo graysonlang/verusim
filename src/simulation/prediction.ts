@@ -1,4 +1,4 @@
-import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { appendBounded, clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import type {
   DyadState,
   MindModelObservationEvent,
@@ -8,7 +8,7 @@ import type {
   SensoryAssessment,
   CharacterInstance,
   SimulationState,
-  TraceEntry,
+  TraceEntryInput,
 } from '../model/types.js';
 import { resolveCharacterCapabilityCheck } from './capability.js';
 import { evaluateSpatialPerception } from './spatial.js';
@@ -50,8 +50,8 @@ function observationTrace(
   event: MindModelObservationEvent,
   observer: CharacterInstance,
   sensory: SensoryAssessment,
-  perceptionTerms: TraceEntry['terms'],
-): TraceEntry {
+  perceptionTerms: TraceEntryInput['terms'],
+): TraceEntryInput {
   const subject = agentFor(state, event.subjectId);
   const perceived = sensory.available;
   return {
@@ -126,8 +126,8 @@ function predictionTrace(
   state: SimulationState,
   event: MindModelObservationEvent,
   record: MindModelObservationRecord,
-  capabilityTerms: TraceEntry['terms'],
-): TraceEntry {
+  capabilityTerms: TraceEntryInput['terms'],
+): TraceEntryInput {
   const observer = agentFor(state, record.observerId);
   const subject = agentFor(state, record.subjectId);
   return {
@@ -215,7 +215,6 @@ function resolveForObserver(
   let trace = appendTrace(
     state.trace,
     observationTrace(state, event, observer, sensory, perception.terms),
-    MAX_TRACE_ENTRIES,
   );
   if (!sensory.available) {
     return {
@@ -324,11 +323,7 @@ function resolveForObserver(
     subjectId: event.subjectId,
     tick: state.tick,
   };
-  trace = appendTrace(
-    trace,
-    predictionTrace(state, event, record, calibration.terms),
-    MAX_TRACE_ENTRIES,
-  );
+  trace = appendTrace(trace, predictionTrace(state, event, record, calibration.terms));
   const next: SimulationState = {
     ...state,
     dyads:
@@ -339,7 +334,12 @@ function resolveForObserver(
               ? updatedDyad
               : candidate,
           ),
-    observations: appendBounded(state.observations, record, MAX_OBSERVATIONS),
+    observations: retainCharacterRecord(
+      state.observations,
+      record,
+      record => record.observerId,
+      recordWindows(state.characters),
+    ),
     trace,
   };
   return repriceExposureFor(

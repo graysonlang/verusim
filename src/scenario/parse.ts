@@ -1,3 +1,4 @@
+import { CHARACTER_TIERS } from '../model/types.js';
 import {
   CAPABILITY_IDS,
   HEIGHT_CLASSES,
@@ -79,6 +80,7 @@ const SOMATIC_CADENCES = new Set(['fluctuating', 'steady']);
 const SOMATIC_ORIGINS = new Set(['activity', 'environment', 'event']);
 const SOMATIC_PREEMPTIONS = new Set(['dead', 'emergency', 'incapacitated', 'none']);
 const AGENCY_MODES = new Set(['invoker', 'responder']);
+const CHARACTER_TIER_SET: ReadonlySet<string> = new Set(CHARACTER_TIERS);
 const NARRATIVE_CLAIM_KINDS = new Set(['affirm', 'deny', 'deserve']);
 const RESOURCE_KIND_SET = new Set<string>(RESOURCE_KINDS);
 const SEASON_ID_SET = new Set<string>(SEASON_IDS);
@@ -830,8 +832,12 @@ function migrateScenario(value: unknown): Record<string, unknown> {
       },
     );
   }
-  if (sourceVersion < 18)
+  if (sourceVersion < 18) {
     renameKeysDeep(file, { affectedAgentId: 'affectedInstanceId', agentId: 'instanceId' });
+    eachObject(file.characters, characters, placement => {
+      placement.tier = 'secondary';
+    });
+  }
   file.schemaVersion = 18;
   return file;
 }
@@ -1330,6 +1336,7 @@ const CHARACTER_PLACEMENT_KEYS: readonly string[] = [
   'initialValues',
   'instanceId',
   'narrativeOverrides',
+  'tier',
   'normPerspectives',
   'position',
   'schedule',
@@ -1597,6 +1604,9 @@ export function parseScenario(value: unknown): ScenarioFile {
     const placement = objectValue(item, path);
     identifierValue(placement.instanceId, `${path}.instanceId`);
     parseResourceAddress(placement.profile, `${path}.profile`, 'character-profile');
+    if (typeof placement.tier !== 'string' || !CHARACTER_TIER_SET.has(placement.tier)) {
+      throw new ScenarioValidationError(`${path}.tier`, 'expected a known character tier');
+    }
     if (typeof placement.agency !== 'string' || !AGENCY_MODES.has(placement.agency)) {
       throw new ScenarioValidationError(`${path}.agency`, 'expected invoker or responder');
     }

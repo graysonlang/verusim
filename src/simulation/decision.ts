@@ -1,4 +1,10 @@
-import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import {
+  appendBounded,
+  clamp,
+  memoryWindow,
+  recordWindows,
+  retainCharacterRecord,
+} from '../model/retention.js';
 import type {
   ActionCandidate,
   BehaviorOpportunity,
@@ -8,7 +14,7 @@ import type {
   RuntimeMemory,
   CharacterInstance,
   SimulationState,
-  TraceEntry,
+  TraceEntryInput,
 } from '../model/types.js';
 import { appraiseAction } from './appraisal.js';
 import { evaluateEmpathy } from './empathy.js';
@@ -18,8 +24,6 @@ import { effectiveValueWeights } from './salience.js';
 import { somaticActionAvailable } from './somatic.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyCharacterValueTurns } from './value-turn.js';
-
-const MAX_DECISIONS = 80;
 
 function findAgent(state: SimulationState, instanceId: string): CharacterInstance {
   const agent = state.characters.find(candidate => candidate.id === instanceId);
@@ -139,7 +143,7 @@ function somaticGateTrace(
   opportunity: BehaviorOpportunity,
   selectedId: string | null,
   removedIds: readonly string[],
-): TraceEntry {
+): TraceEntryInput {
   const actor = findAgent(state, opportunity.actorId);
   return {
     instanceId: actor.id,
@@ -201,7 +205,6 @@ function resolvePreemptedOpportunity(
           .filter(candidate => candidate.id !== selected?.id)
           .map(candidate => candidate.id),
       ),
-      MAX_TRACE_ENTRIES,
     ),
   };
 }
@@ -210,7 +213,7 @@ function appraisalTrace(
   state: SimulationState,
   opportunity: BehaviorOpportunity,
   candidate: CandidateEvaluation,
-): TraceEntry {
+): TraceEntryInput {
   const appraisal = candidate.appraisal;
   const candidateSource = `scenario.behaviorOpportunities.${opportunity.id}.candidates.${candidate.candidateId}`;
   const actorSource = `characters.${opportunity.actorId}`;
@@ -328,7 +331,7 @@ export function resolveOpportunity(
       memories:
         aftermathMemory === null
           ? withRemorse.memories
-          : appendBounded(withRemorse.memories, aftermathMemory, MAX_MEMORIES),
+          : appendBounded(withRemorse.memories, aftermathMemory, memoryWindow(withRemorse.tier)),
     };
   });
 
@@ -340,72 +343,64 @@ export function resolveOpportunity(
     trace = appendTrace(
       trace,
       somaticGateTrace(state, opportunity, selectedCandidate.id, removedIds),
-      MAX_TRACE_ENTRIES,
     );
   }
   for (const candidate of decision.candidates) {
-    trace = appendTrace(trace, appraisalTrace(state, opportunity, candidate), MAX_TRACE_ENTRIES);
+    trace = appendTrace(trace, appraisalTrace(state, opportunity, candidate));
   }
-  trace = appendTrace(
-    trace,
-    {
+  trace = appendTrace(trace, {
+    instanceId: opportunity.actorId,
+    id: `${state.tick}:${opportunity.id}:decision`,
+    kind: 'decision',
+    minute: state.minute,
+    selection: {
+      rule: 'highest-utility-then-authored-order',
+      selectedId: selectedCandidate.id,
+    },
+    summary: `${findAgent(state, opportunity.actorId).profile.name}: ${selectedCandidate.label}`,
+    terms: [
+      traceTerm('opportunity', opportunity.id, `scenario.behaviorOpportunities.${opportunity.id}`),
+      traceTerm(
+        'selected-utility',
+        selectedEvaluation.appraisal.utility,
+        `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.utility`,
+      ),
+    ],
+    tick: state.tick,
+  });
+  if (remorse >= 0.05) {
+    trace = appendTrace(trace, {
       instanceId: opportunity.actorId,
-      id: `${state.tick}:${opportunity.id}:decision`,
-      kind: 'decision',
+      id: `${state.tick}:${opportunity.id}:aftermath`,
+      kind: 'aftermath',
       minute: state.minute,
-      selection: {
-        rule: 'highest-utility-then-authored-order',
-        selectedId: selectedCandidate.id,
-      },
-      summary: `${findAgent(state, opportunity.actorId).profile.name}: ${selectedCandidate.label}`,
+      selection: null,
+      summary: `${findAgent(state, opportunity.actorId).profile.name} carries remorse from ${selectedCandidate.label.toLowerCase()}`,
       terms: [
         traceTerm(
-          'opportunity',
-          opportunity.id,
-          `scenario.behaviorOpportunities.${opportunity.id}`,
+          'other-harm-felt',
+          negativeOtherTurn,
+          `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.contributions`,
         ),
         traceTerm(
-          'selected-utility',
-          selectedEvaluation.appraisal.utility,
-          `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.utility`,
+          'contract-cost',
+          selectedEvaluation.appraisal.contractViolationCost,
+          `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.contractViolationCost`,
         ),
       ],
       tick: state.tick,
-    },
-    MAX_TRACE_ENTRIES,
-  );
-  if (remorse >= 0.05) {
-    trace = appendTrace(
-      trace,
-      {
-        instanceId: opportunity.actorId,
-        id: `${state.tick}:${opportunity.id}:aftermath`,
-        kind: 'aftermath',
-        minute: state.minute,
-        selection: null,
-        summary: `${findAgent(state, opportunity.actorId).profile.name} carries remorse from ${selectedCandidate.label.toLowerCase()}`,
-        terms: [
-          traceTerm(
-            'other-harm-felt',
-            negativeOtherTurn,
-            `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.contributions`,
-          ),
-          traceTerm(
-            'contract-cost',
-            selectedEvaluation.appraisal.contractViolationCost,
-            `decisions.${decision.id}.candidates.${selectedCandidate.id}.appraisal.contractViolationCost`,
-          ),
-        ],
-        tick: state.tick,
-      },
-      MAX_TRACE_ENTRIES,
-    );
+    });
   }
 
   return {
     ...state,
     characters: agents,
-    decisions: appendBounded(state.decisions, decision, MAX_DECISIONS),
+    decisions: retainCharacterRecord(
+      state.decisions,
+      decision,
+      record => record.actorId,
+      recordWindows(state.characters),
+    ),
     resolvedOpportunityIds: [...state.resolvedOpportunityIds, opportunity.id],
     trace,
   };

@@ -138,7 +138,8 @@
         "packageId": "verusim",
         "resourceId": "pottsfield-reeve"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "resident",
@@ -176,7 +177,8 @@
         "packageId": "verusim",
         "resourceId": "pottsfield-resident"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "visitor",
@@ -214,7 +216,8 @@
         "packageId": "verusim",
         "resourceId": "pottsfield-visitor"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],

@@ -1,4 +1,4 @@
-import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { appendBounded, clamp, memoryWindow } from '../model/retention.js';
 import {
   SOCIAL_FEATURE_IDS,
   type DisclosureAudienceEvaluation,
@@ -8,7 +8,7 @@ import {
   type RuntimeMemory,
   type SimulationState,
   type SocialFeatureMap,
-  type TraceEntry,
+  type TraceEntryInput,
 } from '../model/types.js';
 import { effectiveDisclosure } from './history.js';
 import { appendTrace, traceTerm } from './trace.js';
@@ -108,7 +108,7 @@ function appraisalTrace(
   state: SimulationState,
   opportunity: DisclosureOpportunity,
   decision: DisclosureDecisionRecord,
-): TraceEntry {
+): TraceEntryInput {
   return {
     instanceId: opportunity.ownerId,
     id: `${state.tick}:${opportunity.id}:disclosure-appraisal`,
@@ -182,43 +182,35 @@ export function resolveDisclosureOpportunity(
     type: 'disclosure',
   };
 
-  let trace = appendTrace(
-    state.trace,
-    appraisalTrace(state, opportunity, decision),
-    MAX_TRACE_ENTRIES,
-  );
-  trace = appendTrace(
-    trace,
-    {
-      instanceId: opportunity.ownerId,
-      id: `${state.tick}:${opportunity.id}:disclosure-decision`,
-      kind: 'disclosure-decision',
-      minute: state.minute,
-      selection: { rule: 'positive-utility', selectedId: decision.outcome },
-      summary,
-      terms: [
-        traceTerm(
-          'opportunity',
-          opportunity.id,
-          `scenario.disclosureOpportunities.${opportunity.id}`,
-        ),
-        traceTerm('utility', decision.utility, `disclosureDecisions.${decision.id}.utility`),
-        traceTerm(
-          'worst-audience',
-          decision.worstAudienceId,
-          `disclosureDecisions.${decision.id}.worstAudienceId`,
-        ),
-      ],
-      tick: state.tick,
-    },
-    MAX_TRACE_ENTRIES,
-  );
+  let trace = appendTrace(state.trace, appraisalTrace(state, opportunity, decision));
+  trace = appendTrace(trace, {
+    instanceId: opportunity.ownerId,
+    id: `${state.tick}:${opportunity.id}:disclosure-decision`,
+    kind: 'disclosure-decision',
+    minute: state.minute,
+    selection: { rule: 'positive-utility', selectedId: decision.outcome },
+    summary,
+    terms: [
+      traceTerm(
+        'opportunity',
+        opportunity.id,
+        `scenario.disclosureOpportunities.${opportunity.id}`,
+      ),
+      traceTerm('utility', decision.utility, `disclosureDecisions.${decision.id}.utility`),
+      traceTerm(
+        'worst-audience',
+        decision.worstAudienceId,
+        `disclosureDecisions.${decision.id}.worstAudienceId`,
+      ),
+    ],
+    tick: state.tick,
+  });
 
   let next: SimulationState = {
     ...state,
     characters: state.characters.map(agent =>
       agent.id === owner.id
-        ? { ...agent, memories: appendBounded(agent.memories, memory, MAX_MEMORIES) }
+        ? { ...agent, memories: appendBounded(agent.memories, memory, memoryWindow(agent.tier)) }
         : agent,
     ),
     disclosureDecisions: appendBounded(

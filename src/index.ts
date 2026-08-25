@@ -46,6 +46,16 @@ export {
   type VignetteDefinition,
 } from './acceptance/ensemble.js';
 export { endicottMarguerittevignette, pottsfieldVignette } from './acceptance/vignettes.js';
+export {
+  RETENTION_BY_TIER,
+  SYSTEM_TRACE_ENTRIES,
+  memoryWindow,
+  recordWindows,
+  retainCharacterRecord,
+  traceWindow,
+  type TierRetention,
+} from './model/retention.js';
+export { CHARACTER_TIERS, type CharacterTier } from './model/types.js';
 export { canonicalJson, contentDigest } from './scenario/digest.js';
 export { validatePreparedScenario } from './scenario/prepare.js';
 export { validateSnapshotReferences } from './scenario/snapshot-references.js';

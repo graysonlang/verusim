@@ -1,4 +1,4 @@
-import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { appendBounded, clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import {
   VALUE_IDS,
   type NormAddress,
@@ -9,7 +9,7 @@ import {
   type SensoryAssessment,
   type CharacterInstance,
   type SimulationState,
-  type TraceEntry,
+  type TraceEntryInput,
   type ValueMap,
 } from '../model/types.js';
 import { resolveCharacterCapabilityCheck } from './capability.js';
@@ -97,8 +97,8 @@ function observationTrace(
   event: NormObservationEvent,
   observer: CharacterInstance,
   sensory: SensoryAssessment,
-  perceptionTerms: TraceEntry['terms'],
-): TraceEntry {
+  perceptionTerms: TraceEntryInput['terms'],
+): TraceEntryInput {
   const perceived = sensory.available;
   const key = normKey(event.norm);
   return {
@@ -159,8 +159,8 @@ function appraisalTrace(
   state: SimulationState,
   event: NormObservationEvent,
   record: NormObservationRecord,
-  capabilityTerms: TraceEntry['terms'],
-): TraceEntry {
+  capabilityTerms: TraceEntryInput['terms'],
+): TraceEntryInput {
   const observer = agentFor(state, record.observerId);
   const direction =
     record.subjectiveTurn === null || Math.abs(record.subjectiveTurn) < 0.0001
@@ -239,7 +239,6 @@ function resolveForObserver(
   let trace = appendTrace(
     state.trace,
     observationTrace(state, event, observer, sensory, perception.terms),
-    MAX_TRACE_ENTRIES,
   );
   if (!sensory.available) {
     return {
@@ -294,11 +293,7 @@ function resolveForObserver(
     subjectiveTurns: turns.subjectiveTurns,
     tick: state.tick,
   };
-  trace = appendTrace(
-    trace,
-    appraisalTrace(state, event, record, legibility.terms),
-    MAX_TRACE_ENTRIES,
-  );
+  trace = appendTrace(trace, appraisalTrace(state, event, record, legibility.terms));
   return {
     ...state,
     characters: state.characters.map(candidate =>
@@ -306,7 +301,12 @@ function resolveForObserver(
         ? applyCharacterValueTurns(candidate, turns.subjectiveTurns)
         : candidate,
     ),
-    observations: appendBounded(state.observations, record, MAX_OBSERVATIONS),
+    observations: retainCharacterRecord(
+      state.observations,
+      record,
+      record => record.observerId,
+      recordWindows(state.characters),
+    ),
     trace,
   };
 }

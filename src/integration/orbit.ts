@@ -1,5 +1,10 @@
-import { MAX_TRACE_ENTRIES, clamp } from '../model/retention.js';
-import type { DyadState, CharacterInstance, SimulationState, TraceEntry } from '../model/types.js';
+import { clamp } from '../model/retention.js';
+import type {
+  DyadState,
+  CharacterInstance,
+  SimulationState,
+  TraceEntryInput,
+} from '../model/types.js';
 import { dyadFor, projectedDyad, turnDyad } from '../simulation/relationship.js';
 import { appendTrace, traceTerm } from '../simulation/trace.js';
 
@@ -144,7 +149,7 @@ function gateTrace(
   exchange: LowStakesExchange,
   initiator: CharacterInstance,
   responder: CharacterInstance,
-): TraceEntry {
+): TraceEntryInput {
   return {
     instanceId: initiator.id,
     id: `${state.tick}:${exchange.id}:somatic-gate`,
@@ -178,11 +183,7 @@ export function resolveOrbitExchange(
   if (initiator.somatic.level >= 3 || responder.somatic.level >= 3) {
     return {
       ...state,
-      trace: appendTrace(
-        state.trace,
-        gateTrace(state, exchange, initiator, responder),
-        MAX_TRACE_ENTRIES,
-      ),
+      trace: appendTrace(state.trace, gateTrace(state, exchange, initiator, responder)),
     };
   }
   const settlement = evaluateOrbitExchange(state, exchange);
@@ -196,7 +197,7 @@ export function resolveOrbitExchange(
   );
   let dyads = replaceDyad(state, initiatorDyad);
   dyads = replaceDyad({ ...state, dyads }, responderDyad);
-  const trace: TraceEntry = {
+  const trace: TraceEntryInput = {
     instanceId: initiator.id,
     id: `${settlement.id}:orbit`,
     kind: 'relationship',
@@ -231,6 +232,6 @@ export function resolveOrbitExchange(
   return {
     ...state,
     dyads,
-    trace: appendTrace(state.trace, trace, MAX_TRACE_ENTRIES),
+    trace: appendTrace(state.trace, trace),
   };
 }

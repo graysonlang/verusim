@@ -20,6 +20,9 @@ export const RESOURCE_KINDS = [
 
 export type ResourceKind = (typeof RESOURCE_KINDS)[number];
 
+export const CHARACTER_TIERS = ['principal', 'secondary', 'background'] as const;
+export type CharacterTier = (typeof CHARACTER_TIERS)[number];
+
 export interface ResourceAddress {
   kind: ResourceKind;
   packageId: string;
@@ -574,6 +577,7 @@ export interface CharacterPlacement {
   normPerspectives: NormPerspective[];
   position: LayerPosition;
   schedule: ScheduleBlock[];
+  tier: CharacterTier;
   walkingMetersPerMinute?: number;
 }
 
@@ -1105,6 +1109,7 @@ export interface CharacterInstance {
   resources: ResourceState;
   schedule: ScheduleBlock[];
   somatic: SomaticState;
+  tier: CharacterTier;
   values: ValueMap<ValueState>;
   walkingMetersPerMinute: number;
 }
@@ -1161,15 +1166,23 @@ export interface TraceEntry {
   id: string;
   kind: TraceKind;
   minute: number;
+  sequence: number;
   selection: TraceSelection | null;
   summary: string;
   terms: TraceTerm[];
   tick: number;
 }
 
+/** A trace entry before `appendTrace` assigns its per-character sequence. */
+export type TraceEntryInput = Omit<TraceEntry, 'sequence'>;
+
 export interface CausalTrace {
   entries: TraceEntry[];
-  schemaVersion: 1;
+  schemaVersion: 2;
+  /** Next-sequence counters per character instance, plus `*` for entries with no character. */
+  sequences: Record<string, number>;
+  /** Retention window per character instance, derived from placement tier. */
+  windows: Record<string, number>;
 }
 
 export interface SimulationState {
@@ -1627,6 +1640,7 @@ export interface CharacterInstanceSnapshot {
   resources: ResourceState;
   schedule: ScheduleBlock[];
   somatic: SomaticState;
+  tier: CharacterTier;
   values: ValueMap<ValueState>;
   walkingMetersPerMinute: number;
 }

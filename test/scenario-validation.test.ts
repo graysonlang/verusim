@@ -182,7 +182,7 @@ describe('scenario validation', () => {
     delete snapshot.worldRevision;
     const migratedSnapshot = parseSnapshot(snapshot);
     assert.equal(migratedSnapshot.schemaVersion, 18);
-    assert.equal(migratedSnapshot.trace.schemaVersion, 1);
+    assert.equal(migratedSnapshot.trace.schemaVersion, 2);
     assert.equal(migratedSnapshot.trace.entries[0]?.terms[0]?.id, 'legacy-cause');
     assert.deepEqual(migratedSnapshot.agendaGoals, []);
     assert.deepEqual(migratedSnapshot.worldFacts, []);
@@ -207,7 +207,7 @@ describe('scenario validation', () => {
     downgradeSnapshotReferences(agendaSnapshot, 2);
     const migratedAgendaSnapshot = parseSnapshot(agendaSnapshot);
     assert.equal(migratedAgendaSnapshot.schemaVersion, 18);
-    assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 1);
+    assert.equal(migratedAgendaSnapshot.trace.schemaVersion, 2);
   });
 
   it('migrates legacy schedule activities to explicit recovery modes', () => {
@@ -509,6 +509,7 @@ describe('scenario validation', () => {
       id: '0:mara:gate:emergency',
       kind: 'gate',
       minute: snapshot.minute,
+      sequence: 1,
       selection: { rule: 'preempt-gate', selectedId: 'emergency' },
       summary: 'Emergency preempted ordinary appraisal',
       terms: [

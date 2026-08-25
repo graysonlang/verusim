@@ -1,4 +1,4 @@
-import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { appendBounded, clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import type {
   AspirationOpportunity,
   AttributedNarrative,
@@ -15,7 +15,6 @@ import { effectiveValueWeights } from './salience.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyCharacterValueTurns } from './value-turn.js';
 
-const MAX_NARRATIVE_RECORDS = 120;
 const MAX_REPUTATIONS = 160;
 const YEAR_MINUTES = 365 * 24 * 60;
 const ADULT_WEAR_IN_RATE_PER_YEAR = 0.02;
@@ -125,27 +124,28 @@ function addRecord(
           }
         : agent,
     ),
-    narrativeRecords: appendBounded(state.narrativeRecords, record, MAX_NARRATIVE_RECORDS),
-    resolvedNarrativeEventIds: [...state.resolvedNarrativeEventIds, event.id],
-    trace: appendTrace(
-      state.trace,
-      {
-        instanceId: actorId,
-        id: record.id,
-        kind: event.eventType === 'attribution' ? 'reputation' : 'narrative',
-        minute: state.minute,
-        selection: null,
-        summary: `${actor.profile.name}: ${disposition}`,
-        terms: [
-          traceTerm('event', event.id, `scenario.narrativeEvents.${event.id}`),
-          traceTerm('claim', claimId, `characters.${actorId}.narrative.claims.${claimId}`),
-          traceTerm('disposition', disposition, `narrativeRecords.${record.id}.disposition`),
-          traceTerm('regulation-cost', regulationCost, `characters.${actorId}.resources`),
-        ],
-        tick: state.tick,
-      },
-      MAX_TRACE_ENTRIES,
+    narrativeRecords: retainCharacterRecord(
+      state.narrativeRecords,
+      record,
+      record => record.actorId,
+      recordWindows(state.characters),
     ),
+    resolvedNarrativeEventIds: [...state.resolvedNarrativeEventIds, event.id],
+    trace: appendTrace(state.trace, {
+      instanceId: actorId,
+      id: record.id,
+      kind: event.eventType === 'attribution' ? 'reputation' : 'narrative',
+      minute: state.minute,
+      selection: null,
+      summary: `${actor.profile.name}: ${disposition}`,
+      terms: [
+        traceTerm('event', event.id, `scenario.narrativeEvents.${event.id}`),
+        traceTerm('claim', claimId, `characters.${actorId}.narrative.claims.${claimId}`),
+        traceTerm('disposition', disposition, `narrativeRecords.${record.id}.disposition`),
+        traceTerm('regulation-cost', regulationCost, `characters.${actorId}.resources`),
+      ],
+      tick: state.tick,
+    }),
   };
 }
 
@@ -392,33 +392,29 @@ export function prepareNarrativeAgency(state: SimulationState): SimulationState 
       ...next,
       agendaGoals: [...next.agendaGoals, goal],
       resolvedAspirationOpportunityIds: [...next.resolvedAspirationOpportunityIds, opportunity.id],
-      trace: appendTrace(
-        next.trace,
-        {
-          instanceId: agent.id,
-          id: `${next.tick}:${opportunity.id}:aspiration`,
-          kind: 'narrative',
-          minute: next.minute,
-          selection: { rule: 'positive-utility', selectedId: goal.id },
-          summary: `${agent.profile.name} formed an aspiration goal: ${goal.label}`,
-          terms: [
-            traceTerm('claim', claim.id, `characters.${agent.id}.narrative.claims.${claim.id}`),
-            traceTerm(
-              'commitment',
-              claim.commitment,
-              `characters.${agent.id}.narrative.claims.${claim.id}`,
-            ),
-            traceTerm(
-              'confidence',
-              claim.confidence,
-              `characters.${agent.id}.narrative.claims.${claim.id}`,
-            ),
-            traceTerm('goal', goal.id, `agendaGoals.${goal.id}`),
-          ],
-          tick: next.tick,
-        },
-        MAX_TRACE_ENTRIES,
-      ),
+      trace: appendTrace(next.trace, {
+        instanceId: agent.id,
+        id: `${next.tick}:${opportunity.id}:aspiration`,
+        kind: 'narrative',
+        minute: next.minute,
+        selection: { rule: 'positive-utility', selectedId: goal.id },
+        summary: `${agent.profile.name} formed an aspiration goal: ${goal.label}`,
+        terms: [
+          traceTerm('claim', claim.id, `characters.${agent.id}.narrative.claims.${claim.id}`),
+          traceTerm(
+            'commitment',
+            claim.commitment,
+            `characters.${agent.id}.narrative.claims.${claim.id}`,
+          ),
+          traceTerm(
+            'confidence',
+            claim.confidence,
+            `characters.${agent.id}.narrative.claims.${claim.id}`,
+          ),
+          traceTerm('goal', goal.id, `agendaGoals.${goal.id}`),
+        ],
+        tick: next.tick,
+      }),
     };
   }
   return next;

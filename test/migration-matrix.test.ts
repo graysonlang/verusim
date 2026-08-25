@@ -19,7 +19,7 @@ const catalog = createResourceCatalog(BUILT_IN_RESOURCES);
 // corresponding migration gate would reinstate, so a downgrade to any legacy
 // version must migrate back to exactly this parsed value.
 const minimalScenario = {
-  schemaVersion: 17,
+  schemaVersion: 18,
   id: 'migration-matrix',
   title: 'Migration matrix',
   summary: 'A minimal scenario whose legacy downgrades migrate back to itself.',
@@ -56,6 +56,7 @@ const minimalScenario = {
       narrativeOverrides: [],
       profile: { kind: 'character-profile', packageId: 'verusim', resourceId: 'mara-under-load' },
       initialSomaticSources: [],
+      tier: 'secondary',
     },
   ],
   aspirationOpportunities: [],

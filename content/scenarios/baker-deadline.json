@@ -276,7 +276,8 @@
         "packageId": "verusim",
         "resourceId": "mara-vale"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],

@@ -174,7 +174,8 @@
         "packageId": "verusim",
         "resourceId": "endicott"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "margueritte",
@@ -201,7 +202,8 @@
         "packageId": "verusim",
         "resourceId": "margueritte"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],

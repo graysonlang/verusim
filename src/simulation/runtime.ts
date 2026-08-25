@@ -1,4 +1,4 @@
-import { MAX_MEMORIES, MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { appendBounded, clamp, memoryWindow } from '../model/retention.js';
 import {
   VALUE_IDS,
   type CharacterDefinition,
@@ -13,7 +13,7 @@ import {
   type CharacterInstance,
   type SimulationSnapshotFile,
   type SimulationState,
-  type TraceEntry,
+  type TraceEntryInput,
   type ValueId,
   type ValueMap,
   type ValueState,
@@ -55,7 +55,7 @@ import {
   resolveRelationshipEvent,
   resolveRelationshipRequest,
 } from './relationship.js';
-import { appendTrace, createTrace, traceTerm } from './trace.js';
+import { appendTrace, createTrace, traceTerm, traceWindows } from './trace.js';
 
 const DAY_MINUTES = 1440;
 
@@ -185,6 +185,7 @@ function initializeAgent(
       ...ambientSomaticSources.map(source => ({ ...source })),
       ...placement.initialSomaticSources.map(source => ({ ...source })),
     ]),
+    tier: placement.tier,
     values: initialValues(profile, placement),
     walkingMetersPerMinute: applyBuildToWalkingPace(
       placement.walkingMetersPerMinute ?? DEFAULT_WALKING_METERS_PER_MINUTE,
@@ -270,7 +271,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     socialContracts: prepared.socialContracts,
     somaticRecords: [],
     tick: 0,
-    trace: createTrace([
+    trace: createTrace(traceWindows(prepared.scenario.characters), [
       {
         instanceId: null,
         id: '0:scenario',
@@ -345,6 +346,7 @@ export function createSimulationFromPreparedSnapshot(input: {
       resources: { ...saved.resources },
       schedule: saved.schedule.map(block => ({ ...block })),
       somatic: structuredClone(saved.somatic),
+      tier: saved.tier,
       values: Object.fromEntries(
         VALUE_IDS.map(valueId => [valueId, { ...saved.values[valueId] }]),
       ) as ValueMap<ValueState>,
@@ -461,7 +463,7 @@ interface CharacterAdvanceResult {
   agent: CharacterInstance;
   plasticitySignals: BaselinePlasticitySignal[];
   sleeping: boolean;
-  trace: TraceEntry[];
+  trace: TraceEntryInput[];
 }
 
 function advanceAgent(
@@ -562,7 +564,7 @@ function advanceAgent(
   }
 
   let memories = agent.memories;
-  const trace: TraceEntry[] = [];
+  const trace: TraceEntryInput[] = [];
   if (somatic.attentionTax > 0) {
     trace.push({
       instanceId: agent.id,
@@ -588,7 +590,7 @@ function advanceAgent(
     memories = appendBounded(
       memories,
       { id: `${nextTick}:${agent.id}:activity`, minute: nextMinute, summary, type: 'activity' },
-      MAX_MEMORIES,
+      memoryWindow(agent.tier),
     );
     trace.push({
       instanceId: agent.id,
@@ -745,7 +747,7 @@ function advanceOneTick(state: SimulationState): SimulationState {
   );
   let trace = prepared.trace;
   for (const result of results) {
-    for (const entry of result.trace) trace = appendTrace(trace, entry, MAX_TRACE_ENTRIES);
+    for (const entry of result.trace) trace = appendTrace(trace, entry);
   }
   let next: SimulationState = {
     ...prepared,
@@ -867,7 +869,7 @@ function interventionEntry(
   termId: string,
   value: number,
   source: string,
-): TraceEntry {
+): TraceEntryInput {
   const idPrefix = `${state.tick}:${agent.id}:intervention:`;
   let ordinal = 0;
   for (const entry of state.trace.entries) {
@@ -914,7 +916,7 @@ export function setCharacterValueCharge(
             memories: appendBounded(
               candidate.memories,
               { id: entry.id, minute: state.minute, summary, type: 'intervention' },
-              MAX_MEMORIES,
+              memoryWindow(candidate.tier),
             ),
             values: {
               ...candidate.values,
@@ -923,7 +925,7 @@ export function setCharacterValueCharge(
           }
         : candidate,
     ),
-    trace: appendTrace(state.trace, entry, MAX_TRACE_ENTRIES),
+    trace: appendTrace(state.trace, entry),
   };
 }
 
@@ -952,6 +954,6 @@ export function setCharacterResource(
         ? { ...candidate, resources: { ...candidate.resources, [resourceId]: nextAmount } }
         : candidate,
     ),
-    trace: appendTrace(state.trace, entry, MAX_TRACE_ENTRIES),
+    trace: appendTrace(state.trace, entry),
   };
 }

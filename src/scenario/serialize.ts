@@ -42,6 +42,7 @@ export function serializeSnapshot(state: SimulationState): SimulationSnapshotFil
       resources: agent.resources,
       schedule: agent.schedule,
       somatic: agent.somatic,
+      tier: agent.tier,
       values: agent.values,
       walkingMetersPerMinute: agent.walkingMetersPerMinute,
     })),

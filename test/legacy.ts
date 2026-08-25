@@ -214,6 +214,18 @@ export function downgradeSnapshotVocabulary(snapshot: Doc): void {
   // test can keep mutating the same instance array after downgrading, and the
   // migration's `characters = agents` assignment overwrites it identically.
   if ('characters' in snapshot) snapshot.agents = snapshot.characters;
+  for (const instance of objects(snapshot.characters)) delete instance.tier;
+  const trace = snapshot.trace as Doc | undefined;
+  if (trace !== undefined && trace.schemaVersion === 2) {
+    snapshot.trace = {
+      entries: objects(trace.entries).map(entry => {
+        const { sequence, ...rest } = entry;
+        void sequence;
+        return rest;
+      }),
+      schemaVersion: 1,
+    };
+  }
   const scenario = snapshot.scenario as Doc | undefined;
   const placements = objects(scenario?.characters);
   renameKeysDeepForLegacy(

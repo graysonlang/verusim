@@ -1,4 +1,4 @@
-import { MAX_TRACE_ENTRIES, appendBounded, clamp } from '../model/retention.js';
+import { clamp, recordWindows, retainCharacterRecord } from '../model/retention.js';
 import {
   VALUE_IDS,
   type DisplayEvent,
@@ -11,7 +11,7 @@ import {
   type PositionalRespectState,
   type CharacterInstance,
   type SimulationState,
-  type TraceEntry,
+  type TraceEntryInput,
   type ValueMap,
 } from '../model/types.js';
 import { evaluateEmpathy } from './empathy.js';
@@ -21,7 +21,6 @@ import { activeSocialInterpretationTerms } from './social-context.js';
 import { appendTrace, traceTerm } from './trace.js';
 import { applyCharacterValueTurns } from './value-turn.js';
 
-const MAX_DISPLAY_RECORDS = 160;
 const MAX_POSITIONAL_REFERENCES = 5;
 const POSITIONAL_DEADBAND = 0.02;
 const STATUS_RELEVANCE_FLOOR = 0.25;
@@ -216,7 +215,7 @@ function appraisalTrace(
   state: SimulationState,
   event: DisplayEvent,
   appraisal: DisplayObserverAppraisal,
-): TraceEntry {
+): TraceEntryInput {
   return {
     instanceId: appraisal.observerId,
     id: `${appraisal.id}:trace`,
@@ -258,7 +257,7 @@ function wearerTrace(
   state: SimulationState,
   event: DisplayEvent,
   record: DisplayResolutionRecord,
-): TraceEntry {
+): TraceEntryInput {
   return {
     instanceId: event.wearerId,
     id: `${record.id}:wearer`,
@@ -411,14 +410,19 @@ export function resolveDisplayEvent(state: SimulationState, event: DisplayEvent)
   };
   let trace = state.trace;
   for (const appraisal of appraisals) {
-    trace = appendTrace(trace, appraisalTrace(state, event, appraisal), MAX_TRACE_ENTRIES);
+    trace = appendTrace(trace, appraisalTrace(state, event, appraisal));
   }
-  trace = appendTrace(trace, wearerTrace(state, event, record), MAX_TRACE_ENTRIES);
+  trace = appendTrace(trace, wearerTrace(state, event, record));
   return {
     ...state,
     characters: agents,
     displayExposures,
-    displayRecords: appendBounded(state.displayRecords, record, MAX_DISPLAY_RECORDS),
+    displayRecords: retainCharacterRecord(
+      state.displayRecords,
+      record,
+      record => record.wearerId,
+      recordWindows(state.characters),
+    ),
     resolvedDisplayEventIds: [...state.resolvedDisplayEventIds, event.id],
     trace,
   };

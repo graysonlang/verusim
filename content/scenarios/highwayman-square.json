@@ -222,7 +222,8 @@
         "packageId": "verusim",
         "resourceId": "corvin-rusk"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "merchant",
@@ -249,7 +250,8 @@
         "packageId": "verusim",
         "resourceId": "jon-mere"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "warden",
@@ -276,7 +278,8 @@
         "packageId": "verusim",
         "resourceId": "elian-voss"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "actor-kin",
@@ -303,7 +306,8 @@
         "packageId": "verusim",
         "resourceId": "lena-rusk"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     },
     {
       "instanceId": "merchant-kin",
@@ -330,7 +334,8 @@
         "packageId": "verusim",
         "resourceId": "petra-mere"
       },
-      "initialSomaticSources": []
+      "initialSomaticSources": [],
+      "tier": "secondary"
     }
   ],
   "relationshipEvents": [],
