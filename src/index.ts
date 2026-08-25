@@ -25,6 +25,7 @@ export {
   startRevision,
   type AuthoringRevision,
   type RevisionSimulation,
+  revisionDigest,
 } from './authoring/revision.js';
 export {
   ENSEMBLE_ALGORITHM,

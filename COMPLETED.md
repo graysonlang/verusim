@@ -693,6 +693,35 @@ Existing snapshot replay coverage now asserts schema version 17.
 The phase changes no browser-visible layout or interaction, so browser validation does not apply.
 The full verification gate passes with 281 deterministic tests.
 
+## Phase 8C — shared Build and Simulate application shell
+
+Status: complete.
+
+The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
+Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
+That half is in place: `app/morph.ts` reconciles rendered sections into the existing DOM with delegated intervention handlers, covered by `test/morph.test.ts` and an isolated-browser check of focus and scroll across real-time playback; the mode switch and workspace ownership remain.
+Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
+Build retains its selected document, property selection, editor camera, dirty state, and undo history; Simulate retains only runtime state derived from the explicitly applied revision.
+Returning to Build must not import interventions, snapshot state, runtime selection, or camera state into the authored draft.
+
+Gate: repeated keyboard and pointer mode switches preserve both workspace states, editing during Simulate remains impossible while editing the retained Build draft cannot mutate the live simulation, and live inspector updates preserve focused controls and scroll position without rebuilding unchanged sections.
+
+The shell now has a persistent Build/Simulate mode switch (header control, `Shift+B`, menu, and quick action) over two workspaces that never share state.
+`app/workspace.ts` is the pure Build model: the authoring graph with drafts, dirty state, and transactional undo/redo, the selected document and property path, the editor viewport, the digest of the revision Simulate is running, and the last preparation problem; `prepareBuildRevision` is its only bridge to Simulate and runs the ordinary `prepareRevision` boundary, and `markBuildApplied` records a revision started from a loaded file or built-in.
+`app/build-workspace.ts` presents it as a content explorer grouped by document kind, a raw JSON draft editor with apply, revert, undo, redo, and run-revision controls (the advanced view that precedes the Phase 8D editors), and a document inspector with provenance, history, applied revision, incoming and outgoing references, and problems; all three reconcile in place so selection, scroll, and caret survive renders.
+Simulate keeps its existing signals; entering Build pauses playback and makes the Simulate panels inert, Simulate makes the Build panels inert, and the transport, step, play, and reset actions are enabled only in Simulate.
+Running a revision starts a new simulation and reset baseline through `startRevision` and switches to Simulate while the drafts, selection, viewport, and history stay in Build; a blocked revision records its problem at the authored path and changes nothing else.
+The spatial editor camera arrives with the layout editor in Phase 8D; Build's viewport is the draft editor's scroll and selection until then.
+
+Live inspector updates reconcile through `app/morph.ts` (see the Phase 9E follow-ups): nodes are kept where tag and position match, equal subtrees are skipped, and the focused control is left untouched until focus leaves, with interventions routed through one delegated listener per container.
+
+`test/workspace.test.ts` proves the project loads clean with the scenario selected, a prepared revision matches `prepareRevision` and clears the pending flag, editing marks the drafts dirty and pending without touching the applied revision while undo returns to the applied drafts and redo restores the edit byte-for-byte, a running simulation stays byte-equivalent while drafts change until a new revision starts, a failing draft reports its authored path while keeping drafts, selection, viewport, and history, and selection never touches the graph.
+`test/morph.test.ts` proves node identity preservation, text patching, active-control protection including descendants, and trailing append and removal.
+Browser verification against the isolated preview with the headless Playwright MCP server: in Simulate the scenario was stepped to 7:51:00, Tomas selected, and the camera zoomed to 100%; `Shift+B` entered Build with the scenario document selected, the transport disabled, and the Simulate panels inert; the scenario title was edited in the draft and applied as one transaction; a pointer switch to Simulate found 7:51:00, Tomas, 100%, and the original title untouched, and a runtime intervention on Tomas's respect was recorded there; `Shift+B` back to Build found the revised draft, scroll 240, selection 53-60, the selected document, and one undoable entry intact, with no trace of the intervention in the draft; Run revision started a new simulation titled "Market Morning, revised" at 7:50:00 in Simulate, and a further `Shift+B` found Build still holding the draft, now marked as running the applied revision with a new digest.
+Earlier in the slice, the inspector was verified across 27 seconds of real-time playback: scroll, focus, and section node identity were preserved and a slider change through the delegated handler kept the same focused node.
+The console recorded no errors or warnings; screenshots are under `.playwright-mcp/`.
+The full verification gate passes with 318 deterministic tests.
+
 ## Phase 10A — ensemble runner and falsifier harness
 
 Status: complete.

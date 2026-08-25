@@ -18,12 +18,12 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8C: the shared Build and Simulate application shell.
-Give the workbench a persistent Build/Simulate mode switch with independently owned workspace state, and make live inspector updates preserve scroll position, focus, and selection instead of rebuilding the subtree on every advancement.
+The active slice is Phase 8D: specialized editors and the shared problems surface.
+Replace the raw JSON draft view with editors for character identities and continuity profiles, layered environment layouts, atomic norms, social-contract composition, and scenario placement and initial conditions, backed by a content explorer, property and reference inspector, and one problems panel over the same document graph.
 
 ### Current-focus non-goals
 
-- no specialized editors, problems surface, store adapters, or packing; those are Phases 8D through 8F
+- no authoring-store adapters or packing; those are Phases 8E and 8F
 - no simulation-model or time-domain changes; Phase 9 is complete
 - no behavior-model or evaluator-fidelity expansion
 
@@ -31,10 +31,10 @@ Give the workbench a persistent Build/Simulate mode switch with independently ow
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phases 8C through 8F — application shell, editors, store adapters, and packing
+1. Phases 8D through 8F — editors, store adapters, and packing
 2. Phase 10B — remaining acceptance vignettes
 
-Phase 9 ran to completion ahead of the presentation slices so the shell in Phase 8C integrates the finished advancement model rather than one that changes underneath it.
+Phase 9 ran to completion ahead of the presentation slices, and the Phase 8C shell now integrates the finished advancement model; the editors in Phase 8D build over that shell.
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -65,18 +65,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A and 8B are recorded in COMPLETED.md; Phases 9A and 10A are recorded in COMPLETED.md so the shell and editors are built once over the canonical time domain.
-
-#### Phase 8C — shared Build and Simulate application shell
-
-The Phase 8P3 extraction of the inspector renderer, icon and badge builders, and shared menu controller is recorded in COMPLETED.md; build workspace ownership over those module boundaries.
-Make live inspector updates preserve scroll position, focus, and selection instead of reconstructing the complete subtree on every simulation tick.
-That half is in place: `app/morph.ts` reconciles rendered sections into the existing DOM with delegated intervention handlers, covered by `test/morph.test.ts` and an isolated-browser check of focus and scroll across real-time playback; the mode switch and workspace ownership remain.
-Refactor the workbench around a persistent Build/Simulate mode switch and keep each workspace's state independently owned.
-Build retains its selected document, property selection, editor camera, dirty state, and undo history; Simulate retains only runtime state derived from the explicitly applied revision.
-Returning to Build must not import interventions, snapshot state, runtime selection, or camera state into the authored draft.
-
-Gate: repeated keyboard and pointer mode switches preserve both workspace states, editing during Simulate remains impossible while editing the retained Build draft cannot mutate the live simulation, and live inspector updates preserve focused controls and scroll position without rebuilding unchanged sections.
+Phases 8A through 8C are recorded in COMPLETED.md, as are Phases 9 and 10A, so the editors are built once over the canonical time domain and the finished shell.
 
 #### Phase 8D — specialized editors and shared problems surface
 

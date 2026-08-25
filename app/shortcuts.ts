@@ -13,6 +13,7 @@ export type WorkbenchShortcutActionId =
   | 'save-snapshot'
   | 'settings'
   | 'toggle-left-sidebar'
+  | 'toggle-mode'
   | 'toggle-right-sidebar'
   | 'toggle-sidebars';
 
@@ -88,6 +89,7 @@ export function workbenchActionForShortcut(input: ShortcutInput): WorkbenchShort
   }
 
   if (input.shiftKey && !input.altKey && !input.ctrlKey && !input.metaKey) {
+    if (input.code === 'KeyB') return 'toggle-mode';
     if (input.code === 'KeyR') return 'reset-scenario';
     if (input.code === 'KeyS') return 'save-snapshot';
   }

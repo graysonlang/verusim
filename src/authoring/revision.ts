@@ -25,6 +25,14 @@ export interface RevisionSimulation {
   state: SimulationState;
 }
 
+/** The canonical digest of one prepared revision: locked resources plus the prepared scenario. */
+export function revisionDigest(prepared: PreparedScenario): string {
+  return contentDigest({
+    resources: prepared.resourceLock.digest,
+    scenario: prepared.scenario,
+  });
+}
+
 export function prepareRevision(
   graph: AuthoringGraph,
   scenarioDocumentId: string,
@@ -40,10 +48,7 @@ export function prepareRevision(
   );
   const prepared = prepareScenario({ catalog, scenario: scenario.draft });
   return {
-    digest: contentDigest({
-      resources: prepared.resourceLock.digest,
-      scenario: prepared.scenario,
-    }),
+    digest: revisionDigest(prepared),
     prepared,
     scenarioDocumentId,
   };

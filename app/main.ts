@@ -11,9 +11,14 @@ import {
   prepareScenario,
   serializeSnapshot,
   relativeLayerLevel,
+  revisionDigest,
+  startRevision,
+  type PreparedScenario,
   type SimulationState,
 } from '../src/index.js';
+import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
+import { createBuildPanels } from './build-workspace.js';
 import {
   classLabel,
   indicatorStrip,
@@ -29,6 +34,20 @@ import { bindHandsetSheetDrag } from './handset-sheet.js';
 import { controlIcon, hamburgerIcon, sidebarIcon } from './icons.js';
 import { createActivityInspector, renderInspector } from './inspector.js';
 import { createMenuGroup } from './menus.js';
+import {
+  createBuildWorkspace,
+  editBuildDocument,
+  markBuildApplied,
+  prepareBuildRevision,
+  redoBuildEdit,
+  selectBuildDocument,
+  selectBuildPath,
+  setBuildViewport,
+  toggleWorkbenchMode,
+  undoBuildEdit,
+  type BuildWorkspace,
+  type WorkbenchMode,
+} from './workspace.js';
 import indexPath from './index.html';
 import './styles.css';
 import {
@@ -124,6 +143,14 @@ function createStarterSimulation(entry: BuiltInScenario): SimulationState {
   return createSimulation(entry.prepared);
 }
 
+/** A Build project for one prepared scenario: the built-in catalog plus that scenario, marked as running. */
+function projectWorkspace(prepared: PreparedScenario, source: string): BuildWorkspace {
+  return markBuildApplied(
+    createBuildWorkspace({ resources: BUILT_IN_RESOURCES, scenario: prepared.scenario, source }),
+    revisionDigest(prepared),
+  );
+}
+
 function downloadSnapshot(state: SimulationState): void {
   const contents = `${JSON.stringify(serializeSnapshot(state), null, 2)}\n`;
   const url = URL.createObjectURL(new Blob([contents], { type: 'application/json' }));
@@ -183,6 +210,13 @@ function createWorkbench(): HTMLElement {
     null,
   );
   let playbackBacklogSeconds = IDLE_PLAYBACK_CLOCK.backlogSeconds;
+  const [mode, setMode] = createSignal<WorkbenchMode>('simulate');
+  const [buildWorkspace, setBuildWorkspace] = createSignal<BuildWorkspace>(
+    projectWorkspace(
+      initialBuiltInScenario.prepared,
+      `content/scenarios/${initialBuiltInScenario.id}.json`,
+    ),
+  );
   const canvasState = createMemo(() => projectPlaybackState(state(), playbackPreviewSeconds()));
 
   const shell = element('section', 'app-shell');
@@ -228,6 +262,9 @@ function createWorkbench(): HTMLElement {
   const zoomFit = menuAction('Zoom to fit', 'fit-environment', 'Shift+1');
   const zoomSelection = menuAction('Zoom to selection', 'zoom-selection', 'Shift+2');
   const transport = element('div', 'transport');
+  const modeSwitch = element('div', 'mode-switch');
+  const modeBuildButton = button('Build', '');
+  const modeSimulateButton = button('Simulate', '');
   const resetScenario = button('', 'button transport-button');
   const play = button('', 'button transport-button primary');
   const step = button('', 'button transport-button');
@@ -327,6 +364,7 @@ function createWorkbench(): HTMLElement {
   appMenu.append(
     menuAction('Open file...', 'open-file', 'Shift+O'),
     menuAction('Save snapshot', 'save-snapshot', 'Shift+S'),
+    menuAction('Switch Build / Simulate', 'toggle-mode', 'Shift+B'),
     menuSeparatorOne,
     menuAction('Reset loaded scenario', 'reset-scenario', 'Shift+R'),
     menuAction('Step simulation', 'step', 'ArrowRight'),
@@ -392,7 +430,17 @@ function createWorkbench(): HTMLElement {
   fileInput.accept = '.json,.scenario.json,application/json';
   fileInput.hidden = true;
   resetScenario.title = `Reset ${initial.scenario.title} to its loaded state`;
-  fileActions.append(menuButton, leftSidebarToggle, scenarioSelector, fileInput);
+  modeSwitch.setAttribute('role', 'radiogroup');
+  modeSwitch.setAttribute('aria-label', 'Workspace mode');
+  modeSwitch.dataset.testid = 'mode-switch';
+  modeBuildButton.setAttribute('role', 'radio');
+  modeBuildButton.dataset.testid = 'mode-build';
+  modeBuildButton.title = 'Build: edit authored drafts (Shift+B)';
+  modeSimulateButton.setAttribute('role', 'radio');
+  modeSimulateButton.dataset.testid = 'mode-simulate';
+  modeSimulateButton.title = 'Simulate: run the applied revision (Shift+B)';
+  modeSwitch.append(modeBuildButton, modeSimulateButton);
+  fileActions.append(menuButton, leftSidebarToggle, scenarioSelector, modeSwitch, fileInput);
   resetScenario.dataset.testid = 'transport-reset';
   resetScenario.setAttribute('aria-label', 'Reset loaded scenario');
   resetScenario.append(controlIcon('reset'));
@@ -710,6 +758,21 @@ function createWorkbench(): HTMLElement {
   scenarioInfoOverlay.setAttribute('aria-hidden', 'true');
   scenarioInfoOverlay.inert = true;
   scenarioInfoOverlay.append(scenarioInfoPanel);
+  const buildPanels = createBuildPanels({
+    onEdit: (documentId, draft, label) => {
+      setBuildWorkspace(current => editBuildDocument(current, documentId, draft, label));
+      setStatus(`Recorded ${label}`);
+    },
+    onRedo: () => setBuildWorkspace(current => redoBuildEdit(current)),
+    onRunRevision: () => runRevision(),
+    onSelectDocument: documentId =>
+      setBuildWorkspace(current => selectBuildDocument(current, documentId)),
+    onSelectPath: path => setBuildWorkspace(current => selectBuildPath(current, path)),
+    onStatus: setStatus,
+    onUndo: () => setBuildWorkspace(current => undoBuildEdit(current)),
+    onViewport: viewport => setBuildWorkspace(current => setBuildViewport(current, viewport)),
+  });
+
   shell.append(
     appMenu,
     scenarioMenu,
@@ -723,6 +786,9 @@ function createWorkbench(): HTMLElement {
     stage,
     rightSidebarResize,
     inspector,
+    buildPanels.explorer,
+    buildPanels.editor,
+    buildPanels.inspector,
     footer,
     quickActionsOverlay,
     settingsOverlay,
@@ -899,12 +965,71 @@ function createWorkbench(): HTMLElement {
     try {
       const loaded = createSimulation(entry.prepared);
       activateLoadedSimulation(loaded, `Loaded ${entry.title}`, entry.id);
+      setBuildWorkspace(projectWorkspace(entry.prepared, `content/scenarios/${entry.id}.json`));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     }
   }
 
+  // Build and Simulate never share state: switching modes only changes which
+  // workspace is presented. Entering Build pauses playback so the running
+  // simulation stays where it was; nothing in Build can reach it.
+  function setWorkbenchMode(next: WorkbenchMode): void {
+    if (next === mode()) return;
+    if (next === 'build') setPlaying(false);
+    setMode(next);
+    setStatus(
+      next === 'build'
+        ? 'Build: editing drafts; the simulation is paused and untouched'
+        : 'Simulate: running the applied revision',
+    );
+  }
+
+  function runRevision(): void {
+    const result = prepareBuildRevision(buildWorkspace());
+    setBuildWorkspace(result.workspace);
+    if ('problem' in result) {
+      setStatus(`Revision blocked at ${result.problem.path}: ${result.problem.message}`);
+      return;
+    }
+    const started = startRevision(result.revision);
+    activateLoadedSimulation(
+      started.state,
+      `Started revision ${result.revision.digest.slice(0, 12)}`,
+      null,
+    );
+    setWorkbenchMode('simulate');
+  }
+
   const actions: readonly QuickAction[] = [
+    {
+      id: 'toggle-mode',
+      keywords: ['build', 'simulate', 'workspace', 'edit', 'draft'],
+      label: 'Switch Build / Simulate',
+      run: () => setWorkbenchMode(toggleWorkbenchMode(mode())),
+      shortcut: 'Shift+B',
+    },
+    {
+      enabled: () => mode() === 'build',
+      id: 'run-revision',
+      keywords: ['build', 'apply', 'prepare', 'revision', 'start'],
+      label: 'Run revision',
+      run: runRevision,
+    },
+    {
+      enabled: () => mode() === 'build' && buildWorkspace().graph.undoStack.length > 0,
+      id: 'undo-edit',
+      keywords: ['build', 'history', 'draft'],
+      label: 'Undo draft edit',
+      run: () => setBuildWorkspace(current => undoBuildEdit(current)),
+    },
+    {
+      enabled: () => mode() === 'build' && buildWorkspace().graph.redoStack.length > 0,
+      id: 'redo-edit',
+      keywords: ['build', 'history', 'draft'],
+      label: 'Redo draft edit',
+      run: () => setBuildWorkspace(current => redoBuildEdit(current)),
+    },
     {
       id: 'open-file',
       keywords: ['file', 'import', 'scenario', 'snapshot'],
@@ -936,6 +1061,7 @@ function createWorkbench(): HTMLElement {
       shortcut: primaryShortcut(','),
     },
     {
+      enabled: () => mode() === 'simulate',
       id: 'reset-scenario',
       keywords: ['restore', 'restart', 'loaded state'],
       label: 'Reset loaded scenario',
@@ -943,6 +1069,7 @@ function createWorkbench(): HTMLElement {
       shortcut: 'Shift+R',
     },
     {
+      enabled: () => mode() === 'simulate',
       id: 'step',
       keywords: ['simulation', 'transport', 'time'],
       label: 'Step simulation',
@@ -950,6 +1077,7 @@ function createWorkbench(): HTMLElement {
       shortcut: 'ArrowRight',
     },
     {
+      enabled: () => mode() === 'simulate',
       id: 'play-pause',
       keywords: ['simulation', 'transport', 'time'],
       label: 'Play / pause',
@@ -1671,6 +1799,29 @@ function createWorkbench(): HTMLElement {
   });
 
   createEffect(() => {
+    const building = mode() === 'build';
+    shell.dataset.mode = mode();
+    modeBuildButton.setAttribute('aria-checked', String(building));
+    modeSimulateButton.setAttribute('aria-checked', String(!building));
+    modeBuildButton.classList.toggle('selected', building);
+    modeSimulateButton.classList.toggle('selected', !building);
+    roster.inert = building;
+    stage.inert = building;
+    inspector.inert = building;
+    buildPanels.explorer.inert = !building;
+    buildPanels.editor.inert = !building;
+    buildPanels.inspector.inert = !building;
+    play.disabled = building;
+    step.disabled = building;
+    resetScenario.disabled = building;
+  });
+
+  createEffect(() => {
+    if (mode() !== 'build') return;
+    buildPanels.render(buildWorkspace());
+  });
+
+  createEffect(() => {
     const diagnostics = playbackDiagnostics();
     playbackDiagnosticsText.hidden = diagnostics === null;
     playbackDiagnosticsText.textContent =
@@ -1906,6 +2057,8 @@ function createWorkbench(): HTMLElement {
     setHandsetLayerMenuOpen(false);
   });
   step.addEventListener('click', () => executeActionById('step'));
+  modeBuildButton.addEventListener('click', () => setWorkbenchMode('build'));
+  modeSimulateButton.addEventListener('click', () => setWorkbenchMode('simulate'));
   play.addEventListener('click', () => executeActionById('play-pause'));
   timeRateButton.addEventListener('click', () => setTimeRateMenuOpen(timeRateMenu.hidden));
   timeRateButton.addEventListener('keydown', event => {
@@ -2093,23 +2246,23 @@ function createWorkbench(): HTMLElement {
     if (file === undefined) return;
     try {
       const contents = JSON.parse(await file.text()) as unknown;
-      const loaded =
+      const snapshot =
         typeof contents === 'object' &&
         contents !== null &&
         'type' in contents &&
         contents.type === 'verusim-snapshot'
-          ? (() => {
-              const snapshot = parseSnapshot(contents);
-              const prepared = prepareScenario({
-                catalog: BUILT_IN_RESOURCE_CATALOG,
-                scenario: snapshot.scenario,
-              });
-              return createSimulationFromSnapshot({ prepared, snapshot });
-            })()
-          : createSimulation(
-              prepareScenario({ catalog: BUILT_IN_RESOURCE_CATALOG, scenario: contents }),
-            );
+          ? parseSnapshot(contents)
+          : null;
+      const prepared = prepareScenario({
+        catalog: BUILT_IN_RESOURCE_CATALOG,
+        scenario: snapshot === null ? contents : snapshot.scenario,
+      });
+      const loaded =
+        snapshot === null
+          ? createSimulation(prepared)
+          : createSimulationFromSnapshot({ prepared, snapshot });
       activateLoadedSimulation(loaded, `Loaded ${file.name}`, null);
+      setBuildWorkspace(projectWorkspace(prepared, file.name));
     } catch (error) {
       setStatus(error instanceof Error ? error.message : String(error));
     }
