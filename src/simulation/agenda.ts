@@ -681,7 +681,8 @@ export function intendedTask(state: SimulationState, instanceId: string): TaskOp
   return intention === undefined ? null : findTask(state, intention.taskId);
 }
 
-export function setWorldFactAmount(
+/** Apply a world-fact edit and replan agendas; `setWorldFactAmount` in runtime.ts adds route planning. */
+export function applyWorldFactAmount(
   state: SimulationState,
   factId: string,
   amount: number,

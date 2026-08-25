@@ -214,12 +214,7 @@ export type {
   BaselinePlasticityAdvance,
   BaselinePlasticitySignal,
 } from './simulation/plasticity.js';
-export {
-  advanceIntentions,
-  intendedTask,
-  prepareAgenda,
-  setWorldFactAmount,
-} from './simulation/agenda.js';
+export { advanceIntentions, intendedTask, prepareAgenda } from './simulation/agenda.js';
 export { appraiseAction } from './simulation/appraisal.js';
 export {
   capabilityAvailability,
@@ -276,6 +271,7 @@ export {
   redirectCharacter,
   setCharacterResource,
   setCharacterValueCharge,
+  setWorldFactAmount,
 } from './simulation/runtime.js';
 export {
   MOVEMENT_SPEED_LABELS,

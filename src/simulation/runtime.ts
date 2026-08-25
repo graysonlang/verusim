@@ -29,7 +29,7 @@ import {
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
 import { validateSnapshotReferences } from '../scenario/snapshot-references.js';
-import { advanceIntentions, intendedTask, prepareAgenda } from './agenda.js';
+import { advanceIntentions, applyWorldFactAmount, intendedTask, prepareAgenda } from './agenda.js';
 import { resolveOpportunity } from './decision.js';
 import { resolveDisclosureOpportunity } from './disclosure.js';
 import { resolveDisplayEvent } from './display.js';
@@ -1112,6 +1112,20 @@ function interventionEntry(
     terms: [traceTerm(termId, value, source)],
     tick: state.tick,
   };
+}
+
+/**
+ * Set a world fact, replan every agenda, and commit any route the replanning
+ * changes at this second, so a task change caused by the edit is visible in the
+ * state immediately rather than after the next advanced interval.
+ */
+export function setWorldFactAmount(
+  state: SimulationState,
+  factId: string,
+  amount: number,
+): SimulationState {
+  const next = applyWorldFactAmount(state, factId, amount);
+  return next === state ? state : planRoutes(next);
 }
 
 export function setCharacterValueCharge(

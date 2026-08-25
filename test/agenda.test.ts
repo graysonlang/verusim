@@ -4,6 +4,7 @@ import { characters, environments } from './fixtures.js';
 import bakerScenario from '../content/scenarios/baker-deadline.json';
 import {
   advanceSimulation,
+  advanceTo,
   createSimulation,
   createSimulationFromSnapshot,
   serializeSnapshot,
@@ -126,6 +127,18 @@ describe('agenda planning', () => {
     assert.equal(initial.intentions[0]?.taskId, 'bake-bread-standard');
     const replanned = setWorldFactAmount(initial, 'flour-on-hand', 0);
     assert.equal(replanned.intentions[0]?.taskId, 'fetch-flour');
+    // The replanned task's route is committed at the second of the edit, and it
+    // is the same route the next advance follows.
+    const mara = replanned.characters.find(agent => agent.id === 'mara');
+    assert.ok(mara?.route);
+    assert.equal(mara.route.destinationLocationId, 'alder-mill');
+    assert.equal(mara.route.departureSecond, replanned.second);
+    assert.deepEqual(mara.route.origin, mara.position);
+    assert.deepEqual(
+      advanceTo(replanned, replanned.second + 1).characters.find(agent => agent.id === 'mara')
+        ?.route,
+      mara.route,
+    );
     assert.ok(
       replanned.trace.entries.some(
         entry =>
