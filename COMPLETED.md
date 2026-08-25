@@ -745,6 +745,27 @@ Browser verification against the isolated preview with the headless Playwright M
 The console recorded no errors or warnings; screenshots are under `.playwright-mcp/`.
 The full verification gate passes with 324 deterministic tests.
 
+## Phase 8E — authoring-store ports and adapters
+
+Status: complete.
+
+Define the host-facing authoring-store port for deterministic document discovery, reads, and atomic change-set commits outside the engine.
+Implement a direct in-memory adapter for embedded consumers and an IndexedDB-backed browser adapter, with import and export remaining application concerns over the same graph.
+Neither adapter may change semantic identity, prepared content, validation results, or transaction boundaries.
+
+Gate: both adapters load and commit the same project and produce byte-equivalent documents, semantic addresses, diagnostics, and prepared scenarios after reload.
+
+`src/authoring/store.ts` is the port: a store lists documents in identity order, reads them by semantic identity as copies, reports its revision (a content digest of every stored record in identity order), and commits one change set atomically - writes and deletes all land or none do, a record whose value's identity differs from its key is refused, and a change set derived from a stale revision is refused with `AuthoringStoreConflictError`.
+Adapters supply only a backend (load every record with the stored revision; replace the record set with a new revision atomically); the shared core supplies ordering, identity checks, digests, and conflict detection, so no adapter can change identity, content, validation results, or transaction boundaries.
+`createMemoryAuthoringStore` is the embedded adapter; `app/project-store.ts` is the browser adapter over one IndexedDB object store keyed by identity with a revision row, saving in one readwrite transaction.
+`loadAuthoringProject` builds the ordinary graph from a store's records, `changeSetForGraph` writes every document against an empty store and only dirty documents otherwise, and `commitAuthoringProject` commits then re-baselines the written documents through the new `rebaselineDocuments` graph operation, so dirty state means "changed since the last commit" while undo and redo history is untouched.
+The Build editor gained Save project and Reload project: a save is one change set to the browser store (a fresh session saving over an earlier session's project replaces it with every draft), a reload replaces the drafts while keeping selection, cameras, and the applied revision, and the inspector shows the store revision.
+
+`test/authoring-store.test.ts` proves identity-ordered discovery and copied reads, atomic refusal of a change set with a mis-identified record, stale-revision refusal, delete commits, and - through the in-memory adapter and a second table-shaped adapter that yields records in reverse order - that loading the Pottsfield project produces byte-equivalent documents, references, diagnostics, and prepared digests to direct construction, that a retitle commit writes only the dirty document and yields the same revision in both, that history survives the commit and undoing past it makes the document dirty again, that reloads see exactly the committed drafts as clean baselines with equal prepared digests, and that an invalid draft commits and reloads with the same diagnostics.
+Browser verification against the isolated preview with the headless Playwright MCP server: in Build on Pottsfield, a retitled scenario saved 27 documents to IndexedDB and became clean with a store revision shown, a second save reported nothing changed, a page reload followed by Reload project restored the retitled draft byte-for-byte with the same store revision while Simulate kept running the original applied revision, and a fresh session editing and saving over that saved project replaced it and reloaded with the newer revision.
+The console recorded no errors or warnings.
+The full verification gate passes with 328 deterministic tests.
+
 ## Phase 10A — ensemble runner and falsifier harness
 
 Status: complete.

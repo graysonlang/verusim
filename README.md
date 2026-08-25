@@ -25,6 +25,7 @@ The model currently covers:
 - narrative claims, validators, external attribution, and aspiration-driven agency
 - seeded role-conditioned character and cohort generation, pre-contact relationship generation, and environment generation as authoring adapters with complete draw provenance
 - host-facing cadence sessions, text and embodied observation projections, and low-stakes exchange settlement over the same evaluator
+- an in-memory authoring graph with transactional undo, a revision boundary that is the only path from drafts to a runnable simulation, and an authoring-store port whose adapters persist projects without touching identity or validation
 
 Every behavioral decision produces a causal trace of separated terms, and level of detail changes scheduling cadence, never evaluator fidelity.
 

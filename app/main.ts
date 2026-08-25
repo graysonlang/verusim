@@ -11,6 +11,9 @@ import {
   prepareScenario,
   serializeSnapshot,
   relativeLayerLevel,
+  AuthoringStoreConflictError,
+  commitAuthoringProject,
+  loadAuthoringProject,
   revisionDigest,
   startRevision,
   type PreparedScenario,
@@ -19,6 +22,7 @@ import {
 import { BUILT_IN_RESOURCES } from '../content/catalog.generated.js';
 import { filterActions, isActionEnabled, type QuickAction } from './actions.js';
 import { createBuildPanels } from './build-workspace.js';
+import { createIndexedDbAuthoringStore } from './project-store.js';
 import {
   insertDraftEntry,
   moveDraftEntry,
@@ -45,7 +49,9 @@ import {
   editBuildDocument,
   markBuildApplied,
   prepareBuildRevision,
+  rebaselineBuildWorkspace,
   redoBuildEdit,
+  replaceBuildProject,
   selectBuildDocument,
   selectBuildPath,
   setBuildCamera,
@@ -778,6 +784,7 @@ function createWorkbench(): HTMLElement {
     });
     if (changed) setStatus(`Recorded ${label}`);
   };
+  const projectStore = createIndexedDbAuthoringStore();
   const buildPanels = createBuildPanels({
     onCamera: (documentId, camera) =>
       setBuildWorkspace(current => setBuildCamera(current, documentId, camera)),
@@ -788,10 +795,12 @@ function createWorkbench(): HTMLElement {
     onMoveEntry: (documentId, listPath, from, to, label) =>
       recordEdit(label, current => moveDraftEntry(current, documentId, listPath, from, to, label)),
     onRedo: () => setBuildWorkspace(current => redoBuildEdit(current)),
+    onReloadProject: () => void reloadProject(),
     onRemoveEntry: (documentId, path, label) =>
       recordEdit(label, current => removeDraftEntry(current, documentId, path, label)),
     onRemoveValue: (documentId, path, label) =>
       recordEdit(label, current => removeDraftEntry(current, documentId, path, label)),
+    onSaveProject: () => void saveProject(),
     onSetValue: (documentId, path, value, label) =>
       recordEdit(label, current => setDraftValue(current, documentId, path, value, label)),
     onView: view => setBuildWorkspace(current => setBuildView(current, view)),
@@ -1018,6 +1027,64 @@ function createWorkbench(): HTMLElement {
         ? 'Build: editing drafts; the simulation is paused and untouched'
         : 'Simulate: running the applied revision',
     );
+  }
+
+  // The browser project store is an adapter of the authoring-store port; a
+  // save is one atomic change set of the dirty drafts (every draft the first
+  // time), and a reload replaces the drafts without touching the running
+  // simulation or its applied revision.
+  async function saveProject(): Promise<void> {
+    const before = buildWorkspace();
+    try {
+      let committed: Awaited<ReturnType<typeof commitAuthoringProject>>;
+      try {
+        committed = await commitAuthoringProject(projectStore, before.graph, before.storeRevision);
+      } catch (error) {
+        if (!(error instanceof AuthoringStoreConflictError) || before.storeRevision !== null) {
+          throw error;
+        }
+        // A project saved by an earlier session: replace it with every draft.
+        committed = await commitAuthoringProject(
+          projectStore,
+          before.graph,
+          error.currentRevision,
+          { all: true },
+        );
+      }
+      const written = committed.result.written.length;
+      setBuildWorkspace(current =>
+        current.graph === before.graph
+          ? rebaselineBuildWorkspace(current, committed.graph, committed.result.revision)
+          : { ...current, storeRevision: committed.result.revision },
+      );
+      setStatus(
+        written === 0
+          ? 'Project already saved; nothing changed'
+          : `Saved ${written} document${written === 1 ? '' : 's'} to the browser project store`,
+      );
+    } catch (error) {
+      setStatus(
+        error instanceof AuthoringStoreConflictError
+          ? 'The saved project changed elsewhere; reload it before saving'
+          : `Save failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
+
+  async function reloadProject(): Promise<void> {
+    try {
+      const loaded = await loadAuthoringProject(projectStore);
+      if (loaded.graph.documents.length === 0) {
+        setStatus('No saved project in the browser store');
+        return;
+      }
+      setBuildWorkspace(current => replaceBuildProject(current, loaded.graph, loaded.revision));
+      setStatus(
+        `Reloaded ${loaded.graph.documents.length} documents from the browser project store`,
+      );
+    } catch (error) {
+      setStatus(`Reload failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   function runRevision(): void {

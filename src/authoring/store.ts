@@ -207,8 +207,9 @@ export async function loadAuthoringProject(store: AuthoringStore): Promise<Loade
 export function changeSetForGraph(
   graph: AuthoringGraph,
   baseRevision: string | null,
+  options: { all?: boolean } = {},
 ): AuthoringChangeSet {
-  const all = baseRevision === null;
+  const all = baseRevision === null || options.all === true;
   return {
     baseRevision,
     deletes: [],
@@ -236,8 +237,9 @@ export async function commitAuthoringProject(
   store: AuthoringStore,
   graph: AuthoringGraph,
   baseRevision: string | null,
+  options: { all?: boolean } = {},
 ): Promise<CommittedAuthoringProject> {
-  const changeSet = changeSetForGraph(graph, baseRevision);
+  const changeSet = changeSetForGraph(graph, baseRevision, options);
   const result = await store.commit(changeSet);
   return { graph: rebaselineDocuments(graph, result.written), result };
 }

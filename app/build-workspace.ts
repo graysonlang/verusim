@@ -41,7 +41,9 @@ export interface BuildHandlers {
   ) => void;
   onRedo: () => void;
   onRemoveEntry: (documentId: string, path: string, label: string) => void;
+  onReloadProject: () => void;
   onRemoveValue: (documentId: string, path: string, label: string) => void;
+  onSaveProject: () => void;
   onSetValue: (documentId: string, path: string, value: unknown, label: string) => void;
   onView: (view: BuildEditorView) => void;
   onRunRevision: () => void;
@@ -142,6 +144,8 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   const undo = button('Undo', 'button subtle');
   const redo = button('Redo', 'button subtle');
   const runRevision = button('Run revision', 'button primary');
+  const saveProject = button('Save project', 'button subtle');
+  const reloadProject = button('Reload project', 'button subtle');
   const viewTabs = element('div', 'build-view-tabs');
   const formTab = button('Form', 'build-view-tab');
   const canvasTab = button('Canvas', 'build-view-tab');
@@ -170,6 +174,10 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   runRevision.dataset.testid = 'build-run-revision';
   runRevision.title =
     'Prepare every draft through the ordinary boundary and start a new simulation from it';
+  saveProject.dataset.testid = 'build-save-project';
+  saveProject.title = 'Commit the drafts to the browser project store as one atomic change set';
+  reloadProject.dataset.testid = 'build-reload-project';
+  reloadProject.title = 'Replace the drafts with the saved project from the browser store';
   textarea.dataset.testid = 'build-draft';
   textarea.spellcheck = false;
   textarea.setAttribute('aria-label', 'Draft JSON');
@@ -196,7 +204,17 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   canvasTab.title = 'Spatial layout editor (environment layouts)';
   jsonTab.title = 'Advanced view: the raw draft as JSON over the same transactions';
   viewTabs.append(formTab, canvasTab, jsonTab);
-  toolbar.append(editorTitle, editorMeta, applyEdit, revertEdit, undo, redo, runRevision);
+  toolbar.append(
+    editorTitle,
+    editorMeta,
+    applyEdit,
+    revertEdit,
+    undo,
+    redo,
+    saveProject,
+    reloadProject,
+    runRevision,
+  );
   editor.append(toolbar, viewTabs, editorBody, editorStatus, problemsHeading, problemsList);
 
   let renderedDocumentId: string | null = null;
@@ -310,6 +328,8 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
   });
   undo.addEventListener('click', () => handlers.onUndo());
   redo.addEventListener('click', () => handlers.onRedo());
+  saveProject.addEventListener('click', () => handlers.onSaveProject());
+  reloadProject.addEventListener('click', () => handlers.onReloadProject());
   runRevision.addEventListener('click', () => {
     if (!textarea.hidden && editorDirty()) {
       editorStatus.textContent = 'Apply or revert the editor text before running a revision.';
@@ -486,6 +506,10 @@ export function createBuildPanels(handlers: BuildHandlers): BuildPanels {
       [
         'Applied revision',
         workspace.appliedDigest === null ? 'None' : workspace.appliedDigest.slice(0, 16),
+      ],
+      [
+        'Project store',
+        workspace.storeRevision === null ? 'Not saved' : workspace.storeRevision.slice(0, 16),
       ],
     ] as const) {
       const dt = element('dt');

@@ -18,13 +18,12 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 8E: authoring-store ports and adapters.
-Define the host-facing authoring-store port for deterministic document discovery, reads, and atomic change-set commits outside the engine.
-Implement a direct in-memory adapter for embedded consumers and an IndexedDB-backed browser adapter, with import and export remaining application concerns over the same graph.
+The active slice is Phase 8F: dependency-aware packing and integrated verification.
+Add project export from selected scenario roots over the authoritative dependency closure and exact resource locks, deduplicate shared resources with deterministic provenance, exclude unrelated documents, and close Phase 8 with the separate-document fixture, accessibility workflows, browser validation, deterministic replay, and the full gate.
 
 ### Current-focus non-goals
 
-- no dependency-aware packing or export; that is Phase 8F
+- no new editors or store adapters; Phases 8D and 8E are complete
 - no simulation-model or time-domain changes; Phase 9 is complete
 - no behavior-model or evaluator-fidelity expansion
 
@@ -32,10 +31,10 @@ Implement a direct in-memory adapter for embedded consumers and an IndexedDB-bac
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phases 8E and 8F — store adapters and packing
+1. Phase 8F — packing and integrated verification
 2. Phase 10B — remaining acceptance vignettes
 
-Phase 9 ran to completion ahead of the presentation slices; the Phase 8C shell and the Phase 8D editors are built over the finished advancement model, and the store adapters in Phase 8E feed the same document graph.
+Phase 9 ran to completion ahead of the presentation slices; the Phase 8C shell, the Phase 8D editors, and the Phase 8E store adapters are built over the finished advancement model and one document graph, and packing in Phase 8F reuses the preparation closure they share.
 
 Two dependencies drive the interleaving.
 Phase 9A changes the authored schema by making seconds canonical for schedules, deadlines, and event times, so it precedes the Phase 8 editors; building editors over the minute-based shape and reshaping them afterward would do that presentation work twice, while 8A and 8B are shape-agnostic and can go first.
@@ -66,15 +65,7 @@ A pack starts from selected scenario roots, walks the same explicit dependency c
 ### Phase 8 implementation sequence
 
 Each slice retains the complete Phase 8 scope below and closes one discriminating boundary before the next slice begins.
-Phases 8A through 8D are recorded in COMPLETED.md, as are Phases 9 and 10A; the store adapters and packing build over the finished shell, editors, and time domain.
-
-#### Phase 8E — authoring-store ports and adapters
-
-Define the host-facing authoring-store port for deterministic document discovery, reads, and atomic change-set commits outside the engine.
-Implement a direct in-memory adapter for embedded consumers and an IndexedDB-backed browser adapter, with import and export remaining application concerns over the same graph.
-Neither adapter may change semantic identity, prepared content, validation results, or transaction boundaries.
-
-Gate: both adapters load and commit the same project and produce byte-equivalent documents, semantic addresses, diagnostics, and prepared scenarios after reload.
+Phases 8A through 8E are recorded in COMPLETED.md, as are Phases 9 and 10A; packing builds over the finished shell, editors, store port, and time domain.
 
 #### Phase 8F — dependency-aware packing and integrated verification
 

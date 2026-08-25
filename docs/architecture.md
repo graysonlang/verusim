@@ -106,6 +106,10 @@ Build exists only in the wide layout (1080 pixels and up), where its explorer, e
 
 Build edits are path edits: `app/editing/paths.ts` addresses a draft value with dot and index notation, `app/editing/edits.ts` records a set, clear, insert, remove, or move as one undoable transaction, and `app/editing/forms.ts` declares a form per document kind whose fields and lists are addressed by those paths, so the specifications are the only place that knows authored shapes and a diagnostic at an authored path maps onto the field that owns it.
 The form view, the spatial layout canvas, and the raw JSON view are three presentations of the same draft and transaction stream; the canvas keeps a camera per document in the workspace, and none of the views holds document state of its own.
+
+Persistence goes through the authoring-store port (`src/authoring/store.ts`): a store lists documents in identity order, reads copies by semantic identity, reports a revision digest of its records, and commits one change set atomically or not at all, refusing mis-identified records and stale base revisions.
+Adapters provide only a load-everything and replace-everything backend; the in-memory adapter serves embedded consumers and tests, and `app/project-store.ts` keeps the browser project in IndexedDB.
+A commit re-baselines the written documents so dirty means changed since the last commit, leaves undo and redo history alone, and never touches the applied revision; a reload replaces drafts without touching Simulate.
 The neutral walking calibration is 80 meters per simulation minute, or about 1.33 meters per second, before authored physical-build effects.
 Device-local application preferences default to a one-simulated-minute-per-second time scale, 12-hour clocks, feet, Fahrenheit, a hidden status bar, and visible 250-pixel roster and 350-pixel inspector sidebars.
 Distance and temperature units are independent presentation choices; a stored preference from before that split preserves its former meter/Celsius or feet/Fahrenheit pairing until the user changes either field.

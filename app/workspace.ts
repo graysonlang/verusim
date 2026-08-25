@@ -65,6 +65,8 @@ export interface BuildWorkspace {
   scenarioDocumentId: string;
   selectedDocumentId: string;
   selectedPath: string | null;
+  /** The authoring-store revision the drafts were loaded from or last committed to, or null. */
+  storeRevision: string | null;
   /** Which editor presents the selected document: form, spatial canvas, or the raw JSON advanced view. */
   view: BuildEditorView;
   viewport: EditorViewport;
@@ -106,8 +108,44 @@ export function createBuildWorkspace(input: {
     scenarioDocumentId: documentId,
     selectedDocumentId: documentId,
     selectedPath: null,
+    storeRevision: null,
     view: 'form',
     viewport: IDLE_EDITOR_VIEWPORT,
+  };
+}
+
+/** After a store commit: the committed graph (re-baselined) and the new store revision. */
+export function rebaselineBuildWorkspace(
+  workspace: BuildWorkspace,
+  graph: AuthoringGraph,
+  revision: string,
+): BuildWorkspace {
+  return { ...workspace, graph, storeRevision: revision };
+}
+
+/**
+ * Replace the project with one loaded from a store. Selection stays on the
+ * same documents when they still exist, cameras and view are kept, and the
+ * applied revision is untouched: Simulate keeps running what it was running.
+ */
+export function replaceBuildProject(
+  workspace: BuildWorkspace,
+  graph: AuthoringGraph,
+  revision: string | null,
+): BuildWorkspace {
+  const has = (id: string): boolean => graph.documents.some(document => document.id === id);
+  const scenario = has(workspace.scenarioDocumentId)
+    ? workspace.scenarioDocumentId
+    : (graph.documents.find(document => document.kind === 'scenario')?.id ?? null);
+  if (scenario === null) throw new Error('The loaded project has no scenario document');
+  return {
+    ...workspace,
+    graph,
+    preparationProblem: null,
+    scenarioDocumentId: scenario,
+    selectedDocumentId: has(workspace.selectedDocumentId) ? workspace.selectedDocumentId : scenario,
+    selectedPath: null,
+    storeRevision: revision,
   };
 }
 
