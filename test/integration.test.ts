@@ -5,7 +5,7 @@ import relationshipScenario from '../content/scenarios/relationship-momentum.jso
 import {
   LOW_STAKES_EXCHANGE_MAX,
   advanceSimulation,
-  cadenceLogicalTick,
+  cadenceLogicalSecond,
   catchUpConstantRate,
   createCadenceSession,
   createSimulation,
@@ -83,9 +83,9 @@ describe('integration adapters', () => {
     for (const tier of tiers) {
       const scheduled = scheduleCadence(
         createCadenceSession(createRelationshipSimulation(), tier),
-        7,
+        7 * 60,
       );
-      assert.equal(cadenceLogicalTick(scheduled), full.tick);
+      assert.equal(cadenceLogicalSecond(scheduled), full.second);
       assert.deepEqual(serializeSnapshot(flushCadence(scheduled).state), serializeSnapshot(full));
     }
   });
@@ -95,17 +95,17 @@ describe('integration adapters', () => {
     const direct = advanceSimulation(initial, 60);
     const accelerated = scheduleCadence(
       createCadenceSession(createRelationshipSimulation(), 'location'),
-      60,
+      3600,
     );
     let incremental = createCadenceSession(createRelationshipSimulation(), 'location');
-    for (let tick = 0; tick < 60; tick += 1) incremental = scheduleCadence(incremental, 1);
+    for (let tick = 0; tick < 60; tick += 1) incremental = scheduleCadence(incremental, 60);
 
     assert.deepEqual(serializeSnapshot(accelerated.state), serializeSnapshot(direct));
     assert.deepEqual(serializeSnapshot(incremental.state), serializeSnapshot(direct));
 
     const pending = scheduleCadence(
       createCadenceSession(createRelationshipSimulation(), 'on-demand'),
-      13,
+      13 * 60,
     );
     const save = JSON.parse(JSON.stringify(serializeCadenceSave(pending))) as unknown;
     const resumed = resumeCadenceSave({
@@ -113,7 +113,7 @@ describe('integration adapters', () => {
       environmentLibrary: environments,
       save,
     });
-    assert.equal(cadenceLogicalTick(resumed), initial.tick + 13);
+    assert.equal(cadenceLogicalSecond(resumed), initial.second + 13 * 60);
     assert.deepEqual(
       serializeSnapshot(flushCadence(resumed).state),
       serializeSnapshot(advanceSimulation(initial, 13)),
@@ -158,7 +158,7 @@ describe('integration adapters', () => {
 
     const offscreen = scheduleCadence(
       createCadenceSession(createRelationshipSimulation(), 'on-demand'),
-      6,
+      6 * 60,
     );
     const resolvedOffscreen = resolveOrbitExchange(
       flushCadence(offscreen).state,

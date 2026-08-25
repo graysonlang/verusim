@@ -18,20 +18,20 @@ NPCs retain independent state and visible unavailability without requiring inven
 
 ## Current focus
 
-The active slice is Phase 9D: playback and level-of-detail cadence policy.
-Evolve cadence sessions to logical durations and event boundaries, combine playback rate and level of detail into host scheduling policy, and prove byte-equivalent state across every schedule.
+The active slice is Phase 9E: workbench integration and verification.
+Drive authoritative advancement from wall time and the selected playback rate through `advanceTo`, interpolate frames only between committed movement samples, preserve fractional playback time across pause and rate changes, apply backpressure, and verify the interruption fixture in the isolated browser preview.
 
 ### Current-focus non-goals
 
 - no reduced-fidelity evaluator or distance-gated authoritative state
-- no workbench playback changes; those are Phase 9E
+- no new editors or store adapters; those are Phases 8C through 8F
 - no behavior-model or evaluator-fidelity expansion
 
 ## Phase order
 
 Phases group work by theme, but slices are executed in this cross-phase order:
 
-1. Phases 9D and 9E — cadence policy and workbench integration
+1. Phase 9E — workbench integration and verification
 2. Phases 8C through 8F — application shell, editors, store adapters, and packing
 3. Phase 10B — remaining acceptance vignettes
 
@@ -135,16 +135,7 @@ Playback rate remains host presentation and scheduling state rather than a behav
 
 ### Phase 9 implementation sequence
 
-Phases 9A through 9C are recorded in COMPLETED.md; the remaining Phase 9 slices proceed directly.
-
-#### Phase 9D — playback and level-of-detail cadence policy
-
-Evolve cadence sessions from pending whole-minute ticks to pending logical duration and event boundaries.
-Let the host combine playback-rate and behavioral level-of-detail policy so high rates and distant agents use coarser scheduling while active engagement and discrete input impose immediate barriers.
-Coarse processing may batch exact substeps or jump across a proven event-free interval, but it may not skip a consequential event or select a behavior through a reduced-fidelity evaluator.
-Measure full-cadence and catch-up cost at representative cohort sizes, then add deterministic indexes only for hot paths whose linear scans prevent the selected cadence policy from keeping up.
-
-Gate: real-time adjacent, accelerated adjacent, location, settlement, and on-demand schedules all reach byte-equivalent authoritative state and causal traces at the same observation boundary, including a tier change and player input during pending work, while the measured cohort fixture completes without dropping due work.
+Phases 9A through 9D are recorded in COMPLETED.md; the remaining Phase 9 slice proceeds directly.
 
 #### Phase 9E — workbench integration and verification
 

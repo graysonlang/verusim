@@ -771,6 +771,26 @@ Snapshot schema version 20 persists the route and the directed destination, with
 The phase changes no browser-visible layout or interaction, so browser validation does not apply; the workbench projection still interpolates between committed positions until Phase 9E.
 The full verification gate passes with 300 deterministic tests.
 
+## Phase 9D — playback and level-of-detail cadence policy
+
+Status: complete.
+
+Evolve cadence sessions from pending whole-minute ticks to pending logical duration and event boundaries.
+Let the host combine playback-rate and behavioral level-of-detail policy so high rates and distant agents use coarser scheduling while active engagement and discrete input impose immediate barriers.
+Coarse processing may batch exact substeps or jump across a proven event-free interval, but it may not skip a consequential event or select a behavior through a reduced-fidelity evaluator.
+Measure full-cadence and catch-up cost at representative cohort sizes, then add deterministic indexes only for hot paths whose linear scans prevent the selected cadence policy from keeping up.
+
+Gate: real-time adjacent, accelerated adjacent, location, settlement, and on-demand schedules all reach byte-equivalent authoritative state and causal traces at the same observation boundary, including a tier change and player input during pending work, while the measured cohort fixture completes without dropping due work.
+
+Byte equivalence required one runtime change: continuous accumulators (values, resources, somatic state, cascade load, and the hourly trace) now integrate exactly once per authored tick at tick completion, using the character's persisted `arrivedSecond` (snapshot schema version 21) to prorate recovery within the tick, while movement, coping timers, and intention progress still integrate per interval from committed routes and exact seconds.
+With that, whole, per-tick, seven-second, two-second, and one-second partitions of every built-in scenario produce byte-identical snapshots, and the earlier tolerance-based partition test became an exact one.
+Cadence sessions now hold pending logical seconds and a policy in seconds (adjacent 60, location 300, settlement 1800, on-demand null); scheduling commits whole due intervals through `advanceTo`, `retierCadence` flushes before switching, `applyCadenceInput` flushes to the logical second before mutating state, `cadenceLogicalSecond` replaces the tick-based logical time, and `cadencePolicyForRate` widens batched intervals to cover a real-time batch at a playback rate.
+Cadence-save schema version 2 stores pending seconds and migrates version 1 pending ticks and tick-valued intervals through the embedded scenario's tick length.
+
+`test/cadence.test.ts` proves that real-time adjacent, accelerated adjacent, location, settlement, on-demand, and rate-scaled schedules over a road scenario with off-grid opportunities all reach the same bytes as a direct `advanceTo` at the observation boundary; that a settlement-to-adjacent tier change with 700 pending seconds and a player value push at second 1000 under every tier land at the same second and reach the same bytes as the direct run; that sessions commit only whole intervals; that save schema 2 round-trips and schema 1 migrates; and that a forty-character cohort commits a logical hour under the 3600x real-second budget as settlement batches and under the real-time budget as 3600 one-second requests (measured 7 ms and 123 ms), so no hot-path indexes were added.
+The phase changes no browser-visible layout or interaction, so browser validation does not apply.
+The full verification gate passes with 307 deterministic tests.
+
 ## Phase 1 decisions
 
 Phase 1 uses the following bounded decisions.

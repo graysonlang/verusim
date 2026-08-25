@@ -2,12 +2,13 @@ import type { PreparedScenario, SimulationSnapshotFile, SimulationState } from '
 import { createSimulationFromSnapshot } from '../scenario/load.js';
 import { serializeSnapshot } from '../scenario/serialize.js';
 import { parseSnapshot } from '../scenario/snapshot.js';
-import { advanceSimulation } from '../simulation/runtime.js';
+import { advanceTo } from '../simulation/runtime.js';
 
 export const CADENCE_TIERS = ['adjacent', 'location', 'settlement', 'on-demand'] as const;
 
 export type CadenceTier = (typeof CADENCE_TIERS)[number];
 
+/** Batching intervals in logical seconds; on-demand retains all pending work until a flush. */
 export interface CadencePolicy {
   adjacent: number;
   location: number;
@@ -16,26 +17,36 @@ export interface CadencePolicy {
 }
 
 export const DEFAULT_CADENCE_POLICY: CadencePolicy = Object.freeze({
-  adjacent: 1,
-  location: 5,
+  adjacent: 60,
+  location: 300,
   'on-demand': null,
-  settlement: 30,
+  settlement: 1800,
 });
 
 export interface CadenceSession {
-  pendingTicks: number;
+  pendingSeconds: number;
   policy: CadencePolicy;
   state: SimulationState;
   tier: CadenceTier;
 }
 
 export interface CadenceSaveFile {
-  pendingTicks: number;
+  pendingSeconds: number;
   policy: CadencePolicy;
-  schemaVersion: 1;
+  schemaVersion: 2;
   snapshot: SimulationSnapshotFile;
   tier: CadenceTier;
   type: 'verusim-cadence-save';
+}
+
+/** Host inputs that select a schedule: how fast logical time runs and how closely the chunk is watched. */
+export interface CadenceHostPolicy {
+  /** Real seconds the host is willing to let logical time run ahead between authoritative commits. */
+  batchRealSeconds?: number;
+  /** Logical seconds per real second. */
+  playbackRate: number;
+  /** Base intervals per tier, before rate scaling. */
+  policy?: CadencePolicy;
 }
 
 interface PreparedCadenceResumeInput {
@@ -53,8 +64,8 @@ function clone<Value>(value: Value): Value {
   return JSON.parse(JSON.stringify(value)) as Value;
 }
 
-function validateTicks(ticks: number, label: string): void {
-  if (!Number.isInteger(ticks) || ticks < 0) {
+function validateSeconds(seconds: number, label: string): void {
+  if (!Number.isInteger(seconds) || seconds < 0) {
     throw new RangeError(`${label} must be a non-negative integer`);
   }
 }
@@ -95,42 +106,88 @@ export function createCadenceSession(
   policy: CadencePolicy = DEFAULT_CADENCE_POLICY,
 ): CadenceSession {
   return {
-    pendingTicks: 0,
+    pendingSeconds: 0,
     policy: parseCadencePolicy(policy, 'cadence.policy'),
     state,
     tier: cadenceTier(tier, 'cadence.tier'),
   };
 }
 
-export function scheduleCadence(session: CadenceSession, ticks: number): CadenceSession {
-  validateTicks(ticks, 'cadence ticks');
-  const pendingTicks = session.pendingTicks + ticks;
+/**
+ * Add logical seconds to the chunk and commit every whole interval that is now due.
+ * Committed work runs through `advanceTo`, which resolves every boundary inside the
+ * interval at its exact second, so batching never skips or reorders an event.
+ */
+export function scheduleCadence(session: CadenceSession, seconds: number): CadenceSession {
+  validateSeconds(seconds, 'cadence seconds');
+  const pendingSeconds = session.pendingSeconds + seconds;
   const interval = session.policy[session.tier];
-  if (interval === null) return { ...session, pendingTicks };
-  const dueTicks = pendingTicks - (pendingTicks % interval);
-  if (dueTicks === 0) return { ...session, pendingTicks };
+  if (interval === null) return { ...session, pendingSeconds };
+  const dueSeconds = pendingSeconds - (pendingSeconds % interval);
+  if (dueSeconds === 0) return { ...session, pendingSeconds };
   return {
     ...session,
-    pendingTicks: pendingTicks - dueTicks,
-    state: advanceSimulation(session.state, dueTicks),
+    pendingSeconds: pendingSeconds - dueSeconds,
+    state: advanceTo(session.state, session.state.second + dueSeconds),
   };
 }
 
+/** Commit all pending logical time so the state is authoritative at the logical second. */
 export function flushCadence(session: CadenceSession): CadenceSession {
-  if (session.pendingTicks === 0) return session;
+  if (session.pendingSeconds === 0) return session;
   return {
     ...session,
-    pendingTicks: 0,
-    state: advanceSimulation(session.state, session.pendingTicks),
+    pendingSeconds: 0,
+    state: advanceTo(session.state, session.state.second + session.pendingSeconds),
   };
 }
 
+/** Change tier; pending work is committed first so the schedule change cannot move an event. */
 export function retierCadence(session: CadenceSession, tier: CadenceTier): CadenceSession {
-  return { ...flushCadence(session), tier };
+  return { ...flushCadence(session), tier: cadenceTier(tier, 'cadence.tier') };
 }
 
-export function cadenceLogicalTick(session: CadenceSession): number {
-  return session.state.tick + session.pendingTicks;
+/**
+ * Apply discrete input at the chunk's logical second.
+ * Input is an immediate barrier: pending work is committed up to the logical
+ * second before the input mutates authoritative state, so a batched schedule
+ * observes the input at exactly the same second as a real-time one.
+ */
+export function applyCadenceInput(
+  session: CadenceSession,
+  input: (state: SimulationState) => SimulationState,
+): CadenceSession {
+  const flushed = flushCadence(session);
+  return { ...flushed, state: input(flushed.state) };
+}
+
+/** The logical second the chunk has been scheduled to, including uncommitted work. */
+export function cadenceLogicalSecond(session: CadenceSession): number {
+  return session.state.second + session.pendingSeconds;
+}
+
+/**
+ * Derive a policy for a host running logical time at `playbackRate`.
+ * Each batched interval grows to cover at least `batchRealSeconds` of real time at
+ * that rate, so a faster rate commits coarser batches with the same exact result.
+ * Real-time and slower rates keep the base intervals.
+ */
+export function cadencePolicyForRate(host: CadenceHostPolicy): CadencePolicy {
+  const base = parseCadencePolicy(host.policy ?? DEFAULT_CADENCE_POLICY, 'cadence.policy');
+  const batchRealSeconds = host.batchRealSeconds ?? 1;
+  if (!Number.isFinite(host.playbackRate) || host.playbackRate <= 0) {
+    throw new RangeError('playbackRate must be a positive finite number');
+  }
+  if (!Number.isFinite(batchRealSeconds) || batchRealSeconds <= 0) {
+    throw new RangeError('batchRealSeconds must be a positive finite number');
+  }
+  const floor = Math.max(1, Math.ceil(host.playbackRate * batchRealSeconds));
+  return {
+    adjacent: Math.max(base.adjacent, floor),
+    location: Math.max(base.location, floor),
+    'on-demand': null,
+    settlement: Math.max(base.settlement, floor),
+  };
 }
 
 export function catchUpConstantRate(
@@ -156,13 +213,22 @@ export function catchUpConstantRate(
 
 export function serializeCadenceSave(session: CadenceSession): CadenceSaveFile {
   return clone({
-    pendingTicks: session.pendingTicks,
+    pendingSeconds: session.pendingSeconds,
     policy: session.policy,
-    schemaVersion: 1,
+    schemaVersion: 2,
     snapshot: serializeSnapshot(session.state),
     tier: session.tier,
     type: 'verusim-cadence-save',
   });
+}
+
+function scaleLegacyPolicy(policy: CadencePolicy, tickSeconds: number): CadencePolicy {
+  return {
+    adjacent: policy.adjacent * tickSeconds,
+    location: policy.location * tickSeconds,
+    'on-demand': null,
+    settlement: policy.settlement * tickSeconds,
+  };
 }
 
 export function parseCadenceSave(value: unknown): CadenceSaveFile {
@@ -173,16 +239,38 @@ export function parseCadenceSave(value: unknown): CadenceSaveFile {
   if (file.type !== 'verusim-cadence-save') {
     throw new RangeError('cadence save type must be verusim-cadence-save');
   }
-  if (file.schemaVersion !== 1) throw new RangeError('cadence save schema version is unsupported');
-  const pendingTicks = file.pendingTicks;
-  if (typeof pendingTicks !== 'number')
-    throw new RangeError('cadence save pendingTicks is required');
-  validateTicks(pendingTicks, 'cadence save pendingTicks');
+  if (file.schemaVersion !== 1 && file.schemaVersion !== 2) {
+    throw new RangeError('cadence save schema version is unsupported');
+  }
+  const snapshot = parseSnapshot(file.snapshot);
+  const policy = parseCadencePolicy(file.policy, 'cadence save policy');
+  if (file.schemaVersion === 1) {
+    // Version 1 counted pending whole ticks and expressed intervals in ticks.
+    const pendingTicks = file.pendingTicks;
+    if (typeof pendingTicks !== 'number') {
+      throw new RangeError('cadence save pendingTicks is required');
+    }
+    validateSeconds(pendingTicks, 'cadence save pendingTicks');
+    const tickSeconds = snapshot.scenario.tickSeconds;
+    return clone({
+      pendingSeconds: pendingTicks * tickSeconds,
+      policy: scaleLegacyPolicy(policy, tickSeconds),
+      schemaVersion: 2,
+      snapshot,
+      tier: cadenceTier(file.tier, 'cadence save tier'),
+      type: 'verusim-cadence-save',
+    });
+  }
+  const pendingSeconds = file.pendingSeconds;
+  if (typeof pendingSeconds !== 'number') {
+    throw new RangeError('cadence save pendingSeconds is required');
+  }
+  validateSeconds(pendingSeconds, 'cadence save pendingSeconds');
   return clone({
-    pendingTicks,
-    policy: parseCadencePolicy(file.policy, 'cadence save policy'),
-    schemaVersion: 1,
-    snapshot: parseSnapshot(file.snapshot),
+    pendingSeconds,
+    policy,
+    schemaVersion: 2,
+    snapshot,
     tier: cadenceTier(file.tier, 'cadence save tier'),
     type: 'verusim-cadence-save',
   });
@@ -201,7 +289,7 @@ export function resumeCadenceSave(
           snapshot: save.snapshot,
         });
   return {
-    pendingTicks: save.pendingTicks,
+    pendingSeconds: save.pendingSeconds,
     policy: save.policy,
     state,
     tier: save.tier,

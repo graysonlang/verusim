@@ -135,20 +135,22 @@ Dynamic weather must later become an explicit deterministic timeline or event wi
 ## Integration cadence and observations
 
 Cadence is an integration schedule over one evaluator.
-A cadence session treats a prepared simulation chunk as the smallest coupled authoritative unit, retains committed state plus a whole pending-tick count, and uses adjacent, location, settlement, or on-demand scheduling.
-The default adjacent interval is one tick, location is five ticks, settlement is thirty ticks, and on-demand retains all ticks until a host flushes the chunk for observation or loading.
-Hosts may replace the two batched intervals with other validated positive integers without changing evaluator behavior.
+A cadence session treats a prepared simulation chunk as the smallest coupled authoritative unit, retains committed state plus a pending count of logical seconds, and uses adjacent, location, settlement, or on-demand scheduling.
+The default adjacent interval is 60 logical seconds, location is 300, settlement is 1800, and on-demand retains all pending seconds until a host flushes the chunk for observation or loading.
+Hosts may replace the three batched intervals with other validated positive integers without changing evaluator behavior, and `cadencePolicyForRate` derives a policy for a playback rate by widening each batched interval to cover at least a chosen real-time batch, so faster playback commits coarser batches with the same exact result.
 
-Every due or flushed tick passes through `advanceSimulation` in deterministic order.
-The session never uses a reduced-fidelity transition and changing tiers flushes pending work before adopting the new schedule.
-The committed tick plus pending ticks is the chunk's logical time, so time acceleration changes batching rather than the simulated result.
+Every due or flushed interval passes through `advanceTo`, which splits it at every event boundary and authored tick end in deterministic order, so a batch may jump across a proven event-free stretch but can never skip, reorder, or approximate an event.
+Because continuous accumulators integrate exactly once per authored tick and movement derives from committed routes, the authoritative state at any boundary is byte-identical whether the interval arrives as one request or as many one-second requests.
+The session never uses a reduced-fidelity transition; changing tiers flushes pending work before adopting the new schedule, and `applyCadenceInput` flushes pending work up to the logical second before mutating state, so discrete player input is an immediate barrier that lands at the same second on every schedule.
+The committed second plus pending seconds is the chunk's logical second, so time acceleration changes batching rather than the simulated result.
 
-Cadence-save schema version 1 wraps the ordinary snapshot schema with the tier, validated policy, and pending-tick count.
-Resume crosses the same prepared-resource or raw-library compatibility boundary as an ordinary snapshot, then preserves pending work until the next schedule or flush operation.
+Cadence-save schema version 2 wraps the ordinary snapshot schema with the tier, validated policy in seconds, and pending-second count; version 1 saves counted pending whole ticks and are migrated by scaling through the embedded scenario's tick length.
+Resume crosses the same prepared-resource or raw-library compatibility boundary as an ordinary snapshot, then preserves pending work until the next schedule, input, or flush operation.
 The embedded simulation snapshot remains the authoritative save-game state; the cadence envelope adds integration scheduling state and does not change scenario truth.
 
 Closed-form catch-up is exposed only for an isolated clamped constant-rate primitive with finite, constant inputs across the interval.
-Coupled simulation state takes the conservative exact path and replays pending ticks because discrete events, changing schedules, and cross-agent effects prevent a general equivalence proof.
+Coupled simulation state takes the conservative exact path and replays pending seconds because discrete events, changing schedules, and cross-agent effects prevent a general equivalence proof.
+Measured on a forty-character cohort, a full logical hour commits in single-digit milliseconds as one batch and well under a real second as 3600 one-second requests, so no hot-path indexes are warranted yet; a linear scan earns an index only when a measured schedule fails to keep up.
 
 Text and embodied observation projections consume the same live or snapshot-restored state and the same bounded causal-trace identifiers.
 Text projects summary-scale prose and visible tells, while embodied output projects action, attention, expression, motion, and posture.

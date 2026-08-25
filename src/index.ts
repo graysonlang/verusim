@@ -152,7 +152,9 @@ export type {
 export {
   CADENCE_TIERS,
   DEFAULT_CADENCE_POLICY,
-  cadenceLogicalTick,
+  applyCadenceInput,
+  cadenceLogicalSecond,
+  cadencePolicyForRate,
   catchUpConstantRate,
   createCadenceSession,
   flushCadence,
