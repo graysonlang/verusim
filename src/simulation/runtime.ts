@@ -10,6 +10,7 @@ import {
   type CharacterDefinition,
   type CharacterPlacement,
   type EnvironmentDefinition,
+  type LayerPosition,
   type LocationDefinition,
   type MaskingDemand,
   type PreparedScenario,
@@ -24,6 +25,7 @@ import {
   type ValueMap,
   type ValueState,
   type SomaticSourceSeed,
+  type TimedRoute,
 } from '../model/types.js';
 import { ScenarioValidationError } from '../model/validation.js';
 import { validateSnapshotReferences } from '../scenario/snapshot-references.js';
@@ -308,7 +310,7 @@ export function createSimulationFromPrepared(prepared: PreparedScenario): Simula
     ...initial,
     dyads: initial.dyads.map(dyad => repriceExposureDebt(initial, dyad)),
   };
-  return prepareAgenda(prepareNarrativeAgency(initial));
+  return planRoutes(prepareAgenda(prepareNarrativeAgency(initial)));
 }
 
 export function createSimulationFromPreparedSnapshot(input: {
@@ -474,6 +476,80 @@ function combinedResourceDrains(
   ) as Partial<ResourceState>;
 }
 
+interface ResolvedDestination {
+  block: ReturnType<typeof activeScheduleBlock> | null;
+  destination: LayerPosition;
+  intention: SimulationState['intentions'][number] | undefined;
+  location: LocationDefinition;
+  locationId: string;
+  preempted: boolean;
+  task: ReturnType<typeof intendedTask>;
+}
+
+/** Where a character is bound from this second: a player redirect, its agenda task, or its schedule. */
+function resolveDestination(state: SimulationState, agent: CharacterInstance): ResolvedDestination {
+  const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
+  // A player-directed destination supersedes agenda and schedule until arrival.
+  const task = agent.directedLocationId === null ? intendedTask(state, agent.id) : null;
+  // Inputs are constant across an interval because advanceTo splits at every
+  // schedule start, so the block in force is the one active when it begins.
+  const block =
+    task === null && agent.directedLocationId === null
+      ? activeScheduleBlock(agent.schedule, state.second)
+      : null;
+  const locationId = agent.directedLocationId ?? task?.locationId ?? block?.locationId;
+  if (locationId === undefined)
+    throw new Error('An agent always has a task or schedule destination');
+  const location = findLocation(state.environment, locationId);
+  const preempted = agent.somatic.level >= 3;
+  const destination = preempted ? agent.position : locationCenter(location);
+  return { block, destination, intention, location, locationId, preempted, task };
+}
+
+/**
+ * The route a character follows from this second. A committed route makes
+ * position a pure function of absolute time. Any destination change settles
+ * the old route at this second (the previous interval already placed the
+ * character here) and commits a replacement from that settled position.
+ */
+function committedRoute(
+  state: SimulationState,
+  agent: CharacterInstance,
+  resolved: Pick<ResolvedDestination, 'destination' | 'locationId' | 'preempted'>,
+): TimedRoute | null {
+  if (resolved.preempted || sameLayerPosition(agent.position, resolved.destination)) return null;
+  return agent.route !== null &&
+    agent.route.destinationLocationId === resolved.locationId &&
+    agent.route.departureSecond <= state.second
+    ? agent.route
+    : createTimedRoute(
+        state.environment,
+        agent.position,
+        resolved.destination,
+        resolved.locationId,
+        state.second,
+        agent.walkingMetersPerMinute / SECONDS_PER_MINUTE,
+      );
+}
+
+/**
+ * Commit, at a boundary second, the route each character will follow from it.
+ * Routes are therefore present in the state at the second movement begins -
+ * scenario start, a schedule or task change, a redirect - rather than only
+ * after the first interval has moved the character, so observers can project
+ * movement from a departure second without waiting for the next commit.
+ */
+function planRoutes(state: SimulationState): SimulationState {
+  let changed = false;
+  const characters = state.characters.map(agent => {
+    const route = committedRoute(state, agent, resolveDestination(state, agent));
+    if (route === agent.route || route === null) return agent;
+    changed = true;
+    return { ...agent, route };
+  });
+  return changed ? { ...state, characters } : state;
+}
+
 interface CharacterAdvanceResult {
   agent: CharacterInstance;
   plasticitySignals: BaselinePlasticitySignal[];
@@ -490,42 +566,9 @@ function advanceAgent(
 ): CharacterAdvanceResult {
   const tickSeconds = state.scenario.tickSeconds;
   const tickStart = nextSecond - tickSeconds;
-  const intention = state.intentions.find(candidate => candidate.actorId === agent.id);
-  // A player-directed destination supersedes agenda and schedule until arrival.
-  const task = agent.directedLocationId === null ? intendedTask(state, agent.id) : null;
-  // Inputs are constant across an interval because advanceTo splits at every
-  // schedule start, so the block in force is the one active when it begins.
-  const block =
-    task === null && agent.directedLocationId === null
-      ? activeScheduleBlock(agent.schedule, state.second)
-      : null;
-  const locationId = agent.directedLocationId ?? task?.locationId ?? block?.locationId;
-  if (locationId === undefined)
-    throw new Error('An agent always has a task or schedule destination');
-  const location = findLocation(state.environment, locationId);
-  const preempted = agent.somatic.level >= 3;
-  const destination = preempted ? agent.position : locationCenter(location);
-  // A committed route makes position a pure function of absolute time. Any
-  // destination change settles the old route at this interval's start second
-  // (the previous interval already placed the character there) and commits a
-  // replacement from that settled position.
-  const atDestination = sameLayerPosition(agent.position, destination);
-  const route = preempted
-    ? null
-    : atDestination
-      ? null
-      : agent.route !== null &&
-          agent.route.destinationLocationId === locationId &&
-          agent.route.departureSecond <= state.second
-        ? agent.route
-        : createTimedRoute(
-            state.environment,
-            agent.position,
-            destination,
-            locationId,
-            state.second,
-            agent.walkingMetersPerMinute / SECONDS_PER_MINUTE,
-          );
+  const { block, destination, intention, location, locationId, preempted, task } =
+    resolveDestination(state, agent);
+  const route = committedRoute(state, agent, { destination, locationId, preempted });
   const remaining = route === null ? 0 : route.lengthMeters;
   const arrivalSecond = route === null ? state.second : routeArrivalSecond(route);
   const position = preempted
@@ -964,7 +1007,7 @@ function advanceInterval(state: SimulationState, toSecond: number): SimulationSt
   for (const event of due(prepared.scenario.narrativeEvents, prepared.resolvedNarrativeEventIds)) {
     next = resolveNarrativeEvent(next, event);
   }
-  if (!completesTick) return next;
+  if (!completesTick) return planRoutes(next);
   next = consolidateRelationshipMemories(
     next,
     results.filter(result => result.sleeping).map(result => result.agent.id),
@@ -973,7 +1016,7 @@ function advanceInterval(state: SimulationState, toSecond: number): SimulationSt
   const signalsByAgent = new Map(
     results.map(result => [result.agent.id, result.plasticitySignals]),
   );
-  return {
+  return planRoutes({
     ...next,
     characters: next.characters.map(agent =>
       advanceBaselinePlasticity(agent, {
@@ -986,7 +1029,7 @@ function advanceInterval(state: SimulationState, toSecond: number): SimulationSt
         ],
       }),
     ),
-  };
+  });
 }
 
 /**
@@ -1014,7 +1057,7 @@ export function advanceSimulation(state: SimulationState, ticks = 1): Simulation
 /**
  * Direct a character toward a location. The current route settles where it
  * stands at this second and a replacement route starts from that position on
- * the next advance; the directed destination supersedes schedule and agenda
+ * this second; the directed destination supersedes schedule and agenda
  * until arrival.
  */
 export function redirectCharacter(
@@ -1033,7 +1076,7 @@ export function redirectCharacter(
     state.second,
     `environment.locations.${locationId}`,
   );
-  return {
+  return planRoutes({
     ...state,
     characters: state.characters.map(candidate =>
       candidate.id === instanceId
@@ -1041,7 +1084,7 @@ export function redirectCharacter(
         : candidate,
     ),
     trace: appendTrace(state.trace, entry),
-  };
+  });
 }
 
 function interventionEntry(

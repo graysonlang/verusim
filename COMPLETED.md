@@ -843,7 +843,8 @@ The status bar shows solver milliseconds, frame milliseconds, committed seconds,
 Browser verification ran against the isolated preview on port 48731 with the headless Playwright MCP server: Market Morning loaded at real time, Mara was redirected to East Field from the inspector, playback ran in real time while the inspector reported "Walking to East Field (redirected)" and her distances to other characters changed frame by frame, the rate changed to 10x during travel, the projection switched to the Surface layer and back to Exterior while she kept moving, playback paused, and the saved snapshot (captured through the download hook) was byte-identical to a headless `advanceTo` replay of the same redirect at second 28200 to second 28561 and to an accelerated settlement cadence session over the same interval.
 The console recorded no application errors or warnings and no non-static network requests; the only console entry was the esbuild live-reload stream closing when the preview was stopped.
 Screenshots and the accessibility snapshots are under `.playwright-mcp/`.
-The full verification gate passes with 307 deterministic tests.
+A follow-up fixed a hold-then-jump at every departure: routes were created lazily inside the first moving interval, so the projection had nothing to follow for one committed second; routes are now committed at scenario start, at the end of every interval, and on redirect, with regression tests in `test/timed-movement.test.ts` and a 180-frame real-time loop in `test/playback.test.ts`, and the reset transport control no longer refits the viewport.
+The full verification gate passes with 309 deterministic tests.
 
 ## Phase 1 decisions
 

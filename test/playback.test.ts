@@ -133,6 +133,43 @@ describe('workbench playback', () => {
     assert.throws(() => projectPlaybackState(walking, -0.1), RangeError);
   });
 
+  it('moves every in-transit character from the first frame with no hold-then-jump', () => {
+    let state = createSimulation({
+      characterLibrary: characters,
+      environmentLibrary: environments,
+      scenario,
+    });
+    const walkers = state.characters
+      .filter(character => character.currentLocationId === null)
+      .map(character => character.id);
+    assert.ok(walkers.length > 0);
+    const rate = playbackRateForId('real-time');
+    const frameSeconds = 1 / 60;
+    let clock = IDLE_PLAYBACK_CLOCK;
+    let shown = projectPlaybackState(state, 0);
+    for (let frame = 0; frame < 180; frame += 1) {
+      const plan = planPlaybackFrame(clock, frameSeconds, rate);
+      clock = plan.clock;
+      if (plan.commitSeconds > 0) state = advanceTo(state, state.second + plan.commitSeconds);
+      const next = projectPlaybackState(state, clock.carriedSeconds);
+      for (const id of walkers) {
+        const before = shown.characters.find(character => character.id === id);
+        const after = next.characters.find(character => character.id === id);
+        assert.ok(before && after);
+        const moved = Math.hypot(
+          after.position.x - before.position.x,
+          after.position.y - before.position.y,
+        );
+        const expected = (after.walkingMetersPerMinute / 60) * frameSeconds;
+        assert.ok(
+          Math.abs(moved - expected) < expected * 0.05 + 1e-6,
+          `${id} moved ${moved.toFixed(4)}m in frame ${frame}, expected ${expected.toFixed(4)}m`,
+        );
+      }
+      shown = next;
+    }
+  });
+
   it('commits at most a frame budget and keeps the remainder as backlog', () => {
     const rate = playbackRateForId('10-minutes-per-second');
     const steady = planPlaybackFrame(IDLE_PLAYBACK_CLOCK, 0.5, rate);

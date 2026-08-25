@@ -49,6 +49,30 @@ function startLongWalk() {
 }
 
 describe('interruptible timed movement', () => {
+  it('commits each route at the second movement begins, before any interval moves the character', () => {
+    const initial = createSimulation(scenario('market-morning').prepared);
+    const inTransit = initial.characters.filter(character => character.currentLocationId === null);
+    assert.ok(inTransit.length > 0);
+    for (const character of inTransit) {
+      assert.ok(character.route, `${character.id} departs with a committed route`);
+      assert.equal(character.route.departureSecond, initial.second);
+      assert.deepEqual(character.route.origin, character.position);
+    }
+    // Mara's schedule sends her out at 8:00; the state at that second already
+    // carries her route from her settled position.
+    const departure = advanceTo(initial, 28800);
+    const mara = departure.characters.find(character => character.id === 'mara');
+    assert.ok(mara?.route);
+    assert.equal(mara.route.departureSecond, 28800);
+    assert.deepEqual(mara.route.origin, mara.position);
+    assert.equal(mara.currentLocationId, 'mara-house');
+    const { state } = startLongWalk();
+    const redirected = state.characters.find(character => character.id === 'mara');
+    assert.ok(redirected?.route);
+    assert.equal(redirected.route.departureSecond, state.second);
+    assert.equal(redirected.route.destinationLocationId, redirected.directedLocationId);
+  });
+
   it('commits a timed route whose position is a pure function of absolute time', () => {
     const { mara, state, target } = startLongWalk();
     const at20 = advanceTo(state, state.second + 20);
@@ -97,12 +121,19 @@ describe('interruptible timed movement', () => {
     assert.notDeepEqual(moving.position, mara.position);
     assert.notDeepEqual(moving.position, routePositionAtSecond(original, state.second + 25));
 
-    const arrived = advanceTo(redirected, Math.ceil(routeArrivalSecond(moving.route)));
+    const arrivalSecond = Math.ceil(routeArrivalSecond(moving.route));
+    const arrived = advanceTo(redirected, arrivalSecond);
     const there = arrived.characters.find(character => character.id === 'mara');
     assert.equal(there?.currentLocationId, elsewhere.id);
-    assert.equal(there?.route, null);
     assert.equal(there?.directedLocationId, null);
     assert.deepEqual(there?.position, locationCenter(elsewhere));
+    // The redirect is spent on arrival; any route present at that second is the
+    // schedule's next leg, committed from the arrival position at the arrival second.
+    if (there?.route) {
+      assert.notEqual(there.route.destinationLocationId, elsewhere.id);
+      assert.equal(there.route.departureSecond, arrivalSecond);
+      assert.deepEqual(there.route.origin, there.position);
+    }
     assert.ok(
       arrived.trace.entries.filter(
         entry => entry.kind === 'intervention' && entry.instanceId === 'mara',
