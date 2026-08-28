@@ -227,10 +227,15 @@ export function worldPaletteFor(
 }
 
 export const CSS_PIXELS_PER_METER_AT_100_PERCENT = 10;
+const WHEEL_ZOOM_SENSITIVITY = 0.0025;
 
 const LOCATION_LABEL_MIN_PIXELS_PER_METER = 3.6;
 const MIN_ZOOM = 0.12;
 const MAX_ZOOM = 5;
+
+export function zoomFactorForWheelDelta(deltaY: number): number {
+  return Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY);
+}
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(maximum, Math.max(minimum, value));
@@ -1250,7 +1255,7 @@ export function createWorldView(options: WorldViewOptions): WorldView {
   function onWheel(event: WheelEvent): void {
     event.preventDefault();
     if (event.ctrlKey) {
-      zoomAt(Math.exp(-event.deltaY * 0.01), screenPoint(canvas, event));
+      zoomAt(zoomFactorForWheelDelta(event.deltaY), screenPoint(canvas, event));
       return;
     }
     options.onHover(null);

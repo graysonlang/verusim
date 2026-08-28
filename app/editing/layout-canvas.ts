@@ -1,7 +1,7 @@
 import { button, element } from '../dom.js';
 import type { DistanceUnit } from '../preferences.js';
 import type { EditorCamera } from '../workspace.js';
-import { scaleBarForZoom } from '../world-view.js';
+import { scaleBarForZoom, zoomFactorForWheelDelta } from '../world-view.js';
 import { getAtPath } from './paths.js';
 
 /**
@@ -497,7 +497,7 @@ export function createLayoutCanvas(handlers: CanvasHandlers): LayoutCanvas {
     event => {
       event.preventDefault();
       if (event.ctrlKey) {
-        zoomAt(Math.exp(-event.deltaY * 0.01), { x: event.offsetX, y: event.offsetY });
+        zoomAt(zoomFactorForWheelDelta(event.deltaY), { x: event.offsetX, y: event.offsetY });
         return;
       }
       camera = {

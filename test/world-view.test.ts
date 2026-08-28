@@ -10,6 +10,7 @@ import {
   locationLabelVisibleInProjection,
   scaleBarForZoom,
   worldPaletteFor,
+  zoomFactorForWheelDelta,
 } from '../app/world-view.js';
 import { environments, highwaymanEnvironments } from './fixtures.js';
 
@@ -67,6 +68,14 @@ describe('agent marker appearance', () => {
 });
 
 describe('world view gestures', () => {
+  it('keeps wheel zoom gradual and symmetric', () => {
+    const zoomIn = zoomFactorForWheelDelta(-100);
+    const zoomOut = zoomFactorForWheelDelta(100);
+    assert.ok(zoomIn > 1 && zoomIn < 1.3);
+    assert.ok(zoomOut < 1 && zoomOut > 0.75);
+    assert.ok(Math.abs(zoomIn * zoomOut - 1) < Number.EPSILON);
+  });
+
   it('pans by following the two-pointer centroid', () => {
     assert.deepEqual(
       cameraForGesture(
